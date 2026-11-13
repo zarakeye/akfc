@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { FileAdapter } from "@contracts/finder";
-import { useFinderStore } from "@features/finder-core/state/useFinderStore";
+import type { FileAdapter } from "@akfc/contracts/finder/index.ts";
+import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
 
 /**
  * Ce hook gère le chargement des données du Finder en fonction du path courant.

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { richTextContentSchema } from "@contracts/page/richText";
+import { richTextContentSchema } from "#page/richText.ts";
 
 /**
  * Contrat versionné de contenu de page — v1.

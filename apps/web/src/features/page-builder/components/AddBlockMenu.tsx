@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
-import type { PageBlockKindV1 } from "@contracts/page";
+import type { PageBlockKindV1 } from "@akfc/contracts/page/index.ts";
 
 import { ALL_BLOCK_DEFINITIONS } from "../blockRegistry";
 import { BlockPreviewCard } from "./BlockPreviews";

@@ -3,7 +3,7 @@
 import type { JSX, ReactNode } from "react";
 import { Download, FileText } from "lucide-react";
 
-import type { DocumentListBlockV1 } from "@contracts/page";
+import type { DocumentListBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import { useResolvedMediaList } from "../../components/useResolvedMediaList";
 

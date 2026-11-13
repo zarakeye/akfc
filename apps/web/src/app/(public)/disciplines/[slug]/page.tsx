@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
-import { prisma } from "@backend/prisma";
-import { audienceFor, DraftBanner, draftAccess, isLive } from "@features/editorial/editorialGate";
-import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { parsePageContentV1 } from "@contracts/page";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { audienceFor, DraftBanner, draftAccess, isLive } from "#features/editorial/editorialGate.tsx";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
 import type { Metadata } from "next";
 
 /**

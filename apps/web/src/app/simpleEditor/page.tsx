@@ -1,5 +1,5 @@
 import { JSX } from "react"
-import { SimpleEditor } from "@/features/editor-tiptap/templates/simple/simple-editor"
+import { SimpleEditor } from "#features/editor-tiptap/templates/simple/simple-editor.tsx"
 
 export default function Page(): JSX.Element {
   return <SimpleEditor />

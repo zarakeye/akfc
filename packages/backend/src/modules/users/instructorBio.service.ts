@@ -1,8 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-import { extractMediaIdsFromContent, type PageContentV1 } from "@contracts/page";
-import { personalSpaceOwnerId } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
+import { extractMediaIdsFromContent, type PageContentV1 } from "@akfc/contracts/page/index.ts";
+import { personalSpaceOwnerId } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
 
 /**
  * instructorBio.service.ts — les règles de la présentation d'instructeur.

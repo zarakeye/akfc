@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import type { TipTapBlockV1 } from "@contracts/page";
+import type { TipTapBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockEditorProps } from "../../BlockDefinition.types";
 import { BuilderTipTapEditor } from "./builder-tiptap-editor";

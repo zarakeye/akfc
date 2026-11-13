@@ -1,4 +1,4 @@
-import type { FormActionState } from "@contracts/forms/form-action.types";
+import type { FormActionState } from "@akfc/contracts/forms/form-action.types.ts";
 
 export type UpdateMeField =
   "firstName" | "lastName" | "pseudo" | "aboutMe" | "phone" | "birthDate";

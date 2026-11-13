@@ -2,10 +2,10 @@ import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
-import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@contracts/time/hhmm.schema";
-import { sessionDateSchema } from "@contracts/time/sessionDate.schema";
+import { router, protectedProcedure, publicProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
+import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@akfc/contracts/time/hhmm.schema.ts";
+import { sessionDateSchema } from "@akfc/contracts/time/sessionDate.schema.ts";
 
 /**
  * seminarSessions/router.ts

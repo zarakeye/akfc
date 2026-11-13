@@ -1,15 +1,15 @@
 import type { JSX } from "react";
 
-import { prisma } from "@backend/prisma";
+import { prisma } from "@akfc/backend/prisma.ts";
 import {
   audienceFor,
   editorialAccess,
   editorialRobots,
   UnderConstruction,
-} from "@features/editorial/editorialGate";
-import { parsePageContentV1 } from "@contracts/page";
+} from "#features/editorial/editorialGate.tsx";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
 
-import { PageRenderer } from "@features/page-builder/PageRenderer";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
 import type { Metadata } from "next";
 
 export const dynamic = 'force-dynamic';

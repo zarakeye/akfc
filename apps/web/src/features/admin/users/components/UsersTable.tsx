@@ -3,16 +3,16 @@
 import { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Table, type Column } from "react-ts-tab-lib";
-import { trpc } from "@trpc/trpcClient";
-import { DemoAccountsToggle, DemoBadge } from "@features/admin/common/DemoAccounts";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { DemoAccountsToggle, DemoBadge } from "#features/admin/common/DemoAccounts.tsx";
 import {
   IMAGE_CONSENT_LABEL,
   IMAGE_CONSENT_PROOF_LABEL,
   LEGAL_AGE_LABEL,
   effectiveLegalAge,
-} from "@contracts/legal/imageConsent";
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { deleteColumn } from "@features/admin/common/delete";
+} from "@akfc/contracts/legal/imageConsent.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { deleteColumn } from "#features/admin/common/delete/index.ts";
 
 type UserRow = { id: string; email: string; name: string; groups: string; majority: string; photos: string; proof: string; kind: string; supprimer: string };
 

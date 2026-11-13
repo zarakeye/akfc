@@ -1,15 +1,18 @@
 {
-  "name": "@workspace/finder-core",
+  "name": "@akfc/finder-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
   "exports": {
-    "./cart": "./src/cart/usePickerCartStore.ts"
+    "./*": "./src/*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@workspace/contracts": "workspace:*"
+    "@akfc/contracts": "workspace:*"
   }
 }

@@ -3,12 +3,12 @@
 import type { JSX } from "react";
 import { UserRound } from "lucide-react";
 
-import { useAvatarVersionStore } from "@lib/stores/useAvatarVersionStore";
+import { useAvatarVersionStore } from "#lib/stores/useAvatarVersionStore.ts";
 import {
   type DisplayUser,
   portraitUrl,
   initials,
-} from "@features/social/userDisplay";
+} from "#features/social/userDisplay.ts";
 
 /**
  * Pastille ronde : portrait si disponible, sinon initiales sur fond neutre. Sans auteur

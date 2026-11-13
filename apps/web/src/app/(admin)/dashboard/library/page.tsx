@@ -2,10 +2,10 @@
 
 import { JSX, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Finder from '@features/finder-core/components/Finder';
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { finderStorageAdapter } from '@/features/finder-adapters/storage/finderStorage.adapter';
-import { APP_ROOT } from '@config/app';
+import Finder from '#features/finder-core/components/Finder.tsx';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { finderStorageAdapter } from '#features/finder-adapters/storage/finderStorage.adapter.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
 
 // Lit ?path= dans l'URL — doit vivre sous un <Suspense> (exigence Next au build).
 function DeepLinkSync(): null {

@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
-import { prisma } from "@backend/prisma";
-import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { parsePageContentV1 } from "@contracts/page";
-import { PresentationShell } from "@features/admin/common/components/PresentationShell";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import { PresentationShell } from "#features/admin/common/components/PresentationShell.tsx";
 
 /** null → Brouillon, future → Programmé, passée → Publié. */
 function statut(publicationDate: Date | null): string {

@@ -1,4 +1,4 @@
-import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "@backend/email/mailer";
+import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "#email/mailer.ts";
 
 /**
  * Relance du droit à l'image (un admin, depuis les tags d'un média) : le membre est invité à donner

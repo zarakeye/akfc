@@ -3,22 +3,22 @@
 import { forwardRef, useCallback, useMemo } from "react"
 
 // --- Lib ---
-import { parseShortcutKeys } from "@/lib/tiptap-utils"
+import { parseShortcutKeys } from "#lib/tiptap-utils.ts"
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/features/editor-tiptap/hooks/use-tiptap-editor"
+import { useTiptapEditor } from "#features/editor-tiptap/hooks/use-tiptap-editor.ts"
 
 // --- Tiptap UI ---
-import type { UseColorHighlightConfig } from "@/features/editor-tiptap/ui/color-highlight-button"
+import type { UseColorHighlightConfig } from "#features/editor-tiptap/ui/color-highlight-button/index.tsx"
 import {
   COLOR_HIGHLIGHT_SHORTCUT_KEY,
   useColorHighlight,
-} from "@/features/editor-tiptap/ui/color-highlight-button"
+} from "#features/editor-tiptap/ui/color-highlight-button/index.tsx"
 
 // --- UI Primitives ---
-import type { ButtonProps } from "@/features/editor-tiptap/ui-primitive/button"
-import { Button } from "@/features/editor-tiptap/ui-primitive/button"
-import { Badge } from "@/features/editor-tiptap/ui-primitive/badge"
+import type { ButtonProps } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
+import { Button } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
+import { Badge } from "#features/editor-tiptap/ui-primitive/badge/index.tsx"
 
 // --- Styles ---
 // color-highlight-button styles migrated to Tailwind classes in JSX

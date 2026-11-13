@@ -2,9 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { trpc, getTrpcClient } from '@trpc/trpcClient';
+import { trpc, getTrpcClient } from '#core/trpc/trpcClient.ts';
 import { JSX, useState } from 'react';
-import { TourProvider } from '@features/tours';
+import { TourProvider } from '#features/tours/index.ts';
 
 /**
  * Provides the QueryClient and TRPC client to the application.

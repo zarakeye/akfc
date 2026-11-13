@@ -13,7 +13,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@components/ui/tooltip"
+} from "#components/ui/tooltip.tsx"
 
 interface CodeExampleClientProps {
   language?: string

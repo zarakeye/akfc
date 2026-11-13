@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 
-import { prisma } from "@backend/prisma";
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
-import { memberDocumentReadableBy } from "@backend/modules/memberDocuments/visibleTo";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
+import { memberDocumentReadableBy } from "@akfc/backend/modules/memberDocuments/visibleTo.ts";
 import {
   getR2Bucket,
   getR2Client,
-} from "@backend/modules/storage/adapters/r2/client";
+} from "@akfc/backend/modules/storage/adapters/r2/client.ts";
 
 /**
  * Livraison GATÉE MEMBRE d'un document mis à disposition.

@@ -5,8 +5,8 @@ section: "Fondations front"
 order: 2
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Le proxy ne vérifie pas les rôles parce qu'il n'a pas accès à la base. La vérification des rôles vit au-dessus du tableau de bord parce que celui-ci est un composant client. Le header lit une session fournie par le serveur parce que le store client y est vide. Trois décisions, une même frontière.
 
@@ -32,8 +32,8 @@ import { JSX, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { PanelLeft, X } from 'lucide-react';
 
-import Header from '@features/app-shell/Header';
-import ControlPanelSidebar from '@features/app-shell/ControlPanelSidebar';
+import Header from '#features/app-shell/Header.tsx';
+import ControlPanelSidebar from '#features/app-shell/ControlPanelSidebar.tsx';
 ```
 
 Une conséquence directe : un module qui mélange une fonction pure et un hook devient client tout entier, et sa fonction pure n'est plus utilisable par un composant serveur. Le projet sépare donc les deux :
@@ -99,7 +99,7 @@ Ce que le navigateur ne doit jamais recevoir est protégé à trois niveaux.
 
 ```ts
 // apps/web/src/core/trpc/trpcClient.ts (extrait)
-import type { AppRouter } from "@backend/modules"
+import type { AppRouter } from "@akfc/backend/modules/index.ts"
 ```
 
 Un import ordinaire de Prisma depuis un composant client ne donnerait de toute façon rien d'utilisable : le paquet ne fournit au navigateur qu'une version qui refuse de s'exécuter, puisqu'une base de données ne se joint pas depuis un navigateur.

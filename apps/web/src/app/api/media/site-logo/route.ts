@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getR2Bucket,
   getR2Client,
-} from "@backend/modules/storage/adapters/r2/client";
-import { SITE_LOGO_KEY } from "@backend/modules/siteSettings/services/siteLogo.service";
+} from "@akfc/backend/modules/storage/adapters/r2/client.ts";
+import { SITE_LOGO_KEY } from "@akfc/backend/modules/siteSettings/services/siteLogo.service.ts";
 
 /**
  * Route publique du logo du site. Le logo vit dans une clé R2 réservée

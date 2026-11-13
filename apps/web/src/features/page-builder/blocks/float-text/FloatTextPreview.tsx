@@ -3,8 +3,8 @@
 import { useState, type CSSProperties, type JSX } from "react";
 import { hasRichText, richTextHtml } from "../../richTextHtml";
 
-import type { FloatTextBlockV1 } from "@contracts/page";
-import { useResolvedPreviewMedia } from "@features/page-builder/components/useResolvedPreviewMedia";
+import type { FloatTextBlockV1 } from "@akfc/contracts/page/index.ts";
+import { useResolvedPreviewMedia } from "#features/page-builder/components/useResolvedPreviewMedia.ts";
 
 /**
  * Aperçu CLIENT du bloc float, affiché sous l'éditeur dans le builder.

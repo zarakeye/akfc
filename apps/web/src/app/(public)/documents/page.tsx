@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FileText, CircleDot } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { DocumentReaderPanel } from "@features/member-documents/DocumentReaderPanel";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { DocumentReaderPanel } from "#features/member-documents/DocumentReaderPanel.tsx";
 
 type DocItem = {
   id: string;

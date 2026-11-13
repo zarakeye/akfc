@@ -3,9 +3,9 @@
 import { type JSX } from "react";
 import { usePathname } from "next/navigation";
 
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { trpc } from "@trpc/trpcClient";
-import { pageKeyForPath } from "@/config/pageRegistry";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { pageKeyForPath } from "#config/pageRegistry.ts";
 
 /**
  * Badge flottant « Page non publiée » — visible uniquement d'un ADMIN sur une

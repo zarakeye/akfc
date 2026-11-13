@@ -4,7 +4,7 @@ import { createTRPCReact } from "@trpc/react-query"
 import { httpBatchLink, createTRPCClient } from "@trpc/client"
 import superjson from "superjson"
 
-import type { AppRouter } from "@backend/modules"
+import type { AppRouter } from "@akfc/backend/modules/index.ts"
 
 /** Un seul lien pour les deux clients : même adresse, même transformateur. */
 const links = [

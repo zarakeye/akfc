@@ -3,8 +3,8 @@
 import type { JSX } from "react";
 import { Download, Printer, X } from "lucide-react";
 
-import { PdfViewer } from "@features/member-documents/PdfViewerClient";
-import { printFile } from "@features/image-consent/printFile";
+import { PdfViewer } from "#features/member-documents/PdfViewerClient.tsx";
+import { printFile } from "#features/image-consent/printFile.ts";
 
 /**
  * Aperçu d'un fichier (PDF ou image) en panneau latéral, avec Télécharger et Imprimer — même

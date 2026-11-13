@@ -1,11 +1,11 @@
-import { isDemoEmail } from "@backend/lib/demoAccounts";
+import { isDemoEmail } from "#lib/demoAccounts.ts";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-import { router, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
-import { ensureGroupSpaceFolder } from "@backend/modules/memberGroups/ensureGroupSpaceFolder.service";
-import { deleteGroupWithSpace } from "@backend/modules/memberGroups/deleteGroupWithSpace.service";
+import { router, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
+import { ensureGroupSpaceFolder } from "#modules/memberGroups/ensureGroupSpaceFolder.service.ts";
+import { deleteGroupWithSpace } from "#modules/memberGroups/deleteGroupWithSpace.service.ts";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 

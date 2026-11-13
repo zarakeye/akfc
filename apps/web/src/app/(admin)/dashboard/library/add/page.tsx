@@ -1,5 +1,5 @@
 import { JSX } from "react";
-import DragNDropForm from '@features/admin/library/forms/DragNDropForm';
+import DragNDropForm from '#features/admin/library/forms/DragNDropForm.tsx';
  
 
 export default function AddPicturePage(): JSX.Element {

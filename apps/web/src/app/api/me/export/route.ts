@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { prisma } from "@backend/prisma";
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
-import { exportMyData } from "@backend/modules/privacy/exportMyData.service";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
+import { exportMyData } from "@akfc/backend/modules/privacy/exportMyData.service.ts";
 
 /**
  * « Télécharger mes données » (profil) : export JSON des données personnelles du membre connecté

@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { formatTicketRef } from "@backend/modules/tickets/ticketRef";
+import { formatTicketRef } from "#modules/tickets/ticketRef.ts";
 
 /*
  * Droit d'accès et à la portabilité (art. 15 et 20 RGPD) : toutes les données personnelles qu'un

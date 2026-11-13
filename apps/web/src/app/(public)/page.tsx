@@ -3,29 +3,29 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
-import HomeCarousel from "@features/app-shell/HomeCarousel";
-import { LocalBusinessJsonLd } from "@features/seo/LocalBusinessJsonLd";
+import HomeCarousel from "#features/app-shell/HomeCarousel.tsx";
+import { LocalBusinessJsonLd } from "#features/seo/LocalBusinessJsonLd.tsx";
 
-import { prisma } from "@backend/prisma";
+import { prisma } from "@akfc/backend/prisma.ts";
 import {
   editorialRobots,
   isEditorialPageGated,
   UnderConstruction,
-} from "@features/editorial/editorialGate";
+} from "#features/editorial/editorialGate.tsx";
 import {
   groupReactions,
   userSelect,
   type GroupedReaction,
-} from "@backend/modules/reactions/router";
-import { PostCard } from "@features/social/PostCard";
-import { PageRenderer } from "@features/page-builder/PageRenderer";
+} from "@akfc/backend/modules/reactions/router.ts";
+import { PostCard } from "#features/social/PostCard.tsx";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
 import {
   SummaryCards,
   type SummaryCardData,
-} from "@features/common/SummaryCards";
-import { parsePageContentV1 } from "@contracts/page";
-import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
-import { refusedMediaIds } from "@backend/modules/mediaPeople/mediaPeople.service";
+} from "#features/common/SummaryCards.tsx";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import { resolveMediaByIds } from "@akfc/backend/modules/media/services/resolveMediaByIds.service.ts";
+import { refusedMediaIds } from "@akfc/backend/modules/mediaPeople/mediaPeople.service.ts";
 import type { Metadata } from "next";
 
 /**

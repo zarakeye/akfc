@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
-import { Input } from "@components/ui/Input";
-import { Button } from "@components/ui/Button";
-import { trpc } from "@trpc/trpcClient";
-import { DemoAccountsToggle, MemberLabel } from "@features/admin/common/DemoAccounts";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { Input } from "#components/ui/Input.tsx";
+import { Button } from "#components/ui/Button.tsx";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { DemoAccountsToggle, MemberLabel } from "#features/admin/common/DemoAccounts.tsx";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 
 /** Fiche d'un groupe — `/(admin)/dashboard/groups/[id]`. */
 export default function GroupDetailPage(): JSX.Element {

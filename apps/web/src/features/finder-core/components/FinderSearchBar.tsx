@@ -3,7 +3,7 @@
 import { JSX, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 import { Search, X, Loader2 } from 'lucide-react';
-import { useFinderStore, type SearchFlags } from '@features/finder-core/state/useFinderStore';
+import { useFinderStore, type SearchFlags } from '#features/finder-core/state/useFinderStore.ts';
 
 /**
  * 🔎 FinderSearchBar — barre de recherche du finder avec filtres type VS Code.

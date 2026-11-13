@@ -1,7 +1,7 @@
-import { GLOSSARIES, type GlossarySpace } from "@features/docs/glossary/glossary"
-import { docTarget } from "@features/docs/glossary/glossaryLinks"
-import { InlineMd } from "@features/docs/glossary/InlineMd"
-import { GlossaireCartesClient, type CarteTerme } from "@features/docs/glossary/GlossaireCartesClient"
+import { GLOSSARIES, type GlossarySpace } from "#features/docs/glossary/glossary.ts"
+import { docTarget } from "#features/docs/glossary/glossaryLinks.ts"
+import { InlineMd } from "#features/docs/glossary/InlineMd.tsx"
+import { GlossaireCartesClient, type CarteTerme } from "#features/docs/glossary/GlossaireCartesClient.tsx"
 
 /**
  * Les cartes du glossaire d'une page : une entrée par terme présent (pas par occurrence), préparée

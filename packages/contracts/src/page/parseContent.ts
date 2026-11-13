@@ -4,7 +4,7 @@ import {
   pageContentSchemaV1,
   type PageBlockV1,
   type PageContentV1,
-} from '@contracts/page/blocks.v1';
+} from '#page/blocks.v1.ts';
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  parsePageContentV1                                                     */

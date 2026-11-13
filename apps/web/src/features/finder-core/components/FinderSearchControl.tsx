@@ -2,8 +2,8 @@
 
 import { JSX } from 'react';
 
-import { useIsBreakpoint } from '@/hooks/use-is-breakpoint';
-import FinderSearchBar from '@features/finder-core/components/FinderSearchBar';
+import { useIsBreakpoint } from '#hooks/use-is-breakpoint.ts';
+import FinderSearchBar from '#features/finder-core/components/FinderSearchBar.tsx';
 
 /**
  * Recherche du finder, selon la place disponible.

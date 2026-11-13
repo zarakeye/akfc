@@ -1,15 +1,15 @@
 import { z } from "zod";
 
-import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
-import { validateLogo } from "@backend/modules/sitePartners/sitePartners.service";
-import { saveSiteContactSchema } from "@contracts/siteContact/siteContact.schema";
-import { compactId, saveLegalSettingsSchema } from "@contracts/legal/legalSettings.schema";
-import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
+import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
+import { validateLogo } from "#modules/sitePartners/sitePartners.service.ts";
+import { saveSiteContactSchema } from "@akfc/contracts/siteContact/siteContact.schema.ts";
+import { compactId, saveLegalSettingsSchema } from "@akfc/contracts/legal/legalSettings.schema.ts";
+import { buildMediaProxyUrl } from "#modules/media/helpers/media-url.ts";
 import {
   putSiteLogo,
   SITE_LOGO_KEY,
-} from "@backend/modules/siteSettings/services/siteLogo.service";
+} from "#modules/siteSettings/services/siteLogo.service.ts";
 
 const SETTINGS_ID = "site";
 

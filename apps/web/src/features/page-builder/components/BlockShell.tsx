@@ -3,7 +3,7 @@
 import { useRef, type ComponentType } from "react";
 import { GripVertical, Trash2 } from "lucide-react";
 import clsx from "clsx";
-import type { PageBlockV1 } from "@contracts/page";
+import type { PageBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import { getBlockDefinition } from "../blockRegistry";
 import type { BlockEditorProps } from "../BlockDefinition.types";

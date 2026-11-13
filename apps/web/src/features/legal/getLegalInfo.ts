@@ -1,7 +1,7 @@
-import { prisma } from "@backend/prisma";
-import { parsePageContentV1, type PageContentV1 } from "@contracts/page";
-import type { StorageRegion } from "@contracts/legal/legalSettings.schema";
-import type { RetentionSettings } from "@contracts/legal/processingRegister";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { parsePageContentV1, type PageContentV1 } from "@akfc/contracts/page/index.ts";
+import type { StorageRegion } from "@akfc/contracts/legal/legalSettings.schema.ts";
+import type { RetentionSettings } from "@akfc/contracts/legal/processingRegister.ts";
 
 /**
  * Informations légales lues dans les Réglages du site, prêtes pour les pages « Mentions légales »

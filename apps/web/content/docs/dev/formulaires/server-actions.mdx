@@ -5,10 +5,10 @@ section: "Formulaires"
 order: 4
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
-import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
-import { CodeSnippetWalkthrough } from "@/features/docs/ui/CodeSnippetWalkthrough"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+import { CodeSnippet } from "#features/docs/ui/CodeSnippet.tsx"
+import { CodeSnippetWalkthrough } from "#features/docs/ui/CodeSnippetWalkthrough.tsx"
 
 > **Précédemment.** `useActionState` relie une fonction métier à un `<form>` réel : le navigateur soumet, React orchestre, l’interface lit un état. Mais la fonction métier appelait encore `fetch` : le serveur restait « derrière une URL ».
 
@@ -190,11 +190,11 @@ Le schéma `<form> → formAction → Server Action → Prisma` reste abstrait t
 
 import { Prisma } from "@prisma/client";
 
-import { prisma } from "@backend/prisma";
-import { APP_ROOT } from "@config/app";
-import { categoryFolderPath, newCategorySegment, setFolderLabel } from "@backend/modules/storage/storageSegments";
-import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
-import { saveCategoryFormSchema } from "@contracts/forms/saveCategoryForm.schema";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
+import { categoryFolderPath, newCategorySegment, setFolderLabel } from "@akfc/backend/modules/storage/storageSegments.ts";
+import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "#features/admin/common/actions/callerIsAdmin.ts";
+import { saveCategoryFormSchema } from "@akfc/contracts/forms/saveCategoryForm.schema.ts";
 
 export type SaveCategoryFormState = {
   success: boolean;
@@ -312,7 +312,7 @@ Les actions d'administration vérifient donc les droits **à leur première lign
 
 ```ts
 // apps/web/src/features/admin/common/actions/callerIsAdmin.ts (fichier complet)
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
 
 /**
  * Garde des server actions d'administration.

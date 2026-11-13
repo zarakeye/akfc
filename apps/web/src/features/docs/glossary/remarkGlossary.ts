@@ -1,4 +1,4 @@
-import { glossaryOfPage } from "@features/docs/glossary/glossary"
+import { glossaryOfPage } from "#features/docs/glossary/glossary.ts"
 
 /** Le strict nécessaire de l'arbre mdast (et de ses nœuds MDX) pour ce parcours. */
 interface MdNode {

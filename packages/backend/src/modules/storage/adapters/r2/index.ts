@@ -1,1 +1,1 @@
-export * from "@backend/modules/storage/adapters/r2/r2StorageAdapter";
+export * from "#modules/storage/adapters/r2/r2StorageAdapter.ts";

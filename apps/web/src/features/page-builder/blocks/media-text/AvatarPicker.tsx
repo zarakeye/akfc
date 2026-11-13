@@ -2,8 +2,8 @@
 
 import { useEffect, useState, type JSX } from "react";
 
-import { trpcClient } from "@trpc/trpcClient";
-import { avatarUrlFor } from "@features/social/userDisplay";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { avatarUrlFor } from "#features/social/userDisplay.ts";
 
 interface AvatarCandidate {
   id: string;

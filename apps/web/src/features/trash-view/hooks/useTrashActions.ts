@@ -1,8 +1,8 @@
 'use client';
 
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
 
 /**
  * Mutations de la vue corbeille : restore, deleteForever, emptyBin.

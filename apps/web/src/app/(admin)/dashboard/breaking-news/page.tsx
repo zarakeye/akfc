@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import BreakingNewsTable from "@features/admin/breaking-news/components/BreakingNewsTable";
+import BreakingNewsTable from "#features/admin/breaking-news/components/BreakingNewsTable.tsx";
 
 /** Liste des flashs info (messages du ruban) — `/(admin)/dashboard/breaking-news`. */
 export default function BreakingNewsPage(): JSX.Element {

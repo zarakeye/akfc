@@ -1,9 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
-import { submitTicketSchema } from "@contracts/tickets/ticket.schema";
-import { sendTicketAcknowledgement, sendTicketNotification, sendTicketReply } from "@backend/email/services/sendTicketEmails";
+import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
+import { submitTicketSchema } from "@akfc/contracts/tickets/ticket.schema.ts";
+import { sendTicketAcknowledgement, sendTicketNotification, sendTicketReply } from "#email/services/sendTicketEmails.ts";
 import {
   canHandleCategory,
   cleanText,
@@ -15,9 +15,9 @@ import {
   replyToTicket,
   takeTicket,
   transferTicket,
-} from "@backend/modules/tickets/tickets.service";
-import { getTicketDetail, listHandlers, listInbox, ticketAccess } from "@backend/modules/tickets/ticketQueries.service";
-import { submitThrottle } from "@backend/modules/tickets/submitThrottle";
+} from "#modules/tickets/tickets.service.ts";
+import { getTicketDetail, listHandlers, listInbox, ticketAccess } from "#modules/tickets/ticketQueries.service.ts";
+import { submitThrottle } from "#modules/tickets/submitThrottle.ts";
 
 /**
  * Demandes adressées au club (formulaire de contact).

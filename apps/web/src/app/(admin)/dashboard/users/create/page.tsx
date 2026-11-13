@@ -4,13 +4,13 @@ import { JSX, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   CreateUserForm,
   type CreateUserFormInput,
-} from "@features/admin/users/forms/CreateUserForm";
-import { toLegalInput } from "@features/admin/users/legal/LegalInfoFields";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+} from "#features/admin/users/forms/CreateUserForm.tsx";
+import { toLegalInput } from "#features/admin/users/legal/LegalInfoFields.tsx";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 /** Création — `/(admin)/dashboard/users/create`. id User = string (cuid). */
 export default function CreateUserPage(): JSX.Element {

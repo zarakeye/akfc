@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
   /**
    * Le traceur du build `standalone` rate les fichiers atteints par des
    * `await import()` DYNAMIQUES (instrumentation.ts → services backend, résolus
-   * via l'alias `@backend/*` vers la source) et les assets NON-JS (schéma
+   * via `@akfc/backend/…`, vers la source) et les assets NON-JS (schéma
    * Prisma, migrations). Sans eux dans l'image, le boot crashe en « Code file
    * not found » et le self-heal ne tourne jamais. On force donc leur inclusion.
    * Globs relatifs au dossier du projet (apps/web) ; clé `**` = toutes entrées.

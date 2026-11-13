@@ -7,7 +7,7 @@ import {
   IMAGE_USAGE_VALUES,
   type ConsentChoices,
   type ImageUsageValue,
-} from "@contracts/legal/imageConsent";
+} from "@akfc/contracts/legal/imageConsent.ts";
 
 /** Détail de chaque usage, tel que sur le formulaire papier. */
 export const USAGE_DETAIL: Record<ImageUsageValue, string> = {

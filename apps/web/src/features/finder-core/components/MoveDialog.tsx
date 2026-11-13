@@ -3,8 +3,8 @@
 import { JSX, useState } from 'react';
 import { Folder, ChevronRight, Loader2 } from 'lucide-react';
 
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
 
 /**
  * Choix d'un dossier de destination pour un déplacement.

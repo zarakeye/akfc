@@ -1,4 +1,4 @@
-import type { DocPage } from "@features/docs/lib/docs.types"
+import type { DocPage } from "#features/docs/lib/docs.types.ts"
 
 // Ordre des sections de la barre latérale. L'espace développeur suit le parcours en parties
 // (Démarrer → Étude de cas) ; « Accueil » sert aux espaces guide et admin, puis les parties du guide et de l'admin.

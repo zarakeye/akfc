@@ -3,8 +3,8 @@
 import Link from "next/link";
 import type { JSX } from "react";
 
-import { trpc } from "@trpc/trpcClient";
-import { VerdictBadges } from "@features/admin/media-people/RightsBadges";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { VerdictBadges } from "#features/admin/media-people/RightsBadges.tsx";
 
 const SOURCE_LABEL = {
   FORM: "d'après votre dernier formulaire",

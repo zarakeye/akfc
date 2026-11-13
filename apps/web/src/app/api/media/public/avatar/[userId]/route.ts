@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 
-import { prisma } from "@backend/prisma";
-import { isAvatarKey } from "@backend/modules/avatar/avatar.service";
-import { resolveDeliveryKey, streamDerived } from "@backend/modules/media/services/mediaDerivatives.service";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { isAvatarKey } from "@akfc/backend/modules/avatar/avatar.service.ts";
+import { resolveDeliveryKey, streamDerived } from "@akfc/backend/modules/media/services/mediaDerivatives.service.ts";
 
 /**
  * Proxy PUBLIC d'avatar.

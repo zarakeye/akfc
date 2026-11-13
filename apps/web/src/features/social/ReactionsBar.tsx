@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { SmilePlus } from "lucide-react";
 import type { ReactionTarget } from "@prisma/client";
 
-import { trpcClient } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { UserPortrait } from "@features/social/UserPortrait";
-import { formatUserName } from "@features/social/userDisplay";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { UserPortrait } from "#features/social/UserPortrait.tsx";
+import { formatUserName } from "#features/social/userDisplay.ts";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Constantes                                                             */

@@ -10,7 +10,7 @@
  * assignables.
  */
 
-import { FORMER_MEMBER_LABEL } from "@contracts/shared/formerMember";
+import { FORMER_MEMBER_LABEL } from "@akfc/contracts/shared/formerMember.ts";
 
 export interface DisplayUser {
   id: string;

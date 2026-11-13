@@ -1,4 +1,4 @@
-import type { SearchFlags } from '@features/finder-core/state/useFinderStore';
+import type { SearchFlags } from '#features/finder-core/state/useFinderStore.ts';
 
 /**
  * 🎨 Split un texte en segments alternant "match" / "no match" pour le

@@ -1,9 +1,9 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 
-import { parsePageContentV1 } from "@contracts/page";
-import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
-import { splitBioMedia } from "@backend/modules/users/instructorBio.service";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaReferences.service.ts";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
+import { splitBioMedia } from "#modules/users/instructorBio.service.ts";
 
 /**
  * Rattrape les liens média des bios d'instructeur (PageMediaReference,

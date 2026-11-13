@@ -2,10 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "typeRoots": ["node"],
-    "noCheck": true,
-    "paths": {
-      "@contracts/*": ["./src/*"]
-    }
+    "noCheck": true
   },
   "include": ["src", "**/*.ts"]
 }

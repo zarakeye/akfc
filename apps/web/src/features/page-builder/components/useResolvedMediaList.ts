@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { trpcClient } from "@trpc/trpcClient";
-import type { ResolvedMedia } from "@contracts/page";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import type { ResolvedMedia } from "@akfc/contracts/page/index.ts";
 
 /**
  * Résolution d'une liste d'identifiants de médias, pour les aperçus côté

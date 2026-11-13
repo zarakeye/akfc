@@ -10,8 +10,8 @@ entities:
   MemberGroupMembership: [groupId, userId, access]
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Chaque procédure reçoit la session dans `ctx.sessionClient`, et `protectedProcedure` garantit qu’un membre est présent. Le code métier lit son identifiant sans vérification.
 

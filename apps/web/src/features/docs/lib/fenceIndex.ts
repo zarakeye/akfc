@@ -1,5 +1,5 @@
-import { tryReadCodeFile } from "@features/docs/lib/code.utils"
-import { locateSnippet, type SnippetLocation } from "@features/docs/lib/snippetLocate"
+import { tryReadCodeFile } from "#features/docs/lib/code.utils.ts"
+import { locateSnippet, type SnippetLocation } from "#features/docs/lib/snippetLocate.ts"
 
 /**
  * Index des blocs « ``` » d'une page de doc, construit à partir du source MDX avant sa

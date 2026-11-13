@@ -1,13 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-import { isTrashStoragePath, normalizePath } from "@backend/modules/trash/utils";
-import { pruneEmptyFolders } from "@backend/modules/storage/services/pruneEmptyFolders.service";
+import { isTrashStoragePath, normalizePath } from "#modules/trash/utils.ts";
+import { pruneEmptyFolders } from "#modules/storage/services/pruneEmptyFolders.service.ts";
 import {
   r2DeleteFile,
   r2DeleteByPrefix,
-} from "@backend/modules/trash/services/r2TrashOps";
-import { deleteAssetRowsOfTrashedItem } from "@backend/modules/trash/services/trashedAssets.service";
+} from "#modules/trash/services/r2TrashOps.ts";
+import { deleteAssetRowsOfTrashedItem } from "#modules/trash/services/trashedAssets.service.ts";
 
 /**
  * purge.service.ts

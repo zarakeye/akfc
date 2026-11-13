@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 
-import type { UploadDestination } from "@contracts/storage/upload-destination.schema";
-import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCanWriteGroupSpace.service";
+import type { UploadDestination } from "@akfc/contracts/storage/upload-destination.schema.ts";
+import { assertCanWriteGroupSpace } from "#modules/memberGroups/assertCanWriteGroupSpace.service.ts";
 
 /**
  * Autorise (ou refuse) une destination d'upload selon l'utilisateur.

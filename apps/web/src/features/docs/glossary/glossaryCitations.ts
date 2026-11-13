@@ -2,10 +2,10 @@ import remarkMdx from "remark-mdx"
 import remarkParse from "remark-parse"
 import { unified } from "unified"
 
-import type { GlossarySpace } from "@features/docs/glossary/glossary"
-import { collectGlossary } from "@features/docs/glossary/remarkGlossary"
-import { generateDocsIndex } from "@features/docs/lib/docs.index"
-import { getDocSource } from "@features/docs/lib/docs.source"
+import type { GlossarySpace } from "#features/docs/glossary/glossary.ts"
+import { collectGlossary } from "#features/docs/glossary/remarkGlossary.ts"
+import { generateDocsIndex } from "#features/docs/lib/docs.index.ts"
+import { getDocSource } from "#features/docs/lib/docs.source.ts"
 
 export interface Citation {
   /** La page qui cite le terme : son numéro, son titre, sa partie. */

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { uploadDestinationSchema } from "@contracts/storage/upload-destination.schema";
+import { uploadDestinationSchema } from "#storage/upload-destination.schema.ts";
 
 /**
  * Schemas Zod des procédures tRPC d'envoi vers R2 (seul stockage du site).

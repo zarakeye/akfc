@@ -2,8 +2,8 @@ import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
-import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
+import { router, protectedProcedure, publicProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
 
 /**
  * origins/router.ts

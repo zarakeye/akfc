@@ -4,12 +4,12 @@ import { JSX, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   DisciplineForm,
   type DisciplineFormInput,
-} from "@features/admin/disciplines/forms/DisciplineForm";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+} from "#features/admin/disciplines/forms/DisciplineForm.tsx";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 /** Création d'une discipline — `/(admin)/dashboard/disciplines/create`. */
 export default function CreateDisciplinePage(): JSX.Element {

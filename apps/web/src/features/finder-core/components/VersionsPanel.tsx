@@ -3,11 +3,11 @@
 import { JSX, useState } from 'react';
 import { Download, History, RotateCcw, Trash2 } from 'lucide-react';
 
-import type { FinderNode } from '@contracts/finder';
-import { trpc } from '@trpc/trpcClient';
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { formatBytes } from '@features/finder-core/utils/formatBytes';
-import { formatDate } from '@features/finder-core/utils/formatDate';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { formatBytes } from '#features/finder-core/utils/formatBytes.ts';
+import { formatDate } from '#features/finder-core/utils/formatDate.ts';
 
 /**
  * Panneau « Versions » d'un fichier sélectionné (aperçu du finder, admin et « Mes espaces »).

@@ -1,7 +1,7 @@
 "use client"
 
 import { forwardRef } from "react"
-import { cn } from "@/lib/tiptap-utils"
+import { cn } from "#lib/tiptap-utils.ts"
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "ghost" | "white" | "gray" | "green" | "default"

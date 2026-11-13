@@ -1,5 +1,5 @@
-import { prisma } from "@backend/prisma";
-import { logoUrlOf, parseLinks, type PartnerLink } from "@backend/modules/sitePartners/sitePartners.service";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { logoUrlOf, parseLinks, type PartnerLink } from "@akfc/backend/modules/sitePartners/sitePartners.service.ts";
 import type { PartnerRoleValue } from "./partnerUi";
 
 export type PublicPartner = {

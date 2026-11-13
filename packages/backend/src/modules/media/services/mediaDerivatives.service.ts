@@ -27,7 +27,7 @@ function loadSharp(): Promise<SharpFn | null> {
   return sharpLoad;
 }
 
-import { getR2Bucket, getR2Client } from "@backend/modules/storage/adapters/r2/client";
+import { getR2Bucket, getR2Client } from "#modules/storage/adapters/r2/client.ts";
 
 /*
  * Déclinaisons des médias stockés sur R2 :

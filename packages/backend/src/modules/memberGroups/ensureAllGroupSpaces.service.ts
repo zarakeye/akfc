@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { ensureGroupSpaceFolder } from "@backend/modules/memberGroups/ensureGroupSpaceFolder.service";
+import { ensureGroupSpaceFolder } from "#modules/memberGroups/ensureGroupSpaceFolder.service.ts";
 
 /**
  * Backfill : garantit la ligne `Folder` de l'espace de CHAQUE groupe

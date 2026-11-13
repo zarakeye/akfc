@@ -1,6 +1,6 @@
 'use client';
 
-import type { CropGrid, Shape } from '@/features/gallery-crop/types/cropper.types';
+import type { CropGrid, Shape } from '#features/gallery-crop/types/cropper.types.ts';
 
 type Props = {
   grid: CropGrid;

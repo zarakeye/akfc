@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CATEGORY_KEYS } from "@contracts/categories/categoryKey";
+import { CATEGORY_KEYS } from "#categories/categoryKey.ts";
 
 /**
  * Schéma unifié création + édition.

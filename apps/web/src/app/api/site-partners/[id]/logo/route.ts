@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { prisma } from "@backend/prisma";
+import { prisma } from "@akfc/backend/prisma.ts";
 
 /**
  * Logo d'un partenaire du club (public). Stocké en base ; l'URL porte ?v=… (date du logo), d'où

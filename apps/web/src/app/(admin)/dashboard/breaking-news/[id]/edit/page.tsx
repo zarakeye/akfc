@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 
-import { EditBreakingNews } from "@features/admin/breaking-news/components/EditBreakingNews";
+import { EditBreakingNews } from "#features/admin/breaking-news/components/EditBreakingNews.tsx";
 
 /** Édition — `/(admin)/dashboard/breaking-news/[id]/edit`. */
 export default async function EditBreakingNewsPage({

@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { categorySegment, disciplineSegment } from "@backend/modules/storage/storageSegments";
+import { categorySegment, disciplineSegment } from "#modules/storage/storageSegments.ts";
 
 /**
  * Protège les dossiers adossés aux DISCIPLINES / CATÉGORIES. Contrairement aux

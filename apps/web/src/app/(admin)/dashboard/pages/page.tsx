@@ -3,8 +3,8 @@
 import { type JSX } from "react";
 import { useRouter } from "next/navigation";
 
-import { trpc } from "@trpc/trpcClient";
-import { PAGE_REGISTRY } from "@/config/pageRegistry";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { PAGE_REGISTRY } from "#config/pageRegistry.ts";
 
 /**
  * Hub « Pages éditoriales » — pages au contenu PROPRE (non dynamiques, non

@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { FamilyForm } from "@features/admin/discipline-families/forms/FamilyForm";
+import { FamilyForm } from "#features/admin/discipline-families/forms/FamilyForm.tsx";
 
 /** Création — `/(admin)/dashboard/discipline-families/create`. */
 export default function CreateFamilyPage(): JSX.Element {

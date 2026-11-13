@@ -6,8 +6,8 @@ import { MessageCircle } from "lucide-react";
 import {
   ReactionsBar,
   type ReactionsBarProps,
-} from "@features/social/ReactionsBar";
-import { CommentsSection } from "@features/social/CommentsSection";
+} from "#features/social/ReactionsBar.tsx";
+import { CommentsSection } from "#features/social/CommentsSection.tsx";
 
 /**
  * Îlot client au pied d'une carte du mur (pattern Facebook) :

@@ -3,13 +3,13 @@
 import { useState, type JSX } from "react";
 import Link from "next/link";
 
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   saveLegalSettingsSchema,
   STORAGE_REGION_LABEL,
   type SaveLegalSettingsInput,
   type StorageRegion,
-} from "@contracts/legal/legalSettings.schema";
+} from "@akfc/contracts/legal/legalSettings.schema.ts";
 
 /**
  * Réglages du site → « Informations légales » : éditeur et coordonnées légales (siège, téléphone,

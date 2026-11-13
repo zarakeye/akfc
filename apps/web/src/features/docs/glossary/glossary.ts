@@ -1,6 +1,6 @@
-import dev from "@features/docs/glossary/glossary.dev.json"
-import guide from "@features/docs/glossary/glossary.guide.json"
-import admin from "@features/docs/glossary/glossary.admin.json"
+import dev from "#features/docs/glossary/glossary.dev.json"
+import guide from "#features/docs/glossary/glossary.guide.json"
+import admin from "#features/docs/glossary/glossary.admin.json"
 
 /** Un terme d'un glossaire de la documentation (`glossary.<espace>.json`). */
 export interface GlossaryEntry {

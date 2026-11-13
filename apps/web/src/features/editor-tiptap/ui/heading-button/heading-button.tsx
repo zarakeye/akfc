@@ -3,23 +3,23 @@
 import { forwardRef, useCallback } from "react"
 
 // --- Lib ---
-import { parseShortcutKeys } from "@/lib/tiptap-utils"
+import { parseShortcutKeys } from "#lib/tiptap-utils.ts"
 
 // --- Tiptap UI ---
 import type {
   Level,
   UseHeadingConfig,
-} from "@/features/editor-tiptap/ui/heading-button"
+} from "#features/editor-tiptap/ui/heading-button/index.tsx"
 import {
   HEADING_SHORTCUT_KEYS,
   useHeading,
-} from "@/features/editor-tiptap/ui/heading-button"
+} from "#features/editor-tiptap/ui/heading-button/index.tsx"
 
 // --- UI Primitives ---
-import type { ButtonProps } from "@/features/editor-tiptap/ui-primitive/button"
-import { Button } from "@/features/editor-tiptap/ui-primitive/button"
-import { Badge } from "@/features/editor-tiptap/ui-primitive/badge"
-import { useTiptapEditor } from "@/features/editor-tiptap/hooks/use-tiptap-editor"
+import type { ButtonProps } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
+import { Button } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
+import { Badge } from "#features/editor-tiptap/ui-primitive/badge/index.tsx"
+import { useTiptapEditor } from "#features/editor-tiptap/hooks/use-tiptap-editor.ts"
 
 export interface HeadingButtonProps
   extends Omit<ButtonProps, "type">,

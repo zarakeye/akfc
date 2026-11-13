@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
-import { prisma } from "@backend/prisma";
-import { PresentationShell } from "@features/admin/common/components/PresentationShell";
-import { ImageConsentControl } from "@features/admin/users/components/ImageConsentControl";
-import { ImageConsentForms } from "@features/admin/users/components/ImageConsentForms";
-import { GuardianLinkPanel } from "@features/admin/users/components/GuardianLinkPanel";
-import { LegalInfoControl } from "@features/admin/users/legal/LegalInfoControl";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { PresentationShell } from "#features/admin/common/components/PresentationShell.tsx";
+import { ImageConsentControl } from "#features/admin/users/components/ImageConsentControl.tsx";
+import { ImageConsentForms } from "#features/admin/users/components/ImageConsentForms.tsx";
+import { GuardianLinkPanel } from "#features/admin/users/components/GuardianLinkPanel.tsx";
+import { LegalInfoControl } from "#features/admin/users/legal/LegalInfoControl.tsx";
 
 /** Présentation admin d'un utilisateur — `/(admin)/dashboard/users/[id]` (lecture seule). */
 export default async function UserPresentationPage({

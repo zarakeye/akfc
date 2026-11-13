@@ -1,7 +1,7 @@
 "use client";
 
 import { FileText } from "lucide-react";
-import type { DocumentListBlockV1 } from "@contracts/page";
+import type { DocumentListBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockEditorProps } from "../../BlockDefinition.types";
 import {

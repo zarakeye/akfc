@@ -4,13 +4,13 @@ import { JSX, use, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Trash2 } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   EventForm,
   type EventFormInput,
-} from "@features/admin/events/forms/EventForm";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
-import { SessionsManager } from "@features/admin/common/components/SessionsManager";
+} from "#features/admin/events/forms/EventForm.tsx";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
+import { SessionsManager } from "#features/admin/common/components/SessionsManager.tsx";
 
 /**
  * Édition d'un évènement — `/(admin)/dashboard/events/[id]/edit`.

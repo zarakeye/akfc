@@ -1,9 +1,9 @@
 import Link from "next/link"
 import { BookOpen, Code2, ShieldCheck } from "lucide-react"
 
-import { DocsLayout } from "@features/docs/components/DocsLayout"
-import { DOC_SPACES, type DocSpaceId } from "@features/docs/lib/docs.spaces"
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest"
+import { DocsLayout } from "#features/docs/components/DocsLayout.tsx"
+import { DOC_SPACES, type DocSpaceId } from "#features/docs/lib/docs.spaces.ts"
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts"
 
 const ICONS: Record<DocSpaceId, typeof BookOpen> = { guide: BookOpen, admin: ShieldCheck, dev: Code2 }
 

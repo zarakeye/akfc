@@ -1,4 +1,4 @@
-import { extractLines, readCodeFile, resolveSnippetBounds } from "@features/docs/lib/code.utils"
+import { extractLines, readCodeFile, resolveSnippetBounds } from "#features/docs/lib/code.utils.ts"
 import { renderCodeBlockHtml } from "./CodeBlock"
 import { CodeExampleClient } from "./CodeExampleClient"
 

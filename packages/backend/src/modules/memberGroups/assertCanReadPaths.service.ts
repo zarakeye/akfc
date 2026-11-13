@@ -1,9 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
-import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
-import { groupIdFromLogicalPath, personalSpaceOwnerId } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
+import { resolveGroupAccessForUser } from "#modules/memberGroups/resolveGroupAccessForUser.service.ts";
+import { groupIdFromLogicalPath, personalSpaceOwnerId } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
 
 /**
  * `assertCanReadPath` pour une LISTE de chemins (recherche, métadonnées d'une sélection) : même

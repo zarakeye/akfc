@@ -5,10 +5,10 @@ import type {
   ListResult,
   GetTreeOptions,
   GetTreeResult,
-} from "@contracts/finder";
+} from "@akfc/contracts/finder/index.ts";
 
-import { trpcClient } from "@/core/trpc/trpcClient";
-import { finderStorageAdapter } from "@features/finder-adapters/storage/finderStorage.adapter";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
 
 /**
  * Racine VIRTUELLE du finder membre. Ce n'est pas un chemin physique : à cet

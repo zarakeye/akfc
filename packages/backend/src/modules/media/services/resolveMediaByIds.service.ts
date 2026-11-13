@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 
-import type { ResolvedMedia } from '@contracts/page';
-import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
+import type { ResolvedMedia } from '@akfc/contracts/page/index.ts';
+import { buildMediaProxyUrl } from '#modules/media/helpers/media-url.ts';
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Audience                                                               */

@@ -17,65 +17,65 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import type { FileAdapter, FinderNode } from "@contracts/finder";
-import { APP_ROOT } from "@config/app";
-import { trpc } from "@trpc/trpcClient";
+import type { FileAdapter, FinderNode } from "@akfc/contracts/finder/index.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
 
-import FinderBinRootView from "@features/finder-core/components/FinderBinRootView";
-import FinderViewModeSwitcher from "@features/finder-core/components/FinderViewModeSwitcher";
-import FinderTableRow from "@features/finder-core/components/FinderTableRow";
-import FinderCompactRow from "@features/finder-core/components/FinderCompactRow";
+import FinderBinRootView from "#features/finder-core/components/FinderBinRootView.tsx";
+import FinderViewModeSwitcher from "#features/finder-core/components/FinderViewModeSwitcher.tsx";
+import FinderTableRow from "#features/finder-core/components/FinderTableRow.tsx";
+import FinderCompactRow from "#features/finder-core/components/FinderCompactRow.tsx";
 
-import { useFinderData } from "@features/finder-core/hooks/useFinderData";
-import { useFinderStore } from "@features/finder-core/state/useFinderStore";
+import { useFinderData } from "#features/finder-core/hooks/useFinderData.ts";
+import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
 
-import Breadcrumb from "@features/finder-core/components/Breadcrumb";
-import PreviewPanel from "@features/finder-core/components/PreviewPanel";
-import { FinderReadOnlyContext } from "@features/finder-core/state/FinderReadOnlyContext";
-import { useIsBreakpoint } from "@/hooks/use-is-breakpoint";
-import FinderTree from "@features/finder-core/components/FinderTree";
-import GridItem from "@features/finder-core/components/GridItem";
-import StatusFilterBar from "@features/finder-core/components/StatusFilterBar";
+import Breadcrumb from "#features/finder-core/components/Breadcrumb.tsx";
+import PreviewPanel from "#features/finder-core/components/PreviewPanel.tsx";
+import { FinderReadOnlyContext } from "#features/finder-core/state/FinderReadOnlyContext.ts";
+import { useIsBreakpoint } from "#hooks/use-is-breakpoint.ts";
+import FinderTree from "#features/finder-core/components/FinderTree.tsx";
+import GridItem from "#features/finder-core/components/GridItem.tsx";
+import StatusFilterBar from "#features/finder-core/components/StatusFilterBar.tsx";
 // Le dialogue de `trash-view`, celui dont `EmptyBinButton` se sert déjà.
 // En écrire un second serait la troisième façon de poser une question
 // dans ce projet.
-import ConfirmDialog from "@features/trash-view/components/ConfirmDialog";
-import { statusOf } from "@features/finder-core/utils/statusFolders";
+import ConfirmDialog from "#features/trash-view/components/ConfirmDialog.tsx";
+import { statusOf } from "#features/finder-core/utils/statusFolders.ts";
 import ContextMenu, {
   type ContextMenuItem,
-} from "@features/finder-core/components/ContextMenu";
+} from "#features/finder-core/components/ContextMenu.tsx";
 
-import { useNodeActions } from "@features/finder-core/hooks/useNodeActions";
-import { useMediaAssetEnrichment } from "@features/finder-core/hooks/useMediaAssetEnrichment";
-import { useFinderSearch } from "@features/finder-core/hooks/useFinderSearch";
+import { useNodeActions } from "#features/finder-core/hooks/useNodeActions.ts";
+import { useMediaAssetEnrichment } from "#features/finder-core/hooks/useMediaAssetEnrichment.ts";
+import { useFinderSearch } from "#features/finder-core/hooks/useFinderSearch.ts";
 
-import FinderSearchControl from "@features/finder-core/components/FinderSearchControl";
-import SearchResultsView from "@features/finder-core/components/SearchResultsView";
+import FinderSearchControl from "#features/finder-core/components/FinderSearchControl.tsx";
+import SearchResultsView from "#features/finder-core/components/SearchResultsView.tsx";
 
-import { sortNodes, groupNodes } from "@features/finder-core/utils/sortNodes";
-import type { SortField } from "@features/finder-core/state/useFinderStore";
+import { sortNodes, groupNodes } from "#features/finder-core/utils/sortNodes.ts";
+import type { SortField } from "#features/finder-core/state/useFinderStore.ts";
 
 import {
   getTriState,
   type TriState,
-} from "@features/finder-core/utils/triState";
+} from "#features/finder-core/utils/triState.ts";
 
 import {
   startDragGhost,
   type GhostPreview,
-} from "@features/finder-core/dnd/dragGhost";
+} from "#features/finder-core/dnd/dragGhost.ts";
 import {
   FINDER_DRAG_MIME,
   serializePayload,
   dragItemFromNode,
   type DragItem,
-} from "@features/finder-core/dnd/payload";
-import StatusRadioGroup from "@features/finder-core/components/StatusRadioGroup";
+} from "#features/finder-core/dnd/payload.ts";
+import StatusRadioGroup from "#features/finder-core/components/StatusRadioGroup.tsx";
 import {
   buildNodePool,
   resolveSelectedNodes,
-} from "@features/finder-core/utils/selectionNodes";
-import { isProtectedEntityFolder } from "@features/finder-core/utils/spaceFolderKind";
+} from "#features/finder-core/utils/selectionNodes.ts";
+import { isProtectedEntityFolder } from "#features/finder-core/utils/spaceFolderKind.ts";
 
 /**
  * Clé localStorage utilisée pour persister la disposition (largeur) des 3

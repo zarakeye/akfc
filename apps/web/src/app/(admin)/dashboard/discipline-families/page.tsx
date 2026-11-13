@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import FamiliesTable from "@features/admin/discipline-families/components/DisciplineFamiliesTable";
+import FamiliesTable from "#features/admin/discipline-families/components/DisciplineFamiliesTable.tsx";
 
 /** Liste des familles de disciplines — `/(admin)/dashboard/discipline-families`. */
 export default function FamiliesPage(): JSX.Element {

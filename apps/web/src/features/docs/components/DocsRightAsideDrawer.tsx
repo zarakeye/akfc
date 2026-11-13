@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import { List } from "lucide-react"
 import { DocsRightAside } from "./DocsRightAside"
-import { DocsAction, PILL, PILL_LABEL } from "@features/docs/lib/docsActions"
-import type { TocItem } from "@features/docs/lib/docs.types"
+import { DocsAction, PILL, PILL_LABEL } from "#features/docs/lib/docsActions.tsx"
+import type { TocItem } from "#features/docs/lib/docs.types.ts"
 
 export function DocsRightAsideDrawer({ items }: { items: TocItem[] }) {
   const [open, setOpen] = useState(false)

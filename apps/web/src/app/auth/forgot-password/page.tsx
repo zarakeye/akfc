@@ -2,8 +2,8 @@
 
 import { JSX, useMemo, useState } from "react";
 // import { trpc } from "@backend /core/trpc/trpcClient";
-import { trpc } from '@trpc/trpcClient';
-import { emailSchema } from '@contracts/auth/auth.schema';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { emailSchema } from '@akfc/contracts/auth/auth.schema.ts';
 
 /**
  * /auth/forgot-password

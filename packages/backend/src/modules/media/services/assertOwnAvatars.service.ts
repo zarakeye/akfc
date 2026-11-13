@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
-import { avatarUserIdsFromContent, type PageContentV1 } from "@contracts/page";
+import { avatarUserIdsFromContent, type PageContentV1 } from "@akfc/contracts/page/index.ts";
 
 /**
  * Un avatar représente son titulaire ; personne ne le pose dans un contenu à sa place.

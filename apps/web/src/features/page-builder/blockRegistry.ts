@@ -1,4 +1,4 @@
-import type { PageBlockKindV1, PageBlockV1 } from "@contracts/page";
+import type { PageBlockKindV1, PageBlockV1 } from "@akfc/contracts/page/index.ts";
 import type { BlockDefinition } from "./BlockDefinition.types";
 
 import { tiptapDefinition } from "./blocks/tiptap";

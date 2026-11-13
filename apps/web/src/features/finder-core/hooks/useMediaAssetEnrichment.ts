@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import { trpc } from '@trpc/trpcClient';
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import type { FinderNode } from '@contracts/finder';
-import { APP_ROOT } from '@config/app';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
 
 /**
  * 🪝 useMediaAssetEnrichment — enrichit les FinderNodes avec les metadata DB

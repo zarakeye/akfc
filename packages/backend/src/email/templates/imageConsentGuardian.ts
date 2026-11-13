@@ -1,5 +1,5 @@
-import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "@backend/email/mailer";
-import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES, type ImageUsageValue } from "@contracts/legal/imageConsent";
+import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "#email/mailer.ts";
+import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES, type ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
 
 /**
  * E-mails du circuit « droit à l'image d'un mineur, validé par son parent » :

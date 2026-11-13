@@ -1,6 +1,6 @@
 "use client";
 
-import { useFinderReadOnly } from "@features/finder-core/state/FinderReadOnlyContext";
+import { useFinderReadOnly } from "#features/finder-core/state/FinderReadOnlyContext.ts";
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronRight,
@@ -14,30 +14,30 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 
-import type { FinderNode } from "@contracts/finder";
-import type { FileAdapter } from "@contracts/finder";
+import type { FinderNode } from "@akfc/contracts/finder/index.ts";
+import type { FileAdapter } from "@akfc/contracts/finder/index.ts";
 
-import { APP_ROOT } from "@config/app";
-import { trpc } from "@trpc/trpcClient";
+import { APP_ROOT } from "@akfc/config/app.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
 
-import { useFinderStore } from "@features/finder-core/state/useFinderStore";
-import { friendlySpaceFolderLabel } from "@features/finder-core/utils/spaceFolderLabel";
-import { useLongPress } from "@features/finder-core/hooks/useLongPress";
-import { useNodeActions } from "@features/finder-core/hooks/useNodeActions";
-import { isStatusFolder } from "@features/finder-core/utils/statusFolders";
-import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isAvatarsContainer, isProtectedEntityFolder } from "@features/finder-core/utils/spaceFolderKind";
-import { BinIcon } from "@features/finder-core/components/BinIcon";
+import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
+import { friendlySpaceFolderLabel } from "#features/finder-core/utils/spaceFolderLabel.ts";
+import { useLongPress } from "#features/finder-core/hooks/useLongPress.ts";
+import { useNodeActions } from "#features/finder-core/hooks/useNodeActions.ts";
+import { isStatusFolder } from "#features/finder-core/utils/statusFolders.ts";
+import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isAvatarsContainer, isProtectedEntityFolder } from "#features/finder-core/utils/spaceFolderKind.ts";
+import { BinIcon } from "#features/finder-core/components/BinIcon.tsx";
 import ContextMenu, {
   type ContextMenuItem,
-} from "@features/finder-core/components/ContextMenu";
-import { RenameInput } from "@features/finder-core/components/RenameInput";
+} from "#features/finder-core/components/ContextMenu.tsx";
+import { RenameInput } from "#features/finder-core/components/RenameInput.tsx";
 import {
   FINDER_DRAG_MIME,
   tryParsePayload,
   isDropAllowed,
   isDropEffective,
-} from "@features/finder-core/dnd/payload";
-import FinderTreeFile from "@features/finder-core/components/FinderTreeFile";
+} from "#features/finder-core/dnd/payload.ts";
+import FinderTreeFile from "#features/finder-core/components/FinderTreeFile.tsx";
 
 /**
  * FinderTreeFolder

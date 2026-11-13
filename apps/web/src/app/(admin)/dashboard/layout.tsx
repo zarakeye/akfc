@@ -4,9 +4,9 @@ import { JSX, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { PanelLeft, X } from 'lucide-react';
 
-import Header from '@features/app-shell/Header';
-import ControlPanelSidebar from '@features/app-shell/ControlPanelSidebar';
-import { Providers } from '@app/(admin)/dashboard/providers';
+import Header from '#features/app-shell/Header.tsx';
+import ControlPanelSidebar from '#features/app-shell/ControlPanelSidebar.tsx';
+import { Providers } from '#app/(admin)/dashboard/providers.tsx';
 
 interface Props {
   children: React.ReactNode;

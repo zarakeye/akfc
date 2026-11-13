@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { GroupForm } from "@features/admin/groups/forms/GroupForm";
+import { GroupForm } from "#features/admin/groups/forms/GroupForm.tsx";
 
 /** Création — `/(admin)/dashboard/groups/create`. */
 export default function CreateGroupPage(): JSX.Element {

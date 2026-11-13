@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
-import { prisma } from "@backend/prisma";
-import { PresentationShell } from "@features/admin/common/components/PresentationShell";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { PresentationShell } from "#features/admin/common/components/PresentationShell.tsx";
 
 /** Présentation — `/(admin)/dashboard/discipline-families/[id]`. */
 export default async function FamilyPresentationPage({

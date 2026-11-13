@@ -1,9 +1,9 @@
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest"
-import { readCodeFile } from "@features/docs/lib/code.utils"
-import { docExists, getDocSource } from "@features/docs/lib/docs.source"
-import { spaceOf } from "@features/docs/lib/docs.spaces"
-import { buildFenceIndex } from "@features/docs/lib/fenceIndex"
-import { renderCodeBlockHtml } from "@features/docs/ui/CodeBlock"
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts"
+import { readCodeFile } from "#features/docs/lib/code.utils.ts"
+import { docExists, getDocSource } from "#features/docs/lib/docs.source.ts"
+import { spaceOf } from "#features/docs/lib/docs.spaces.ts"
+import { buildFenceIndex } from "#features/docs/lib/fenceIndex.ts"
+import { renderCodeBlockHtml } from "#features/docs/ui/CodeBlock.tsx"
 
 /**
  * Fichier complet d'un extrait de code, rendu à la demande.

@@ -1,10 +1,10 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
 
-import { generateDocsIndex } from "@features/docs/lib/docs.index"
-import { getNumberedDoc } from "@features/docs/lib/docs.navigation"
-import { getSpace } from "@features/docs/lib/docs.spaces"
-import { slugifyHeading } from "@features/docs/lib/slugifyHeading"
+import { generateDocsIndex } from "#features/docs/lib/docs.index.ts"
+import { getNumberedDoc } from "#features/docs/lib/docs.navigation.ts"
+import { getSpace } from "#features/docs/lib/docs.spaces.ts"
+import { slugifyHeading } from "#features/docs/lib/slugifyHeading.ts"
 
 interface PromesseProps {
   /** Le chapitre qui approfondit, chemin complet sans extension : "dev/auth/les-droits-par-les-groupes". */

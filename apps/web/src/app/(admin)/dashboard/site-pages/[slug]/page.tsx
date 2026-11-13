@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 
-import { SitePageEditor } from "@features/admin/site-pages/SitePageEditor";
+import { SitePageEditor } from "#features/admin/site-pages/SitePageEditor.tsx";
 
 /**
  * Titres proposés par défaut pour les pages connues, tant qu'aucune n'a été

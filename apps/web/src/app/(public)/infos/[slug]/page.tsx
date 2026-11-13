@@ -1,9 +1,9 @@
 import type { JSX } from "react";
 
-import { prisma } from "@backend/prisma";
-import { parsePageContentV1 } from "@contracts/page";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
 
-import { PageRenderer } from "@features/page-builder/PageRenderer";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
 import type { Metadata } from "next";
 
 /**

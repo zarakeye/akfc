@@ -11,7 +11,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@components/ui/tooltip"
+} from "#components/ui/tooltip.tsx"
 
 interface WalkthroughStep {
   title: string

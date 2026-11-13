@@ -3,8 +3,8 @@ import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { prisma } from "@backend/prisma";
-import { CategoryForm } from "@features/admin/categories/forms/CategoryForm";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { CategoryForm } from "#features/admin/categories/forms/CategoryForm.tsx";
 
 /**
  * Édition d'une catégorie — `/(admin)/dashboard/categories/[id]/edit`.

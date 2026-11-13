@@ -1,10 +1,10 @@
 import type { ReactNode } from "react"
-import { DocsSidebar } from "@features/docs/components/DocsSidebar"
-import { generateDocsIndex } from "@features/docs/lib/docs.index"
-import { DocsMainScrollControls } from "@features/docs/components/DocsMainScrollControls"
-import type { DocSpaceId } from "@features/docs/lib/docs.spaces"
-import { PortraitHint } from "@features/docs/components/PortraitHint"
-import { DOCS_ACTIONS_ID } from "@features/docs/lib/docsActionsSlot"
+import { DocsSidebar } from "#features/docs/components/DocsSidebar.tsx"
+import { generateDocsIndex } from "#features/docs/lib/docs.index.ts"
+import { DocsMainScrollControls } from "#features/docs/components/DocsMainScrollControls.tsx"
+import type { DocSpaceId } from "#features/docs/lib/docs.spaces.ts"
+import { PortraitHint } from "#features/docs/components/PortraitHint.tsx"
+import { DOCS_ACTIONS_ID } from "#features/docs/lib/docsActionsSlot.ts"
 
 export function DocsLayout({
   space = null,

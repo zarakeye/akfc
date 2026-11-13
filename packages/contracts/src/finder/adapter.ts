@@ -1,4 +1,4 @@
-import type { FinderNode } from "@contracts/finder/node";
+import type { FinderNode } from "#finder/node.ts";
 
 /**
  * Ce fichier définit les types liés à l'adapter de fichiers pour le Finder.

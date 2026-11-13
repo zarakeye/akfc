@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react"
 
 // --- UI Primitives ---
-import { Button } from "@/features/editor-tiptap/ui-primitive/button"
+import { Button } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
 
 // --- Icons ---
-import { MoonStarIcon } from "@/features/editor-tiptap/icons/moon-star-icon"
-import { SunIcon } from "@/features/editor-tiptap/icons/sun-icon"
+import { MoonStarIcon } from "#features/editor-tiptap/icons/moon-star-icon.tsx"
+import { SunIcon } from "#features/editor-tiptap/icons/sun-icon.tsx"
 
 function getInitialDarkMode(): boolean {
   if (typeof window === "undefined" || typeof document === "undefined") {

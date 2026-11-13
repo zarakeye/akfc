@@ -33,6 +33,7 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/backend/package.json ./packages/backend/
 COPY packages/contracts/package.json ./packages/contracts/
 COPY packages/finder-core/package.json ./packages/finder-core/
+COPY packages/config/package.json ./packages/config/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   pnpm config set store-dir /pnpm/store \
   && pnpm install --frozen-lockfile

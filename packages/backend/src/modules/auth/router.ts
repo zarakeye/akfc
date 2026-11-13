@@ -1,24 +1,24 @@
-import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
-import { deleteSessionFromCookie } from "@backend/lib/session/session.server";
-import { loginService } from "@backend/modules/auth/services/auth.service";
+import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
+import { deleteSessionFromCookie } from "#lib/session/session.server.ts";
+import { loginService } from "#modules/auth/services/auth.service.ts";
 import {
   createPasswordResetToken,
   hashResetToken,
   RESET_TOKEN_COOLDOWN_MS,
   RESET_TOKEN_TTL_MS,
-} from "@backend/modules/auth/services/passwordReset.service";
-import { sendPasswordResetEmail } from "@backend/email/services/sendPasswordResetEmail";
+} from "#modules/auth/services/passwordReset.service.ts";
+import { sendPasswordResetEmail } from "#email/services/sendPasswordResetEmail.ts";
 
 import { TRPCError } from "@trpc/server";
-import { hashPassword, verifyPassword } from "@backend/lib/auth/password";
-import { getToken, verifyJwt } from "@backend/lib/session/session.server";
+import { hashPassword, verifyPassword } from "#lib/auth/password.ts";
+import { getToken, verifyJwt } from "#lib/session/session.server.ts";
 import {
   changePasswordSchema,
   loginSchema,
   requestPasswordResetSchema,
   resetPasswordSchema,
-} from "@contracts/auth/auth.schema";
-import { assertPasswordOfConnectedUser } from "@backend/lib/security/passwordCheck";
+} from "@akfc/contracts/auth/auth.schema.ts";
+import { assertPasswordOfConnectedUser } from "#lib/security/passwordCheck.ts";
 
 /**
  * Connexion, déconnexion, session courante, mot de passe (changement, oubli, réinitialisation).

@@ -4,12 +4,12 @@ import { JSX, startTransition, useActionState, useState, useEffect, useRef } fro
 import {
   updateGalleryFormAction,
   type UpdateGalleryFormState,
-} from "@features/admin/galleries/actions/updateGalleryForm.action";
-import { Button } from "@components/ui/Button";
-import { Input } from "@components/ui/Input";
+} from "#features/admin/galleries/actions/updateGalleryForm.action.ts";
+import { Button } from "#components/ui/Button.tsx";
+import { Input } from "#components/ui/Input.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updateGalleryFormSchema } from "@contracts/forms/updateGalleryForm.schema";
-import { slugify } from "@contracts/slug/slugify";
+import { updateGalleryFormSchema } from "@akfc/contracts/forms/updateGalleryForm.schema.ts";
+import { slugify } from "@akfc/contracts/slug/slugify.ts";
 import {
   Form,
   FormControl,
@@ -17,9 +17,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@components/ui/form";
+} from "#components/ui/form.tsx";
 import type { Gallery } from "@prisma/client";
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 
 /** Date → valeur input type="date" (YYYY-MM-DD, locale). "" si null. */
 function toDateInputValue(d: Date | null): string {

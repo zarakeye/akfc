@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@/lib/tiptap-utils"
+import { cn } from "#lib/tiptap-utils.ts"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (

@@ -3,10 +3,10 @@
 import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 
-import type { DocPage } from "@features/docs/lib/docs.types"
-import { ThemeToggle } from "@features/theme"
+import type { DocPage } from "#features/docs/lib/docs.types.ts"
+import { ThemeToggle } from "#features/theme/index.ts"
 import { ArrowLeft } from "lucide-react"
-import { OsSelect } from "@features/docs/ui/OsSelect"
+import { OsSelect } from "#features/docs/ui/OsSelect.tsx"
 
 type NavigationSection = {
   section: string

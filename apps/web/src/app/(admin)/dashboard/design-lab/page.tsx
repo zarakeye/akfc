@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 
-import { BlockStyleLab } from "@features/design-lab/BlockStyleLab";
+import { BlockStyleLab } from "#features/design-lab/BlockStyleLab.tsx";
 
 /**
  * /dashboard/design-lab

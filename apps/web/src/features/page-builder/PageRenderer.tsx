@@ -3,17 +3,17 @@
 import "server-only";
 import type { ComponentType } from "react";
 
-import { prisma } from "@backend/prisma";
-import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
-import { resolveAvatarsByUserIds } from "@backend/modules/media/services/resolveAvatarsByUserIds.service";
-import { refusedMediaIds } from "@backend/modules/mediaPeople/mediaPeople.service";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { resolveMediaByIds } from "@akfc/backend/modules/media/services/resolveMediaByIds.service.ts";
+import { resolveAvatarsByUserIds } from "@akfc/backend/modules/media/services/resolveAvatarsByUserIds.service.ts";
+import { refusedMediaIds } from "@akfc/backend/modules/mediaPeople/mediaPeople.service.ts";
 
 import {
   extractMediaIdsFromContent,
   type PageBlockV1,
   type PageContentV1,
   type ResolvedMedia,
-} from "@contracts/page";
+} from "@akfc/contracts/page/index.ts";
 
 import { getBlockDefinition } from "./blockRegistry";
 import type { BlockViewProps } from "./BlockDefinition.types";

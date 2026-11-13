@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { trpcClient } from "@trpc/trpcClient";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
 import type { DisciplineFamily } from "@prisma/client";
 
 /* ─────────────────────────────────────────────────────────────────────── */

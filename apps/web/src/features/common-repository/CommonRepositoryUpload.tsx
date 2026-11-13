@@ -1,13 +1,13 @@
 "use client";
 
 import { JSX, useMemo, useState } from "react";
-import { countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from "@features/media/heic/browserImages";
-import { trpc } from "@trpc/trpcClient";
-import Cropper from "@features/gallery-crop/components/Cropper";
-import { PdfThumbnail } from "@features/common-repository/PdfThumbnailClient";
-import type { PictureItem } from "@features/gallery-crop/types/picture.types";
-import type { CropResult } from "@features/gallery-crop/types/cropper.types";
-import { uploadToR2 } from "@features/media/uploadToR2";
+import { countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from "#features/media/heic/browserImages.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import Cropper from "#features/gallery-crop/components/Cropper.tsx";
+import { PdfThumbnail } from "#features/common-repository/PdfThumbnailClient.tsx";
+import type { PictureItem } from "#features/gallery-crop/types/picture.types.ts";
+import type { CropResult } from "#features/gallery-crop/types/cropper.types.ts";
+import { uploadToR2 } from "#features/media/uploadToR2.ts";
 
 /**
  * Uploader MEMBRE en cascade.

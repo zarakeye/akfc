@@ -1,13 +1,13 @@
-import { isDemoEmail } from "@backend/lib/demoAccounts";
+import { isDemoEmail } from "#lib/demoAccounts.ts";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-import { router, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
-import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
-import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCanWriteGroupSpace.service";
-import { groupIdFromLogicalPath } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
-import { memberDocumentReadableBy, memberDocumentVisibleTo } from "@backend/modules/memberDocuments/visibleTo";
+import { router, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
+import { collaborativeEntriesForMember } from "#modules/memberGroups/collaborativeEntriesForMember.service.ts";
+import { assertCanWriteGroupSpace } from "#modules/memberGroups/assertCanWriteGroupSpace.service.ts";
+import { groupIdFromLogicalPath } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
+import { memberDocumentReadableBy, memberDocumentVisibleTo } from "#modules/memberDocuments/visibleTo.ts";
 
 /**
  * Documents membres : fichiers du finder mis à disposition des membres, avec

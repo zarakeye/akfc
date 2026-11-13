@@ -1,11 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-import { sendImageConsentReminder } from "@backend/email/templates/imageConsentReminder";
-import { byEffectiveDesc } from "@backend/modules/imageConsent/formOrder";
-import { resendGuardianLink } from "@backend/modules/imageConsent/imageConsentGuardian.service";
-import { maskEmail } from "@backend/modules/imageConsent/imageConsentOnline.service";
-import { IMAGE_USAGE_VALUES, effectiveLegalAge, type ImageUsageValue } from "@contracts/legal/imageConsent";
+import { sendImageConsentReminder } from "#email/templates/imageConsentReminder.ts";
+import { byEffectiveDesc } from "#modules/imageConsent/formOrder.ts";
+import { resendGuardianLink } from "#modules/imageConsent/imageConsentGuardian.service.ts";
+import { maskEmail } from "#modules/imageConsent/imageConsentOnline.service.ts";
+import { IMAGE_USAGE_VALUES, effectiveLegalAge, type ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
 import {
   IMAGE_CONSENT_REMINDER_COOLDOWN_MS,
   blockingMessage,
@@ -16,7 +16,7 @@ import {
   personUsageState,
   type PersonConsent,
   type PersonUsageState,
-} from "@contracts/legal/mediaPeople";
+} from "@akfc/contracts/legal/mediaPeople.ts";
 
 /**
  * Tags de personnes sur les médias (administrateurs) : qui apparaît sur quel média, et ce que leur

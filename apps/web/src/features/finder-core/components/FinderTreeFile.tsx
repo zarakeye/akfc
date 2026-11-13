@@ -1,26 +1,26 @@
 'use client';
 
-import { useFinderReadOnly } from "@features/finder-core/state/FinderReadOnlyContext";
+import { useFinderReadOnly } from "#features/finder-core/state/FinderReadOnlyContext.ts";
 import { JSX, useState } from 'react';
 import { File, Music, Check, FileText, Play } from 'lucide-react';
-import { effectiveExtension, isAudioFile, isPdfFile, isTextFile, videoPosterUrl, displayName } from '@features/finder-core/utils/fileType';
-import { statusOf } from '@features/finder-core/utils/statusFolders';
+import { effectiveExtension, isAudioFile, isPdfFile, isTextFile, videoPosterUrl, displayName } from '#features/finder-core/utils/fileType.ts';
+import { statusOf } from '#features/finder-core/utils/statusFolders.ts';
 import clsx from 'clsx';
 
-import type { FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { useLongPress } from '@features/finder-core/hooks/useLongPress';
-import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
-import { RenameInput } from '@features/finder-core/components/RenameInput';
-import { MoveDialog } from '@features/finder-core/components/MoveDialog';
-import { PublishToMembersDialog } from '@features/member-documents/PublishToMembersDialog';
-import { useSessionStore } from '@lib/stores/useSessionStore';
-import { baseNameOf } from '@features/finder-core/utils/fileType';
-import { parentPath } from '@features/finder-core/utils/path';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { useLongPress } from '#features/finder-core/hooks/useLongPress.ts';
+import { useNodeActions } from '#features/finder-core/hooks/useNodeActions.ts';
+import { RenameInput } from '#features/finder-core/components/RenameInput.tsx';
+import { MoveDialog } from '#features/finder-core/components/MoveDialog.tsx';
+import { PublishToMembersDialog } from '#features/member-documents/PublishToMembersDialog.tsx';
+import { useSessionStore } from '#lib/stores/useSessionStore.ts';
+import { baseNameOf } from '#features/finder-core/utils/fileType.ts';
+import { parentPath } from '#features/finder-core/utils/path.ts';
 import ContextMenu, {
   type ContextMenuItem,
-} from '@features/finder-core/components/ContextMenu';
+} from '#features/finder-core/components/ContextMenu.tsx';
 
 /**
  * 📄 Item fichier dans la TreeView.

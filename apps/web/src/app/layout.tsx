@@ -1,16 +1,16 @@
 import { JSX } from "react"
 import type { Metadata } from "next"
-import { SITE_URL } from "@/config/siteUrl";
+import { SITE_URL } from "#config/siteUrl.ts";
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css";
-import "@/styles/tiptap-variables.css";
-import "@/styles/dark-legacy.css";
+import "#styles/tiptap-variables.css";
+import "#styles/dark-legacy.css";
 import { cookies } from "next/headers";
-import { THEME_COOKIE } from "@features/theme/theme";
-import { prisma } from "@backend/prisma"
-import { AppProviders } from "@app/providers"
-import { SessionLoader } from "@features/auth/SessionLoader"
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest"
+import { THEME_COOKIE } from "#features/theme/theme.ts";
+import { prisma } from "@akfc/backend/prisma.ts"
+import { AppProviders } from "#app/providers.tsx"
+import { SessionLoader } from "#features/auth/SessionLoader.tsx"
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts"
 
 export const dynamic = 'force-dynamic';
 

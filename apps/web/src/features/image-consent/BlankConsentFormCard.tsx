@@ -3,8 +3,8 @@
 import { useState, type JSX } from "react";
 import { FileText } from "lucide-react";
 
-import { IMAGE_CONSENT_BLANK_FORM_URL } from "@contracts/legal/imageConsent";
-import { FilePreviewPanel } from "@features/image-consent/FilePreviewPanel";
+import { IMAGE_CONSENT_BLANK_FORM_URL } from "@akfc/contracts/legal/imageConsent.ts";
+import { FilePreviewPanel } from "#features/image-consent/FilePreviewPanel.tsx";
 
 /** Aperçu du formulaire vierge, avec Télécharger et Imprimer. */
 export function BlankConsentFormPreview({ onClose }: { onClose: () => void }): JSX.Element {

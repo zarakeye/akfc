@@ -1,4 +1,4 @@
-import type { StorageFolderNode, StorageNode } from "@contracts/storage";
+import type { StorageFolderNode, StorageNode } from "@akfc/contracts/storage/index.ts";
 
 /**
  * Aplatissement d'AFFICHAGE du conteneur `personal-space` sur le sous-espace de

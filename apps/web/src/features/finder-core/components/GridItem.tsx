@@ -1,29 +1,29 @@
 'use client';
 
-import { useFinderReadOnly } from "@features/finder-core/state/FinderReadOnlyContext";
+import { useFinderReadOnly } from "#features/finder-core/state/FinderReadOnlyContext.ts";
 import { JSX, useState } from 'react';
 import { Folder, Users, User, CircleUserRound, Music, Check, FileText, Play } from 'lucide-react';
 import clsx from 'clsx';
 
-import type { FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
-import { useLongPress } from '@features/finder-core/hooks/useLongPress';
-import { statusOf } from '@features/finder-core/utils/statusFolders';
-import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
+import { useLongPress } from '#features/finder-core/hooks/useLongPress.ts';
+import { statusOf } from '#features/finder-core/utils/statusFolders.ts';
+import { useNodeActions } from '#features/finder-core/hooks/useNodeActions.ts';
 import ContextMenu, {
   type ContextMenuItem,
-} from '@features/finder-core/components/ContextMenu';
-import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
-import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isAvatarsContainer, isBinRoot, isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
-import { BinIcon } from '@features/finder-core/components/BinIcon';
-import type { TriState } from '@features/finder-core/utils/triState';
-import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '@features/finder-core/utils/fileType';
-import { friendlySpaceFolderLabel } from '@features/finder-core/utils/spaceFolderLabel';
-import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextContent';
-import { RenameInput } from '@features/finder-core/components/RenameInput';
-import { MoveDialog } from '@features/finder-core/components/MoveDialog';
-import { PublishToMembersDialog } from '@features/member-documents/PublishToMembersDialog';
-import { useSessionStore } from '@lib/stores/useSessionStore';
+} from '#features/finder-core/components/ContextMenu.tsx';
+import { isStatusFolder } from '#features/finder-core/utils/statusFolders.ts';
+import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isAvatarsContainer, isBinRoot, isProtectedEntityFolder } from '#features/finder-core/utils/spaceFolderKind.ts';
+import { BinIcon } from '#features/finder-core/components/BinIcon.tsx';
+import type { TriState } from '#features/finder-core/utils/triState.ts';
+import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '#features/finder-core/utils/fileType.ts';
+import { friendlySpaceFolderLabel } from '#features/finder-core/utils/spaceFolderLabel.ts';
+import { useNodeTextContent } from '#features/finder-core/hooks/useNodeTextContent.ts';
+import { RenameInput } from '#features/finder-core/components/RenameInput.tsx';
+import { MoveDialog } from '#features/finder-core/components/MoveDialog.tsx';
+import { PublishToMembersDialog } from '#features/member-documents/PublishToMembersDialog.tsx';
+import { useSessionStore } from '#lib/stores/useSessionStore.ts';
 
 /* -------------------------------------------------------------------------- */
 /*                              FORMAT HELPERS                                */

@@ -1,9 +1,9 @@
 'use server';
 
-import { prisma } from "@backend/prisma";
-import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "#features/admin/common/actions/callerIsAdmin.ts";
 import { Prisma } from "@prisma/client";
-import { saveOriginFormSchema } from "@contracts/forms/saveOriginForm.schema";
+import { saveOriginFormSchema } from "@akfc/contracts/forms/saveOriginForm.schema.ts";
 
 export type SaveOriginFormState = {
   success: boolean;

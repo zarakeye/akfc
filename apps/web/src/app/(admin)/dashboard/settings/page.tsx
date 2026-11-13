@@ -2,11 +2,11 @@
 
 import { useRef, useState, type JSX } from "react";
 
-import { trpc } from "@/core/trpc/trpcClient";
-import { LogoPreview } from "@features/admin/site-settings/LogoPreview";
-import { PartnersSettings } from "@features/admin/site-settings/PartnersSettings";
-import { ContactSettings } from "@features/admin/site-settings/ContactSettings";
-import { LegalSettings } from "@features/admin/site-settings/LegalSettings";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { LogoPreview } from "#features/admin/site-settings/LogoPreview.tsx";
+import { PartnersSettings } from "#features/admin/site-settings/PartnersSettings.tsx";
+import { ContactSettings } from "#features/admin/site-settings/ContactSettings.tsx";
+import { LegalSettings } from "#features/admin/site-settings/LegalSettings.tsx";
 
 /**
  * Réglages du site — identité éditable par un admin.

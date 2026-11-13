@@ -5,9 +5,9 @@ section: "Configuration"
 order: 1
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
-import { FileTree, FileTreeItem } from "@/features/docs/ui/FileTree"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+import { FileTree, FileTreeItem } from "#features/docs/ui/FileTree.tsx"
 
 > **Précédemment.** Le projet est installé, vérifié par `pnpm check`, et nous savons travailler avec. Avant d'entrer dans le code, regardons les fichiers qui disent à chaque outil comment le lire.
 
@@ -28,14 +28,14 @@ Chaque dossier de `apps/` et de `packages/` qui contient un `package.json` est u
 
 <FileTree>
   <FileTreeItem name="package.json — la racine : les scripts du projet, la plupart des dépendances, packageManager" />
-  <FileTreeItem name="apps/web — paquet « web » : l'application Next.js" />
-  <FileTreeItem name="packages/backend — paquet « @workspace/backend » : routeurs tRPC, services, accès base" />
-  <FileTreeItem name="packages/contracts — paquet « @workspace/contracts » : types et schémas Zod partagés" />
-  <FileTreeItem name="packages/finder-core — paquet « @workspace/finder-core » : le moteur du Finder" />
-  <FileTreeItem name="packages/config — un simple dossier (pas de package.json), atteint par l’alias @config" />
+  <FileTreeItem name="apps/web — paquet « @akfc/web » : l'application Next.js" />
+  <FileTreeItem name="packages/backend — paquet « @akfc/backend » : routeurs tRPC, services, accès base" />
+  <FileTreeItem name="packages/contracts — paquet « @akfc/contracts » : types et schémas Zod partagés" />
+  <FileTreeItem name="packages/finder-core — paquet « @akfc/finder-core » : le moteur du Finder" />
+  <FileTreeItem name="packages/config — paquet « @akfc/config » : la configuration partagée (racine des fichiers)" />
 </FileTree>
 
-Le **nom** d'un paquet est celui de son `package.json`, pas celui de son dossier. C'est lui qu'utilise l'option `--filter` : `pnpm --filter web build` lance le script `build` du paquet nommé `web`. Un nom à portée (`@workspace/backend`) peut être désigné sans sa portée tant qu'il n'y a pas d'ambiguïté : `pnpm --filter backend typecheck`, que lance `pnpm check`, vise `@workspace/backend`.
+Le **nom** d'un paquet est celui de son `package.json`, pas celui de son dossier. C'est lui qu'utilise l'option `--filter` : `pnpm --filter web build` lance le script `build` du paquet `@akfc/web`. Un nom à portée (`@akfc/backend`) peut être désigné sans sa portée tant qu'il n'y a pas d'ambiguïté : `pnpm --filter backend typecheck`, que lance `pnpm check`, vise `@akfc/backend`.
 
 ## Le package.json d'un paquet
 
@@ -44,44 +44,43 @@ Le plus court du dépôt montre tout ce qu'un paquet déclare :
 ```json
 // packages/finder-core/package.json (fichier complet)
 {
-  "name": "@workspace/finder-core",
+  "name": "@akfc/finder-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
   "exports": {
-    "./cart": "./src/cart/usePickerCartStore.ts"
+    "./*": "./src/*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@workspace/contracts": "workspace:*"
+    "@akfc/contracts": "workspace:*"
   }
 }
 ```
 
-<DocsTable columnsJson='["Champ", "Ce qu’il dit"]' rowsJson='[["name", "Le nom du paquet, utilisé par --filter et par les dépendances des autres paquets."], ["private: true", "Le paquet ne sera jamais publié sur le registre npm : pnpm refuse de le publier par erreur."], ["type: module", "Ses fichiers .js sont des modules ES (import / export), pas du CommonJS (require)."], ["exports", "Ce qu’un autre paquet a le droit d’importer, et depuis quel fichier : ici le seul sous-chemin « ./cart ». Le point d’entrée « . », qui renvoyait vers un fichier d’index que personne n’importait, a été retiré avec lui."], ["dependencies", "Les paquets dont il a besoin ; ici un autre paquet du workspace."]]' />
+<DocsTable columnsJson='["Champ", "Ce qu’il dit"]' rowsJson='[["name", "Le nom du paquet, utilisé par --filter et par les dépendances des autres paquets."], ["private: true", "Le paquet ne sera jamais publié sur le registre npm : pnpm refuse de le publier par erreur."], ["type: module", "Ses fichiers .js sont des modules ES (import / export), pas du CommonJS (require)."], ["imports", "Les raccourcis du paquet POUR LUI-MÊME : « #cart/usePickerCartStore.ts » désigne ./src/cart/usePickerCartStore.ts. Un « # » ne sort jamais du paquet."], ["exports", "Ce que les AUTRES paquets peuvent importer : « @akfc/finder-core/cart/usePickerCartStore.ts » désigne le même fichier."], ["dependencies", "Les paquets dont il a besoin ; ici un autre paquet du workspace, sans lequel « @akfc/contracts/… » ne se résoudrait pas."]]' />
 
-`"workspace:*"` est propre aux workspaces pnpm : la dépendance n'est pas téléchargée du registre, c'est le dossier `packages/contracts` lui-même, relié par un lien symbolique dans `node_modules/@workspace/contracts`. Une modification de `contracts` est donc visible immédiatement par les paquets qui en dépendent, sans publication ni réinstallation.
+`"workspace:*"` est propre aux workspaces pnpm : la dépendance n'est pas téléchargée du registre, c'est le dossier `packages/contracts` lui-même, relié par un lien symbolique dans `node_modules/@akfc/contracts`. Une modification de `contracts` est donc visible immédiatement par les paquets qui en dépendent, sans publication ni réinstallation.
 
 Les paquets ne sont **pas compilés** séparément : il n'y a pas de dossier `dist/`. Leurs fichiers TypeScript sont lus tels quels par Next.js et par `tsc`, comme s'ils faisaient partie de l'application. C'est ce qui permet de modifier le backend et de voir le changement au rechargement suivant.
 
-## Deux façons de se joindre
+## Un seul mécanisme pour se joindre
 
-Le code du projet n'importe pourtant jamais `@workspace/backend` ou `@workspace/contracts` par leur nom de paquet. Il passe par des **alias** TypeScript :
+Un import du projet a trois formes, et une seule règle pour chacune :
 
-```json
-// apps/web/tsconfig.json (extrait)
-"@contracts/*": ["../../packages/contracts/src/*"],
-"@backend/*": ["../../packages/backend/src/*"],
-```
+<DocsTable columnsJson='["Forme", "Exemple", "Ce qu’elle désigne"]' rowsJson='[["« # » + chemin", "#features/docs/ui/Callout.tsx", "Un fichier du MÊME paquet, depuis son dossier src (champ imports de son package.json)."], ["« @akfc/ » + paquet + chemin", "@akfc/backend/prisma.ts", "Un fichier d’un AUTRE paquet du dépôt, depuis son src (champ exports du paquet visé, et dépendance workspace:* chez l’importeur)."], ["Un nom de paquet npm", "zod, @prisma/client", "Une bibliothèque installée dans node_modules."]]' />
 
-`import { prisma } from "@backend/prisma"` est réécrit, à la compilation, en `packages/backend/src/prisma`. L'alias ne dépend ni du lien symbolique ni du champ `exports` : il pointe directement dans le code source.
+Le chemin nomme le fichier **avec son extension** (`.ts`, `.tsx`) : les champs `imports` et `exports` associent un motif à un chemin, sans deviner d'extension ni chercher un `index`. C'est exigeant, mais sans surprise : l'import dit exactement quel fichier il lit.
 
-Le projet a donc deux mécanismes pour la même chose : les dépendances `workspace:*`, déclarées mais peu utilisées par les imports, et les alias, qui font réellement le travail. C'est un héritage de son histoire plus qu'un choix : un paquet pourrait se contenter des dépendances de workspace et de ses `exports`. Le chapitre suivant, sur TypeScript, détaille les alias et leur contrainte principale : tout `tsconfig` qui compile un fichier doit connaître les alias que ce fichier utilise.
+Ces deux champs sont un standard de Node, pas une option de TypeScript. TypeScript, Node, webpack (le build) et Turbopack (le serveur de développement) les lisent tous dans le même `package.json`, celui du paquet **qui contient le fichier importeur**. Il n'y a donc plus de liste d'alias à recopier d'un `tsconfig` à l'autre (chapitre suivant).
 
 <Callout type="info">
-Pour s'y retrouver dans le code : un import qui commence par `@backend/`, `@contracts/`, `@features/` ou `@finder-core/` est un **alias**, résolu par les `tsconfig` ; un import comme `zod` ou `@prisma/client` est une **dépendance**, installée dans `node_modules`.
+**Avant**, le projet avait trois mécanismes pour la même chose : une quinzaine d'alias de `tsconfig` (`@features/…`, `@backend/…`, `@/…`, dont deux pour le même dossier et deux qui portaient le nom de vrais paquets npm, `@trpc/…` et `@types/…`), quelques imports par nom de paquet (`@workspace/finder-core/cart`), et les dépendances `workspace:*`. Un script a réécrit les quelque 2 200 imports concernés vers les deux formes ci-dessus.
 </Callout>
 
 ## Les dépendances : où elles sont déclarées
@@ -158,7 +157,7 @@ Les scripts de la racine délèguent souvent au paquet concerné, qui a les sien
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment pnpm connaît-il les paquets ?", "pnpm-workspace.yaml : tout dossier de apps/ et packages/ qui a un package.json."], ["Comment désigner un paquet ?", "Par le nom de son package.json (web, @workspace/backend), avec --filter."], ["Comment le code d’un paquet atteint-il un autre paquet ?", "Par des alias TypeScript (@backend/…), qui pointent dans le code source ; les dépendances workspace:* existent mais servent peu."], ["Où sont déclarées les dépendances ?", "Surtout à la racine ; Node les trouve en remontant les dossiers."], ["Qui fixe les versions installées ?", "pnpm-lock.yaml, versionné ; le Dockerfile l’exige à l’identique (--frozen-lockfile)."], ["Comment ajouter une dépendance ?", "pnpm add (ou pnpm --filter web add), jamais à la main dans le package.json."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment pnpm connaît-il les paquets ?", "pnpm-workspace.yaml : tout dossier de apps/ et packages/ qui a un package.json."], ["Comment désigner un paquet ?", "Par le nom de son package.json (@akfc/web, @akfc/backend), avec --filter, avec ou sans sa portée."], ["Comment le code atteint-il un fichier ?", "#chemin.ext dans son propre paquet (imports) ; @akfc/paquet/chemin.ext dans un autre (exports, et une dépendance workspace:*)."], ["Où sont déclarées les dépendances ?", "Surtout à la racine ; Node les trouve en remontant les dossiers."], ["Qui fixe les versions installées ?", "pnpm-lock.yaml, versionné ; le Dockerfile l’exige à l’identique (--frozen-lockfile)."], ["Comment ajouter une dépendance ?", "pnpm add (ou pnpm --filter web add), jamais à la main dans le package.json."]]' />
 
 ## À suivre
 

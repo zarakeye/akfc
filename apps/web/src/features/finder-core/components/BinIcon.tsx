@@ -1,7 +1,7 @@
 "use client";
 
-import { trpc } from "@trpc/trpcClient";
-import { APP_ROOT } from "@config/app";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
 
 /**
  * Icône de corbeille commutée sur l'état RÉEL de la corbeille :

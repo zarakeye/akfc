@@ -4,7 +4,7 @@ import { useState, type JSX, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import { ExpandableContent } from "@features/social/ExpandableContent";
+import { ExpandableContent } from "#features/social/ExpandableContent.tsx";
 
 /**
  * Liste de cartes bâties sur une présentation synthétique.

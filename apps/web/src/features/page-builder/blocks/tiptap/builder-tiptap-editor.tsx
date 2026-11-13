@@ -19,43 +19,43 @@ import { Superscript } from "@tiptap/extension-superscript";
 import { Selection } from "@tiptap/extensions";
 
 // --- UI Primitives ---
-import { Button } from "@/features/editor-tiptap/ui-primitive/button";
-import { Spacer } from "@/features/editor-tiptap/ui-primitive/spacer";
+import { Button } from "#features/editor-tiptap/ui-primitive/button/index.tsx";
+import { Spacer } from "#features/editor-tiptap/ui-primitive/spacer/index.tsx";
 import {
   Toolbar,
   ToolbarGroup,
   ToolbarSeparator,
-} from "@/features/editor-tiptap/ui-primitive/toolbar";
+} from "#features/editor-tiptap/ui-primitive/toolbar/index.tsx";
 
 // --- Tiptap Node ---
-import { HorizontalRule } from "@/features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node-extension";
-import { LibraryImageNode } from "@/features/editor-tiptap/node/library-image-node";
+import { HorizontalRule } from "#features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node-extension.ts";
+import { LibraryImageNode } from "#features/editor-tiptap/node/library-image-node/index.tsx";
 
 // --- Node styles (réutilisés du SimpleEditor — fichiers existants du template) ---
-import "@features/editor-tiptap/node/blockquote-node/blockquote-node.scss";
-import "@features/editor-tiptap/node/code-block-node/code-block-node.scss";
-import "@features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node.scss";
-import "@features/editor-tiptap/node/list-node/list-node.scss";
-import "@features/editor-tiptap/node/heading-node/heading-node.scss";
-import "@features/editor-tiptap/node/paragraph-node/paragraph-node.scss";
+import "#features/editor-tiptap/node/blockquote-node/blockquote-node.scss";
+import "#features/editor-tiptap/node/code-block-node/code-block-node.scss";
+import "#features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node.scss";
+import "#features/editor-tiptap/node/list-node/list-node.scss";
+import "#features/editor-tiptap/node/heading-node/heading-node.scss";
+import "#features/editor-tiptap/node/paragraph-node/paragraph-node.scss";
 
 // --- Tiptap UI ---
-import { HeadingDropdownMenu } from "@/features/editor-tiptap/ui/heading-dropdown-menu";
-import { ListDropdownMenu } from "@/features/editor-tiptap/ui/list-dropdown-menu";
-import { BlockquoteButton } from "@/features/editor-tiptap/ui/blockquote-button";
-import { CodeBlockButton } from "@/features/editor-tiptap/ui/code-block-button";
-import { ColorHighlightPopover } from "@/features/editor-tiptap/ui/color-highlight-popover";
-import { LinkPopover } from "@/features/editor-tiptap/ui/link-popover";
-import { MarkButton } from "@/features/editor-tiptap/ui/mark-button";
-import { TextAlignButton } from "@/features/editor-tiptap/ui/text-align-button";
-import { UndoRedoButton } from "@/features/editor-tiptap/ui/undo-redo-button";
+import { HeadingDropdownMenu } from "#features/editor-tiptap/ui/heading-dropdown-menu/index.tsx";
+import { ListDropdownMenu } from "#features/editor-tiptap/ui/list-dropdown-menu/index.tsx";
+import { BlockquoteButton } from "#features/editor-tiptap/ui/blockquote-button/index.tsx";
+import { CodeBlockButton } from "#features/editor-tiptap/ui/code-block-button/index.tsx";
+import { ColorHighlightPopover } from "#features/editor-tiptap/ui/color-highlight-popover/index.tsx";
+import { LinkPopover } from "#features/editor-tiptap/ui/link-popover/index.tsx";
+import { MarkButton } from "#features/editor-tiptap/ui/mark-button/index.tsx";
+import { TextAlignButton } from "#features/editor-tiptap/ui/text-align-button/index.tsx";
+import { UndoRedoButton } from "#features/editor-tiptap/ui/undo-redo-button/index.tsx";
 
 // --- Icons ---
 import { Images } from "lucide-react";
 
 // --- tRPC + Picker + Context ---
-import { trpcClient } from "@/core/trpc/trpcClient";
-import { MediaPicker } from "@/features/finder-core/components/MediaPicker";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { MediaPicker } from "#features/finder-core/components/MediaPicker.tsx";
 import { usePageBuilderContext } from "../../PageBuilderContext";
 
 /* ─────────────────────────────────────────────────────────────────────── */

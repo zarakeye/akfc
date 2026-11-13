@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
-import { useFinderStore, type SearchResultNode } from '@features/finder-core/state/useFinderStore';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import { useFinderStore, type SearchResultNode } from '#features/finder-core/state/useFinderStore.ts';
 
 /**
  * 🔎 Hook qui pilote la recherche récursive depuis `currentPath`.

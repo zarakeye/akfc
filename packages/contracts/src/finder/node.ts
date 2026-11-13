@@ -1,4 +1,4 @@
-import type { MediaMeta } from "@contracts/finder/meta.types";
+import type { MediaMeta } from "#finder/meta.types.ts";
 
 /**
  * Types de base pour les nœuds du finder.

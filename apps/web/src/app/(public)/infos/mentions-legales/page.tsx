@@ -2,9 +2,9 @@ import type { JSX } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { getLegalComplement, getLegalInfo } from "@features/legal/getLegalInfo";
-import { LegalSection, Val, frenchDate } from "@features/legal/LegalBits";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
+import { getLegalComplement, getLegalInfo } from "#features/legal/getLegalInfo.ts";
+import { LegalSection, Val, frenchDate } from "#features/legal/LegalBits.tsx";
 
 /**
  * Mentions légales (art. 1-1 LCEN), GÉNÉRÉES depuis Réglages du site → Informations légales et

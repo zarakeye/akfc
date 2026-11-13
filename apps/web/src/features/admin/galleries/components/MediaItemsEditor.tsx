@@ -21,17 +21,17 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { trpc, trpcClient } from '@trpc/trpcClient';
-import { MediaPicker } from '@features/finder-core/components/MediaPicker';
-import { finderStorageAdapter } from '@/features/finder-adapters/storage/finderStorage.adapter';
-import { APP_ROOT } from '@config/app';
-import type { ResolvedMedia } from '@contracts/page';
-import type { AppRouter } from '@backend/modules';
-import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES, type ImageUsageValue } from '@contracts/legal/imageConsent';
-import { checkDestinations } from '@contracts/legal/mediaPeople';
-import { RightsCheckBanner } from '@features/admin/media-people/RightsCheckBanner';
-import { MediaTagsDialog } from '@features/admin/media-people/MediaTagsDialog';
-import { USAGE_SHORT_LABEL, VerdictBadge } from '@features/admin/media-people/RightsBadges';
+import { trpc, trpcClient } from '#core/trpc/trpcClient.ts';
+import { MediaPicker } from '#features/finder-core/components/MediaPicker.tsx';
+import { finderStorageAdapter } from '#features/finder-adapters/storage/finderStorage.adapter.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import type { ResolvedMedia } from '@akfc/contracts/page/index.ts';
+import type { AppRouter } from '@akfc/backend/modules/index.ts';
+import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES, type ImageUsageValue } from '@akfc/contracts/legal/imageConsent.ts';
+import { checkDestinations } from '@akfc/contracts/legal/mediaPeople.ts';
+import { RightsCheckBanner } from '#features/admin/media-people/RightsCheckBanner.tsx';
+import { MediaTagsDialog } from '#features/admin/media-people/MediaTagsDialog.tsx';
+import { USAGE_SHORT_LABEL, VerdictBadge } from '#features/admin/media-people/RightsBadges.tsx';
 
 type MediaRights = inferRouterOutputs<AppRouter>['mediaPeople']['verdicts'][string];
 

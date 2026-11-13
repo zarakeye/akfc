@@ -1,16 +1,16 @@
 import type { JSX } from "react";
 
-import { prisma } from "@backend/prisma";
-import { parsePageContentV1 } from "@contracts/page";
-import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
-import { refusedMediaIds } from "@backend/modules/mediaPeople/mediaPeople.service";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import { resolveMediaByIds } from "@akfc/backend/modules/media/services/resolveMediaByIds.service.ts";
+import { refusedMediaIds } from "@akfc/backend/modules/mediaPeople/mediaPeople.service.ts";
 
-import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { startOfClubDay } from "@lib/time/clubDay";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
+import { startOfClubDay } from "#lib/time/clubDay.ts";
 import {
   SummaryCards,
   type SummaryCardData,
-} from "@features/common/SummaryCards";
+} from "#features/common/SummaryCards.tsx";
 import type { Metadata } from "next";
 
 /**

@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import GalleriesTable from "@features/admin/galleries/components/GalleriesTable";
+import GalleriesTable from "#features/admin/galleries/components/GalleriesTable.tsx";
 
 /** Liste des galeries — `/(admin)/dashboard/galleries`. */
 export default function GalleriesPage(): JSX.Element {

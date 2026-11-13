@@ -5,9 +5,9 @@ import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewWrapper } from "@tiptap/react"
 import clsx from "clsx"
 
-import { Button } from "@/features/editor-tiptap/ui-primitive/button"
-import { CloseIcon } from "@/features/editor-tiptap/icons/close-icon"
-import { ImagePlusIcon } from "@/features/editor-tiptap/icons/image-plus-icon"
+import { Button } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
+import { CloseIcon } from "#features/editor-tiptap/icons/close-icon.tsx"
+import { ImagePlusIcon } from "#features/editor-tiptap/icons/image-plus-icon.tsx"
 
 import type { LibraryImageNodeOptions } from "./library-image-node-extension"
 

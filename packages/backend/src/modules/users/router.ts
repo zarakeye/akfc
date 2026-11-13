@@ -1,26 +1,26 @@
 import { Prisma } from "@prisma/client";
 
-import { router, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
+import { router, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
 import { z } from "zod";
-import generateStrongPassword from "@backend/lib/security/generatePassword";
-import { hashPassword } from "@backend/lib/auth/password";
-import { sendWelcomeEmail, sendWelcomeNotice } from "@backend/email/templates/welcomeEmailWithPassword";
-import { isDemoEmail } from "@backend/lib/demoAccounts";
+import generateStrongPassword from "#lib/security/generatePassword.ts";
+import { hashPassword } from "#lib/auth/password.ts";
+import { sendWelcomeEmail, sendWelcomeNotice } from "#email/templates/welcomeEmailWithPassword.ts";
+import { isDemoEmail } from "#lib/demoAccounts.ts";
 import { TRPCError } from "@trpc/server";
 
-import type { UserProfile } from "@contracts/users/user-profile.types";
-import type { ImageConsentProofValue } from "@contracts/legal/imageConsent";
-import { legalInfoInput, legalInfoData } from "@backend/modules/users/legalInfo";
-import { emailSchema } from "@contracts/auth/auth.schema";
-import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
-import { pageContentSchemaV1 } from "@contracts/page";
-import { assertBioMediaAllowed, isInstructorUser } from "@backend/modules/users/instructorBio.service";
-import { removeAvatarFile } from "@backend/modules/avatar/avatar.service";
-import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
-import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
-import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
-import { byEffectiveDesc } from "@backend/modules/imageConsent/formOrder";
+import type { UserProfile } from "@akfc/contracts/users/user-profile.types.ts";
+import type { ImageConsentProofValue } from "@akfc/contracts/legal/imageConsent.ts";
+import { legalInfoInput, legalInfoData } from "#modules/users/legalInfo.ts";
+import { emailSchema } from "@akfc/contracts/auth/auth.schema.ts";
+import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaReferences.service.ts";
+import { pageContentSchemaV1 } from "@akfc/contracts/page/index.ts";
+import { assertBioMediaAllowed, isInstructorUser } from "#modules/users/instructorBio.service.ts";
+import { removeAvatarFile } from "#modules/avatar/avatar.service.ts";
+import { resolvePersoBaseFolder } from "#modules/media/services/resolvePersoBaseFolder.service.ts";
+import { assertOwnAvatars } from "#modules/media/services/assertOwnAvatars.service.ts";
+import { assertPublicContentRights } from "#modules/mediaPeople/publicContentRights.service.ts";
+import { byEffectiveDesc } from "#modules/imageConsent/formOrder.ts";
 import { clubRolesBlockingDeletion } from "./clubRolesBlockingDeletion.service";
 
 /** Les champs du profil, et eux seuls : ni l'empreinte du mot de passe, ni les données légales. */

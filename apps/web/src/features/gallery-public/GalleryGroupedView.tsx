@@ -3,10 +3,10 @@
 import { useMemo, useState, type JSX } from "react";
 import { ChevronRight, Lock } from "lucide-react";
 
-import { GalleryGrid } from "@features/gallery-public/GalleryGrid";
-import { type LightboxItem } from "@features/gallery-public/GalleryLightbox";
-import { CATEGORY_KEYS, type CategoryKey } from "@contracts/categories/categoryKey";
-import { compareDisciplines, type FamilyRank } from "@features/app-shell/disciplineOrder";
+import { GalleryGrid } from "#features/gallery-public/GalleryGrid.tsx";
+import { type LightboxItem } from "#features/gallery-public/GalleryLightbox.tsx";
+import { CATEGORY_KEYS, type CategoryKey } from "@akfc/contracts/categories/categoryKey.ts";
+import { compareDisciplines, type FamilyRank } from "#features/app-shell/disciplineOrder.ts";
 
 /**
  * Vue publique groupée des galeries — Structure Y :

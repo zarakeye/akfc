@@ -1,14 +1,14 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 
-import type { DeleteForeverInput, DeleteForeverOutput } from "@contracts/trash/trash.mutations";
+import type { DeleteForeverInput, DeleteForeverOutput } from "@akfc/contracts/trash/trash.mutations.ts";
 
-import { isTrashStoragePath, normalizePath } from "@backend/modules/trash/utils";
+import { isTrashStoragePath, normalizePath } from "#modules/trash/utils.ts";
 import {
   r2DeleteFile,
   r2DeleteByPrefix,
-} from "@backend/modules/trash/services/r2TrashOps";
-import { deleteAssetRowsOfTrashedItem } from "@backend/modules/trash/services/trashedAssets.service";
+} from "#modules/trash/services/r2TrashOps.ts";
+import { deleteAssetRowsOfTrashedItem } from "#modules/trash/services/trashedAssets.service.ts";
 
 /**
  * deleteForever.service.ts

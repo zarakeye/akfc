@@ -4,20 +4,20 @@ import { JSX, useEffect, useRef, useState } from 'react';
 import { ChevronRight, MoreHorizontal } from 'lucide-react';
 import clsx from 'clsx';
 
-import type { FileAdapter } from '@contracts/finder';
+import type { FileAdapter } from '@akfc/contracts/finder/index.ts';
 
-import { APP_ROOT } from '@config/app';
-import { trpc } from '@trpc/trpcClient';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import { trpc } from '#core/trpc/trpcClient.ts';
 
-import { buildPathSegments } from '@features/finder-core/utils/path';
-import { isPersoSpaceFolder } from '@features/finder-core/utils/spaceFolderKind';
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
+import { buildPathSegments } from '#features/finder-core/utils/path.ts';
+import { isPersoSpaceFolder } from '#features/finder-core/utils/spaceFolderKind.ts';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
 import {
   FINDER_DRAG_MIME,
   tryParsePayload,
   isDropAllowed,
   isDropEffective,
-} from '@features/finder-core/dnd/payload';
+} from '#features/finder-core/dnd/payload.ts';
 
 type Props = {
   /**

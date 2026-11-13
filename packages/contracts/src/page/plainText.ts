@@ -1,4 +1,4 @@
-import type { PageContentV1 } from '@contracts/page/blocks.v1';
+import type { PageContentV1 } from '#page/blocks.v1.ts';
 
 /**
  * Extraction du texte BRUT d'un composite de page.

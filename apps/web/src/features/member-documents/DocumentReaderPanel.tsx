@@ -3,10 +3,10 @@
 import { useEffect } from "react";
 import { X, Download, BookmarkCheck, BookmarkMinus } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { PdfViewer } from "@features/member-documents/PdfViewerClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { PdfViewer } from "#features/member-documents/PdfViewerClient.tsx";
 import ReactMarkdown from "react-markdown";
-import { useNodeTextContent } from "@features/finder-core/hooks/useNodeTextContent";
+import { useNodeTextContent } from "#features/finder-core/hooks/useNodeTextContent.ts";
 
 type ReaderDoc = {
   id: string;

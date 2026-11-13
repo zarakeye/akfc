@@ -5,8 +5,8 @@ import {
   router,
   protectedProcedure,
   publicProcedure,
-} from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
+} from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
 
 /**
  * Router des BreakingNews — les actualités courtes du club.

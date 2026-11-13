@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import GroupsTable from "@features/admin/groups/components/GroupsTable";
+import GroupsTable from "#features/admin/groups/components/GroupsTable.tsx";
 
 /** Liste des groupes de membres — `/(admin)/dashboard/groups`. */
 export default function GroupsPage(): JSX.Element {

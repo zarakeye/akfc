@@ -3,26 +3,26 @@
 import { forwardRef, useCallback, useState } from "react"
 
 // --- Icons ---
-import { ChevronDownIcon } from "@/features/editor-tiptap/icons/chevron-down-icon"
+import { ChevronDownIcon } from "#features/editor-tiptap/icons/chevron-down-icon.tsx"
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/features/editor-tiptap/hooks/use-tiptap-editor"
+import { useTiptapEditor } from "#features/editor-tiptap/hooks/use-tiptap-editor.ts"
 
 // --- Tiptap UI ---
-import { HeadingButton } from "@/features/editor-tiptap/ui/heading-button"
-import type { UseHeadingDropdownMenuConfig } from "@/features/editor-tiptap/ui/heading-dropdown-menu"
-import { useHeadingDropdownMenu } from "@/features/editor-tiptap/ui/heading-dropdown-menu"
+import { HeadingButton } from "#features/editor-tiptap/ui/heading-button/index.tsx"
+import type { UseHeadingDropdownMenuConfig } from "#features/editor-tiptap/ui/heading-dropdown-menu/index.tsx"
+import { useHeadingDropdownMenu } from "#features/editor-tiptap/ui/heading-dropdown-menu/index.tsx"
 
 // --- UI Primitives ---
-import type { ButtonProps } from "@/features/editor-tiptap/ui-primitive/button"
-import { Button, ButtonGroup } from "@/features/editor-tiptap/ui-primitive/button"
+import type { ButtonProps } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
+import { Button, ButtonGroup } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "@/features/editor-tiptap/ui-primitive/dropdown-menu"
-import { Card, CardBody } from "@/features/editor-tiptap/ui-primitive/card"
+} from "#features/editor-tiptap/ui-primitive/dropdown-menu/index.tsx"
+import { Card, CardBody } from "#features/editor-tiptap/ui-primitive/card/index.tsx"
 
 export interface HeadingDropdownMenuProps
   extends Omit<ButtonProps, "type">,

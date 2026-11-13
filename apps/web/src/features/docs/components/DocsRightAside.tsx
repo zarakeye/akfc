@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import type { TocItem } from "@features/docs/lib/docs.types"
-import { InlineTocText } from "@features/docs/ui/InlineTocText"
-import { getDocsScroller, offsetWithin, onDocsScroll } from "@features/docs/lib/docsScroller"
+import type { TocItem } from "#features/docs/lib/docs.types.ts"
+import { InlineTocText } from "#features/docs/ui/InlineTocText.tsx"
+import { getDocsScroller, offsetWithin, onDocsScroll } from "#features/docs/lib/docsScroller.ts"
 
 export function DocsRightAside({ items }: { items: TocItem[] }) {
   const [activeId, setActiveId] = useState<string | null>(null)

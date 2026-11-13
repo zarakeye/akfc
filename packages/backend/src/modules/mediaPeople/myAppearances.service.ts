@@ -1,12 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { CAROUSEL_SLUG, dueTagDigests } from "@contracts/legal/mediaPeople";
-import { sendMediaTagDigest } from "@backend/email/templates/mediaTagDigest";
-import { isDemoEmail } from "@backend/lib/demoAccounts";
-import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
-import { deriveMediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
-import { NO_CONSENT, consentOf, mediaVerdictsFor, statesOf } from "@backend/modules/mediaPeople/mediaPeople.service";
-import { KIND_LABEL, pageTitles } from "@backend/modules/mediaPeople/publicRightsReport.service";
+import { CAROUSEL_SLUG, dueTagDigests } from "@akfc/contracts/legal/mediaPeople.ts";
+import { sendMediaTagDigest } from "#email/templates/mediaTagDigest.ts";
+import { isDemoEmail } from "#lib/demoAccounts.ts";
+import { buildMediaProxyUrl } from "#modules/media/helpers/media-url.ts";
+import { deriveMediaKind } from "#modules/media/helpers/deriveMediaKind.ts";
+import { NO_CONSENT, consentOf, mediaVerdictsFor, statesOf } from "#modules/mediaPeople/mediaPeople.service.ts";
+import { KIND_LABEL, pageTitles } from "#modules/mediaPeople/publicRightsReport.service.ts";
 
 /**
  * « Où j'apparais » : les médias où le membre connecté a été tagué, où ils sont montrés, et ce que

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { MediaPicker } from '@/features/finder-core/components/MediaPicker';
-import { finderStorageAdapter } from '@/features/finder-adapters/storage/finderStorage.adapter';
+import { MediaPicker } from '#features/finder-core/components/MediaPicker.tsx';
+import { finderStorageAdapter } from '#features/finder-adapters/storage/finderStorage.adapter.ts';
 
 export default function TestPickerPage() {
   const [open, setOpen] = useState(false);

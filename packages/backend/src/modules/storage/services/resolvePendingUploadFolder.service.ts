@@ -1,12 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
-import { categorySegment, disciplineSegment } from "@backend/modules/storage/storageSegments";
+import { categorySegment, disciplineSegment } from "#modules/storage/storageSegments.ts";
 
-import type { UploadDestination } from "@contracts/storage/upload-destination.schema";
-import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
-import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
-import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
+import type { UploadDestination } from "@akfc/contracts/storage/upload-destination.schema.ts";
+import { resolvePersoBaseFolder } from "#modules/media/services/resolvePersoBaseFolder.service.ts";
+import { resolveGroupBaseFolder } from "#modules/media/services/resolveGroupBaseFolder.service.ts";
+import { commonRepositoryContainerPath } from "#modules/media/services/commonRepositoryContainerPath.service.ts";
 
 /**
  * resolvePendingUploadFolder.service.ts

@@ -1,25 +1,25 @@
 import { TRPCError } from "@trpc/server";
-import { purgeAtOf, trashRetentionDays, trashedByNameOf } from "@backend/modules/trash/services/trashRetention.service";
+import { purgeAtOf, trashRetentionDays, trashedByNameOf } from "#modules/trash/services/trashRetention.service.ts";
 import type { PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
 
-import type { TrashToBinInput, TrashToBinOutput } from "@contracts/trash/trash.mutations";
-import type { TrashEntryDTO } from "@contracts/trash/trash.dto";
+import type { TrashToBinInput, TrashToBinOutput } from "@akfc/contracts/trash/trash.mutations.ts";
+import type { TrashEntryDTO } from "@akfc/contracts/trash/trash.dto.ts";
 
-import { buildPreviousPathShort, normalizePath, bigIntToSafeNumber } from "@backend/modules/trash/utils";
-import { deriveMediaKind, type MediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
-import { isProtectedDisciplineFolderPath } from "@backend/modules/storage/protectedDisciplineFolder";
-import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
-import { requiredRootPaths } from "@backend/modules/storage/ensureContentRoots.service";
-import { rewriteAssetPaths } from "@backend/modules/storage/mediaPaths";
-import { assertTrashDoesntRemoveUsedAssets } from "@backend/modules/trash/services/trashedAssets.service";
+import { buildPreviousPathShort, normalizePath, bigIntToSafeNumber } from "#modules/trash/utils.ts";
+import { deriveMediaKind, type MediaKind } from "#modules/media/helpers/deriveMediaKind.ts";
+import { isProtectedDisciplineFolderPath } from "#modules/storage/protectedDisciplineFolder.ts";
+import { isProtectedEntityFolderPath } from "#modules/storage/protectedEntityFolder.ts";
+import { requiredRootPaths } from "#modules/storage/ensureContentRoots.service.ts";
+import { rewriteAssetPaths } from "#modules/storage/mediaPaths.ts";
+import { assertTrashDoesntRemoveUsedAssets } from "#modules/trash/services/trashedAssets.service.ts";
 import {
   r2Exists,
   r2GetInfo,
   r2ListByPrefix,
   r2MoveFile,
   r2MoveFolder,
-} from "@backend/modules/trash/services/r2TrashOps";
+} from "#modules/trash/services/r2TrashOps.ts";
 
 /**
  * trashToBin.service.ts

@@ -59,7 +59,7 @@ export function formatUserName(user: UserNameParts | null): string | null {
 /* ─────────────────────────────────────────────────────────────────────── */
 
 /** Heure au format HHMM (1830) → « 18h30 ». Une seule implémentation, dans lib/time. */
-export { formatHHMM as formatTime } from "@lib/time/formatHHMM";
+export { formatHHMM as formatTime } from "#lib/time/formatHHMM.ts";
 
 const SESSION_DATE_FMT = new Intl.DateTimeFormat("fr-FR", {
   weekday: "long",

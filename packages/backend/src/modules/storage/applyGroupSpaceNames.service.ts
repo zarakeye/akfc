@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import type { StorageFolderNode, StorageNode } from "@contracts/storage";
+import type { StorageFolderNode, StorageNode } from "@akfc/contracts/storage/index.ts";
 
 /**
  * Résout le NOM AFFICHÉ des dossiers dans le listing, sans jamais toucher au

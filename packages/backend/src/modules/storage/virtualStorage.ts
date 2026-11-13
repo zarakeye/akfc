@@ -8,13 +8,13 @@ import type {
   StorageMetadata,
   StorageMoveOperation,
   StoragePath,
-} from "@contracts/storage";
+} from "@akfc/contracts/storage/index.ts";
 
 import {
   getAdapter,
   type StorageAdapterDeps,
   type AdapterFor,
-} from "@backend/modules/storage/providerRegistry";
+} from "#modules/storage/providerRegistry.ts";
 
 /*
  * `statusFromPath` vivait ici — quatrième copie d'une même règle, avec sa

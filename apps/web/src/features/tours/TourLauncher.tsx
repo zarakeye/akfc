@@ -4,7 +4,7 @@ import { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CircleHelp, X } from "lucide-react";
 
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import { tourStore } from "./tour.store";
 import { toursFor } from "./tour.registry";
 

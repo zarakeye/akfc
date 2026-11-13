@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
-import { pageContentSchemaV1 } from "@contracts/page";
+import { pageContentSchemaV1 } from "@akfc/contracts/page/index.ts";
 
 /*
  * Page éditoriale « S'inscrire » (SitePage « inscription ») : créée au premier démarrage avec un

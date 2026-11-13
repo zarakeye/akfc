@@ -6,16 +6,16 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import { trpc } from '@trpc/trpcClient';
-import { useSessionStore } from '@lib/stores/useSessionStore';
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { HEIC_ACCEPT, countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from '@features/media/heic/browserImages';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { useSessionStore } from '#lib/stores/useSessionStore.ts';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { HEIC_ACCEPT, countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from '#features/media/heic/browserImages.ts';
 
-import type { PictureItem } from '@features/gallery-crop/types/picture.types';
-import type { CropResult } from '@features/gallery-crop/types/cropper.types';
-import Cropper from '@features/gallery-crop/components/Cropper';
-import { PdfThumbnail } from '@features/common-repository/PdfThumbnailClient';
-import { uploadToR2 } from '@features/media/uploadToR2';
+import type { PictureItem } from '#features/gallery-crop/types/picture.types.ts';
+import type { CropResult } from '#features/gallery-crop/types/cropper.types.ts';
+import Cropper from '#features/gallery-crop/components/Cropper.tsx';
+import { PdfThumbnail } from '#features/common-repository/PdfThumbnailClient.tsx';
+import { uploadToR2 } from '#features/media/uploadToR2.ts';
 
 /**
  * DragNDropForm — envoi de fichiers vers la bibliothèque AKFC (stockage R2).

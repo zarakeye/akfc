@@ -2,14 +2,14 @@ import type { JSX } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { getLegalComplement, getLegalInfo } from "@features/legal/getLegalInfo";
-import { LegalSection, Val, frenchDate } from "@features/legal/LegalBits";
-import { processingActivities, processors, SECURITY_MEASURES } from "@contracts/legal/processingRegister";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
+import { getLegalComplement, getLegalInfo } from "#features/legal/getLegalInfo.ts";
+import { LegalSection, Val, frenchDate } from "#features/legal/LegalBits.tsx";
+import { processingActivities, processors, SECURITY_MEASURES } from "@akfc/contracts/legal/processingRegister.ts";
 
 /**
  * Politique de confidentialité (art. 13 RGPD), GÉNÉRÉE : identité du responsable depuis les
- * Réglages du site, traitements depuis @contracts/legal/processingRegister (même source que le
+ * Réglages du site, traitements depuis @akfc/contracts/legal/processingRegister.ts (même source que le
  * registre des traitements), durées depuis les réglages. Compléments libres éventuels : SitePage
  * « confidentialite », rédigée dans le constructeur, affichée à la suite.
  * Route statique : prend le pas sur /infos/[slug].

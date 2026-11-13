@@ -3,7 +3,7 @@
 import { type JSX, useState } from "react";
 import Link from "next/link";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 
 /**
  * Éditeur du HERO de la page d'accueil — uniquement le titre et le corps de la

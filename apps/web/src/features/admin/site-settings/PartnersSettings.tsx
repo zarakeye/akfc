@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 
-import { trpc } from "@/core/trpc/trpcClient";
-import { LogoPreview } from "@features/admin/site-settings/LogoPreview";
-import { PARTNER_ROLE_OPTION, type PartnerRoleValue } from "@features/partners/partnerUi";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { LogoPreview } from "#features/admin/site-settings/LogoPreview.tsx";
+import { PARTNER_ROLE_OPTION, type PartnerRoleValue } from "#features/partners/partnerUi.ts";
 
 /**
  * Réglages du site → « Partenaires du club » (MJC, fédération…) : nom, rôle, phrase de présentation,

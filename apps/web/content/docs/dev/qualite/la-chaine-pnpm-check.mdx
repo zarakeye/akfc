@@ -5,8 +5,8 @@ section: "Qualité (1) : vérifier avant d’enregistrer"
 order: 1
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** La configuration est posée : les paquets, les `tsconfig`, le build de Next et les variables d’environnement. Nous allons bientôt écrire du code ; avant, installons ce qui le vérifiera à chaque modification.
 
@@ -48,8 +48,8 @@ L’ordre n’est pas indifférent : les **gardes maison** passent d’abord, pa
   language="ts"
   filepath="apps/web/tsconfig.json"
   filename="tsconfig.json"
-  snippetRange="23-31"
-  snippetHighlight="4,6"
+  snippetRange="9-17"
+  snippetHighlight="3,6"
   snippetTitle="Ce que vérifie le typecheck du web"
   fullFileTitle="Voir le fichier complet"
 />
@@ -66,7 +66,7 @@ Le dépôt n’est pas **un** projet TypeScript mais plusieurs, chacun avec son 
 
 <DocsTable columnsJson='["Projet", "Commande", "Ce qu’il vérifie"]' rowsJson='[["apps/web", "pnpm --filter web typecheck", "L’application, et avec ses propres règles tout ce qu’elle inclut : les contrats, le moteur du Finder, la configuration partagée."], ["packages/backend", "pnpm --filter backend typecheck", "Le backend et les contrats, avec les règles du backend."], ["La racine", "tsc -p tsconfig.json", "prisma.config.ts, les scripts TypeScript de prisma/, et les tests de bout en bout (playwright.config.ts, e2e/, chapitre 4)."]]' />
 
-Les contrats sont donc vérifiés deux fois, une fois par chacun de leurs lecteurs : c’est voulu, chaque projet les compile avec ses propres alias et ses propres options, et une incompatibilité avec l’un des deux doit se voir.
+Les contrats sont donc vérifiés deux fois, une fois par chacun de leurs lecteurs : c’est voulu, chaque projet les compile avec ses propres options, et une incompatibilité avec l’un des deux doit se voir.
 
 La troisième ligne est récente. La configuration de la racine ne servait qu’à l’éditeur : `prisma.config.ts` n’était vérifié par **rien**. Un fichier que personne ne vérifie finit par contenir une erreur que personne ne voit.
 
@@ -76,7 +76,7 @@ La troisième ligne est récente. La configuration de la racine ne servait qu’
   filename="tsconfig.json"
   snippetStart="{"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="10"
+  snippetHighlight="7"
   snippetTitle="La configuration de la racine"
   fullFileTitle="Voir le fichier complet"
 />

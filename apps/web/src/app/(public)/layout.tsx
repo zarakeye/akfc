@@ -1,12 +1,12 @@
 import { JSX } from "react";
 
-import Header from "@features/app-shell/Header";
-import Footer from "@features/app-shell/Footer";
-import { prisma } from "@backend/prisma";
-import { BreakingNewsShell } from "@features/breaking-news/BreakingNewsShell";
-import { FirstLoginRedirect } from "@features/auth/FirstLoginRedirect";
-import { DraftPageBadge } from "@features/app-shell/DraftPageBadge";
-import { SkipLink } from "@features/app-shell/SkipLink";
+import Header from "#features/app-shell/Header.tsx";
+import Footer from "#features/app-shell/Footer.tsx";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { BreakingNewsShell } from "#features/breaking-news/BreakingNewsShell.tsx";
+import { FirstLoginRedirect } from "#features/auth/FirstLoginRedirect.tsx";
+import { DraftPageBadge } from "#features/app-shell/DraftPageBadge.tsx";
+import { SkipLink } from "#features/app-shell/SkipLink.tsx";
 
 /**
  * Layout du SITE PUBLIC.

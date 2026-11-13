@@ -4,15 +4,15 @@ import { TRPCError } from "@trpc/server";
 
 import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { getR2Bucket, getR2Client, getR2PresignClient } from "@backend/modules/storage/adapters/r2/client";
+import { getR2Bucket, getR2Client, getR2PresignClient } from "#modules/storage/adapters/r2/client.ts";
 import {
   IMAGE_CONSENT_FORM_MAX_BYTES,
   IMAGE_CONSENT_FORM_MIME_EXT,
   consentFromUsages,
   type ImageUsageValue,
-} from "@contracts/legal/imageConsent";
-import { sendImageConsentNotice } from "@backend/email/templates/imageConsentNotice";
-import { latestFormUsages } from "@backend/modules/imageConsent/formOrder";
+} from "@akfc/contracts/legal/imageConsent.ts";
+import { sendImageConsentNotice } from "#email/templates/imageConsentNotice.ts";
+import { latestFormUsages } from "#modules/imageConsent/formOrder.ts";
 
 /**
  * Formulaires de droit à l'image SIGNÉS — déposés par un admin sur la fiche d'un membre.

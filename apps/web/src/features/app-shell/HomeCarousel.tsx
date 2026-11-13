@@ -10,7 +10,7 @@ import {
   GalleryHorizontalEnd,
 } from "lucide-react";
 
-import { trpcClient } from "@trpc/trpcClient";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
 
 type CarouselItem = {
   mediaAssetId: string;

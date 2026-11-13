@@ -2,12 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     // "outDir": "dist",
-    "paths": {
-      "@backend/*": ["./src/*"],
-      "@contracts/*": ["../contracts/src/*"],
-    },
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": false
+    "moduleResolution": "bundler"
   },
   "include": ["src", "../contracts/src/**/*.ts", "../contracts/src/slug/slug.schema.ts"]
 }

@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
-import { verifyPassword } from "@backend/lib/auth/password";
-import { createThrottle } from "@backend/lib/security/throttle";
+import { verifyPassword } from "#lib/auth/password.ts";
+import { createThrottle } from "#lib/security/throttle.ts";
 
 /**
  * Vérification du mot de passe d'un membre DÉJÀ connecté (changer de mot de passe, confirmer un

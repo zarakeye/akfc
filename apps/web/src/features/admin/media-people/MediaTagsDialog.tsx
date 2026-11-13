@@ -4,9 +4,9 @@ import { useId, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { IMAGE_USAGE_VALUES, type ImageUsageValue } from "@contracts/legal/imageConsent";
-import type { PersonUsageState, UsageVerdict } from "@contracts/legal/mediaPeople";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { IMAGE_USAGE_VALUES, type ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
+import type { PersonUsageState, UsageVerdict } from "@akfc/contracts/legal/mediaPeople.ts";
 
 import { USAGE_ORDER_HINT, VerdictBadges } from "./RightsBadges";
 

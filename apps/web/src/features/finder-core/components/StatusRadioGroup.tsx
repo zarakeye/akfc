@@ -4,13 +4,13 @@ import { useMemo, type JSX } from 'react';
 import { Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 
-import type { FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
 import {
   statusOf,
   type LifecycleStatus,
-} from '@features/finder-core/utils/statusFolders';
-import { useStatusChange } from '@features/finder-core/hooks/useStatusChange';
+} from '#features/finder-core/utils/statusFolders.ts';
+import { useStatusChange } from '#features/finder-core/hooks/useStatusChange.ts';
 
 // ⚠️ `value` reste 'published' : c'est la valeur du contrat et de la base.
 // Seul le LIBELLÉ change. Un admin valide un média — il le rend utilisable

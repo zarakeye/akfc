@@ -2,8 +2,8 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { NextRequest } from "next/server";
 
-import { prisma } from "@backend/prisma";
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
+import { prisma } from "#prisma.ts";
+import { getSessionFromRequest } from "#modules/auth/getSessionFromRequest.ts";
 import { APP_ROOT } from "../../../config/app";
 
 export type TRPCContext = {

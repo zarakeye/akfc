@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 
-import { prisma } from "@backend/prisma";
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
-import { getR2Bucket, getR2Client } from "@backend/modules/storage/adapters/r2/client";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
+import { getR2Bucket, getR2Client } from "@akfc/backend/modules/storage/adapters/r2/client.ts";
 
 /**
  * Formulaire de droit à l'image signé — servi au membre CONCERNÉ et aux admins seulement.

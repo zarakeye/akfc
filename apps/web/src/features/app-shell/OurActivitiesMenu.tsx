@@ -7,10 +7,10 @@ import {
   NAV_ACTIVE,
   NAV_SUB_ACTIVE_BAR,
   NAV_SUB_ACTIVE_PANEL,
-} from "@features/app-shell/navEntries";
-import { trpc } from "@trpc/trpcClient";
-import { useDisclosure } from "@features/app-shell/useDisclosure";
-import { compareFamilies, compareNames } from "@features/app-shell/disciplineOrder";
+} from "#features/app-shell/navEntries.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { useDisclosure } from "#features/app-shell/useDisclosure.ts";
+import { compareFamilies, compareNames } from "#features/app-shell/disciplineOrder.ts";
 
 /**
  * Menu public « Nos disciplines ».

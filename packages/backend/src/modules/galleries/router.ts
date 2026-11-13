@@ -2,15 +2,15 @@ import {
   router,
   protectedProcedure,
   publicProcedure,
-} from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
+} from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
-import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
-import { deriveMediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
+import { buildMediaProxyUrl } from "#modules/media/helpers/media-url.ts";
+import { deriveMediaKind } from "#modules/media/helpers/deriveMediaKind.ts";
 import { z } from "zod";
-import { CAROUSEL_SLUG } from "@contracts/legal/mediaPeople";
-import { galleryRightsError, refusedMediaIds } from "@backend/modules/mediaPeople/mediaPeople.service";
+import { CAROUSEL_SLUG } from "@akfc/contracts/legal/mediaPeople.ts";
+import { galleryRightsError, refusedMediaIds } from "#modules/mediaPeople/mediaPeople.service.ts";
 
 /**
  * Router `gallery`.

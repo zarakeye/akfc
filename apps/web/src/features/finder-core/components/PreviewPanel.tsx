@@ -4,17 +4,17 @@ import { JSX, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { FileSearch, Files, FileWarning, Maximize2 } from 'lucide-react';
 
-import type { FileAdapter, FinderNode, FinderNodeMetadata } from '@contracts/finder';
+import type { FileAdapter, FinderNode, FinderNodeMetadata } from '@akfc/contracts/finder/index.ts';
 
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { useNodeMetadata } from '@features/finder-core/hooks/useNodeMetadata';
-import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextContent';
-import { resolveSelection } from '@features/finder-core/utils/resolveSelection';
-import { formatBytes } from '@features/finder-core/utils/formatBytes';
-import { formatDate } from '@features/finder-core/utils/formatDate';
-import PreviewModal from '@features/finder-core/components/PreviewModal';
-import DescriptionField from '@features/finder-core/components/DescriptionField';
-import VersionsPanel from '@features/finder-core/components/VersionsPanel';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { useNodeMetadata } from '#features/finder-core/hooks/useNodeMetadata.ts';
+import { useNodeTextContent } from '#features/finder-core/hooks/useNodeTextContent.ts';
+import { resolveSelection } from '#features/finder-core/utils/resolveSelection.ts';
+import { formatBytes } from '#features/finder-core/utils/formatBytes.ts';
+import { formatDate } from '#features/finder-core/utils/formatDate.ts';
+import PreviewModal from '#features/finder-core/components/PreviewModal.tsx';
+import DescriptionField from '#features/finder-core/components/DescriptionField.tsx';
+import VersionsPanel from '#features/finder-core/components/VersionsPanel.tsx';
 
 /* -------------------------------------------------------------------------- */
 /*                              PREVIEW KIND                                  */

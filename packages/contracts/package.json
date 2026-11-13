@@ -1,13 +1,12 @@
 {
-  "name": "@workspace/contracts",
+  "name": "@akfc/contracts",
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
   "exports": {
-    "./auth/*": "./src/auth/*.ts",
-    "./users/*": "./src/users/*.ts",
-    "./trash/*": "./src/trash/*.ts",
-    "./slug/*": "./src/slug/*.ts",
-    "./categories/*": "./src/categories/*.ts"
+    "./*": "./src/*"
   }
 }

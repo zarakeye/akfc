@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useThrottledCallback } from "@hooks/use-throttled-callback"
+import { useThrottledCallback } from "#hooks/use-throttled-callback.ts"
 
 export type RectState = Omit<DOMRect, "toJSON">
 

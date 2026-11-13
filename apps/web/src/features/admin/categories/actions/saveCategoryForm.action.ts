@@ -2,11 +2,11 @@
 
 import { Prisma } from "@prisma/client";
 
-import { prisma } from "@backend/prisma";
-import { APP_ROOT } from "@config/app";
-import { categoryFolderPath, newCategorySegment, setFolderLabel } from "@backend/modules/storage/storageSegments";
-import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
-import { saveCategoryFormSchema } from "@contracts/forms/saveCategoryForm.schema";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
+import { categoryFolderPath, newCategorySegment, setFolderLabel } from "@akfc/backend/modules/storage/storageSegments.ts";
+import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "#features/admin/common/actions/callerIsAdmin.ts";
+import { saveCategoryFormSchema } from "@akfc/contracts/forms/saveCategoryForm.schema.ts";
 
 export type SaveCategoryFormState = {
   success: boolean;

@@ -1,7 +1,7 @@
 'use client';
 
-import Finder from '@features/finder-core/components/Finder';
-import { finderStorageAdapter } from '@/features/finder-adapters/storage/finderStorage.adapter';
+import Finder from '#features/finder-core/components/Finder.tsx';
+import { finderStorageAdapter } from '#features/finder-adapters/storage/finderStorage.adapter.ts';
 
 /**
  * Page de test du finder agnostique.

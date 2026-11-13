@@ -1,2 +1,2 @@
-export * from '@contracts/finder/adapter';
-export * from '@contracts/finder/node';
+export * from '#finder/adapter.ts';
+export * from '#finder/node.ts';

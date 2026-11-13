@@ -1,9 +1,9 @@
 import { TRPCError } from "@trpc/server";
 
-import { prisma } from "@backend/prisma";
-import { createSessionJWT } from "@backend/lib/session/session.server";
-import { UNKNOWN_ACCOUNT_HASH, verifyPassword } from "@backend/lib/auth/password";
-import { createThrottle } from "@backend/lib/security/throttle";
+import { prisma } from "#prisma.ts";
+import { createSessionJWT } from "#lib/session/session.server.ts";
+import { UNKNOWN_ACCOUNT_HASH, verifyPassword } from "#lib/auth/password.ts";
+import { createThrottle } from "#lib/security/throttle.ts";
 
 /**
  * Essais de mot de passe : 10 échecs par quart d'heure et par adresse. Au-delà, l'adresse est

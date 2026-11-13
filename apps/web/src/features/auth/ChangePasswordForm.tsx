@@ -5,9 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { trpc } from "@trpc/trpcClient";
-import { changePasswordSchema } from "@contracts/auth/auth.schema";
-import { PasswordField } from "@features/auth/PasswordField";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { changePasswordSchema } from "@akfc/contracts/auth/auth.schema.ts";
+import { PasswordField } from "#features/auth/PasswordField.tsx";
 
 /**
  * ChangePasswordForm — changement de mot de passe (utilisateur connecté).

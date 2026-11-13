@@ -1,9 +1,9 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
-import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
-import { groupIdFromLogicalPath } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
+import { resolveGroupBaseFolder } from "#modules/media/services/resolveGroupBaseFolder.service.ts";
+import { isSpaceEmpty } from "#modules/storage/isSpaceEmpty.service.ts";
+import { groupIdFromLogicalPath } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
 
 /**
  * Supprime un groupe et son espace, en cascade SÛRE (décisions A→E) :

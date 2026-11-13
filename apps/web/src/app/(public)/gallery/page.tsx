@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo, useState, type JSX } from "react";
 
-import { trpcClient } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import {
   GalleryLightbox,
   type LightboxItem,
-} from "@features/gallery-public/GalleryLightbox";
+} from "#features/gallery-public/GalleryLightbox.tsx";
 import {
   GalleryGroupedView,
   type GroupedGallery,
-} from "@features/gallery-public/GalleryGroupedView";
+} from "#features/gallery-public/GalleryGroupedView.tsx";
 
 /**
  * Page publique des galeries — `/gallery`.

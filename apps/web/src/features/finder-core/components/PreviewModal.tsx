@@ -3,7 +3,7 @@
 import { JSX, useEffect } from 'react';
 import { X } from 'lucide-react';
 
-import type { FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
 import { PreviewRenderer, type PreviewKind } from './PreviewPanel';
 

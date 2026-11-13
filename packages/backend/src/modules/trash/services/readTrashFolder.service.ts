@@ -6,10 +6,10 @@ import type {
   TrashFileNode,
   TrashFolderNode,
   TrashMeta,
-} from "@contracts/trash/trash-node.types";
+} from "@akfc/contracts/trash/trash-node.types.ts";
 
-import { normalizePath } from "@backend/modules/trash/utils";
-import { r2ListByPrefix } from "@backend/modules/trash/services/r2TrashOps";
+import { normalizePath } from "#modules/trash/utils.ts";
+import { r2ListByPrefix } from "#modules/trash/services/r2TrashOps.ts";
 
 /**
  * readTrashFolder.service.ts

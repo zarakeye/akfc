@@ -1,11 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 
-import type { StorageProvider } from "@contracts/storage";
+import type { StorageProvider } from "@akfc/contracts/storage/index.ts";
 
 import {
   createR2StorageAdapter,
   type R2StorageAdapter,
-} from "@backend/modules/storage/adapters/r2";
+} from "#modules/storage/adapters/r2/index.ts";
 
 /**
  * providerRegistry.ts
@@ -15,7 +15,7 @@ import {
  *
  * Un seul provider depuis la sortie de Cloudinary : R2. Ajouter un stockage
  * consisterait à implémenter sa factory dans `adapters/<provider>/`, l'ajouter
- * ici et étendre `storageProviderSchema` dans `@contracts/storage`.
+ * ici et étendre `storageProviderSchema` dans `@akfc/contracts/storage/…`.
  */
 
 export type StorageAdapterDeps = {

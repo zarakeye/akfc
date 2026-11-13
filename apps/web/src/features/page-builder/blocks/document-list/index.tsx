@@ -1,5 +1,5 @@
 import { FileText } from "lucide-react";
-import type { DocumentListBlockV1 } from "@contracts/page";
+import type { DocumentListBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockDefinition } from "../../BlockDefinition.types";
 

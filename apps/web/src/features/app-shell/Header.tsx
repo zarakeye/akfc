@@ -1,16 +1,16 @@
 'use client';
 
 import Link from "next/link";
-import LoginForm from "@features/auth/components/LoginForm";
-import UserMenu from "@features/app-shell/UserMenu";
-import { NotificationBell } from "@features/app-shell/NotificationBell";
-import { CollaborativeBell } from "@features/app-shell/CollaborativeBell";
+import LoginForm from "#features/auth/components/LoginForm.tsx";
+import UserMenu from "#features/app-shell/UserMenu.tsx";
+import { NotificationBell } from "#features/app-shell/NotificationBell.tsx";
+import { CollaborativeBell } from "#features/app-shell/CollaborativeBell.tsx";
 import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useCurrentUser } from "@features/auth/InitialSession";
-import OurActivitiesMenu from "@features/app-shell/OurActivitiesMenu";
+import { useCurrentUser } from "#features/auth/InitialSession.tsx";
+import OurActivitiesMenu from "#features/app-shell/OurActivitiesMenu.tsx";
 import {
   NAV_ACTIVE,
   NAV_SUB_ACTIVE_BAR,
@@ -18,10 +18,10 @@ import {
   NAV_ENTRIES,
   NAV_GLOW,
   type NavEntry,
-} from "@features/app-shell/navEntries";
-import { trpc } from "@trpc/trpcClient";
-import { ThemeToggle } from "@features/theme";
-import { useDisclosure } from "@features/app-shell/useDisclosure";
+} from "#features/app-shell/navEntries.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { ThemeToggle } from "#features/theme/index.ts";
+import { useDisclosure } from "#features/app-shell/useDisclosure.ts";
 
 /**
  * En-tête de l'application, en deux rendus alimentés par la MÊME source

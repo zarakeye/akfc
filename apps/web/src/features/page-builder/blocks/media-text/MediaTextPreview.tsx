@@ -3,12 +3,12 @@
 import { type CSSProperties, type JSX } from "react";
 import { hasRichText, richTextHtml } from "../../richTextHtml";
 
-import type { MediaTextBlockV1 } from "@contracts/page";
+import type { MediaTextBlockV1 } from "@akfc/contracts/page/index.ts";
 import {
   useResolvedPreviewMedia,
   type PreviewResolution as Resolution,
   type ResolvedPreviewMedia,
-} from "@features/page-builder/components/useResolvedPreviewMedia";
+} from "#features/page-builder/components/useResolvedPreviewMedia.ts";
 
 /**
  * Preview CLIENT du bloc media-text, affichée sous l'éditeur dans le builder.

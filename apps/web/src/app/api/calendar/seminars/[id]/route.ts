@@ -1,5 +1,5 @@
-import { prisma } from "@backend/prisma";
-import { buildICalendar, type ICalEventInput } from "@lib/calendar/ical";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { buildICalendar, type ICalEventInput } from "#lib/calendar/ical.ts";
 
 /**
  * GET /api/calendar/seminars/[id]

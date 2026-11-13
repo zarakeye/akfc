@@ -5,12 +5,12 @@ import { JSX, startTransition, useActionState, useEffect, useState } from "react
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Origin } from "@prisma/client";
 
-import { saveOriginFormSchema } from "@contracts/forms/saveOriginForm.schema";
+import { saveOriginFormSchema } from "@akfc/contracts/forms/saveOriginForm.schema.ts";
 import {
   saveOriginFormAction,
   type SaveOriginFormState,
-} from "@features/admin/origins/actions/saveOriginForm.action";
-import { slugify } from "@contracts/slug/slugify";
+} from "#features/admin/origins/actions/saveOriginForm.action.ts";
+import { slugify } from "@akfc/contracts/slug/slugify.ts";
 import {
   Form,
   FormControl,
@@ -18,11 +18,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@components/ui/form";
-import { Input } from "@components/ui/Input";
-import { Button } from "@components/ui/Button";
-import { trpc } from "@trpc/trpcClient";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+} from "#components/ui/form.tsx";
+import { Input } from "#components/ui/Input.tsx";
+import { Button } from "#components/ui/Button.tsx";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 interface FormValues {
   name: string;

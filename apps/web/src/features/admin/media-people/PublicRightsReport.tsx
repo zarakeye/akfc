@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, type JSX } from "react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 
 import { MediaTagsDialog } from "./MediaTagsDialog";
 

@@ -3,19 +3,19 @@
 import { useState } from "react";
 import type { Audience, Course, Day } from "@prisma/client";
 
-import { PageBuilder } from "@features/page-builder";
-import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
-import { APP_ROOT } from "@config/app";
+import { PageBuilder } from "#features/page-builder/index.ts";
+import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
 
-import { DisciplineSelect } from "@features/admin/common/components/DisciplineSelect";
-import { InstructorSelect } from "@features/admin/common/components/InstructorSelect";
-import { TimeInput } from "@features/admin/common/components/TimeInput";
+import { DisciplineSelect } from "#features/admin/common/components/DisciplineSelect.tsx";
+import { InstructorSelect } from "#features/admin/common/components/InstructorSelect.tsx";
+import { TimeInput } from "#features/admin/common/components/TimeInput.tsx";
 
 import {
   emptyPageContentV1,
   parsePageContentV1,
   type PageContentV1,
-} from "@contracts/page";
+} from "@akfc/contracts/page/index.ts";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types                                                                  */

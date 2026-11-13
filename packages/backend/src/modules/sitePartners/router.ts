@@ -1,15 +1,15 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
+import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
 import {
   isSafeHttpUrl,
   LOGO_MIME_TYPES,
   logoUrlOf,
   parseLinks,
   validateLogo,
-} from "@backend/modules/sitePartners/sitePartners.service";
+} from "#modules/sitePartners/sitePartners.service.ts";
 
 const httpUrl = z.string().trim().max(500).refine(isSafeHttpUrl, "Adresse web invalide (http:// ou https://).");
 

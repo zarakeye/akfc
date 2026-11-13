@@ -2,12 +2,12 @@
 
 import { JSX, useState } from 'react';
 import { Folder, FileText } from 'lucide-react';
-import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
-import { trashTooltip } from '@features/trash-view/lib/trashDates';
+import type { TrashEntryDTO } from '@akfc/contracts/trash/trash.dto.ts';
+import { trashTooltip } from '#features/trash-view/lib/trashDates.ts';
 
 // La MÊME fonction que `mapFileToFinderNode` utilise pour la grille du
 // finder : une seule façon de fabriquer une URL de média.
-import { getMediaUrl } from '@features/finder-adapters/storage/utils';
+import { getMediaUrl } from '#features/finder-adapters/storage/utils.ts';
 
 type Props = {
   entry: TrashEntryDTO;

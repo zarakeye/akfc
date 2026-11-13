@@ -2,21 +2,21 @@
 
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { useDropzone } from "react-dropzone";
-import { HEIC_ACCEPT, heicFailureMessage, heicProgressMessage, isHeicFile, toBrowserImages } from "@features/media/heic/browserImages";
+import { HEIC_ACCEPT, heicFailureMessage, heicProgressMessage, isHeicFile, toBrowserImages } from "#features/media/heic/browserImages.ts";
 import { Camera, Check, ImageUp, Loader2, Trash2, Video, X } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { useAvatarVersionStore } from "@lib/stores/useAvatarVersionStore";
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { avatarUrlFor } from "@features/social/userDisplay";
-import Cropper from "@features/gallery-crop/components/Cropper";
-import type { PictureItem } from "@features/gallery-crop/types/picture.types";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { useAvatarVersionStore } from "#lib/stores/useAvatarVersionStore.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { avatarUrlFor } from "#features/social/userDisplay.ts";
+import Cropper from "#features/gallery-crop/components/Cropper.tsx";
+import type { PictureItem } from "#features/gallery-crop/types/picture.types.ts";
 import type {
   CropResult,
   CropRecipe,
   Shape,
-} from "@features/gallery-crop/types/cropper.types";
-import { CameraCapture } from "@features/avatar/CameraCapture";
+} from "#features/gallery-crop/types/cropper.types.ts";
+import { CameraCapture } from "#features/avatar/CameraCapture.tsx";
 
 /**
  * AvatarUploader — trois sources (glisser-déposer, picker fichier, caméra

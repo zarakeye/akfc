@@ -3,9 +3,9 @@
 import { JSX, useEffect, useRef, useState } from 'react';
 import { Loader2, Check, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
-import type { FinderNode } from '@contracts/finder';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
 /**
  * ✏️ DescriptionField — champ description éditable d'un fichier sélectionné.

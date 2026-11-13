@@ -1,15 +1,15 @@
 import crypto from "crypto";
-import { assertPasswordOfConnectedUser } from "@backend/lib/security/passwordCheck";
+import { assertPasswordOfConnectedUser } from "#lib/security/passwordCheck.ts";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getR2Bucket, getR2Client } from "@backend/modules/storage/adapters/r2/client";
-import { sendImageConsentNotice } from "@backend/email/templates/imageConsentNotice";
-import { buildConsentPdf } from "@backend/modules/imageConsent/consentPdf.service";
-import { IMAGE_CONSENT_ROOT } from "@backend/modules/imageConsent/imageConsentForm.service";
-import { latestFormUsages } from "@backend/modules/imageConsent/formOrder";
-import { pendingGuardianRequest } from "@backend/modules/imageConsent/imageConsentGuardian.service";
+import { getR2Bucket, getR2Client } from "#modules/storage/adapters/r2/client.ts";
+import { sendImageConsentNotice } from "#email/templates/imageConsentNotice.ts";
+import { buildConsentPdf } from "#modules/imageConsent/consentPdf.service.ts";
+import { IMAGE_CONSENT_ROOT } from "#modules/imageConsent/imageConsentForm.service.ts";
+import { latestFormUsages } from "#modules/imageConsent/formOrder.ts";
+import { pendingGuardianRequest } from "#modules/imageConsent/imageConsentGuardian.service.ts";
 import {
   IMAGE_CONSENT_TEXT_VERSION,
   IMAGE_USAGE_VALUES,
@@ -17,7 +17,7 @@ import {
   effectiveLegalAge,
   missingForMinor,
   type ImageUsageValue,
-} from "@contracts/legal/imageConsent";
+} from "@akfc/contracts/legal/imageConsent.ts";
 
 /**
  * Droit à l'image donné EN LIGNE.

@@ -4,9 +4,9 @@ import { type JSX, use, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { EVENT_LABEL, STATUS_CLASS, STATUS_LABEL, dateTime, dueLabel } from "@features/tickets/ticketUi";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { EVENT_LABEL, STATUS_CLASS, STATUS_LABEL, dateTime, dueLabel } from "#features/tickets/ticketUi.ts";
 
 /**
  * Une demande — `/dashboard/tickets/[id]` : fil des messages, réponse signée, prise en charge,

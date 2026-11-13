@@ -2,14 +2,14 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
-import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
+import { router, protectedProcedure, publicProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
+import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaReferences.service.ts";
 
-import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
-import { slugSchema } from "@contracts/slug/slug.schema";
-import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
-import { assertPublicContentRights, assertPublicMediaRights } from "@backend/modules/mediaPeople/publicContentRights.service";
+import { pageContentSchemaV1, parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import { slugSchema } from "@akfc/contracts/slug/slug.schema.ts";
+import { assertOwnAvatars } from "#modules/media/services/assertOwnAvatars.service.ts";
+import { assertPublicContentRights, assertPublicMediaRights } from "#modules/mediaPeople/publicContentRights.service.ts";
 
 /**
  * events/router.ts

@@ -1,13 +1,13 @@
 import { JSX, useEffect, useMemo } from 'react';
-import Finder from '@features/finder-core/components/Finder';
-import { Modal } from '@components/ui/Modal';
-import type { FileAdapter, FinderNode } from '@contracts/finder';
-import { usePickerCartStore } from '@finder-core/cart/usePickerCartStore';
-import { PickerCart } from '@features/finder-core/components/PickerCart';
+import Finder from '#features/finder-core/components/Finder.tsx';
+import { Modal } from '#components/ui/Modal.tsx';
+import type { FileAdapter, FinderNode } from '@akfc/contracts/finder/index.ts';
+import { usePickerCartStore } from '@akfc/finder-core/cart/usePickerCartStore.ts';
+import { PickerCart } from '#features/finder-core/components/PickerCart.tsx';
 import {
   isPickable,
   isMediaNode,
-} from '@features/finder-core/utils/statusFolders';
+} from '#features/finder-core/utils/statusFolders.ts';
 
 type Props = {
   open: boolean;
@@ -48,7 +48,7 @@ type Props = {
  *
  * ─── Source de vérité ───────────────────────────────────────────────────────
  *
- * Le panier vit dans `usePickerCartStore` (`@workspace/finder-core`), partagé
+ * Le panier vit dans `usePickerCartStore` (`@akfc/finder-core`), partagé
  * et portable. Ce composant ne fait que le brancher au Finder (pickMode +
  * onPickToggle) et au bandeau (PickerCart). La validation extrait les paths du
  * panier et les passe à `onSubmit`.

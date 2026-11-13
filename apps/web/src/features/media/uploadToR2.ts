@@ -1,4 +1,4 @@
-import type { UploadDestination } from "@contracts/storage/upload-destination.schema";
+import type { UploadDestination } from "@akfc/contracts/storage/upload-destination.schema.ts";
 
 /**
  * Les trois temps d'un envoi vers le stockage, pour un fichier :

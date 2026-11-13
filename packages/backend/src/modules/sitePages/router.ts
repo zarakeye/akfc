@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 
-import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
-import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
+import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
+import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaReferences.service.ts";
 
-import { pageContentSchemaV1 } from "@contracts/page";
-import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
-import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
+import { pageContentSchemaV1 } from "@akfc/contracts/page/index.ts";
+import { assertOwnAvatars } from "#modules/media/services/assertOwnAvatars.service.ts";
+import { assertPublicContentRights } from "#modules/mediaPeople/publicContentRights.service.ts";
 
 /**
  * Pages de contenu éditoriales du site.

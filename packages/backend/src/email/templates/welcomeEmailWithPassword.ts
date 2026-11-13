@@ -1,7 +1,7 @@
 import type SMTPTransport from "nodemailer/lib/smtp-transport";
 
-import { prisma } from "@backend/prisma";
-import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "@backend/email/mailer";
+import { prisma } from "#prisma.ts";
+import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "#email/mailer.ts";
 
 /*
  * E-mail de bienvenue (avec le mot de passe généré) et avis au club.

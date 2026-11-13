@@ -3,25 +3,25 @@
 import { useState } from "react";
 import type { Discipline, DisciplineType } from "@prisma/client";
 
-import { PageBuilder } from "@features/page-builder";
-import { trpc, trpcClient } from "@/core/trpc/trpcClient";
-import { MediaPicker } from "@/features/finder-core/components/MediaPicker";
-import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
-import { APP_ROOT } from "@config/app";
+import { PageBuilder } from "#features/page-builder/index.ts";
+import { trpc, trpcClient } from "#core/trpc/trpcClient.ts";
+import { MediaPicker } from "#features/finder-core/components/MediaPicker.tsx";
+import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
 
-import { CategorySelect } from "@features/admin/common/components/CategorySelect";
-import { OriginSelect } from "@features/admin/common/components/OriginSelect";
-import { FamilySelect } from "@/features/admin/common/components/FamilySelect";
-import { InstructorSelect } from "@features/admin/common/components/InstructorSelect";
+import { CategorySelect } from "#features/admin/common/components/CategorySelect.tsx";
+import { OriginSelect } from "#features/admin/common/components/OriginSelect.tsx";
+import { FamilySelect } from "#features/admin/common/components/FamilySelect.tsx";
+import { InstructorSelect } from "#features/admin/common/components/InstructorSelect.tsx";
 
-import { slugify } from "@contracts/slug/slugify";
+import { slugify } from "@akfc/contracts/slug/slugify.ts";
 import {
   emptyPageContentV1,
   parsePageContentV1,
   plainTextFromPageContentV1,
   DISCIPLINE_SUMMARY_MAX_CHARS,
   type PageContentV1,
-} from "@contracts/page";
+} from "@akfc/contracts/page/index.ts";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types                                                                  */

@@ -1,4 +1,4 @@
-import type { AudioCollectionBlockV1 } from "@contracts/page";
+import type { AudioCollectionBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockViewProps } from "../../BlockDefinition.types";
 

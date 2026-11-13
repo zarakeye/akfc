@@ -3,8 +3,8 @@
 import type { JSX } from "react";
 import { Send } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { formatDate, formatUsages } from "@features/image-consent/consentFormat";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { formatDate, formatUsages } from "#features/image-consent/consentFormat.ts";
 
 /**
  * Fiche d'un membre mineur (admin) : la demande envoyée à son parent référent — souhaits du

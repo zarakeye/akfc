@@ -1,7 +1,7 @@
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
-import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
+import { resolveGroupAccessForUser } from "#modules/memberGroups/resolveGroupAccessForUser.service.ts";
 
 /**
  * Propriétaire d'un segment d'espace `<slug>-<id>` : l'identifiant (cuid, sans tiret) suit le

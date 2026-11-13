@@ -5,8 +5,8 @@ section: "Étude de cas (1) : les tutoriels interactifs"
 order: 3
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Le moteur garde l’étape en cours dans l’onglet, fait passer les étapes de page en page, et ne laisse agir que la cible, à la souris comme au clavier.
 
@@ -108,7 +108,7 @@ Les tutos d’administration ont le leur, `e2e/tutos-admin.spec.ts`, sur le mêm
 
 À son premier lancement, le test s’est arrêté à l’étape 2 : la page de création d’une actualité ne s’affichait pas du tout (« This page couldn’t load »). Ce lancement-là tournait sur la machine de la relecture, sans Docker, où la connexion à la base passait par un module de remplacement. La console du navigateur désignait ce module — le **backend** de connexion à la base, exécuté… dans le navigateur.
 
-La chaîne était la suivante. Le formulaire d’actualité est un composant client ; il importe le constructeur de pages depuis l’entrée `@features/page-builder`. Cette entrée exportait aussi `PageRenderer`, le composant **serveur** qui affiche une page : il lit la base par Prisma et résout les médias. Importer l’entrée, c’était importer `PageRenderer`, donc le backend, dans le code envoyé au navigateur de chaque formulaire d’administration.
+La chaîne était la suivante. Le formulaire d’actualité est un composant client ; il importe le constructeur de pages depuis l’entrée `#features/page-builder/index.ts`. Cette entrée exportait aussi `PageRenderer`, le composant **serveur** qui affiche une page : il lit la base par Prisma et résout les médias. Importer l’entrée, c’était importer `PageRenderer`, donc le backend, dans le code envoyé au navigateur de chaque formulaire d’administration.
 
 En production, et dans les tests lancés sur un poste avec Docker, le client Prisma dispose d’une version pour navigateur : elle se construit sans erreur, et ne lève une erreur qu’à la première requête, que personne ne fait. Rien ne cassait, rien ne se voyait — mais chaque formulaire chargeait du code serveur qui n’avait rien à y faire. Le module de remplacement, lui, n’avait pas de version pour navigateur : il a rendu visible ce qui était là depuis longtemps.
 
@@ -119,7 +119,7 @@ En production, et dans les tests lancés sur un poste avec Docker, le client Pri
   snippetStart="// Entrée des composants du constructeur, importée par les formulaires CLIENT de l'administration."
   snippetLines="20"
   snippetHighlight="2"
-  snippetTitle="@features/page-builder : ce que l’entrée exporte"
+  snippetTitle="#features/page-builder/index.ts : ce que l’entrée exporte"
   fullFileTitle="Voir le fichier complet"
 />
 

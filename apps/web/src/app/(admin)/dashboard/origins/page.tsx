@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import OriginsTable from "@features/admin/origins/components/OriginsTable";
+import OriginsTable from "#features/admin/origins/components/OriginsTable.tsx";
 
 /** Liste des origines — `/(admin)/dashboard/origins`. */
 export default function OriginsPage(): JSX.Element {

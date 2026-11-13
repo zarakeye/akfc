@@ -14,7 +14,7 @@
  * proprement plutôt que d'essayer de le parser et planter.
  */
 
-import type { FinderNode } from "@contracts/finder";
+import type { FinderNode } from "@akfc/contracts/finder/index.ts";
 
 export const FINDER_DRAG_MIME = "application/x-finder-drag";
 

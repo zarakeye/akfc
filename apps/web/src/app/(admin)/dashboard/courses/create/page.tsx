@@ -4,12 +4,12 @@ import { JSX, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   CourseForm,
   type CourseFormInput,
-} from "@features/admin/courses/forms/CourseForm";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+} from "#features/admin/courses/forms/CourseForm.tsx";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 /**
  * Création d'un cours — `/(admin)/dashboard/courses/create`.

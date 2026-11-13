@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import type { Metadata } from "next";
 
-import { MyAppearances } from "@features/image-consent/MyAppearances";
+import { MyAppearances } from "#features/image-consent/MyAppearances.tsx";
 
 /**
  * « Où j'apparais » — `/profil/ou-j-apparais` (le proxy garde `/profil`). Les photos et vidéos où le

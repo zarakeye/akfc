@@ -3,13 +3,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
-import { prisma } from "@backend/prisma";
-import { parsePageContentV1 } from "@contracts/page";
-import { audienceFor, editorialAccess, UnderConstruction } from "@features/editorial/editorialGate";
-import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { getActivePartners } from "@features/partners/getActivePartners";
-import { PartnerLogo } from "@features/partners/PartnerLogo";
-import { PARTNER_ROLE_LABEL } from "@features/partners/partnerUi";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import { audienceFor, editorialAccess, UnderConstruction } from "#features/editorial/editorialGate.tsx";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
+import { getActivePartners } from "#features/partners/getActivePartners.ts";
+import { PartnerLogo } from "#features/partners/PartnerLogo.tsx";
+import { PARTNER_ROLE_LABEL } from "#features/partners/partnerUi.ts";
 
 /**
  * « S'inscrire » — `/inscription`.

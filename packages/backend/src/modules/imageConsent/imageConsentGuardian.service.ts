@@ -2,13 +2,13 @@ import crypto from "crypto";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-import { sendImageConsentNotice } from "@backend/email/templates/imageConsentNotice";
+import { sendImageConsentNotice } from "#email/templates/imageConsentNotice.ts";
 import {
   sendGuardianConsentLink,
   sendGuardianConsentResultToMember,
-} from "@backend/email/templates/imageConsentGuardian";
-import { buildConsentPdf } from "@backend/modules/imageConsent/consentPdf.service";
-import { latestFormUsages } from "@backend/modules/imageConsent/formOrder";
+} from "#email/templates/imageConsentGuardian.ts";
+import { buildConsentPdf } from "#modules/imageConsent/consentPdf.service.ts";
+import { latestFormUsages } from "#modules/imageConsent/formOrder.ts";
 import {
   fullName,
   maskEmail,
@@ -16,7 +16,7 @@ import {
   normalizeUsages,
   removeObject,
   storeReceipt,
-} from "@backend/modules/imageConsent/imageConsentOnline.service";
+} from "#modules/imageConsent/imageConsentOnline.service.ts";
 import {
   GUARDIAN_LINK_COOLDOWN_MS,
   GUARDIAN_LINK_TTL_MS,
@@ -28,7 +28,7 @@ import {
   missingForMinor,
   type ConsentChoices,
   type ImageUsageValue,
-} from "@contracts/legal/imageConsent";
+} from "@akfc/contracts/legal/imageConsent.ts";
 
 /**
  * Droit à l'image d'un membre MINEUR, validé en ligne par son parent référent.

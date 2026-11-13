@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { SITE_URL } from "@/config/siteUrl";
+import { SITE_URL } from "#config/siteUrl.ts";
 
 /**
  * robots.txt généré par Next.

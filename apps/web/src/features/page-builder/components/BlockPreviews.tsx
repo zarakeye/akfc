@@ -1,5 +1,5 @@
 import type { JSX, ReactNode } from "react";
-import type { PageBlockKindV1 } from "@contracts/page";
+import type { PageBlockKindV1 } from "@akfc/contracts/page/index.ts";
 
 /*
  * Aperçus des types de blocs du builder : une maquette filaire stylisée et une phrase,

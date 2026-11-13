@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import type { PageBlockV1, ResolvedMedia } from "@contracts/page";
+import type { PageBlockV1, ResolvedMedia } from "@akfc/contracts/page/index.ts";
 
 /**
  * Définition complète d'un type de bloc dans le builder de page.

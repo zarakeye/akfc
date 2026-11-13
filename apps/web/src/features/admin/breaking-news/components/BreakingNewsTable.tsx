@@ -3,8 +3,8 @@
 import { type JSX } from "react";
 import { useRouter } from "next/navigation";
 import { Table, type Column } from "react-ts-tab-lib";
-import { trpc } from "@trpc/trpcClient";
-import { deleteColumn } from "@features/admin/common/delete";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { deleteColumn } from "#features/admin/common/delete/index.ts";
 
 type NewsRow = {
   id: number;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { FileAdapter, FinderNodeMetadata } from '@contracts/finder';
+import type { FileAdapter, FinderNodeMetadata } from '@akfc/contracts/finder/index.ts';
 
 /**
  * 📊 Hook qui charge les métadonnées riches (taille, dates, format, mimeType)

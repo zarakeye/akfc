@@ -1,10 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true,
-    "paths": {
-      "@contracts/*": ["../contracts/src/*"]
-    }
+    "noEmit": true
   },
   "include": ["src/**/*.ts"]
 }

@@ -1,4 +1,4 @@
-import { PartSegment } from "@contracts/finder";
+import { PartSegment } from "@akfc/contracts/finder/index.ts";
 
 export function splitPath(path: string): string[] {
   return path.split('/').filter(Boolean);

@@ -85,7 +85,8 @@ test.describe.serial("Versions des fichiers", () => {
     expect(restore.status).toBe(403);
 
     await page.context().clearCookies();
-    await loginAs(page, USERS.limite.email);
+    // Un membre hors du groupe (pas « limite », réservé au test de la limite de connexions).
+    await loginAs(page, USERS.droitImage.email);
     expect((await trpcQuery(page.request, "fileVersion.list", { fullPath })).status).toBe(403);
   });
 

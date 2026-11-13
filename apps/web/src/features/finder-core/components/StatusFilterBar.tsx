@@ -3,7 +3,7 @@
 import { type JSX } from 'react';
 import clsx from 'clsx';
 
-import { useFinderStore, type StatusFilter } from '@features/finder-core/state/useFinderStore';
+import { useFinderStore, type StatusFilter } from '#features/finder-core/state/useFinderStore.ts';
 
 /**
  * La lentille de statut : Tous / En attente / Validés.

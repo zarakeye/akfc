@@ -1,11 +1,11 @@
 'use client';
 
 import { JSX, useState, type FormEvent } from "react";
-import { trpcClient } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import { useRouter } from "next/navigation";
-import { AUTH_ERRORS } from "@features/auth/errors/auth.errors";
-import { loginSchema } from "@contracts/auth/auth.schema";
+import { AUTH_ERRORS } from "#features/auth/errors/auth.errors.ts";
+import { loginSchema } from "@akfc/contracts/auth/auth.schema.ts";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 

@@ -4,12 +4,12 @@ import type {
   ListBinInput,
   ListBinOutput,
   TrashEntryDTO,
-} from "@contracts/trash/trash.dto";
+} from "@akfc/contracts/trash/trash.dto.ts";
 import {
   bigIntToSafeNumber,
   buildPreviousPathShort,
-} from "@backend/modules/trash/utils";
-import { purgeAtOf, trashRetentionDays, trashedByNameOf } from "@backend/modules/trash/services/trashRetention.service";
+} from "#modules/trash/utils.ts";
+import { purgeAtOf, trashRetentionDays, trashedByNameOf } from "#modules/trash/services/trashRetention.service.ts";
 
 /**
  * listBin.service.ts

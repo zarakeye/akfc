@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 
-import { telHref, whatsappHref, type SitePhone } from "@contracts/siteContact/siteContact.schema";
+import { telHref, whatsappHref, type SitePhone } from "@akfc/contracts/siteContact/siteContact.schema.ts";
 
 /**
  * Coordonnées publiques du club (Réglages du site → Coordonnées publiques) : e-mail, téléphones

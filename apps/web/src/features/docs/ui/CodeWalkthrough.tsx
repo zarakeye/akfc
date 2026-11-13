@@ -1,6 +1,6 @@
-import { readCodeFile, resolveSnippetBounds } from "@features/docs/lib/code.utils"
+import { readCodeFile, resolveSnippetBounds } from "#features/docs/lib/code.utils.ts"
 import { renderCodeBlockHtml } from "./CodeBlock"
-import { CodeWalkthroughClient } from "@features/docs/ui/CodeWalktroughClient"
+import { CodeWalkthroughClient } from "#features/docs/ui/CodeWalktroughClient.tsx"
 
 interface WalkthroughStep {
   title: string

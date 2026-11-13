@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import type { Metadata } from "next";
 
-import { PublicRightsReport } from "@features/admin/media-people/PublicRightsReport";
+import { PublicRightsReport } from "#features/admin/media-people/PublicRightsReport.tsx";
 
 /**
  * Droit à l'image des médias en ligne — `/(admin)/dashboard/droit-image`. Ce que le site public

@@ -3,11 +3,11 @@
 import { JSX, use } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { galleryDestinations } from "@contracts/legal/mediaPeople";
+import { galleryDestinations } from "@akfc/contracts/legal/mediaPeople.ts";
 
-import { trpc } from "@trpc/trpcClient";
-import { UpdateGalleryForm } from "@features/admin/galleries/forms/UpdateGalleryForm";
-import { GalleryItemsManager } from "@features/admin/galleries/components/GalleryItemsManager";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { UpdateGalleryForm } from "#features/admin/galleries/forms/UpdateGalleryForm.tsx";
+import { GalleryItemsManager } from "#features/admin/galleries/components/GalleryItemsManager.tsx";
 
 /**
  * Édition d'une galerie — `/(admin)/dashboard/galleries/[id]/edit`.

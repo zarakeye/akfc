@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { getDocsScroller, onDocsScroll } from "@features/docs/lib/docsScroller"
+import { getDocsScroller, onDocsScroll } from "#features/docs/lib/docsScroller.ts"
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)

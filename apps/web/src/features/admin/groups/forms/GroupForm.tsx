@@ -3,9 +3,9 @@
 import { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { Input } from "@components/ui/Input";
-import { Button } from "@components/ui/Button";
-import { trpc } from "@trpc/trpcClient";
+import { Input } from "#components/ui/Input.tsx";
+import { Button } from "#components/ui/Button.tsx";
+import { trpc } from "#core/trpc/trpcClient.ts";
 
 /**
  * Création d'un groupe : nom + case « collaboratif » + SELECT du groupe parent.

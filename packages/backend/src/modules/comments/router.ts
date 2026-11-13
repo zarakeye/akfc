@@ -2,10 +2,10 @@ import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { proseMirrorContentSchema } from "@contracts/shared/prosemirror";
+import { proseMirrorContentSchema } from "@akfc/contracts/shared/prosemirror.ts";
 
-import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
+import { router, protectedProcedure, publicProcedure } from "#trpc/core.ts";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
 
 /**
  * Router des commentaires (arborescents).

@@ -4,34 +4,34 @@ import { forwardRef, useCallback, useEffect, useState } from "react"
 import type { Editor } from "@tiptap/react"
 
 // --- Hooks ---
-import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
-import { useTiptapEditor } from "@/features/editor-tiptap/hooks/use-tiptap-editor"
+import { useIsBreakpoint } from "#hooks/use-is-breakpoint.ts"
+import { useTiptapEditor } from "#features/editor-tiptap/hooks/use-tiptap-editor.ts"
 
 // --- Icons ---
-import { CornerDownLeftIcon } from "@/features/editor-tiptap/icons/corner-down-left-icon"
-import { ExternalLinkIcon } from "@/features/editor-tiptap/icons/external-link-icon"
-import { LinkIcon } from "@/features/editor-tiptap/icons/link-icon"
-import { TrashIcon } from "@/features/editor-tiptap/icons/trash-icon"
+import { CornerDownLeftIcon } from "#features/editor-tiptap/icons/corner-down-left-icon.tsx"
+import { ExternalLinkIcon } from "#features/editor-tiptap/icons/external-link-icon.tsx"
+import { LinkIcon } from "#features/editor-tiptap/icons/link-icon.tsx"
+import { TrashIcon } from "#features/editor-tiptap/icons/trash-icon.tsx"
 
 // --- Tiptap UI ---
-import type { UseLinkPopoverConfig } from "@/features/editor-tiptap/ui/link-popover"
-import { useLinkPopover } from "@/features/editor-tiptap/ui/link-popover"
+import type { UseLinkPopoverConfig } from "#features/editor-tiptap/ui/link-popover/index.tsx"
+import { useLinkPopover } from "#features/editor-tiptap/ui/link-popover/index.tsx"
 
 // --- UI Primitives ---
-import type { ButtonProps } from "@/features/editor-tiptap/ui-primitive/button"
-import { Button, ButtonGroup } from "@/features/editor-tiptap/ui-primitive/button"
+import type { ButtonProps } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
+import { Button, ButtonGroup } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/features/editor-tiptap/ui-primitive/popover"
-import { Separator } from "@/features/editor-tiptap/ui-primitive/separator"
+} from "#features/editor-tiptap/ui-primitive/popover/index.tsx"
+import { Separator } from "#features/editor-tiptap/ui-primitive/separator/index.tsx"
 import {
   Card,
   CardBody,
   CardItemGroup,
-} from "@/features/editor-tiptap/ui-primitive/card"
-import { Input, InputGroup } from "@/features/editor-tiptap/ui-primitive/input"
+} from "#features/editor-tiptap/ui-primitive/card/index.tsx"
+import { Input, InputGroup } from "#features/editor-tiptap/ui-primitive/input/index.tsx"
 
 export interface LinkMainProps {
   /**

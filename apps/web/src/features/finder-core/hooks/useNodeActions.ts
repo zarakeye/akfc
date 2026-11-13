@@ -2,18 +2,18 @@
 
 import { useCallback } from 'react';
 
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
 
-import type { FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
 import {
   buildNodePool,
   resolveSelectedNodes,
-} from '@features/finder-core/utils/selectionNodes';
-import { isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
-import { baseNameOf } from '@features/finder-core/utils/fileType';
+} from '#features/finder-core/utils/selectionNodes.ts';
+import { isProtectedEntityFolder } from '#features/finder-core/utils/spaceFolderKind.ts';
+import { baseNameOf } from '#features/finder-core/utils/fileType.ts';
 
 const BIN_PATH = `${APP_ROOT}/bin`;
 

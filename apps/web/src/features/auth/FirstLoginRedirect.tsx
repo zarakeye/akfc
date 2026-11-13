@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 
 /**
  * Redirige un utilisateur en PREMIÈRE CONNEXION vers /profil/edit, pour

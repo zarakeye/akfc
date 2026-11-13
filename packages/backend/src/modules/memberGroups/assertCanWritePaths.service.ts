@@ -1,9 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
-import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
-import { groupIdFromLogicalPath } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
+import { resolveGroupAccessForUser } from "#modules/memberGroups/resolveGroupAccessForUser.service.ts";
+import { groupIdFromLogicalPath } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
 
 /**
  * Garde d'ÉCRITURE du finder (renommer, déplacer, changer un libellé) : un ADMIN écrit partout ;

@@ -2,15 +2,15 @@
 
 import { useState, type JSX } from "react";
 
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   emptyPageContentV1,
   parsePageContentV1,
   type PageContentV1,
-} from "@contracts/page";
-import { PageBuilder } from "@features/page-builder";
-import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
-import { APP_ROOT } from "@config/app";
+} from "@akfc/contracts/page/index.ts";
+import { PageBuilder } from "#features/page-builder/index.ts";
+import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
 
 /**
  * Éditeur d'une page de contenu, quelle qu'elle soit.

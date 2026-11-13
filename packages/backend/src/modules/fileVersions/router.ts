@@ -1,14 +1,14 @@
 import { z } from "zod";
 
-import { router, protectedProcedure } from "@backend/trpc/core";
-import { sameAppRoot } from "@backend/trpc/middleware";
+import { router, protectedProcedure } from "#trpc/core.ts";
+import { sameAppRoot } from "#trpc/middleware.ts";
 
 import {
   deleteVersion,
   listVersions,
   restoreVersion,
   versionDownloadUrl,
-} from "@backend/modules/fileVersions/fileVersions.service";
+} from "#modules/fileVersions/fileVersions.service.ts";
 
 /**
  * fileVersion.router.ts — anciennes versions d'un fichier de la bibliothèque.

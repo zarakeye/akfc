@@ -1,4 +1,4 @@
-import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "@backend/email/mailer";
+import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "#email/mailer.ts";
 
 /**
  * Une personne a été taguée sur des photos ou vidéos du club : un e-mail par séance de tags (au plus

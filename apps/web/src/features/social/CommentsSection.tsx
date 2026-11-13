@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useState, type JSX } from "react";
 
-import { trpcClient } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { ReactionsBar } from "@features/social/ReactionsBar";
-import { UserPortrait } from "@features/social/UserPortrait";
-import { formatUserName } from "@features/social/userDisplay";
-import { CommentEditor } from "@features/social/CommentEditor";
-import { CommentContent } from "@features/social/CommentContent";
-import type { ProseMirrorContent } from "@contracts/shared/prosemirror";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { ReactionsBar } from "#features/social/ReactionsBar.tsx";
+import { UserPortrait } from "#features/social/UserPortrait.tsx";
+import { formatUserName } from "#features/social/userDisplay.ts";
+import { CommentEditor } from "#features/social/CommentEditor.tsx";
+import { CommentContent } from "#features/social/CommentContent.tsx";
+import type { ProseMirrorContent } from "@akfc/contracts/shared/prosemirror.ts";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types & helpers                                                        */

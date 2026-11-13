@@ -1,4 +1,4 @@
-import { createThrottle } from "@backend/lib/security/throttle";
+import { createThrottle } from "#lib/security/throttle.ts";
 
 /**
  * Garde-fou contre l'envoi en rafale du formulaire de contact (robots, double clic insistant) :

@@ -3,8 +3,8 @@
 import { type JSX, useState } from "react";
 import Link from "next/link";
 
-import { trpc } from "@trpc/trpcClient";
-import { STATUS_CLASS, STATUS_LABEL, dueLabel, shortDate } from "@features/tickets/ticketUi";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { STATUS_CLASS, STATUS_LABEL, dueLabel, shortDate } from "#features/tickets/ticketUi.ts";
 
 /**
  * Demandes — `/dashboard/tickets`.

@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState, type JSX } from "react";
 
-import { trpcClient } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 
 type PollData = NonNullable<
   Awaited<ReturnType<typeof trpcClient.poll.getByPost.query>>

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 
-import { trpc } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 
 /**
  * Entrée de navbar « Documents » avec badge de non-lus (total DISTINCT) et, sur

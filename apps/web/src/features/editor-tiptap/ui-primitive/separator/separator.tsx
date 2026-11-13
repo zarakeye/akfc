@@ -1,7 +1,7 @@
 "use client"
 
 import { forwardRef } from "react"
-import { cn } from "@/lib/tiptap-utils"
+import { cn } from "#lib/tiptap-utils.ts"
 
 export type Orientation = "horizontal" | "vertical"
 

@@ -2,12 +2,12 @@
 
 import { type JSX, useState } from "react";
 
-import { trpc } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import {
   TICKET_BODY_MAX,
   TICKET_SUBJECT_MAX,
-} from "@contracts/tickets/ticket.schema";
+} from "@akfc/contracts/tickets/ticket.schema.ts";
 
 /**
  * Formulaire « Écrire au club » : crée une demande (ticket.submit). RÉSERVÉ AUX MEMBRES

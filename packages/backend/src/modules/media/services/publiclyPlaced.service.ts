@@ -1,6 +1,6 @@
 import type { PageReferencerKind, PrismaClient } from "@prisma/client";
 
-import { isEditorialPageKey } from "@contracts/page";
+import { isEditorialPageKey } from "@akfc/contracts/page/index.ts";
 
 /**
  * publiclyPlaced.service.ts — un fichier peut-il être servi à un visiteur anonyme ?

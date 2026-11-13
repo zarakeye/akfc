@@ -2,12 +2,12 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { prisma } from '@backend/prisma';
-import { APP_ROOT } from '@config/app';
-import { getR2Bucket, getR2Client } from '@backend/modules/storage/adapters/r2/client';
-import { resolveDeliveryKey, streamDerived } from '@backend/modules/media/services/mediaDerivatives.service';
-import { isPubliclyPlaced } from '@backend/modules/media/services/publiclyPlaced.service';
-import { outsideBin } from '@backend/modules/storage/mediaPaths';
+import { prisma } from '@akfc/backend/prisma.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import { getR2Bucket, getR2Client } from '@akfc/backend/modules/storage/adapters/r2/client.ts';
+import { resolveDeliveryKey, streamDerived } from '@akfc/backend/modules/media/services/mediaDerivatives.service.ts';
+import { isPubliclyPlaced } from '@akfc/backend/modules/media/services/publiclyPlaced.service.ts';
+import { outsideBin } from '@akfc/backend/modules/storage/mediaPaths.ts';
 
 /**
  * Route publique pour les fichiers R2 référencés depuis le page-builder.

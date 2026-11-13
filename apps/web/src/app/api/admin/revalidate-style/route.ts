@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
 
 /**
  * Invalide le rendu des pages après un enregistrement du réglage de style.

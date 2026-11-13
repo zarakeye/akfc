@@ -5,12 +5,12 @@ section: "Données (2) : écrire et faire évoluer"
 order: 1
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
-import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
-import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
-import PrismaCoreErdDiagram from "@/features/docs/diagrams/PrismaCoreErdDiagram"
-import PrismaCoreMemoryDiagram from "@/features/docs/diagrams/PrismaCoreMemoryDiagram"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+import { CodeSnippet } from "#features/docs/ui/CodeSnippet.tsx"
+import { CodeWalkthrough } from "#features/docs/ui/CodeWalkthrough.tsx"
+import PrismaCoreErdDiagram from "#features/docs/diagrams/PrismaCoreErdDiagram.tsx"
+import PrismaCoreMemoryDiagram from "#features/docs/diagrams/PrismaCoreMemoryDiagram.tsx"
 
 > **Précédemment.** Le site public est en place : il **lit** le modèle, typé par `prisma generate`, et montre les disciplines, les cours, les stages et les événements du club, derrière un header commun. Il n’écrit encore rien. La partie « Données (1) » avait laissé deux questions en suspens pour ce moment : écrire dans plusieurs tables sans laisser la base à moitié modifiée, et faire évoluer le schéma quand la base contient déjà des données.
 

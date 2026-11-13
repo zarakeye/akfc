@@ -2,19 +2,19 @@ import type { JSX } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { prisma } from "@backend/prisma";
+import { prisma } from "@akfc/backend/prisma.ts";
 import {
   audienceFor,
   editorialAccess,
   editorialRobots,
   UnderConstruction,
-} from "@features/editorial/editorialGate";
-import { parsePageContentV1 } from "@contracts/page";
-import { parseSitePhones } from "@contracts/siteContact/siteContact.schema";
+} from "#features/editorial/editorialGate.tsx";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import { parseSitePhones } from "@akfc/contracts/siteContact/siteContact.schema.ts";
 
-import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { ClubContactCard } from "@features/contact/ClubContactCard";
-import { MemberContactSection } from "@features/contact/MemberContactSection";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
+import { ClubContactCard } from "#features/contact/ClubContactCard.tsx";
+import { MemberContactSection } from "#features/contact/MemberContactSection.tsx";
 
 /**
  * « Nous contacter » (URL /contacts).

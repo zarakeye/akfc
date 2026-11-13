@@ -6,7 +6,7 @@ import type {
   StorageMoveOperation,
   StorageMoveSource,
   StorageNode,
-} from "@contracts/storage";
+} from "@akfc/contracts/storage/index.ts";
 
 /**
  * resolveMoveIntent.service.ts

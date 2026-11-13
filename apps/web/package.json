@@ -1,6 +1,9 @@
 {
-  "name": "web",
+  "name": "@akfc/web",
   "private": true,
+  "imports": {
+    "#*": "./src/*"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
@@ -16,7 +19,10 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@tiptap/core": "^3.27.1",
     "@tiptap/html": "^3.27.1",
-    "@workspace/finder-core": "workspace:*",
+    "@akfc/backend": "workspace:*",
+    "@akfc/config": "workspace:*",
+    "@akfc/contracts": "workspace:*",
+    "@akfc/finder-core": "workspace:*",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "gray-matter": "^4.0.3",

@@ -8,10 +8,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { AvatarUploader } from "@features/avatar/AvatarUploader";
-import { BlankConsentFormCard } from "@features/image-consent/BlankConsentFormCard";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { AvatarUploader } from "#features/avatar/AvatarUploader.tsx";
+import { BlankConsentFormCard } from "#features/image-consent/BlankConsentFormCard.tsx";
 import { updateMeFormAction } from "./updateMeForm.action";
 import {
   initialUpdateMeFormState,

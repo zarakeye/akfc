@@ -4,9 +4,9 @@ import { useState, type JSX } from "react";
 import { useRouter } from "next/navigation";
 import { FileDown } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { missingForMinor, type LegalAgeValue } from "@contracts/legal/imageConsent";
-import { LegalInfoFields, toLegalInput, type LegalInfoValue } from "@features/admin/users/legal/LegalInfoFields";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { missingForMinor, type LegalAgeValue } from "@akfc/contracts/legal/imageConsent.ts";
+import { LegalInfoFields, toLegalInput, type LegalInfoValue } from "#features/admin/users/legal/LegalInfoFields.tsx";
 
 /**
  * Fiche d'un utilisateur (admin) : majorité, date de naissance, parent référent. Un mineur peut

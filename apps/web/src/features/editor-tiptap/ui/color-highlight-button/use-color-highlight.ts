@@ -20,10 +20,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { useHotkeys } from "react-hotkeys-hook";
 
-import { useTiptapEditor } from "@/features/editor-tiptap/hooks/use-tiptap-editor";
-import { useIsBreakpoint } from "@/hooks/use-is-breakpoint";
-import { isMarkInSchema, isNodeTypeSelected } from "@/lib/tiptap-utils";
-import { HighlighterIcon } from "@/features/editor-tiptap/icons/highlighter-icon";
+import { useTiptapEditor } from "#features/editor-tiptap/hooks/use-tiptap-editor.ts";
+import { useIsBreakpoint } from "#hooks/use-is-breakpoint.ts";
+import { isMarkInSchema, isNodeTypeSelected } from "#lib/tiptap-utils.ts";
+import { HighlighterIcon } from "#features/editor-tiptap/icons/highlighter-icon.tsx";
 
 export const COLOR_HIGHLIGHT_SHORTCUT_KEY = "mod+shift+h";
 

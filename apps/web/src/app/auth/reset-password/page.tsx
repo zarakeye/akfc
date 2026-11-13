@@ -2,9 +2,9 @@
 
 import { JSX, Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { trpc } from "@trpc/trpcClient";
-import { PasswordField } from "@features/auth/PasswordField";
-import { PASSWORD_MIN_LENGTH, passwordSchema } from "@contracts/auth/auth.schema";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { PasswordField } from "#features/auth/PasswordField.tsx";
+import { PASSWORD_MIN_LENGTH, passwordSchema } from "@akfc/contracts/auth/auth.schema.ts";
 
 /**
  * /auth/reset-password?token=...[&bienvenue=1]

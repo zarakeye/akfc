@@ -1,14 +1,14 @@
 ---
 title: "TypeScript et ses tsconfig"
-description: "Qui vérifie les types, avec quelle configuration : le tsconfig commun et ses options, l'héritage par extends, les alias de chemins, la contrainte qu'impose un fichier compilé par deux configurations, et les fichiers de déclaration."
+description: "Qui vérifie les types, avec quelle configuration : le tsconfig commun et ses options, l'héritage par extends, des imports résolus par les package.json plutôt que par des alias, un fichier compilé par deux configurations, et les fichiers de déclaration."
 section: "Configuration"
 order: 2
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
-> **Précédemment.** Le dépôt réunit quatre paquets, qui se rejoignent par des alias plutôt que par leurs noms. Ces alias, comme toutes les options de TypeScript, vivent dans les fichiers `tsconfig`.
+> **Précédemment.** Le dépôt réunit cinq paquets, qui se rejoignent par `#…` dans un même paquet et `@akfc/…` d'un paquet à l'autre, deux champs de leurs `package.json`. Les options de TypeScript, elles, vivent dans les fichiers `tsconfig`.
 
 Un fichier `tsconfig.json` dit à TypeScript quels fichiers lire et avec quelles règles. Le projet en a six. Ce chapitre explique ce que chacun règle, et surtout comment ils s'articulent : c'est de là que viennent les erreurs les plus déroutantes, celles où un import marche dans l'éditeur et casse au typecheck.
 
@@ -63,35 +63,23 @@ Chaque paquet part de la configuration commune et n'écrit que ce qui le disting
 
 `extends` recopie toutes les options du fichier désigné, puis celles écrites ici s'y ajoutent ou les remplacent. Une option changée dans `tsconfig.base.json` vaut donc pour tous les paquets à la fois.
 
-## Les alias : paths
+## Pas d'alias : les imports des package.json
+
+Le `tsconfig` du web ne déclare aucun alias (pas de `paths`). Les raccourcis viennent des champs `imports` et `exports` des `package.json` (chapitre précédent). Deux options du `tsconfig.base.json` les rendent utilisables :
 
 ```json
-// apps/web/tsconfig.json (extrait)
-"paths": {
-  "@/*": ["./src/*"],  // indispensable pour shadcn/ui
-  "@web/*": ["./src/*"],
-  "@app/*": ["./src/app/*"],
-  "@contracts/*": ["../../packages/contracts/src/*"],
-  "@backend/*": ["../../packages/backend/src/*"],
-  "@features/*": ["./src/features/*"],
-  "@components/*": ["./src/components/*"],
-  "@hooks/*": ["./src/hooks/*"],
-  "@lib/*": ["./src/lib/*"],
-  "@styles/*": ["./src/styles/*"],
-  "@types/*": ["./src/types/*"],
-  "@trpc/*": ["./src/core/trpc/*"],
-  "@config/*": ["../../packages/config/*"],
-  "@finder-core/*": ["../../packages/finder-core/src/*"]
-}
+// tsconfig.base.json (extrait)
+"noEmit": true,
+"allowImportingTsExtensions": true,
 ```
 
-Chaque ligne associe un préfixe d'import à un dossier, **relatif au tsconfig qui la déclare** : `@features/admin/…` devient `apps/web/src/features/admin/…`, `@backend/prisma` devient `packages/backend/src/prisma`. Next.js lit ces mêmes alias pour construire l'application ; il n'y a pas de seconde liste à tenir.
-
-Deux alias désignent le même dossier, `@/` et `@web/`. `@/` est celui qu'attendent les composants générés par shadcn/ui (le commentaire le rappelle) ; `@web/` est l'usage du projet. Ils coexistent, mais un nouvel import devrait utiliser le plus parlant des alias spécialisés (`@features/…`, `@lib/…`).
+`allowImportingTsExtensions` permet d'écrire l'extension `.ts` ou `.tsx` dans un import, ce qu'exigent les motifs de `imports` et `exports`. TypeScript n'autorise cette option que s'il n'écrit aucun fichier (`noEmit`) : c'est le cas ici, Next.js transforme le code et `tsc` ne fait que vérifier.
 
 ## Un fichier, deux configurations
 
-Les paquets ne sont pas compilés à part : quand une page importe `@backend/modules/tickets/router`, ce fichier du backend est lu et vérifié **avec la configuration de apps/web**. Et lui-même importe `@backend/prisma`, `@contracts/…`. Ces alias doivent donc exister dans le `tsconfig` du web, pas seulement dans celui du backend :
+Les paquets ne sont pas compilés à part : quand une page importe `@akfc/backend/modules/tickets/router.ts`, ce fichier du backend est lu et vérifié **avec la configuration de apps/web**. Et lui-même importe `#prisma.ts`, `@akfc/contracts/…`.
+
+Avec des alias de `tsconfig`, c'était la contrainte principale du montage : tout alias employé par un fichier du backend devait être recopié, sous le même nom, dans le `tsconfig` du web, sans quoi `pnpm typecheck` échouait sur un fichier que l'éditeur trouvait correct. Avec `imports`, la question ne se pose plus : `#prisma.ts`, dans un fichier de `packages/backend`, se résout par le `package.json` de `packages/backend`, quel que soit le projet qui compile. Le `tsconfig` du backend n'a plus rien à déclarer :
 
 ```json
 // packages/backend/tsconfig.json (fichier complet)
@@ -99,21 +87,14 @@ Les paquets ne sont pas compilés à part : quand une page importe `@backend/mod
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     // "outDir": "dist",
-    "paths": {
-      "@backend/*": ["./src/*"],
-      "@contracts/*": ["../contracts/src/*"],
-    },
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": false
+    "moduleResolution": "bundler"
   },
   "include": ["src", "../contracts/src/**/*.ts", "../contracts/src/slug/slug.schema.ts"]
 }
 ```
 
-C'est la contrainte principale de ce montage : **tout alias employé par un fichier doit être déclaré, sous le même nom et vers le même dossier, dans chaque tsconfig qui finit par compiler ce fichier**. `@contracts/*` figure ainsi dans les quatre configurations. Un alias ajouté au seul backend fonctionnerait dans l'éditeur, ouvert sur un fichier du backend, puis casserait `pnpm typecheck` dès qu'une page importerait ce fichier.
-
 <Callout type="warning">
-Le symptôme typique : « Cannot find module '@backend/…' » au typecheck du web, alors que l'éditeur ne signale rien sur le fichier du backend. Le remède est d'ajouter l'alias au `tsconfig` qui échoue, pas de le retirer du code.
+Le symptôme typique, désormais : « Cannot find module '@akfc/contracts/…' » dans un paquet qui ne déclare pas `@akfc/contracts` dans ses `dependencies`. Le remède : `pnpm --filter <paquet> add @akfc/contracts@workspace:*`. Un « # » qui ne se résout pas, lui, désigne presque toujours un fichier d'un autre paquet : il faut `@akfc/…`.
 </Callout>
 
 ### Ce qui n'est pas vérifié à part
@@ -124,10 +105,7 @@ Le symptôme typique : « Cannot find module '@backend/…' » au typecheck du w
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "typeRoots": ["node"],
-    "noCheck": true,
-    "paths": {
-      "@contracts/*": ["./src/*"]
-    }
+    "noCheck": true
   },
   "include": ["src", "**/*.ts"]
 }
@@ -139,7 +117,7 @@ Le symptôme typique : « Cannot find module '@backend/…' » au typecheck du w
   language="json"
   filepath="apps/web/tsconfig.json"
   filename="tsconfig.json"
-  snippetRange="23-32"
+  snippetRange="9-18"
   snippetHighlight="6,10"
   snippetTitle="Ce que vérifie le web"
   fullFileTitle="Voir le fichier complet"
@@ -163,7 +141,7 @@ Les pages de cette documentation sont des fichiers `.mdx`, mais aucun n'est impo
   filename="tsconfig.json"
   snippetStart="{"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="10"
+  snippetHighlight="7"
   snippetTitle="La configuration de la racine"
   fullFileTitle="Voir le fichier complet"
 />
@@ -172,7 +150,7 @@ Elle couvre `prisma.config.ts`, les scripts TypeScript de `prisma/`, et les test
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui transforme le TypeScript en JavaScript ?", "Next.js, sans vérifier les types ; tsc ne fait que vérifier (noEmit)."], ["Où sont les options communes ?", "tsconfig.base.json, repris par chaque paquet avec extends."], ["Comment fonctionne un alias ?", "paths associe un préfixe à un dossier, relatif au tsconfig qui le déclare ; Next.js lit les mêmes."], ["Pourquoi le même alias est-il déclaré plusieurs fois ?", "Un fichier du backend est aussi compilé par la configuration du web : chaque tsconfig qui le compile doit connaître ses alias."], ["Que sont les .d.ts ?", "Des déclarations de types pour ce que TypeScript ne peut pas deviner (fichiers .css, types de Next)."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui transforme le TypeScript en JavaScript ?", "Next.js, sans vérifier les types ; tsc ne fait que vérifier (noEmit)."], ["Où sont les options communes ?", "tsconfig.base.json, repris par chaque paquet avec extends."], ["Où sont les raccourcis d’import ?", "Pas dans les tsconfig : dans les champs imports (#…) et exports (@akfc/…) des package.json, lus par TypeScript, Node, webpack et Turbopack."], ["Pourquoi écrire l’extension ?", "Les motifs de imports et exports ne devinent pas d’extension ; allowImportingTsExtensions l’autorise, avec noEmit."], ["Un fichier du backend compilé par le web ?", "Ses # se résolvent par le package.json du backend : rien à recopier dans le tsconfig du web."], ["Que sont les .d.ts ?", "Des déclarations de types pour ce que TypeScript ne peut pas deviner (fichiers .css, types de Next)."]]' />
 
 ## À suivre
 

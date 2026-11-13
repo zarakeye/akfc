@@ -3,8 +3,8 @@
 import { useState, type JSX } from "react";
 import { useRouter } from "next/navigation";
 
-import { trpc } from "@trpc/trpcClient";
-import { IMAGE_CONSENT_LABEL, IMAGE_CONSENT_VALUES, type ImageConsentValue } from "@contracts/legal/imageConsent";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { IMAGE_CONSENT_LABEL, IMAGE_CONSENT_VALUES, type ImageConsentValue } from "@akfc/contracts/legal/imageConsent.ts";
 
 /**
  * Fiche d'un utilisateur (admin) : droit à l'image. L'autorisation est recueillie par le club (par

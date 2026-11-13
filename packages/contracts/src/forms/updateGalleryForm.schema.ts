@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { slugSchema } from "@contracts/slug/slug.schema";
+import { slugSchema } from "#slug/slug.schema.ts";
 
 // 🧩 Schéma — édition d'une galerie (métadonnées). `id` via input caché.
 // Mêmes conventions que la création : date/facettes en strings du DOM,

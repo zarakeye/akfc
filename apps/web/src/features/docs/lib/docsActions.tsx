@@ -3,7 +3,7 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-import { DOCS_ACTIONS_ID } from "@features/docs/lib/docsActionsSlot";
+import { DOCS_ACTIONS_ID } from "#features/docs/lib/docsActionsSlot.ts";
 
 /*
  * Les boutons flottants de la documentation (« Entités », « Sur cette page ») ne se placent pas

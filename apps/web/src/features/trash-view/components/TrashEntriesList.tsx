@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
+import type { TrashEntryDTO } from '@akfc/contracts/trash/trash.dto.ts';
 import { useTrashStore } from '../state/useTrashStore';
 import { useTrashActions } from '../hooks/useTrashActions';
 
@@ -12,7 +12,7 @@ import TrashEntryCompactRow from './TrashEntryCompactRow';
 import ConfirmDialog from './ConfirmDialog';
 import ContextMenu, {
   type ContextMenuItem,
-} from '@features/finder-core/components/ContextMenu';
+} from '#features/finder-core/components/ContextMenu.tsx';
 
 type Props = {
   entries: TrashEntryDTO[];

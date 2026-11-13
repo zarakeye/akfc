@@ -4,12 +4,12 @@ import { JSX, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   EventForm,
   type EventFormInput,
-} from "@features/admin/events/forms/EventForm";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+} from "#features/admin/events/forms/EventForm.tsx";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 /** Création d'un évènement — `/(admin)/dashboard/events/create`. */
 export default function CreateEventPage(): JSX.Element {

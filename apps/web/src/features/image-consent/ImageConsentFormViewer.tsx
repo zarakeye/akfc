@@ -2,7 +2,7 @@
 
 import type { JSX } from "react";
 
-import { FilePreviewPanel } from "@features/image-consent/FilePreviewPanel";
+import { FilePreviewPanel } from "#features/image-consent/FilePreviewPanel.tsx";
 
 export type ViewableConsentForm = { id: string; mimeType: string; fileName: string };
 

@@ -2,13 +2,13 @@
 
 import { useCallback, useState } from 'react';
 
-import type { FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
 
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import type { LifecycleStatus } from '@features/finder-core/utils/statusFolders';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import type { LifecycleStatus } from '#features/finder-core/utils/statusFolders.ts';
 
 /**
  * Hook de changement de statut d'une sélection de FinderNodes.

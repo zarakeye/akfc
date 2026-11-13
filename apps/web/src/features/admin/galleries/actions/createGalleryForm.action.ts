@@ -1,9 +1,9 @@
 'use server';
 
-import { prisma } from "@backend/prisma";
-import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
-import { createGalleryFormSchema } from "@contracts/forms/createGalleryForm.schema";
-import { galleryRightsError } from "@backend/modules/mediaPeople/mediaPeople.service";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "#features/admin/common/actions/callerIsAdmin.ts";
+import { createGalleryFormSchema } from "@akfc/contracts/forms/createGalleryForm.schema.ts";
+import { galleryRightsError } from "@akfc/backend/modules/mediaPeople/mediaPeople.service.ts";
 
 export type CreateGalleryFormState = {
   success: boolean;

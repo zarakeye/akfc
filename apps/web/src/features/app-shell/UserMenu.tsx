@@ -3,12 +3,12 @@
 import { JSX } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { useCurrentUser } from "@features/auth/InitialSession";
-import { trpc } from "@trpc/trpcClient";
-import { UserPortrait } from "@features/social/UserPortrait";
-import { DocumentsNavLink } from "@features/member-documents/DocumentsNavLink";
-import { useDisclosure } from "@features/app-shell/useDisclosure";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { useCurrentUser } from "#features/auth/InitialSession.tsx";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { UserPortrait } from "#features/social/UserPortrait.tsx";
+import { DocumentsNavLink } from "#features/member-documents/DocumentsNavLink.tsx";
+import { useDisclosure } from "#features/app-shell/useDisclosure.ts";
 
 /**
  * UserMenu is a React component that displays a user menu when the user is connected.

@@ -1,22 +1,22 @@
 'use client';
 
-import { useFinderReadOnly } from "@features/finder-core/state/FinderReadOnlyContext";
+import { useFinderReadOnly } from "#features/finder-core/state/FinderReadOnlyContext.ts";
 import { JSX, useState } from 'react';
 import { Folder, FileText, Image as ImageIcon, FileVideo, FileAudio, FileType } from 'lucide-react';
-import type { FinderNode } from '@contracts/finder';
-import type { TriState } from '@features/finder-core/utils/triState';
-import { useLongPress } from '@features/finder-core/hooks/useLongPress';
-import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
-import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
+import type { TriState } from '#features/finder-core/utils/triState.ts';
+import { useLongPress } from '#features/finder-core/hooks/useLongPress.ts';
+import { isStatusFolder } from '#features/finder-core/utils/statusFolders.ts';
+import { useNodeActions } from '#features/finder-core/hooks/useNodeActions.ts';
 import ContextMenu, {
   type ContextMenuItem,
-} from '@features/finder-core/components/ContextMenu';
-import { RenameInput } from '@features/finder-core/components/RenameInput';
-import { MoveDialog } from '@features/finder-core/components/MoveDialog';
-import { isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
-import { PublishToMembersDialog } from '@features/member-documents/PublishToMembersDialog';
-import { useSessionStore } from '@lib/stores/useSessionStore';
-import { displayName, baseNameOf } from '@features/finder-core/utils/fileType';
+} from '#features/finder-core/components/ContextMenu.tsx';
+import { RenameInput } from '#features/finder-core/components/RenameInput.tsx';
+import { MoveDialog } from '#features/finder-core/components/MoveDialog.tsx';
+import { isProtectedEntityFolder } from '#features/finder-core/utils/spaceFolderKind.ts';
+import { PublishToMembersDialog } from '#features/member-documents/PublishToMembersDialog.tsx';
+import { useSessionStore } from '#lib/stores/useSessionStore.ts';
+import { displayName, baseNameOf } from '#features/finder-core/utils/fileType.ts';
 
 type Props = {
   node: FinderNode;

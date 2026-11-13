@@ -2,10 +2,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "types": ["node"],
-    "noEmit": true,
-    "paths": {
-      "@contracts/*": ["./packages/contracts/src/*"]
-    }
+    "noEmit": true
   },
   "include": ["prisma.config.ts", "prisma/**/*.ts", "playwright.config.ts", "e2e/**/*.ts", "e2e/**/*.mjs"]
 }

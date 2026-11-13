@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import type { FloatTextBlockV1 } from "@contracts/page";
+import type { FloatTextBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockEditorProps } from "../../BlockDefinition.types";
 import { MediaListEditor } from "../../components/MediaListEditor";

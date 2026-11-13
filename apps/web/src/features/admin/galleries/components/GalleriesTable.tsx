@@ -2,11 +2,11 @@
 
 import { JSX } from 'react';
 import { useRouter } from 'next/navigation';
-import { trpc } from '@trpc/trpcClient';
+import { trpc } from '#core/trpc/trpcClient.ts';
 import { Table, type Column } from 'react-ts-tab-lib';
-import { deleteColumn } from "@features/admin/common/delete";
+import { deleteColumn } from "#features/admin/common/delete/index.ts";
 // Slug réservé du carrousel : celui des contrats (il valait ici « accueil », que rien n'utilise).
-import { CAROUSEL_SLUG } from '@contracts/legal/mediaPeople';
+import { CAROUSEL_SLUG } from '@akfc/contracts/legal/mediaPeople.ts';
 
 /**
  * Liste des galeries via `trpc.gallery.getAll.useQuery()`. Clic sur une ligne

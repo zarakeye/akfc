@@ -2,12 +2,12 @@
 
 import { type JSX } from "react";
 import { useRouter } from "next/navigation";
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 
 import {
   BreakingNewsForm,
   type BreakingNewsFormInput,
-} from "@features/admin/breaking-news/forms/BreakingNewsForm";
+} from "#features/admin/breaking-news/forms/BreakingNewsForm.tsx";
 
 export function CreateBreakingNews(): JSX.Element {
   const router = useRouter();

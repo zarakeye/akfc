@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { OriginForm } from "@features/admin/origins/forms/OriginForm";
+import { OriginForm } from "#features/admin/origins/forms/OriginForm.tsx";
 
 /** Création — `/(admin)/dashboard/origins/create`. */
 export default function CreateOriginPage(): JSX.Element {

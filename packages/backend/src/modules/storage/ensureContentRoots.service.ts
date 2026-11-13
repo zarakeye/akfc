@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
-import type { StorageFolderNode } from "@contracts/storage";
-import { categoryFolderPath } from "@backend/modules/storage/storageSegments";
+import type { StorageFolderNode } from "@akfc/contracts/storage/index.ts";
+import { categoryFolderPath } from "#modules/storage/storageSegments.ts";
 
 /**
  * Racines principales du finder — celles qui REÇOIVENT le contenu — qui doivent

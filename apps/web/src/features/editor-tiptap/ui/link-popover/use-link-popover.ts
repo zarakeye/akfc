@@ -4,17 +4,17 @@ import { useCallback, useEffect, useState } from "react"
 import type { Editor } from "@tiptap/react"
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/features/editor-tiptap/hooks/use-tiptap-editor"
+import { useTiptapEditor } from "#features/editor-tiptap/hooks/use-tiptap-editor.ts"
 
 // --- Icons ---
-import { LinkIcon } from "@/features/editor-tiptap/icons/link-icon"
+import { LinkIcon } from "#features/editor-tiptap/icons/link-icon.tsx"
 
 // --- Lib ---
 import {
   isMarkInSchema,
   isNodeTypeSelected,
   sanitizeUrl,
-} from "@/lib/tiptap-utils"
+} from "#lib/tiptap-utils.ts"
 
 /**
  * Configuration for the link popover functionality

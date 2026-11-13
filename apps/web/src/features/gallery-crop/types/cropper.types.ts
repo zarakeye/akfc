@@ -1,4 +1,4 @@
-import { PictureItem } from "@/features/gallery-crop/types/picture.types";
+import { PictureItem } from "#features/gallery-crop/types/picture.types.ts";
 
 export type Shape = "rect" | "circle";
 

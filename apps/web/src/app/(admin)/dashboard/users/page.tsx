@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import UsersTable from "@features/admin/users/components/UsersTable";
+import UsersTable from "#features/admin/users/components/UsersTable.tsx";
 
 /** Liste des utilisateurs — `/(admin)/dashboard/users`. */
 export default function UsersPage(): JSX.Element {

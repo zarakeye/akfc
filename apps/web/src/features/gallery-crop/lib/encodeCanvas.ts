@@ -1,4 +1,4 @@
-import { CROP_QUALITY } from "@contracts/media/cropOutput";
+import { CROP_QUALITY } from "@akfc/contracts/media/cropOutput.ts";
 
 /**
  * Encode le canvas dans le premier format demandé que le navigateur sait écrire.

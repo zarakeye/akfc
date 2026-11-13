@@ -4,7 +4,7 @@
  *  DTO transverse : la forme retournée par la résolution d'un mediaId vers
  *  les informations nécessaires au rendu d'un asset (URL + métadonnées).
  *
- *  Vit dans `@contracts/page` parce que c'est le carrefour entre :
+ *  Vit dans `@akfc/contracts/page/…` parce que c'est le carrefour entre :
  *
  *    - le service backend `resolveMediaByIds` (sous-chantier 6) qui produit
  *      ces objets en interrogeant MediaAsset et en construisant les URLs

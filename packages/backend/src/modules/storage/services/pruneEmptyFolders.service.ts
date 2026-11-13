@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 
-import { getR2Bucket, getR2Client } from "@backend/modules/storage/adapters/r2/client";
+import { getR2Bucket, getR2Client } from "#modules/storage/adapters/r2/client.ts";
 
 /**
  * pruneEmptyFolders.service.ts

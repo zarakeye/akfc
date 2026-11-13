@@ -4,8 +4,8 @@ import { type JSX } from "react";
 import Link from "next/link";
 import { Bell, Users } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 
 /**
  * Cloche des espaces COLLABORATIFS — réservée aux membres NON-admin.

@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
+import { resolveGroupBaseFolder } from "#modules/media/services/resolveGroupBaseFolder.service.ts";
 
 /**
  * Rend l'espace d'un groupe COLLABORATIF visible (même vide) dans le finder, en

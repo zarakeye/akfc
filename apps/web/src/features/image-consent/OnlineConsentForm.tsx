@@ -2,14 +2,14 @@
 
 import { useState, type JSX } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
-import type { AppRouter } from "@backend/modules";
+import type { AppRouter } from "@akfc/backend/modules/index.ts";
 import { FileDown, PenLine, Send } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import type { ImageUsageValue } from "@contracts/legal/imageConsent";
-import { BlankConsentFormPreview } from "@features/image-consent/BlankConsentFormCard";
-import { ConsentChoicesFields } from "@features/image-consent/ConsentChoicesFields";
-import { formatDate } from "@features/image-consent/consentFormat";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import type { ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
+import { BlankConsentFormPreview } from "#features/image-consent/BlankConsentFormCard.tsx";
+import { ConsentChoicesFields } from "#features/image-consent/ConsentChoicesFields.tsx";
+import { formatDate } from "#features/image-consent/consentFormat.ts";
 
 /**
  * Profil : autorisation de droit à l'image EN LIGNE.

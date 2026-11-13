@@ -2,10 +2,10 @@
 
 import { JSX, useCallback, useEffect, useRef, useState } from 'react';
 import { useDropzone, type Accept } from 'react-dropzone';
-import { HEIC_ACCEPT, countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from '@features/media/heic/browserImages';
+import { HEIC_ACCEPT, countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from '#features/media/heic/browserImages.ts';
 
-import { trpc } from '@trpc/trpcClient';
-import { uploadToR2 } from '@features/media/uploadToR2';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { uploadToR2 } from '#features/media/uploadToR2.ts';
 
 /**
  * PersoPhotoUploader

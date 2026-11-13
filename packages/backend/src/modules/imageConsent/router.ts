@@ -1,24 +1,24 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
-import { IMAGE_USAGE_VALUES } from "@contracts/legal/imageConsent";
+import { router, protectedProcedure, publicProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
+import { IMAGE_USAGE_VALUES } from "@akfc/contracts/legal/imageConsent.ts";
 import {
   createImageConsentFormUpload,
   deleteImageConsentForm,
   imageConsentFormSelect,
   registerImageConsentForm,
-} from "@backend/modules/imageConsent/imageConsentForm.service";
-import { confirmMemberConsent, onlineConsentState } from "@backend/modules/imageConsent/imageConsentOnline.service";
+} from "#modules/imageConsent/imageConsentForm.service.ts";
+import { confirmMemberConsent, onlineConsentState } from "#modules/imageConsent/imageConsentOnline.service.ts";
 import {
   confirmGuardianConsent,
   guardianRequestByToken,
   pendingGuardianRequest,
   requestGuardianConsent,
   resendGuardianLink,
-} from "@backend/modules/imageConsent/imageConsentGuardian.service";
-import { byEffectiveDesc } from "@backend/modules/imageConsent/formOrder";
+} from "#modules/imageConsent/imageConsentGuardian.service.ts";
+import { byEffectiveDesc } from "#modules/imageConsent/formOrder.ts";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 

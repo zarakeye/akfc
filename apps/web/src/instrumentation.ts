@@ -16,33 +16,33 @@ export async function register() {
   // un module à part, importé sous une condition POSITIVE sur NEXT_RUNTIME : la compilation Edge de
   // ce fichier l'élimine, et ne voit pas son process.exit (devTargetGuard.ts).
   if (process.env.NEXT_RUNTIME === "nodejs" && process.env.NODE_ENV === "development") {
-    const { assertDevTargets } = await import("@/lib/devTargetGuard");
+    const { assertDevTargets } = await import("#lib/devTargetGuard.ts");
     await assertDevTargets();
   }
 
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
-  const { prisma } = await import("@backend/prisma");
+  const { prisma } = await import("@akfc/backend/prisma.ts");
   const { ensureRootFolders } = await import(
-    "@backend/modules/storage/services/ensureRootFolders.service"
+    "@akfc/backend/modules/storage/services/ensureRootFolders.service.ts"
   );
   const { ensureAllGroupSpaces } = await import(
-    "@backend/modules/memberGroups/ensureAllGroupSpaces.service"
+    "@akfc/backend/modules/memberGroups/ensureAllGroupSpaces.service.ts"
   );
   const { ensureAdminGroup } = await import(
-    "@backend/modules/memberGroups/ensureAdminGroup.service"
+    "@akfc/backend/modules/memberGroups/ensureAdminGroup.service.ts"
   );
   const { ensureTicketCategories } = await import(
-    "@backend/modules/tickets/ensureTicketCategories.service"
+    "@akfc/backend/modules/tickets/ensureTicketCategories.service.ts"
   );
   const { ensureDomainFolderLabels } = await import(
-    "@backend/modules/storage/services/ensureDomainFolderLabels.service"
+    "@akfc/backend/modules/storage/services/ensureDomainFolderLabels.service.ts"
   );
   const { ensureStorageSegments } = await import(
-    "@backend/modules/storage/storageSegments"
+    "@akfc/backend/modules/storage/storageSegments.ts"
   );
   const { ensureInstructorBioMediaReferences } = await import(
-    "@backend/modules/media/services/ensureInstructorBioMediaReferences.service"
+    "@akfc/backend/modules/media/services/ensureInstructorBioMediaReferences.service.ts"
   );
 
   const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
@@ -124,7 +124,7 @@ export async function register() {
 
   try {
     const { ensureDefaultPartners } = await import(
-      "@backend/modules/sitePartners/sitePartners.service"
+      "@akfc/backend/modules/sitePartners/sitePartners.service.ts"
     );
     const created = await ensureDefaultPartners(prisma);
     if (created) console.log(`[instrumentation] ensureDefaultPartners: ${created} partenaire(s) créé(s) ou complété(s) (MJC, FFK)`);
@@ -137,7 +137,7 @@ export async function register() {
 
   try {
     const { ensureInscriptionPage } = await import(
-      "@backend/modules/sitePages/ensureInscriptionPage.service"
+      "@akfc/backend/modules/sitePages/ensureInscriptionPage.service.ts"
     );
     const inscription = await ensureInscriptionPage(prisma);
     if (inscription !== "unchanged") console.log(`[instrumentation] page « S'inscrire » : texte de départ ${inscription === "created" ? "créé (brouillon)" : "mis à jour (liens d'inscription en ligne)"}`);
@@ -150,7 +150,7 @@ export async function register() {
 
   try {
     const { ensureContactsPage } = await import(
-      "@backend/modules/sitePages/ensureContactsPage.service"
+      "@akfc/backend/modules/sitePages/ensureContactsPage.service.ts"
     );
     const r = await ensureContactsPage(prisma);
     if (r.seeded || r.renamed) console.log(`[instrumentation] page « Nous contacter » :${r.seeded ? " texte de départ créé" : ""}${r.renamed ? " titre renommé" : ""}`);
@@ -163,7 +163,7 @@ export async function register() {
 
   try {
     const { startTicketMailboxPolling } = await import(
-      "@backend/modules/tickets/imapIntake.service"
+      "@akfc/backend/modules/tickets/imapIntake.service.ts"
     );
     const started = startTicketMailboxPolling(prisma);
     console.log(
@@ -178,7 +178,7 @@ export async function register() {
 
   try {
     const { startRetentionSchedule } = await import(
-      "@backend/modules/privacy/retention.service"
+      "@akfc/backend/modules/privacy/retention.service.ts"
     );
     const started = startRetentionSchedule(prisma);
     console.log(`[instrumentation] purge RGPD (durées de conservation) : ${started ? "chaque jour à 3 h + au démarrage" : "désactivée"}`);
@@ -188,7 +188,7 @@ export async function register() {
 
   try {
     const { startTagDigestSchedule } = await import(
-      "@backend/modules/mediaPeople/myAppearances.service"
+      "@akfc/backend/modules/mediaPeople/myAppearances.service.ts"
     );
     const started = startTagDigestSchedule(prisma);
     console.log(`[instrumentation] e-mails aux personnes taguées : ${started ? "toutes les 5 min (une heure après le premier tag, au plus un par jour)" : "désactivés"}`);
@@ -198,7 +198,7 @@ export async function register() {
 
   try {
     const { startTicketRecapSchedule } = await import(
-      "@backend/modules/tickets/recap.service"
+      "@akfc/backend/modules/tickets/recap.service.ts"
     );
     const { started, hour } = startTicketRecapSchedule(prisma);
     console.log(

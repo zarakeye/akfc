@@ -1,5 +1,5 @@
 import { Type } from "lucide-react";
-import type { TipTapBlockV1 } from "@contracts/page";
+import type { TipTapBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockDefinition } from "../../BlockDefinition.types";
 

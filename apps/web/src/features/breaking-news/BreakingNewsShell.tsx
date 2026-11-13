@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type JSX } from "react";
 import type { BreakingNews } from "@prisma/client";
 
-import { BreakingNewsTicker } from "@features/breaking-news/BreakingNewsTicker";
-import { BreakingNewsSidebar } from "@features/breaking-news/BreakingNewsSidebar";
+import { BreakingNewsTicker } from "#features/breaking-news/BreakingNewsTicker.tsx";
+import { BreakingNewsSidebar } from "#features/breaking-news/BreakingNewsSidebar.tsx";
 
 /**
  * Orchestrateur client du dispositif BreakingNews public :

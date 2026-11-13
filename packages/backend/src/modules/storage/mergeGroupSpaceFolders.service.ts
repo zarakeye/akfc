@@ -1,15 +1,15 @@
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
 import type { PrismaClient } from "@prisma/client";
 
 import type {
   ListResult,
   StorageFolderNode,
   StorageNode,
-} from "@contracts/storage";
+} from "@akfc/contracts/storage/index.ts";
 
-import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
-import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
-import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
+import { resolveGroupBaseFolder } from "#modules/media/services/resolveGroupBaseFolder.service.ts";
+import { resolvePersoBaseFolder } from "#modules/media/services/resolvePersoBaseFolder.service.ts";
+import { collaborativeEntriesForMember } from "#modules/memberGroups/collaborativeEntriesForMember.service.ts";
 
 /**
  * Espaces de groupe ET perso visibles même VIDES.

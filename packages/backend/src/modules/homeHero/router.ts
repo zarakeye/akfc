@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
+import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
 
 const HOME_ID = "home";
 

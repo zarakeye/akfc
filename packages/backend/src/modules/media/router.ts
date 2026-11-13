@@ -9,19 +9,19 @@
  * pas par le fullPath DB. C'est ce que le frontend attend depuis Phase 1.
  */
 
-import { assertCanTrashPaths } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
-import { outsideBin } from '@backend/modules/storage/mediaPaths';
-import { assertCanReadPaths } from "@backend/modules/memberGroups/assertCanReadPaths.service";
-import { canReadStorageKey } from "@backend/modules/media/services/canReadStorageKey.service";
+import { assertCanTrashPaths } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
+import { outsideBin } from '#modules/storage/mediaPaths.ts';
+import { assertCanReadPaths } from "#modules/memberGroups/assertCanReadPaths.service.ts";
+import { canReadStorageKey } from "#modules/media/services/canReadStorageKey.service.ts";
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '@backend/trpc';
-import { sameAppRoot } from '@backend/trpc/middleware';
-import type { ResolvedMedia } from '@contracts/page';
-import { deriveMediaKind } from '@backend/modules/media/helpers/deriveMediaKind';
-import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
-import { assertStatusChangeDoesntUnpublishReferencedAssets } from '@backend/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service';
-import { FORMER_MEMBER_LABEL } from "@contracts/shared/formerMember";
+import { router, protectedProcedure } from '#trpc/index.ts';
+import { sameAppRoot } from '#trpc/middleware.ts';
+import type { ResolvedMedia } from '@akfc/contracts/page/index.ts';
+import { deriveMediaKind } from '#modules/media/helpers/deriveMediaKind.ts';
+import { buildMediaProxyUrl } from '#modules/media/helpers/media-url.ts';
+import { assertStatusChangeDoesntUnpublishReferencedAssets } from '#modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts';
+import { FORMER_MEMBER_LABEL } from "@akfc/contracts/shared/formerMember.ts";
 
 /* -------------------------------------------------------------------------- */
 /*                                  HELPERS                                   */
@@ -172,7 +172,7 @@ export const mediaRouter = router({
    * et affichera son placeholder « média indisponible ».
    *
    * La forme de retour est le type canonique `ResolvedMedia`
-   * (`@contracts/page`) — source unique partagée avec le PageRenderer,
+   * (`@akfc/contracts/page/…`) — source unique partagée avec le PageRenderer,
    * le MediaListEditor (qui l'infère via inferRouterOutputs) et le
    * MediaItemsEditor.
    *

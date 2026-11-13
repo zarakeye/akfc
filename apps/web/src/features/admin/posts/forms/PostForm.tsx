@@ -3,15 +3,15 @@
 import { useState } from "react";
 import type { Post } from "@prisma/client";
 
-import { PageBuilder } from "@features/page-builder";
-import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
-import { APP_ROOT } from "@config/app";
+import { PageBuilder } from "#features/page-builder/index.ts";
+import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
 
 import {
   emptyPageContentV1,
   parsePageContentV1,
   type PageContentV1,
-} from "@contracts/page";
+} from "@akfc/contracts/page/index.ts";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types                                                                  */

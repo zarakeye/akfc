@@ -1,4 +1,4 @@
-import type { ChapterEntities } from "@features/docs/entities/chapterGraph"
+import type { ChapterEntities } from "#features/docs/entities/chapterGraph.ts"
 
 export interface DocFrontmatter {
   title: string

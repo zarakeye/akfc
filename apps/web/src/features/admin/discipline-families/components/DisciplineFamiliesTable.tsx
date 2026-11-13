@@ -2,10 +2,10 @@
 
 import { JSX } from 'react';
 import { useRouter } from 'next/navigation';
-import { trpc } from '@trpc/trpcClient';
+import { trpc } from '#core/trpc/trpcClient.ts';
 import { Table, type Column } from 'react-ts-tab-lib';
 import type { DisciplineFamily } from '@prisma/client';
-import { deleteColumn } from "@features/admin/common/delete";
+import { deleteColumn } from "#features/admin/common/delete/index.ts";
 
 type FamilyRow = DisciplineFamily & { supprimer: number };
 

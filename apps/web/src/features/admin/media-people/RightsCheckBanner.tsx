@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 
-import { IMAGE_USAGE_LABEL, type ImageUsageValue } from "@contracts/legal/imageConsent";
-import { mediaPositions, type DestinationCheck, type RightsIssue } from "@contracts/legal/mediaPeople";
+import { IMAGE_USAGE_LABEL, type ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
+import { mediaPositions, type DestinationCheck, type RightsIssue } from "@akfc/contracts/legal/mediaPeople.ts";
 
 const usagesOf = (issues: readonly RightsIssue[]): string =>
   [...new Set(issues.map((i) => `« ${IMAGE_USAGE_LABEL[i.usage]} »`))].join(", ");

@@ -4,12 +4,12 @@ import { JSX, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   SeminarForm,
   type SeminarFormInput,
-} from "@features/admin/seminars/forms/SeminarForm";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+} from "#features/admin/seminars/forms/SeminarForm.tsx";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 /** Création d'un stage — `/(admin)/dashboard/seminars/create`. */
 export default function CreateStagePage(): JSX.Element {

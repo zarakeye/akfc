@@ -1,20 +1,20 @@
 import type { JSX } from "react";
 import type { Metadata } from "next";
 
-import { prisma } from "@backend/prisma";
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
-import { processingActivities, processors, SECURITY_MEASURES } from "@contracts/legal/processingRegister";
-import { getLegalInfo } from "@features/legal/getLegalInfo";
-import { frenchDate } from "@features/legal/LegalBits";
-import { PrintButton } from "@features/legal/PrintButton";
-import { listInactiveAccounts } from "@backend/modules/privacy/retention.service";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
+import { isAdminByGroup } from "@akfc/backend/modules/memberGroups/isAdminByGroup.service.ts";
+import { processingActivities, processors, SECURITY_MEASURES } from "@akfc/contracts/legal/processingRegister.ts";
+import { getLegalInfo } from "#features/legal/getLegalInfo.ts";
+import { frenchDate } from "#features/legal/LegalBits.tsx";
+import { PrintButton } from "#features/legal/PrintButton.tsx";
+import { listInactiveAccounts } from "@akfc/backend/modules/privacy/retention.service.ts";
 import Link from "next/link";
 
 /**
  * Registre des activités de traitement (art. 30 RGPD) — réservé aux administrateurs.
  * GÉNÉRÉ depuis la même description que la politique de confidentialité
- * (@contracts/legal/processingRegister) et depuis les Réglages du site. Document interne : à
+ * (@akfc/contracts/legal/processingRegister.ts) et depuis les Réglages du site. Document interne : à
  * présenter à la CNIL si elle le demande. Imprimable (le reste de l'écran est masqué à l'impression).
  */
 export const metadata: Metadata = { title: "Registre des traitements" };

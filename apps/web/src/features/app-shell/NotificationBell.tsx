@@ -2,11 +2,11 @@
 
 import { type JSX } from "react";
 import Link from "next/link";
-import { PAGE_REGISTRY } from "@/config/pageRegistry";
+import { PAGE_REGISTRY } from "#config/pageRegistry.ts";
 import { Bell, HardDrive } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 
 /**
  * Cloche de notifications de la bibliothèque — à gauche de l'avatar.

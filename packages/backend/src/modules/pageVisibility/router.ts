@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { router, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
+import { router, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
 
 /**
  * Publication par page (mode « En construction »).

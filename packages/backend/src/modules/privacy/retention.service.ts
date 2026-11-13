@@ -1,10 +1,10 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { parisClock } from "@backend/modules/tickets/recap.service";
-import { sweepOrphanDerivatives } from "@backend/modules/media/services/mediaDerivatives.service";
-import { purgeFileVersions } from "@backend/modules/fileVersions/fileVersions.service";
-import { purgeExpiredTrash } from "@backend/modules/trash/services/trashRetention.service";
-import { purgeDetachedImageConsentForms } from "@backend/modules/imageConsent/imageConsentForm.service";
+import { parisClock } from "#modules/tickets/recap.service.ts";
+import { sweepOrphanDerivatives } from "#modules/media/services/mediaDerivatives.service.ts";
+import { purgeFileVersions } from "#modules/fileVersions/fileVersions.service.ts";
+import { purgeExpiredTrash } from "#modules/trash/services/trashRetention.service.ts";
+import { purgeDetachedImageConsentForms } from "#modules/imageConsent/imageConsentForm.service.ts";
 
 /*
  * Durées de conservation (RGPD) APPLIQUÉES, pas seulement annoncées :

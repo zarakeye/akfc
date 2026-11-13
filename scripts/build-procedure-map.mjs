@@ -89,16 +89,11 @@ const parsedConfig = ts.parseJsonConfigFileContent(
   ts.sys,
   dirname(backendConfig),
 );
-// Alias des deux côtés (`@backend/…`, `@features/…`, `@/…`), en chemins absolus : un même programme
-// résout les imports du backend et ceux du front.
-const webConfig = join(ROOT, "apps/web/tsconfig.json");
-const webPaths = ts.parseJsonConfigFileContent(ts.readConfigFile(webConfig, ts.sys.readFile).config, ts.sys, dirname(webConfig)).options.paths ?? {};
-const absolutePaths = {};
-for (const [alias, targets] of Object.entries(webPaths)) absolutePaths[alias] = targets.map((t) => resolve(dirname(webConfig), t));
-for (const [alias, targets] of Object.entries(parsedConfig.options.paths ?? {})) absolutePaths[alias] = targets.map((t) => resolve(dirname(backendConfig), t));
+// Pas d'alias à reproduire : « #… » et « @akfc/… » viennent des package.json (champs "imports" et
+// "exports"), que TypeScript lit seul, pour les fichiers du backend comme pour ceux du front.
 const program = ts.createProgram({
   rootNames: [...new Set([...parsedConfig.fileNames, ...backendFiles, ...serverActions, ...appEntries])],
-  options: { ...parsedConfig.options, paths: absolutePaths, noEmit: true, jsx: ts.JsxEmit.Preserve },
+  options: { ...parsedConfig.options, noEmit: true, jsx: ts.JsxEmit.Preserve },
 });
 const checker = program.getTypeChecker();
 
@@ -112,10 +107,12 @@ const isProjectFile = (f) => f.startsWith(ROOT) && !f.includes("/node_modules/")
 
 function resolveModule(fromFile, spec) {
   let base;
-  if (spec.startsWith("@backend/")) base = join(BACKEND, spec.slice("@backend/".length));
+  // « #… » depuis un fichier du backend, ou « @akfc/backend/… » : un fichier du backend, extension comprise.
+  if (spec.startsWith("#") && fromFile.startsWith(BACKEND)) base = join(BACKEND, spec.slice(1));
+  else if (spec.startsWith("@akfc/backend/")) base = join(BACKEND, spec.slice("@akfc/backend/".length));
   else if (spec.startsWith(".")) base = resolve(dirname(fromFile), spec);
   else return null;
-  for (const c of [base + ".ts", base + ".tsx", join(base, "index.ts")]) if (files.has(c)) return c;
+  for (const c of [base, base + ".ts", base + ".tsx", join(base, "index.ts")]) if (files.has(c)) return c;
   return null;
 }
 

@@ -1,9 +1,9 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { trpc } from '@trpc/trpcClient';
-import { MediaItemsEditor } from '@features/admin/galleries/components/MediaItemsEditor';
-import type { ImageUsageValue } from '@contracts/legal/imageConsent';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { MediaItemsEditor } from '#features/admin/galleries/components/MediaItemsEditor.tsx';
+import type { ImageUsageValue } from '@akfc/contracts/legal/imageConsent.ts';
 
 /**
  * Gestion des items d'une galerie **existante** (page d'édition).

@@ -3,7 +3,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import {
   getR2Bucket,
   getR2Client,
-} from "@backend/modules/storage/adapters/r2/client";
+} from "#modules/storage/adapters/r2/client.ts";
 
 /**
  * Clé R2 RÉSERVÉE du logo du site. Hors préfixe applicatif (`AKFC/…`) donc

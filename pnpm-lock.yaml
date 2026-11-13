@@ -325,6 +325,18 @@ importers:
 
   apps/web:
     dependencies:
+      '@akfc/backend':
+        specifier: workspace:*
+        version: link:../../packages/backend
+      '@akfc/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@akfc/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@akfc/finder-core':
+        specifier: workspace:*
+        version: link:../../packages/finder-core
       '@aws-sdk/client-s3':
         specifier: ^3.1049.0
         version: 3.1056.0
@@ -346,9 +358,6 @@ importers:
       '@tiptap/html':
         specifier: ^3.27.1
         version: 3.27.1(@tiptap/core@3.27.3(@tiptap/pm@3.27.3))(@tiptap/pm@3.27.3)(happy-dom@20.9.0)
-      '@workspace/finder-core':
-        specifier: workspace:*
-        version: link:../../packages/finder-core
       embla-carousel-autoplay:
         specifier: ^8.6.0
         version: 8.6.0(embla-carousel@8.6.0)
@@ -416,21 +425,23 @@ importers:
 
   packages/backend:
     dependencies:
+      '@akfc/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@aws-sdk/client-s3':
         specifier: ^3.1049.0
         version: 3.1056.0
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.1049.0
         version: 3.1056.0
-      '@workspace/contracts':
-        specifier: workspace:*
-        version: link:../contracts
+
+  packages/config: {}
 
   packages/contracts: {}
 
   packages/finder-core:
     dependencies:
-      '@workspace/contracts':
+      '@akfc/contracts':
         specifier: workspace:*
         version: link:../contracts
 

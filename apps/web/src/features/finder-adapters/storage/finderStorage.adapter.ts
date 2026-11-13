@@ -7,10 +7,10 @@ import type {
   FinderNode,
   FinderNodeMetadata,
   MoveOptions,
-} from '@contracts/finder';
-import { trpcClient } from '@/core/trpc/trpcClient';
+} from '@akfc/contracts/finder/index.ts';
+import { trpcClient } from '#core/trpc/trpcClient.ts';
 import type { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
-import type { AppRouter } from '@backend/modules';
+import type { AppRouter } from '@akfc/backend/modules/index.ts';
 
 import { getMediaUrl, kindFromFormat } from './utils';
 

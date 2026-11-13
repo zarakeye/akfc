@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { processInboundEmail, type InboundEmail, type InboundOutcome } from "./inboundEmail";
-import { sendTicketFollowUpNotification } from "@backend/email/services/sendTicketEmails";
+import { sendTicketFollowUpNotification } from "#email/services/sendTicketEmails.ts";
 
 /*
  * Relève de la boîte noreply@ (IMAP) : les réponses des demandeurs rejoignent leur demande.

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { slugSchema } from "@contracts/slug/slug.schema";
+import { slugSchema } from "#slug/slug.schema.ts";
 
 /** Schéma unifié create+edit. `id` absent → création, présent → édition. */
 export const saveFamilyFormSchema = z.object({

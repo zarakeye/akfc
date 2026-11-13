@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { router, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
+import { router, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
 import {
   mediaPeopleFor,
   mediaVerdictsFor,
@@ -10,9 +10,9 @@ import {
   setMediaPeople,
   setNoRecognizablePerson,
   tagCandidates,
-} from "@backend/modules/mediaPeople/mediaPeople.service";
-import { publicRightsReport } from "@backend/modules/mediaPeople/publicRightsReport.service";
-import { myAppearances } from "@backend/modules/mediaPeople/myAppearances.service";
+} from "#modules/mediaPeople/mediaPeople.service.ts";
+import { publicRightsReport } from "#modules/mediaPeople/publicRightsReport.service.ts";
+import { myAppearances } from "#modules/mediaPeople/myAppearances.service.ts";
 
 /**
  * Tags de personnes sur les médias : posés et lus par les administrateurs. Les tags sont des données

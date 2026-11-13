@@ -2,7 +2,7 @@
 
 import { Monitor } from "lucide-react"
 
-import { chooseOs, OS_LABEL, useChosenOs, type OsName } from "@features/docs/ui/OsTabs"
+import { chooseOs, OS_LABEL, useChosenOs, type OsName } from "#features/docs/ui/OsTabs.tsx"
 
 /**
  * Le système pour lequel la doc montre ses commandes, dans la barre latérale, à côté du thème.

@@ -1,13 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-import type { SpaceBinItem } from "@contracts/trash/trash.dto";
+import type { SpaceBinItem } from "@akfc/contracts/trash/trash.dto.ts";
 
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
-import { groupIdFromLogicalPath } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
-import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
-import { deleteForever } from "@backend/modules/trash/services/deleteForever.service";
-import { bigIntToSafeNumber } from "@backend/modules/trash/utils";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
+import { groupIdFromLogicalPath } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
+import { resolveGroupAccessForUser } from "#modules/memberGroups/resolveGroupAccessForUser.service.ts";
+import { deleteForever } from "#modules/trash/services/deleteForever.service.ts";
+import { bigIntToSafeNumber } from "#modules/trash/utils.ts";
 
 /*
  * Conservation de la corbeille.

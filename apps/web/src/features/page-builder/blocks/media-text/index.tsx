@@ -1,5 +1,5 @@
 import { Columns2 } from "lucide-react";
-import type { MediaTextBlockV1 } from "@contracts/page";
+import type { MediaTextBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockDefinition } from "../../BlockDefinition.types";
 

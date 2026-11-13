@@ -4,14 +4,14 @@ import { JSX } from 'react';
 import { X } from 'lucide-react';
 import clsx from 'clsx';
 
-import type { FinderNode } from '@contracts/finder';
-import { videoPosterUrl } from '@features/finder-core/utils/fileType';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
+import { videoPosterUrl } from '#features/finder-core/utils/fileType.ts';
 
 /**
  * PickerCart
  *
  * Bandeau du panier de sélection média — RENDU WEB du panier. La logique
- * (contenu, ajout/retrait) vit dans `@workspace/finder-core/cart` ; ce
+ * (contenu, ajout/retrait) vit dans `@akfc/finder-core/cart/usePickerCartStore.ts` ; ce
  * composant ne fait qu'AFFICHER les nodes qu'on lui passe et émettre des
  * intentions de retrait. C'est volontaire : le mobile (Expo) aura son propre
  * rendu de panier, branché sur le même store.

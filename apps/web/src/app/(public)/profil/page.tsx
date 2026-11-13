@@ -4,11 +4,11 @@ import { useMemo, type JSX } from "react";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { UserPortrait } from "@features/social/UserPortrait";
-import { formatUserName, type DisplayUser } from "@features/social/userDisplay";
-import { InstructorBioEditor } from "@features/social/InstructorBioEditor";
-import { MyImageConsent } from "@features/image-consent/MyImageConsent";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { UserPortrait } from "#features/social/UserPortrait.tsx";
+import { formatUserName, type DisplayUser } from "#features/social/userDisplay.ts";
+import { InstructorBioEditor } from "#features/social/InstructorBioEditor.tsx";
+import { MyImageConsent } from "#features/image-consent/MyImageConsent.tsx";
 
 /**
  * Page « Mon profil » — accessible à tout membre connecté (le proxy garde

@@ -1,12 +1,12 @@
 import { TRPCError } from "@trpc/server";
-import { rewriteAssetPaths } from "@backend/modules/storage/mediaPaths";
+import { rewriteAssetPaths } from "#modules/storage/mediaPaths.ts";
 import type { PrismaClient } from "@prisma/client";
 
 import type {
   RestoreFromBinInput,
   RestoreFromBinOutput,
   RestoreResultItem,
-} from "@contracts/trash/trash.mutations";
+} from "@akfc/contracts/trash/trash.mutations.ts";
 
 import {
   formatBinSuffix,
@@ -15,14 +15,14 @@ import {
   suffixFileName,
   suffixFilePath,
   suffixFolderPath,
-} from "@backend/modules/trash/utils";
-import { pruneEmptyFolders } from "@backend/modules/storage/services/pruneEmptyFolders.service";
+} from "#modules/trash/utils.ts";
+import { pruneEmptyFolders } from "#modules/storage/services/pruneEmptyFolders.service.ts";
 import {
   r2Exists,
   r2ListByPrefix,
   r2MoveFile,
   r2MoveFolder,
-} from "@backend/modules/trash/services/r2TrashOps";
+} from "#modules/trash/services/r2TrashOps.ts";
 
 /**
  * restoreFromBin.service.ts

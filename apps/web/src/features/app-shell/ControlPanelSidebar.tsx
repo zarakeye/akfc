@@ -1,11 +1,11 @@
 "use client";
 
 import { JSX, useEffect, useState } from "react";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { trpc } from "@trpc/trpcClient";
-import { PAGE_REGISTRY } from "@/config/pageRegistry";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { PAGE_REGISTRY } from "#config/pageRegistry.ts";
 
 /**
  * Barre latérale du centre de contrôle (admin).

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ImageGalleryBlockV1, ImageGalleryLayout } from "@contracts/page";
+import type { ImageGalleryBlockV1, ImageGalleryLayout } from "@akfc/contracts/page/index.ts";
 
 import type { BlockEditorProps } from "../../BlockDefinition.types";
 import { MediaListEditor } from "../../components/MediaListEditor";

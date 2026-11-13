@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { getMailTransport, isMailConfigured, mailFrom, siteBaseUrl } from "@backend/email/mailer";
+import { getMailTransport, isMailConfigured, mailFrom, siteBaseUrl } from "#email/mailer.ts";
 import { formatTicketRef } from "./ticketRef";
 
 /*

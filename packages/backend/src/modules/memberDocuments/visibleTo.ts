@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
-import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
+import { collaborativeEntriesForMember } from "#modules/memberGroups/collaborativeEntriesForMember.service.ts";
 
 /**
  * Condition Prisma « ce document des membres concerne cet utilisateur ».

@@ -7,10 +7,10 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/features/editor-tiptap/ui-primitive/tooltip"
+} from "#features/editor-tiptap/ui-primitive/tooltip/index.tsx"
 
 // --- Lib ---
-import { cn, parseShortcutKeys } from "@/lib/tiptap-utils"
+import { cn, parseShortcutKeys } from "#lib/tiptap-utils.ts"
 
 
 export interface ButtonProps

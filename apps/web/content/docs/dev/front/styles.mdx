@@ -5,8 +5,8 @@ section: "Fondations front"
 order: 3
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Un fichier marqué « use client » fait passer ses imports côté navigateur. Ce qu'un composant serveur transmet à un composant client doit être sérialisable, et aucune donnée sensible ne traverse la frontière. Le thème du visiteur en a donné un exemple : la classe `dark` est posée dès le HTML serveur, d'après un cookie.
 

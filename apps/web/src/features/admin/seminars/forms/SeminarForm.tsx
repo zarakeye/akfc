@@ -3,26 +3,26 @@
 import { useState } from "react";
 import type { Seminar, Audience } from "@prisma/client";
 
-import { PageBuilder } from "@features/page-builder";
+import { PageBuilder } from "#features/page-builder/index.ts";
 import {
   SummaryFieldset,
   useSummaryLimits,
-} from "@features/admin/common/SummaryFieldset";
-import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
-import { APP_ROOT } from "@config/app";
+} from "#features/admin/common/SummaryFieldset.tsx";
+import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
 
-import { DisciplineSelect } from "@features/admin/common/components/DisciplineSelect";
-import { OriginSelect } from "@features/admin/common/components/OriginSelect";
-import { InstructorSelect } from "@features/admin/common/components/InstructorSelect";
-import { AnimatorsMultiSelect } from "@features/admin/common/components/AnimatorsMultiSelect";
+import { DisciplineSelect } from "#features/admin/common/components/DisciplineSelect.tsx";
+import { OriginSelect } from "#features/admin/common/components/OriginSelect.tsx";
+import { InstructorSelect } from "#features/admin/common/components/InstructorSelect.tsx";
+import { AnimatorsMultiSelect } from "#features/admin/common/components/AnimatorsMultiSelect.tsx";
 
-import { slugify } from "@contracts/slug/slugify";
+import { slugify } from "@akfc/contracts/slug/slugify.ts";
 import {
   emptyPageContentV1,
   parsePageContentV1,
   plainTextFromPageContentV1,
   type PageContentV1,
-} from "@contracts/page";
+} from "@akfc/contracts/page/index.ts";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types                                                                  */

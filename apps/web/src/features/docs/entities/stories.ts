@@ -1,5 +1,5 @@
-import procedureMap from "@features/docs/entities/procedureMap.generated.json";
-import { slugifyHeading } from "@features/docs/lib/slugifyHeading";
+import procedureMap from "#features/docs/entities/procedureMap.generated.json";
+import { slugifyHeading } from "#features/docs/lib/slugifyHeading.ts";
 
 /*
  * Parcours d'un chapitre : un cas d'utilisation (« un membre dépose une demande ») raconté en

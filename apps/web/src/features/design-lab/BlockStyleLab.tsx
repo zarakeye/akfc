@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties, type JSX } from "react";
 
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import { RealBlocksPreview } from "./RealBlocksPreview";
 
 /**

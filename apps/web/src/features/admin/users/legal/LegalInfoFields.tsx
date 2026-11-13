@@ -2,7 +2,7 @@
 
 import type { JSX } from "react";
 
-import { LEGAL_AGE_LABEL, type LegalAgeValue } from "@contracts/legal/imageConsent";
+import { LEGAL_AGE_LABEL, type LegalAgeValue } from "@akfc/contracts/legal/imageConsent.ts";
 
 /** Majorité et parent référent, tels que saisis dans le formulaire (chaînes vides = non renseigné). */
 export type LegalInfoValue = {

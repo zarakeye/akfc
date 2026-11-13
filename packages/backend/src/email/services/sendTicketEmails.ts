@@ -1,7 +1,7 @@
-import { prisma } from "@backend/prisma";
-import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "@backend/email/mailer";
-import { isDemoEmail } from "@backend/lib/demoAccounts";
-import { formatTicketRef, ticketSubject } from "@backend/modules/tickets/ticketRef";
+import { prisma } from "#prisma.ts";
+import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "#email/mailer.ts";
+import { isDemoEmail } from "#lib/demoAccounts.ts";
+import { formatTicketRef, ticketSubject } from "#modules/tickets/ticketRef.ts";
 
 /*
  * E-mails d'une nouvelle demande, tous envoyés par l'adresse d'envoi du site (noreply@) :

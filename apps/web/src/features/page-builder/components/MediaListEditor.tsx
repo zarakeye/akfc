@@ -4,14 +4,14 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Plus, X } from "lucide-react";
 import type { inferRouterOutputs } from "@trpc/server";
 
-import { MediaPicker } from "@/features/finder-core/components/MediaPicker";
-import { Button } from "@/features/editor-tiptap/ui-primitive/button";
-import { trpc, trpcClient } from "@/core/trpc/trpcClient";
-import type { AppRouter } from "@backend/modules";
+import { MediaPicker } from "#features/finder-core/components/MediaPicker.tsx";
+import { Button } from "#features/editor-tiptap/ui-primitive/button/index.tsx";
+import { trpc, trpcClient } from "#core/trpc/trpcClient.ts";
+import type { AppRouter } from "@akfc/backend/modules/index.ts";
 
-import { usePageBuilderContext } from "@features/page-builder/PageBuilderContext";
-import { MediaTagsDialog } from "@features/admin/media-people/MediaTagsDialog";
-import { VerdictBadges } from "@features/admin/media-people/RightsBadges";
+import { usePageBuilderContext } from "#features/page-builder/PageBuilderContext.tsx";
+import { MediaTagsDialog } from "#features/admin/media-people/MediaTagsDialog.tsx";
+import { VerdictBadges } from "#features/admin/media-people/RightsBadges.tsx";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types                                                                  */

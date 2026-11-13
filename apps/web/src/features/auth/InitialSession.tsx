@@ -2,8 +2,8 @@
 
 import { createContext, JSX, ReactNode, useContext } from "react";
 
-import type { SessionClient } from "@contracts/auth/session.types";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import type { SessionClient } from "@akfc/contracts/auth/session.types.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 
 /**
  * Session lue CÔTÉ SERVEUR par le layout racine, transmise aux composants client.

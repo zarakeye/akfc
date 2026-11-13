@@ -2,9 +2,9 @@
 
 import { JSX, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { trpc } from '@trpc/trpcClient';
+import { trpc } from '#core/trpc/trpcClient.ts';
 import { Table, type Column } from 'react-ts-tab-lib';
-import { deleteColumn } from "@features/admin/common/delete";
+import { deleteColumn } from "#features/admin/common/delete/index.ts";
 
 /**
  * SeminarsTable — `trpc.seminar.getAll`. Rattachement résolu : discipline du club,

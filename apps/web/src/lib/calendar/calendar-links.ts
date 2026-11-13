@@ -1,4 +1,4 @@
-import { formatLocalICalStamp } from "@lib/calendar/ical";
+import { formatLocalICalStamp } from "#lib/calendar/ical.ts";
 
 /**
  * Génération des liens « Ajouter à l'agenda » deep-link pour Google

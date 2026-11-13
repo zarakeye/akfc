@@ -2,17 +2,17 @@
 
 import { useState, type JSX } from "react";
 
-import { trpc } from "@trpc/trpcClient";
-import { PageBuilder } from "@features/page-builder";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { PageBuilder } from "#features/page-builder/index.ts";
 import {
   parsePageContentV1,
   emptyPageContentV1,
   type PageContentV1,
-} from "@contracts/page";
-import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
-import { APP_ROOT } from "@config/app";
-import PersoPhotoUploader from "@features/media/PersoPhotoUploader";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+} from "@akfc/contracts/page/index.ts";
+import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
+import PersoPhotoUploader from "#features/media/PersoPhotoUploader.tsx";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 
 /**
  * Éditeur de la présentation publique d'un instructeur, sur SON profil.

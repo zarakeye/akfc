@@ -3,12 +3,12 @@
 import { useState, type JSX } from "react";
 import { Eye } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { IMAGE_CONSENT_LABEL } from "@contracts/legal/imageConsent";
-import { BlankConsentFormCard } from "@features/image-consent/BlankConsentFormCard";
-import { ImageConsentFormViewer, type ViewableConsentForm } from "@features/image-consent/ImageConsentFormViewer";
-import { formatDate, formatKeepAfterLeave, formatUsages } from "@features/image-consent/consentFormat";
-import { OnlineConsentForm } from "@features/image-consent/OnlineConsentForm";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { IMAGE_CONSENT_LABEL } from "@akfc/contracts/legal/imageConsent.ts";
+import { BlankConsentFormCard } from "#features/image-consent/BlankConsentFormCard.tsx";
+import { ImageConsentFormViewer, type ViewableConsentForm } from "#features/image-consent/ImageConsentFormViewer.tsx";
+import { formatDate, formatKeepAfterLeave, formatUsages } from "#features/image-consent/consentFormat.ts";
+import { OnlineConsentForm } from "#features/image-consent/OnlineConsentForm.tsx";
 
 /**
  * Profil : droit à l'image du membre connecté — statut, formulaires signés déposés par le club

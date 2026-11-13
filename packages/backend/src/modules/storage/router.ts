@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { confirmReplacement, prepareReplacement } from "@backend/modules/fileVersions/fileVersions.service";
-import { countBinExpiringSoon } from "@backend/modules/trash/services/trashRetention.service";
-import { assertOutsideAvatars, avatarsPrefix, outsideBin } from "@backend/modules/storage/mediaPaths";
+import { confirmReplacement, prepareReplacement } from "#modules/fileVersions/fileVersions.service.ts";
+import { countBinExpiringSoon } from "#modules/trash/services/trashRetention.service.ts";
+import { assertOutsideAvatars, avatarsPrefix, outsideBin } from "#modules/storage/mediaPaths.ts";
 import { TRPCError } from "@trpc/server";
 
 /**
@@ -41,49 +41,49 @@ function stripBinSubtree(node: StorageFolderNode, binPath: string): void {
     }
   }
 }
-import { enrichTreeWithStatus } from "@backend/modules/storage/services/enrichStatus.service";
+import { enrichTreeWithStatus } from "#modules/storage/services/enrichStatus.service.ts";
 
-import { router, protectedProcedure } from "@backend/trpc";
-import { isAdmin } from "@backend/trpc/middleware";
+import { router, protectedProcedure } from "#trpc/index.ts";
+import { isAdmin } from "#trpc/middleware.ts";
 
 import {
   storageProviderSchema,
   storageMoveIntentSchema,
   createR2UploadAuthorizationSchema,
   type StorageFolderNode,
-} from "@contracts/storage";
+} from "@akfc/contracts/storage/index.ts";
 
-import { uploadDestinationSchema, type UploadDestination } from "@contracts/storage/upload-destination.schema";
-import { uploadTypeError } from "@contracts/storage/allowedUploadTypes";
+import { uploadDestinationSchema, type UploadDestination } from "@akfc/contracts/storage/upload-destination.schema.ts";
+import { uploadTypeError } from "@akfc/contracts/storage/allowedUploadTypes.ts";
 
-import { getAdapter } from "@backend/modules/storage/providerRegistry";
-import { VirtualStorage } from "@backend/modules/storage/virtualStorage";
-import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
-import { isRootFolder } from "@backend/modules/storage/services/ensureRootFolders.service";
+import { getAdapter } from "#modules/storage/providerRegistry.ts";
+import { VirtualStorage } from "#modules/storage/virtualStorage.ts";
+import { isProtectedEntityFolderPath } from "#modules/storage/protectedEntityFolder.ts";
+import { isRootFolder } from "#modules/storage/services/ensureRootFolders.service.ts";
 import {
   planMoveOperations,
   executeMoveOperations,
-} from "@backend/modules/storage/resolveMoveIntent.service";
-import { countPersoImages } from "@backend/modules/media/services/countPersoImages.service";
-import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
-import { listCommonRepositoryFolders } from "@backend/modules/media/services/listCommonRepositoryFolders.service";
-import { listMyCommonRepositoryContainers } from "@backend/modules/media/services/listMyCommonRepositoryContainers.service";
-import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
-import { resolvePendingUploadFolder } from '@backend/modules/storage/services/resolvePendingUploadFolder.service';
-import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
-import { assertCanWritePaths } from "@backend/modules/memberGroups/assertCanWritePaths.service";
-import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
-import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
-import { scopePersoSpaceInTree } from "@backend/modules/storage/scopePersoSpace.service";
-import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
-import { mergeGroupSpaceFoldersIntoTree } from "@backend/modules/storage/mergeGroupSpaceFolders.service";
+} from "#modules/storage/resolveMoveIntent.service.ts";
+import { countPersoImages } from "#modules/media/services/countPersoImages.service.ts";
+import { PERSO_PHOTO_QUOTA } from "#modules/media/services/persoPhotoQuota.constants.ts";
+import { listCommonRepositoryFolders } from "#modules/media/services/listCommonRepositoryFolders.service.ts";
+import { listMyCommonRepositoryContainers } from "#modules/media/services/listMyCommonRepositoryContainers.service.ts";
+import { commonRepositoryContainerPath } from "#modules/media/services/commonRepositoryContainerPath.service.ts";
+import { resolvePendingUploadFolder } from '#modules/storage/services/resolvePendingUploadFolder.service.ts';
+import { assertCanReadPath } from "#modules/memberGroups/assertCanReadPath.service.ts";
+import { assertCanWritePaths } from "#modules/memberGroups/assertCanWritePaths.service.ts";
+import { resolveGroupBaseFolder } from "#modules/media/services/resolveGroupBaseFolder.service.ts";
+import { resolvePersoBaseFolder } from "#modules/media/services/resolvePersoBaseFolder.service.ts";
+import { scopePersoSpaceInTree } from "#modules/storage/scopePersoSpace.service.ts";
+import { collaborativeEntriesForMember } from "#modules/memberGroups/collaborativeEntriesForMember.service.ts";
+import { mergeGroupSpaceFoldersIntoTree } from "#modules/storage/mergeGroupSpaceFolders.service.ts";
 import {
   ensureContentRootsInTree,
   requiredRootPaths,
-} from "@backend/modules/storage/ensureContentRoots.service";
-import { applyGroupSpaceNamesToTree } from "@backend/modules/storage/applyGroupSpaceNames.service";
-import { assertUploadDestinationAllowed } from '@backend/modules/storage/assertUploadDestinationAllowed.service';
-import { buildUploadFileName } from '@backend/modules/storage/services/buildUploadFileName.service';
+} from "#modules/storage/ensureContentRoots.service.ts";
+import { applyGroupSpaceNamesToTree } from "#modules/storage/applyGroupSpaceNames.service.ts";
+import { assertUploadDestinationAllowed } from '#modules/storage/assertUploadDestinationAllowed.service.ts';
+import { buildUploadFileName } from '#modules/storage/services/buildUploadFileName.service.ts';
 
 /**
  * storageRouter — finder (lecture, renommage, déplacement) et envois vers R2.

@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next";
 
-import { prisma } from "@backend/prisma";
+import { prisma } from "@akfc/backend/prisma.ts";
 
-import { SITE_URL } from "@/config/siteUrl";
-import { PAGE_REGISTRY } from "@/config/pageRegistry";
+import { SITE_URL } from "#config/siteUrl.ts";
+import { PAGE_REGISTRY } from "#config/pageRegistry.ts";
 
 /**
  * sitemap.xml généré par Next.

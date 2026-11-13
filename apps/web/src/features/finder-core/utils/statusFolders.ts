@@ -1,5 +1,5 @@
-import { APP_ROOT } from '@config/app';
-import type { FinderNode } from '@contracts/finder';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
 /**
  * Statut de cycle de vie d'un fichier : `MediaAsset.status` (`pending`, `published`), plus `bin`

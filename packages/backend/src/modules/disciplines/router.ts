@@ -2,21 +2,21 @@ import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
-import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
-import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
-import { assertDisciplineReferences } from "@backend/modules/disciplines/services/assertDisciplineReferences.service";
-import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
+import { router, protectedProcedure, publicProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
+import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaReferences.service.ts";
+import { assertDisciplineReferences } from "#modules/disciplines/services/assertDisciplineReferences.service.ts";
+import { isSpaceEmpty } from "#modules/storage/isSpaceEmpty.service.ts";
 import {
   disciplineFolderPath,
   newDisciplineSegment,
   setFolderLabel,
-} from "@backend/modules/storage/storageSegments";
+} from "#modules/storage/storageSegments.ts";
 
-import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
-import { slugSchema } from "@contracts/slug/slug.schema";
-import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
-import { assertPublicContentRights, assertPublicMediaRights } from "@backend/modules/mediaPeople/publicContentRights.service";
+import { pageContentSchemaV1, parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import { slugSchema } from "@akfc/contracts/slug/slug.schema.ts";
+import { assertOwnAvatars } from "#modules/media/services/assertOwnAvatars.service.ts";
+import { assertPublicContentRights, assertPublicMediaRights } from "#modules/mediaPeople/publicContentRights.service.ts";
 
 /**
  * disciplines/router.ts

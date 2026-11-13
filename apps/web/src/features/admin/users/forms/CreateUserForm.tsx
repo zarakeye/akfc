@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   EMPTY_LEGAL_INFO,
   LegalInfoFields,
   legalInfoError,
   type LegalInfoValue,
-} from "@features/admin/users/legal/LegalInfoFields";
+} from "#features/admin/users/legal/LegalInfoFields.tsx";
 
 export interface CreateUserFormInput {
   email: string;

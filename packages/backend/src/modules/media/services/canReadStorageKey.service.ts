@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
-import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
+import { resolveGroupAccessForUser } from "#modules/memberGroups/resolveGroupAccessForUser.service.ts";
 
 /**
  * Lecture d'un fichier privé par la route `/api/media/r2/…` : qui peut obtenir l'URL signée ?

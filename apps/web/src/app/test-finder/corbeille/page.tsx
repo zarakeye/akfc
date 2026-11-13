@@ -1,5 +1,5 @@
 import { JSX } from 'react';
-import TrashView from '@features/trash-view/components/TrashView';
+import TrashView from '#features/trash-view/components/TrashView.tsx';
 
 /**
  * Route /test-finder/corbeille

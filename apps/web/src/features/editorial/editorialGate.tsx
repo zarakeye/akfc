@@ -1,8 +1,8 @@
 import type { JSX } from "react";
 import type { Metadata } from "next";
 
-import { prisma } from "@backend/prisma";
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
 
 /**
  * Gating d'une page éditoriale (home / association / contacts).

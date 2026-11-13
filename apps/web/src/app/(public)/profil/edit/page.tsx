@@ -1,7 +1,7 @@
 import { Suspense, type JSX } from "react";
 
-import UpdateMeForm from "@features/admin/users/forms/update-me/UpdateMeForm";
-import ChangePasswordForm from "@features/auth/ChangePasswordForm";
+import UpdateMeForm from "#features/admin/users/forms/update-me/UpdateMeForm.tsx";
+import ChangePasswordForm from "#features/auth/ChangePasswordForm.tsx";
 
 /**
  * Édition du profil — même formulaire que la première connexion

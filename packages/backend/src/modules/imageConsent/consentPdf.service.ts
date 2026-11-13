@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
-import { compareWishes, type ConsentChoices, type ImageUsageValue, type LegalAgeValue } from "@contracts/legal/imageConsent";
+import { compareWishes, type ConsentChoices, type ImageUsageValue, type LegalAgeValue } from "@akfc/contracts/legal/imageConsent.ts";
 
 /**
  * Formulaire d'autorisation de droit à l'image (apps/web/public/documents), rempli par le serveur.

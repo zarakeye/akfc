@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
-import { prisma } from "@backend/prisma";
-import { PresentationShell } from "@features/admin/common/components/PresentationShell";
-import { CATEGORY_KEY_LABELS } from "@contracts/categories/categoryKey";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { PresentationShell } from "#features/admin/common/components/PresentationShell.tsx";
+import { CATEGORY_KEY_LABELS } from "@akfc/contracts/categories/categoryKey.ts";
 
 /**
  * Présentation admin d'une catégorie — `/(admin)/dashboard/categories/[id]`.

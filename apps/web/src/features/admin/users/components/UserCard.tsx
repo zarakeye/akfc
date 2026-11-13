@@ -2,8 +2,8 @@
 
 import { JSX } from "react";
 import Image from "next/image";
-import { trpc } from "@trpc/trpcClient";
-import { avatarUrlFor } from "@features/social/userDisplay";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { avatarUrlFor } from "#features/social/userDisplay.ts";
 
 interface UserCardProps {
   userId: string;

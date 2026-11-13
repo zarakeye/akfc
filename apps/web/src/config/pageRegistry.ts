@@ -1,4 +1,4 @@
-import type { EditorialPageKey } from "@contracts/page";
+import type { EditorialPageKey } from "@akfc/contracts/page/index.ts";
 
 /**
  * Registre des PAGES ÉDITORIALES — pages au contenu PROPRE (non dynamiques, non

@@ -4,7 +4,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { CreateGalleryForm } from "@features/admin/galleries/forms/CreateGalleryForm";
+import { CreateGalleryForm } from "#features/admin/galleries/forms/CreateGalleryForm.tsx";
 
 /**
  * Création d'une galerie — `/(admin)/dashboard/galleries/create`.

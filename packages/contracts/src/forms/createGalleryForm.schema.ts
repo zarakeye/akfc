@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { slugSchema } from "@contracts/slug/slug.schema";
+import { slugSchema } from "#slug/slug.schema.ts";
 
 // 🧩 Schéma — création d'une galerie (métadonnées seulement).
 // `visibility` en z.enum littéral pour garder @contracts indépendant de Prisma.

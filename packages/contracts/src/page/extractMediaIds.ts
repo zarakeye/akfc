@@ -1,4 +1,4 @@
-import type { PageBlockV1, PageContentV1 } from "@contracts/page/blocks.v1";
+import type { PageBlockV1, PageContentV1 } from "#page/blocks.v1.ts";
 
 /**
  * Extraction des références `mediaId` d'un bloc ou d'un contenu de page.

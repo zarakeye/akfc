@@ -1,8 +1,8 @@
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
-import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
-import { groupIdFromLogicalPath, personalSpaceOwnerId } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
+import { resolveGroupAccessForUser } from "#modules/memberGroups/resolveGroupAccessForUser.service.ts";
+import { groupIdFromLogicalPath, personalSpaceOwnerId } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
 
 /**
  * Garde de LECTURE du finder : un ADMIN lit partout ; un non-admin ne peut lire

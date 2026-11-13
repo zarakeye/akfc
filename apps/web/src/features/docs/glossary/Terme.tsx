@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import { GLOSSARIES, type GlossarySpace } from "@features/docs/glossary/glossary"
+import { GLOSSARIES, type GlossarySpace } from "#features/docs/glossary/glossary.ts"
 
 /**
  * Un terme du glossaire dans le texte d'un chapitre. Inséré par `remarkGlossary`, jamais écrit à la

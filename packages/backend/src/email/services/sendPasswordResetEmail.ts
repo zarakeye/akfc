@@ -1,5 +1,5 @@
-import { prisma } from "@backend/prisma";
-import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "@backend/email/mailer";
+import { prisma } from "#prisma.ts";
+import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "#email/mailer.ts";
 
 /**
  * Envoie le lien de réinitialisation de mot de passe (« mot de passe oublié »).

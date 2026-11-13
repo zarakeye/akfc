@@ -1,9 +1,9 @@
 import { cache } from "react"
 
-import { generateDocsIndex } from "@features/docs/lib/docs.index"
-import { getNumberedDoc } from "@features/docs/lib/docs.navigation"
-import { slugifyHeading } from "@features/docs/lib/slugifyHeading"
-import type { DocSpaceId } from "@features/docs/lib/docs.spaces"
+import { generateDocsIndex } from "#features/docs/lib/docs.index.ts"
+import { getNumberedDoc } from "#features/docs/lib/docs.navigation.ts"
+import { slugifyHeading } from "#features/docs/lib/slugifyHeading.ts"
+import type { DocSpaceId } from "#features/docs/lib/docs.spaces.ts"
 
 export interface DocTarget {
   href: string

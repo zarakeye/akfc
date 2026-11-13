@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 
-import { prisma } from "@backend/prisma";
-import { COOKIE_NAME } from "@contracts/auth/constants";
+import { prisma } from "#prisma.ts";
+import { COOKIE_NAME } from "@akfc/contracts/auth/constants.ts";
 import type { Prisma } from "@prisma/client";
-import type { SessionClient } from "@contracts/auth/session.types";
-import { verifyJwt } from "@backend/lib/session/session.server";
+import type { SessionClient } from "@akfc/contracts/auth/session.types.ts";
+import { verifyJwt } from "#lib/session/session.server.ts";
 
 /**
  * Ce que la lecture d'une session ramène, et rien d'autre : la session, les champs du membre qui

@@ -2,9 +2,9 @@
 
 import type { ComponentType, JSX } from "react";
 
-import type { PageBlockKindV1, PageBlockV1, ResolvedMedia } from "@contracts/page";
-import { getBlockDefinition } from "@features/page-builder/blockRegistry";
-import type { BlockViewProps } from "@features/page-builder/BlockDefinition.types";
+import type { PageBlockKindV1, PageBlockV1, ResolvedMedia } from "@akfc/contracts/page/index.ts";
+import { getBlockDefinition } from "#features/page-builder/blockRegistry.ts";
+import type { BlockViewProps } from "#features/page-builder/BlockDefinition.types.ts";
 
 /**
  * Tous les types de blocs, rendus par leurs VRAIES vues (celles de la page publique), sur des

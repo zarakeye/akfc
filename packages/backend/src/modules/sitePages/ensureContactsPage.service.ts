@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
-import { pageContentSchemaV1 } from "@contracts/page";
+import { pageContentSchemaV1 } from "@akfc/contracts/page/index.ts";
 
 import { sameContent } from "./sameContent";
 

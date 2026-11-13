@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import type { Metadata } from "next";
 
-import { GuardianConsentPage } from "@features/image-consent/GuardianConsentPage";
+import { GuardianConsentPage } from "#features/image-consent/GuardianConsentPage.tsx";
 
 /**
  * /autorisation-parent/<jeton> — le parent référent d'un membre mineur valide son autorisation de

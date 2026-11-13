@@ -1,5 +1,5 @@
-import { formatHHMMCompact } from "@lib/time/formatHHMM";
-import { AUDIENCE_LABELS, DAY_LABELS } from "@lib/format";
+import { formatHHMMCompact } from "#lib/time/formatHHMM.ts";
+import { AUDIENCE_LABELS, DAY_LABELS } from "#lib/format/index.ts";
 
 /**
  * Met en forme les créneaux de cours pour la colonne « Horaires » du footer.

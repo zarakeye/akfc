@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { ensureGroupSpaceFolder } from "@backend/modules/memberGroups/ensureGroupSpaceFolder.service";
+import { ensureGroupSpaceFolder } from "#modules/memberGroups/ensureGroupSpaceFolder.service.ts";
 
 const ADMIN_GROUP_NAME = "Administrateurs";
 

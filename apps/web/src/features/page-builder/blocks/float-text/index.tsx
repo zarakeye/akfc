@@ -1,5 +1,5 @@
 import { WrapText } from "lucide-react";
-import type { FloatTextBlockV1 } from "@contracts/page";
+import type { FloatTextBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockDefinition } from "../../BlockDefinition.types";
 

@@ -5,7 +5,9 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    // "noEmit": true,
+    "noEmit": true,
+    // Les imports nomment le fichier, extension comprise : « #features/x/y.tsx », « @akfc/backend/…/z.ts ».
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

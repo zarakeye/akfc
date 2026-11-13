@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import type { FileAdapter } from "@contracts/finder";
+import type { FileAdapter } from "@akfc/contracts/finder/index.ts";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Forme du contexte                                                      */

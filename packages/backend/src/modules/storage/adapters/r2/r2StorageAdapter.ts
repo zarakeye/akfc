@@ -11,7 +11,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { rewriteAssetPaths } from "@backend/modules/storage/mediaPaths";
+import { rewriteAssetPaths } from "#modules/storage/mediaPaths.ts";
 
 import type {
   StorageAdapter,
@@ -26,13 +26,13 @@ import type {
   StorageMetadata,
   StorageMoveOperation,
   StoragePath,
-} from "@contracts/storage";
+} from "@akfc/contracts/storage/index.ts";
 
-import type { UploadDestination } from "@contracts/storage/upload-destination.schema";
-import { HARD_MAX_UPLOAD_BYTES } from "@contracts/storage/r2-upload.schema";
+import type { UploadDestination } from "@akfc/contracts/storage/upload-destination.schema.ts";
+import { HARD_MAX_UPLOAD_BYTES } from "@akfc/contracts/storage/r2-upload.schema.ts";
 
-import { getR2Client, getR2PresignClient, getR2Bucket } from "@backend/modules/storage/adapters/r2/client";
-import { probeMediaDimensions } from "@backend/modules/media/services/mediaDerivatives.service";
+import { getR2Client, getR2PresignClient, getR2Bucket } from "#modules/storage/adapters/r2/client.ts";
+import { probeMediaDimensions } from "#modules/media/services/mediaDerivatives.service.ts";
 
 /**
  * r2StorageAdapter — implémentation Cloudflare R2 complète

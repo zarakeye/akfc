@@ -1,21 +1,21 @@
 'use client';
 
 import { JSX } from 'react';
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
 import { Loader2, Trash2 } from 'lucide-react';
-import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
+import type { TrashEntryDTO } from '@akfc/contracts/trash/trash.dto.ts';
 
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { useTrashStore } from '@features/trash-view/state/useTrashStore';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { useTrashStore } from '#features/trash-view/state/useTrashStore.ts';
 
-import TrashEntryGrid from '@features/trash-view/components/TrashEntryGrid';
-import TrashEntryTableRow from '@features/trash-view/components/TrashEntryTableRow';
-import TrashTableHead from '@features/trash-view/components/TrashTableHead';
-import TrashEntryCompactRow from '@features/trash-view/components/TrashEntryCompactRow';
-import ViewModeSwitcher from '@features/trash-view/components/ViewModeSwitcher';
-import TrashToolbar from '@features/trash-view/components/TrashToolbar';
-import EmptyBinButton from '@features/trash-view/components/EmptyBinButton';
+import TrashEntryGrid from '#features/trash-view/components/TrashEntryGrid.tsx';
+import TrashEntryTableRow from '#features/trash-view/components/TrashEntryTableRow.tsx';
+import TrashTableHead from '#features/trash-view/components/TrashTableHead.tsx';
+import TrashEntryCompactRow from '#features/trash-view/components/TrashEntryCompactRow.tsx';
+import ViewModeSwitcher from '#features/trash-view/components/ViewModeSwitcher.tsx';
+import TrashToolbar from '#features/trash-view/components/TrashToolbar.tsx';
+import EmptyBinButton from '#features/trash-view/components/EmptyBinButton.tsx';
 
 /**
  * FinderBinRootView

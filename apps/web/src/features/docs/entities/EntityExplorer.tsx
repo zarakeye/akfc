@@ -14,11 +14,11 @@ import {
 } from "react";
 import { Atom, BookOpen, ChevronLeft, ChevronRight, Mail, Route, X } from "lucide-react";
 
-import type { ChapterGraph, GraphModel } from "@features/docs/entities/chapterGraph";
-import type { EntityField, EntityLink } from "@features/docs/entities/prismaSchema";
-import type { EffectOp, StepEffect, Story, StoryStep, TrailHop } from "@features/docs/entities/stories";
-import { layoutGraph, type Point } from "@features/docs/entities/layoutGraph";
-import { DocsAction, PILL, PILL_LABEL } from "@features/docs/lib/docsActions";
+import type { ChapterGraph, GraphModel } from "#features/docs/entities/chapterGraph.ts";
+import type { EntityField, EntityLink } from "#features/docs/entities/prismaSchema.ts";
+import type { EffectOp, StepEffect, Story, StoryStep, TrailHop } from "#features/docs/entities/stories.ts";
+import { layoutGraph, type Point } from "#features/docs/entities/layoutGraph.ts";
+import { DocsAction, PILL, PILL_LABEL } from "#features/docs/lib/docsActions.tsx";
 
 /*
  * Carte des entités d'un chapitre : un panneau à droite, ouvert par le bouton « Entités » ou par un

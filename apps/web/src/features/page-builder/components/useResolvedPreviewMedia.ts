@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import { trpcClient } from "@trpc/trpcClient";
-import type { MediaTextBlockV1 } from "@contracts/page";
-import { avatarUrlFor } from "@features/social/userDisplay";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import type { MediaTextBlockV1 } from "@akfc/contracts/page/index.ts";
+import { avatarUrlFor } from "#features/social/userDisplay.ts";
 
 /**
  * Le média d'un bloc, résolu pour l'APERÇU de l'éditeur (les blocs « image et texte » et « texte

@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ExternalLink, Trash2 } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   PostForm,
   type PostFormInput,
-} from "@features/admin/posts/forms/PostForm";
-import { PollEditor } from "@features/social/PollEditor";
+} from "#features/admin/posts/forms/PostForm.tsx";
+import { PollEditor } from "#features/social/PollEditor.tsx";
 
 /**
  * EditPostPage

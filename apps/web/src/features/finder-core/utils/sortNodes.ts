@@ -1,9 +1,9 @@
-import type { FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 import type {
   SortField,
   SortDirection,
   SortState,
-} from '@features/finder-core/state/useFinderStore';
+} from '#features/finder-core/state/useFinderStore.ts';
 
 /**
  * Trie un tableau de FinderNodes selon un critère primaire et un critère

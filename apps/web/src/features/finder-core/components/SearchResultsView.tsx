@@ -2,9 +2,9 @@
 
 import { JSX } from 'react';
 import { FileText, Folder, FolderOpen } from 'lucide-react';
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { APP_ROOT } from '@config/app';
-import { highlightMatches } from '@features/finder-core/utils/highlightMatches';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import { highlightMatches } from '#features/finder-core/utils/highlightMatches.ts';
 
 /**
  * 🔎 SearchResultsView — vue plate des résultats de recherche récursive.

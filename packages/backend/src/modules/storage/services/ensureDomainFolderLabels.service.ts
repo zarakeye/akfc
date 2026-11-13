@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { categoryFolderPath, disciplineFolderPath, setFolderLabel } from "@backend/modules/storage/storageSegments";
+import { categoryFolderPath, disciplineFolderPath, setFolderLabel } from "#modules/storage/storageSegments.ts";
 
 /**
  * Pose/rafraîchit le libellé affiché des dossiers de CATÉGORIE et de DISCIPLINE.

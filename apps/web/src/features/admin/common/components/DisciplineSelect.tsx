@@ -1,6 +1,6 @@
 "use client";
 
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Props                                                                  */

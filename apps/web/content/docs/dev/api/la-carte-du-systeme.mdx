@@ -5,8 +5,8 @@ section: "API"
 order: 2
 ---
 
-import { Callout } from "@/features/docs/ui/Callout"
-import DocsTable from "@/features/docs/ui/DocsTable"
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** La fracture n’est pas réseau, elle est structurelle : traduire à la main une donnée typée en JSON, puis la reconstruire, n’a plus de contrepartie quand le front et le back partagent leurs types. tRPC en est la conséquence.
 
@@ -73,7 +73,7 @@ Comment le navigateur peut-il connaître les types d’une fonction qui s’exé
 
 ```ts
 // apps/web/src/core/trpc/trpcClient.ts (extrait)
-import type { AppRouter } from "@backend/modules"
+import type { AppRouter } from "@akfc/backend/modules/index.ts"
 ```
 
 C’est un `import type` : il est effacé à la compilation. Le navigateur reçoit les **types** du routeur, jamais son code, ni celui de Prisma, ni un secret du serveur. TypeScript lit ces types au moment où nous écrivons, et ils disparaissent du code livré. Il n’y a donc ni client à générer, ni fichier de types à tenir à jour : renommer un champ dans une procédure fait échouer `pnpm check` partout où le front l’utilise.

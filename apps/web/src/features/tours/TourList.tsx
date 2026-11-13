@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, PlayCircle } from "lucide-react";
 
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import { tourStore } from "./tour.store";
 import { canFollow, getTour, unavailableReason } from "./tour.registry";
 

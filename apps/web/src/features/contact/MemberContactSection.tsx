@@ -2,8 +2,8 @@
 
 import type { JSX } from "react";
 
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { ContactForm } from "@features/contact/ContactForm";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { ContactForm } from "#features/contact/ContactForm.tsx";
 
 /**
  * Partie MEMBRES de « Nous contacter » : le formulaire de demandes (bureau, support du site),

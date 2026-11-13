@@ -23,8 +23,8 @@ import {
 import {
   getR2Client,
   getR2Bucket,
-} from "@backend/modules/storage/adapters/r2/client";
-import { deleteDerivatives } from "@backend/modules/media/services/mediaDerivatives.service";
+} from "#modules/storage/adapters/r2/client.ts";
+import { deleteDerivatives } from "#modules/media/services/mediaDerivatives.service.ts";
 
 /** Efface les vignettes et affiches d'un fichier supprimé (meilleur effort, jamais bloquant). */
 async function dropDerivatives(keys: string[]): Promise<void> {

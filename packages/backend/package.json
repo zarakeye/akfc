@@ -1,14 +1,20 @@
 {
-  "name": "@workspace/backend",
+  "name": "@akfc/backend",
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
+  "exports": {
+    "./*": "./src/*"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1049.0",
     "@aws-sdk/s3-request-presigner": "^3.1049.0",
-    "@workspace/contracts": "workspace:*"
+    "@akfc/contracts": "workspace:*"
   }
 }

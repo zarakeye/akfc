@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { CreateBreakingNews } from "@features/admin/breaking-news/components/CreateBreakingNews";
+import { CreateBreakingNews } from "#features/admin/breaking-news/components/CreateBreakingNews.tsx";
 
 /** Création — `/(admin)/dashboard/breaking-news/create`. */
 export default function CreateBreakingNewsPage(): JSX.Element {

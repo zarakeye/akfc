@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { SITE_URL } from "@/config/siteUrl";
+import { SITE_URL } from "#config/siteUrl.ts";
 
 /**
  * Données structurées (schema.org) de l'AKFC — type SportsActivityLocation

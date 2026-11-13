@@ -7,7 +7,7 @@ import {
   measureLogoLuminance,
   sameOriginLogoUrl,
   type LogoBackdrop,
-} from "@features/admin/site-settings/LogoPreview";
+} from "#features/admin/site-settings/LogoPreview.tsx";
 
 /**
  * Logo du site posé dans un bloc (média « logo du site » d'un média-texte ou d'un texte enrobant).

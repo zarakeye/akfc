@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 
-import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES, type ImageUsageValue } from "@contracts/legal/imageConsent";
-import { USAGE_VERDICT_LABEL, type PersonUsageState, type UsageVerdict } from "@contracts/legal/mediaPeople";
+import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES, type ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
+import { USAGE_VERDICT_LABEL, type PersonUsageState, type UsageVerdict } from "@akfc/contracts/legal/mediaPeople.ts";
 
 /**
  * Pastilles du droit à l'image : vert = accord, rouge = refus, orange = pas d'autorisation (on

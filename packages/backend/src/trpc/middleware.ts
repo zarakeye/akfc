@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { t } from "@backend/trpc/core";
+import { t } from "#trpc/core.ts";
 
 export const isAdmin = t.middleware(({ ctx, next }) => {
   const user = ctx.sessionClient?.user;

@@ -2,16 +2,16 @@
 
 import { useState, type JSX, type ReactNode } from "react";
 
-import { trpc, trpcClient } from "@/core/trpc/trpcClient";
-import { MediaPicker } from "@/features/finder-core/components/MediaPicker";
-import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
-import { APP_ROOT } from "@config/app";
-import { PageBuilder } from "@features/page-builder";
+import { trpc, trpcClient } from "#core/trpc/trpcClient.ts";
+import { MediaPicker } from "#features/finder-core/components/MediaPicker.tsx";
+import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
+import { APP_ROOT } from "@akfc/config/app.ts";
+import { PageBuilder } from "#features/page-builder/index.ts";
 import {
   plainTextFromPageContentV1,
   DISCIPLINE_SUMMARY_MAX_CHARS,
   type PageContentV1,
-} from "@contracts/page";
+} from "@akfc/contracts/page/index.ts";
 
 /**
  * Bloc « présentation synthétique », partagé par les formulaires de

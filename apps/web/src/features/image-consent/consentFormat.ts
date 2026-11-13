@@ -1,4 +1,4 @@
-import { IMAGE_USAGE_LABEL, type ImageUsageValue } from "@contracts/legal/imageConsent";
+import { IMAGE_USAGE_LABEL, type ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
 
 export function formatDate(d: Date | string | null | undefined): string {
   return d ? new Date(d).toLocaleDateString("fr-FR") : "—";

@@ -2,8 +2,8 @@
 
 import { JSX } from 'react';
 import { Folder, FileText } from 'lucide-react';
-import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
-import { formatDay, purgeIsSoon } from '@features/trash-view/lib/trashDates';
+import type { TrashEntryDTO } from '@akfc/contracts/trash/trash.dto.ts';
+import { formatDay, purgeIsSoon } from '#features/trash-view/lib/trashDates.ts';
 
 type Props = {
   entry: TrashEntryDTO;

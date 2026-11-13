@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import type { StorageFileNode, StorageNode } from "@contracts/storage";
+import type { StorageFileNode, StorageNode } from "@akfc/contracts/storage/index.ts";
 
 /**
  * Enrichissement du listing avec le statut de cycle de vie.

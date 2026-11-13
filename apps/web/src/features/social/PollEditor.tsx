@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type JSX } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 
-import { trpcClient } from "@trpc/trpcClient";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
 
 type PollData = NonNullable<
   Awaited<ReturnType<typeof trpcClient.poll.getByPost.query>>

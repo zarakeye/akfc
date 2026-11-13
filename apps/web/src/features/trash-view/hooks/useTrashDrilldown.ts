@@ -1,11 +1,11 @@
 'use client';
 
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
 import type {
   TrashFolderNode,
   TrashFileNode,
-} from '@contracts/trash/trash-node.types';
+} from '@akfc/contracts/trash/trash-node.types.ts';
 
 /**
  * Récupère le contenu d'une TrashEntry de type "folder", pour le drill-down.

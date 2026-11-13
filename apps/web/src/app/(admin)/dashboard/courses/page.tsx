@@ -4,10 +4,10 @@ import { useMemo, type JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { formatHHMM } from "@lib/time/formatHHMM";
-import { AUDIENCE_LABELS, DAY_LABELS } from "@lib/format";
-import { DeleteRowButton } from "@features/admin/common/delete";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { formatHHMM } from "#lib/time/formatHHMM.ts";
+import { AUDIENCE_LABELS, DAY_LABELS } from "#lib/format/index.ts";
+import { DeleteRowButton } from "#features/admin/common/delete/index.ts";
 
 export default function CoursesListPage(): JSX.Element {
   const { data: courses, isLoading, isError } = trpc.course.getAll.useQuery();

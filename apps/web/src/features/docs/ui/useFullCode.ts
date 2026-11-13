@@ -3,8 +3,8 @@
 import { useCallback, useState } from "react"
 import { usePathname } from "next/navigation"
 
-import { loadFullCode } from "@features/docs/lib/fullCode.action"
-import type { FullCode, FullCodeKind } from "@features/docs/lib/fullCode.server"
+import { loadFullCode } from "#features/docs/lib/fullCode.action.ts"
+import type { FullCode, FullCodeKind } from "#features/docs/lib/fullCode.server.ts"
 
 /** Une même page peut citer plusieurs fois un fichier : une seule requête par fichier et par rendu. */
 const requests = new Map<string, Promise<FullCode | null>>()

@@ -4,7 +4,7 @@ import { renderCodeBlockHtml } from "./CodeBlock"
 import { CodeBlockFrame } from "./CodeBlockFrame"
 import { CodeHeader } from "./CodeHeader"
 import { CodeFenceClient, type FenceSibling } from "./CodeFenceClient"
-import { normalizeLanguage, splitSourceLine, type FenceIndex } from "@features/docs/lib/fenceIndex"
+import { normalizeLanguage, splitSourceLine, type FenceIndex } from "#features/docs/lib/fenceIndex.ts"
 
 /**
  * Rendu des blocs « ``` » des pages MDX.

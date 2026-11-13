@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { CategoryForm } from "@features/admin/categories/forms/CategoryForm";
+import { CategoryForm } from "#features/admin/categories/forms/CategoryForm.tsx";
 
 /** Création d'une catégorie — `/(admin)/dashboard/categories/create`. */
 export default function CreateCategoryPage(): JSX.Element {

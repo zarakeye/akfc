@@ -2,7 +2,7 @@
 
 import type { JSX, ReactNode } from "react";
 
-import type { ImageGalleryBlockV1, ResolvedMedia } from "@contracts/page";
+import type { ImageGalleryBlockV1, ResolvedMedia } from "@akfc/contracts/page/index.ts";
 
 import { useResolvedMediaList } from "../../components/useResolvedMediaList";
 

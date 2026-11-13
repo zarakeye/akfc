@@ -1,8 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-import { extractMediaIdsFromContent, type PageContentV1 } from "@contracts/page";
-import { refusedMediaIds } from "@backend/modules/mediaPeople/mediaPeople.service";
+import { extractMediaIdsFromContent, type PageContentV1 } from "@akfc/contracts/page/index.ts";
+import { refusedMediaIds } from "#modules/mediaPeople/mediaPeople.service.ts";
 
 /**
  * Droit à l'image d'un contenu du constructeur de pages. Tous ces contenus (disciplines, cours,

@@ -8,16 +8,16 @@ import {
   useState,
 } from "react";
 
-import Finder from "@features/finder-core/components/Finder";
-import SpacesBinPanel from "@features/trash-view/components/SpacesBinPanel";
-import { useFinderStore } from "@features/finder-core/state/useFinderStore";
-import { trpc } from "@trpc/trpcClient";
+import Finder from "#features/finder-core/components/Finder.tsx";
+import SpacesBinPanel from "#features/trash-view/components/SpacesBinPanel.tsx";
+import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import { TRPCClientError } from "@trpc/client";
-import { uploadToR2 } from "@features/media/uploadToR2";
+import { uploadToR2 } from "#features/media/uploadToR2.ts";
 import {
   memberFinderAdapter,
   MEMBER_FINDER_ROOT,
-} from "@features/finder-adapters/member/memberFinder.adapter";
+} from "#features/finder-adapters/member/memberFinder.adapter.ts";
 
 /**
  * Barre de DÉPÔT superposée au finder membre. Cible l'espace COURANT (déduit de

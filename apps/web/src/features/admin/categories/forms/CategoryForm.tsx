@@ -5,12 +5,12 @@ import { JSX, startTransition, useActionState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Category } from "@prisma/client";
 
-import { saveCategoryFormSchema } from "@contracts/forms/saveCategoryForm.schema";
-import { CATEGORY_KEYS, CATEGORY_KEY_LABELS, type CategoryKey } from "@contracts/categories/categoryKey";
+import { saveCategoryFormSchema } from "@akfc/contracts/forms/saveCategoryForm.schema.ts";
+import { CATEGORY_KEYS, CATEGORY_KEY_LABELS, type CategoryKey } from "@akfc/contracts/categories/categoryKey.ts";
 import {
   saveCategoryFormAction,
   type SaveCategoryFormState,
-} from "@features/admin/categories/actions/saveCategoryForm.action";
+} from "#features/admin/categories/actions/saveCategoryForm.action.ts";
 import {
   Form,
   FormControl,
@@ -18,11 +18,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@components/ui/form";
-import { Input } from "@components/ui/Input";
-import { Button } from "@components/ui/Button";
-import { trpc } from "@trpc/trpcClient";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+} from "#components/ui/form.tsx";
+import { Input } from "#components/ui/Input.tsx";
+import { Button } from "#components/ui/Button.tsx";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 interface FormValues {
   key: CategoryKey;

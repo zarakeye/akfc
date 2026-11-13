@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import type { FileAdapter } from "@contracts/finder";
+import type { FileAdapter } from "@akfc/contracts/finder/index.ts";
 import {
   extractMediaIdsFromContent,
   type PageContentV1,
   type PageBlockV1,
   type PageBlockKindV1,
-} from "@contracts/page";
-import type { ImageUsageValue } from "@contracts/legal/imageConsent";
-import { checkDestinations, type RightsIssue } from "@contracts/legal/mediaPeople";
-import { trpc } from "@trpc/trpcClient";
-import { RightsCheckBanner } from "@features/admin/media-people/RightsCheckBanner";
+} from "@akfc/contracts/page/index.ts";
+import type { ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
+import { checkDestinations, type RightsIssue } from "@akfc/contracts/legal/mediaPeople.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { RightsCheckBanner } from "#features/admin/media-people/RightsCheckBanner.tsx";
 
 import { getBlockDefinition } from "./blockRegistry";
 import { PageBuilderProvider } from "./PageBuilderContext";

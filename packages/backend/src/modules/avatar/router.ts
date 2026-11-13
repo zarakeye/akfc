@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import { router, protectedProcedure } from "@backend/trpc/core";
+import { router, protectedProcedure } from "#trpc/core.ts";
 import {
   deleteAvatar,
   createAvatarUpload,
   registerAvatar,
-} from "@backend/modules/avatar/avatar.service";
+} from "#modules/avatar/avatar.service.ts";
 
 /**
  * Router avatar — tout est scellé sur le user CONNECTÉ (ctx.sessionClient

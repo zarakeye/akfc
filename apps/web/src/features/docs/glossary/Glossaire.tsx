@@ -1,10 +1,10 @@
 import Link from "next/link"
 
-import { GLOSSARIES, type GlossarySpace } from "@features/docs/glossary/glossary"
-import { getGlossaryCitations } from "@features/docs/glossary/glossaryCitations"
-import { docTarget } from "@features/docs/glossary/glossaryLinks"
-import { InlineMd } from "@features/docs/glossary/InlineMd"
-import { RetourGlossaire } from "@features/docs/glossary/RetourGlossaire"
+import { GLOSSARIES, type GlossarySpace } from "#features/docs/glossary/glossary.ts"
+import { getGlossaryCitations } from "#features/docs/glossary/glossaryCitations.ts"
+import { docTarget } from "#features/docs/glossary/glossaryLinks.ts"
+import { InlineMd } from "#features/docs/glossary/InlineMd.tsx"
+import { RetourGlossaire } from "#features/docs/glossary/RetourGlossaire.tsx"
 
 const initial = (terme: string) =>
   terme.normalize("NFD").replace(/[̀-ͯ]/g, "").charAt(0).toUpperCase()

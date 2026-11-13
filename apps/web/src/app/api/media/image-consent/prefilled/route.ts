@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { prisma } from "@backend/prisma";
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
-import { buildConsentPdf } from "@backend/modules/imageConsent/consentPdf.service";
-import { effectiveLegalAge, missingForMinor } from "@contracts/legal/imageConsent";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
+import { buildConsentPdf } from "@akfc/backend/modules/imageConsent/consentPdf.service.ts";
+import { effectiveLegalAge, missingForMinor } from "@akfc/contracts/legal/imageConsent.ts";
 
 /**
  * Formulaire d'autorisation de droit à l'image PRÉ-REMPLI (nom, prénom, date de naissance, e-mail,

@@ -11,8 +11,8 @@ import {
   Pencil,
 } from "lucide-react";
 
-import UserCard from "@features/admin/users/components/UserCard";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import UserCard from "#features/admin/users/components/UserCard.tsx";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 
 export default function DashboardHome(): JSX.Element {
   const user = useSessionStore((state) => state.session?.user);

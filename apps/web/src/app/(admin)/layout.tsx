@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
-import { prisma } from "@backend/prisma";
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
-import { handledCategoryIds } from "@backend/modules/tickets/ticketQueries.service";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
+import { handledCategoryIds } from "@akfc/backend/modules/tickets/ticketQueries.service.ts";
 
 /**
  * Garde SERVEUR de tout le tableau de bord (`/dashboard/**`).

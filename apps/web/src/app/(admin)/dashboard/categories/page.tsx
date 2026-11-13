@@ -4,10 +4,10 @@ import { JSX } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import { Table, type Column } from "react-ts-tab-lib";
-import { CATEGORY_KEYS, CATEGORY_KEY_LABELS } from "@contracts/categories/categoryKey";
-import { deleteColumn } from "@features/admin/common/delete";
+import { CATEGORY_KEYS, CATEGORY_KEY_LABELS } from "@akfc/contracts/categories/categoryKey.ts";
+import { deleteColumn } from "#features/admin/common/delete/index.ts";
 
 type CategoryRow = { id: number; libelle: string; categorie: string; supprimer: number };
 

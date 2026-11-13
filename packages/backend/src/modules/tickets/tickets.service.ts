@@ -1,7 +1,7 @@
 import { Prisma, type PrismaClient, type TicketStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
+import { isAdminByGroup } from "#modules/memberGroups/isAdminByGroup.service.ts";
 import { formatTicketRef } from "./ticketRef";
 
 /*

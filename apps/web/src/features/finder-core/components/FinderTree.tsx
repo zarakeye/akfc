@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
-import type { FinderNode } from '@contracts/finder';
-import type { FileAdapter } from '@contracts/finder';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
+import type { FileAdapter } from '@akfc/contracts/finder/index.ts';
 
 
 import FinderTreeFolder from './FinderTreeFolder';
 import FinderTreeFile from './FinderTreeFile';
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
 
 /**
  * FinderTree — composant racine de la TreeView du finder.

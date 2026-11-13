@@ -3,12 +3,12 @@ import { JSX, startTransition, useActionState, useEffect, useState } from "react
 import {
   createGalleryFormAction,
   type CreateGalleryFormState,
-} from "@features/admin/galleries/actions/createGalleryForm.action";
-import { Button } from "@components/ui/Button";
-import { Input } from "@components/ui/Input";
+} from "#features/admin/galleries/actions/createGalleryForm.action.ts";
+import { Button } from "#components/ui/Button.tsx";
+import { Input } from "#components/ui/Input.tsx";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createGalleryFormSchema } from "@contracts/forms/createGalleryForm.schema";
-import { slugify } from "@contracts/slug/slugify";
+import { createGalleryFormSchema } from "@akfc/contracts/forms/createGalleryForm.schema.ts";
+import { slugify } from "@akfc/contracts/slug/slugify.ts";
 import {
   Form,
   FormControl,
@@ -16,12 +16,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@components/ui/form";
+} from "#components/ui/form.tsx";
 import { useRouter } from "next/navigation";
-import { trpc } from "@trpc/trpcClient";
-import { MediaItemsEditor } from "@features/admin/galleries/components/MediaItemsEditor";
-import { galleryDestinations } from "@contracts/legal/mediaPeople";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { MediaItemsEditor } from "#features/admin/galleries/components/MediaItemsEditor.tsx";
+import { galleryDestinations } from "@akfc/contracts/legal/mediaPeople.ts";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 interface FormValues {
   title: string;

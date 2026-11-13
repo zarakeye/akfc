@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import DisciplinesTable from "@features/admin/disciplines/components/DisciplinesTable";
+import DisciplinesTable from "#features/admin/disciplines/components/DisciplinesTable.tsx";
 
 /** Liste des disciplines — `/(admin)/dashboard/disciplines`. La table fetch via tRPC. */
 export default function DisciplinesPage(): JSX.Element {

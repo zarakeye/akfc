@@ -4,39 +4,39 @@ import { forwardRef, useMemo, useRef, useState } from "react"
 import { type Editor } from "@tiptap/react"
 
 // --- Hooks ---
-import { useMenuNavigation } from "@/features/editor-tiptap/hooks/headless/use-menu-navigation"
-import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
-import { useTiptapEditor } from "@/features/editor-tiptap/hooks/use-tiptap-editor"
+import { useMenuNavigation } from "#features/editor-tiptap/hooks/headless/use-menu-navigation.ts"
+import { useIsBreakpoint } from "#hooks/use-is-breakpoint.ts"
+import { useTiptapEditor } from "#features/editor-tiptap/hooks/use-tiptap-editor.ts"
 
 // --- Icons ---
-import { BanIcon } from "@/features/editor-tiptap/icons/ban-icon"
-import { HighlighterIcon } from "@/features/editor-tiptap/icons/highlighter-icon"
+import { BanIcon } from "#features/editor-tiptap/icons/ban-icon.tsx"
+import { HighlighterIcon } from "#features/editor-tiptap/icons/highlighter-icon.tsx"
 
 // --- UI Primitives ---
-import type { ButtonProps } from "@/features/editor-tiptap/ui-primitive/button"
-import { Button, ButtonGroup } from "@/features/editor-tiptap/ui-primitive/button"
+import type { ButtonProps } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
+import { Button, ButtonGroup } from "#features/editor-tiptap/ui-primitive/button/index.tsx"
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/features/editor-tiptap/ui-primitive/popover"
-import { Separator } from "@/features/editor-tiptap/ui-primitive/separator"
+} from "#features/editor-tiptap/ui-primitive/popover/index.tsx"
+import { Separator } from "#features/editor-tiptap/ui-primitive/separator/index.tsx"
 import {
   Card,
   CardBody,
   CardItemGroup,
-} from "@/features/editor-tiptap/ui-primitive/card"
+} from "#features/editor-tiptap/ui-primitive/card/index.tsx"
 
 // --- Tiptap UI ---
 import type {
   HighlightColor,
   UseColorHighlightConfig,
-} from "@/features/editor-tiptap/ui/color-highlight-button"
+} from "#features/editor-tiptap/ui/color-highlight-button/index.tsx"
 import {
   ColorHighlightButton,
   pickHighlightColorsByValue,
   useColorHighlight,
-} from "@/features/editor-tiptap/ui/color-highlight-button"
+} from "#features/editor-tiptap/ui/color-highlight-button/index.tsx"
 
 export interface ColorHighlightPopoverContentProps {
   /**

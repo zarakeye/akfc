@@ -29,7 +29,7 @@
  * première occurrence, on retire le ghost et tous les listeners.
  */
 
-import { isDropAllowed, type DragItem } from '@features/finder-core/dnd/payload';
+import { isDropAllowed, type DragItem } from '#features/finder-core/dnd/payload.ts';
 
 const FINDER_DROP_PATH_ATTR = 'data-finder-drop-path';
 

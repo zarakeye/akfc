@@ -3,14 +3,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, Clock } from "lucide-react";
 
-import { NAV_ENTRIES } from "@features/app-shell/navEntries";
-import { CLUB_INFO, FOOTER_LEGAL_LINKS } from "@features/app-shell/clubInfo";
-import { parseSitePhones, telHref } from "@contracts/siteContact/siteContact.schema";
-import { buildFooterSchedule } from "@features/app-shell/buildFooterSchedule";
-import { prisma } from "@backend/prisma";
-import { getActivePartners } from "@features/partners/getActivePartners";
-import { PartnerLogo } from "@features/partners/PartnerLogo";
-import { PARTNER_ROLE_LABEL } from "@features/partners/partnerUi";
+import { NAV_ENTRIES } from "#features/app-shell/navEntries.ts";
+import { CLUB_INFO, FOOTER_LEGAL_LINKS } from "#features/app-shell/clubInfo.ts";
+import { parseSitePhones, telHref } from "@akfc/contracts/siteContact/siteContact.schema.ts";
+import { buildFooterSchedule } from "#features/app-shell/buildFooterSchedule.ts";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { getActivePartners } from "#features/partners/getActivePartners.ts";
+import { PartnerLogo } from "#features/partners/PartnerLogo.tsx";
+import { PARTNER_ROLE_LABEL } from "#features/partners/partnerUi.ts";
 
 /**
  * Pied de page du site public.

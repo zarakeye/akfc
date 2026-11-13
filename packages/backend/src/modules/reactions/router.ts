@@ -5,7 +5,7 @@ import {
   router,
   protectedProcedure,
   publicProcedure,
-} from "@backend/trpc/core";
+} from "#trpc/core.ts";
 
 /**
  * Router des réactions emoji (polymorphe Post / Comment).

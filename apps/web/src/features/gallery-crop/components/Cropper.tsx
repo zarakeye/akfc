@@ -5,13 +5,13 @@ import { Circle, Square, Sun, Moon, Undo2, RotateCcw } from "lucide-react";
 import type {
   CropperProps,
   CropGrid,
-} from "@/features/gallery-crop/types/cropper.types";
-import CropGridOverlay from "@/features/gallery-crop/components/cropGridOverlay";
-import CropMaskOverlay from "@/features/gallery-crop/components/cropMaskOverlay";
-import { useTransformWithUndo } from "@/features/gallery-crop/hooks/useTransformWithUndo";
-import { useCropperTheme } from "@/lib/stores/useCropperTheme";
-import { MAX_OUTPUT_SIDE, outputSide, PHOTO_OUTPUT_TYPES, renameForType } from "@contracts/media/cropOutput";
-import { encodeCanvas } from "@/features/gallery-crop/lib/encodeCanvas";
+} from "#features/gallery-crop/types/cropper.types.ts";
+import CropGridOverlay from "#features/gallery-crop/components/cropGridOverlay.tsx";
+import CropMaskOverlay from "#features/gallery-crop/components/cropMaskOverlay.tsx";
+import { useTransformWithUndo } from "#features/gallery-crop/hooks/useTransformWithUndo.ts";
+import { useCropperTheme } from "#lib/stores/useCropperTheme.ts";
+import { MAX_OUTPUT_SIDE, outputSide, PHOTO_OUTPUT_TYPES, renameForType } from "@akfc/contracts/media/cropOutput.ts";
+import { encodeCanvas } from "#features/gallery-crop/lib/encodeCanvas.ts";
 
 const WORKSPACE = 500;
 const WIDE = 620; // px : au-delà → curseurs verticaux à droite

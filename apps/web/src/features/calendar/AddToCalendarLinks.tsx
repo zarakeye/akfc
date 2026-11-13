@@ -4,7 +4,7 @@ import {
   googleCalendarUrl,
   outlookCalendarUrl,
   type CalendarEventDetail,
-} from "@lib/calendar/calendar-links";
+} from "#lib/calendar/calendar-links.ts";
 
 /**
  * Menu « Ajouter à l'agenda » pour **une** séance — deep-links Google

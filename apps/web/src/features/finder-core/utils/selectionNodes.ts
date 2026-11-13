@@ -1,4 +1,4 @@
-import type { FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
 /**
   * Construit un pool de nodes indexé par `id` et par `path`. Le pool est utilisé

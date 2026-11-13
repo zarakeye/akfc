@@ -1,4 +1,4 @@
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
 
 /**
  * Garde des server actions d'administration.

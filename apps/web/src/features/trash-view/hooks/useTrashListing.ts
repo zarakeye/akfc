@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
-import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import type { TrashEntryDTO } from '@akfc/contracts/trash/trash.dto.ts';
 
 /**
  * Récupère la liste plate des TrashEntries pour l'appRoot courant.

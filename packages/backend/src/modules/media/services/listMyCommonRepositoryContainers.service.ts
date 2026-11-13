@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
+import { commonRepositoryContainerPath } from "#modules/media/services/commonRepositoryContainerPath.service.ts";
 
 /**
  * Sujets des dépôts de l'utilisateur courant dans common_repository.

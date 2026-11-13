@@ -3,8 +3,8 @@ import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { prisma } from "@backend/prisma";
-import { OriginForm } from "@features/admin/origins/forms/OriginForm";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { OriginForm } from "#features/admin/origins/forms/OriginForm.tsx";
 
 /** Édition — `/(admin)/dashboard/origins/[id]/edit`. */
 export default async function EditOriginPage({

@@ -4,8 +4,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
-import type { DocTarget } from "@features/docs/glossary/glossaryLinks"
-import { rememberTermOrigin } from "@features/docs/glossary/glossaryReturn"
+import type { DocTarget } from "#features/docs/glossary/glossaryLinks.ts"
+import { rememberTermOrigin } from "#features/docs/glossary/glossaryReturn.ts"
 
 export interface CarteTerme {
   id: string

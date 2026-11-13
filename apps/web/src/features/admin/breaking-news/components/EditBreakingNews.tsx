@@ -2,12 +2,12 @@
 
 import { type JSX } from "react";
 import { useRouter } from "next/navigation";
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 
 import {
   BreakingNewsForm,
   type BreakingNewsFormInput,
-} from "@features/admin/breaking-news/forms/BreakingNewsForm";
+} from "#features/admin/breaking-news/forms/BreakingNewsForm.tsx";
 
 /** Édition + suppression (pas de fiche de présentation : tout est ici). */
 export function EditBreakingNews({ id }: { id: number }): JSX.Element {

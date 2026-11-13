@@ -3,7 +3,7 @@
 import { type JSX } from "react";
 import { Play } from "lucide-react";
 
-import { type LightboxItem } from "@features/gallery-public/GalleryLightbox";
+import { type LightboxItem } from "#features/gallery-public/GalleryLightbox.tsx";
 
 /**
  * (a) Grille de médias d'une galerie.

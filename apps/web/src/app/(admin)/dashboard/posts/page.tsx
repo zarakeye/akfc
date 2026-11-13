@@ -4,8 +4,8 @@ import { useState, type JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
-import { DeleteRowButton } from "@features/admin/common/delete";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { DeleteRowButton } from "#features/admin/common/delete/index.ts";
 
 /**
  * Statut de publication d'un post (même logique que Event).

@@ -2,7 +2,7 @@
 
 import type { JSX, ReactNode } from "react";
 
-import type { AudioCollectionBlockV1 } from "@contracts/page";
+import type { AudioCollectionBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import { useResolvedMediaList } from "../../components/useResolvedMediaList";
 

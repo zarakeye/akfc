@@ -3,10 +3,10 @@
 import { JSX, useState } from 'react';
 import { FileText, Folder, RotateCcw, Trash2 } from 'lucide-react';
 
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
-import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { formatDay, purgeIsSoon } from '@features/trash-view/lib/trashDates';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { formatDay, purgeIsSoon } from '#features/trash-view/lib/trashDates.ts';
 
 /**
  * Corbeille des ESPACES, côté membre (« Mes espaces collaboratifs »).

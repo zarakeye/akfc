@@ -4,7 +4,7 @@ import { useRef, useState, type JSX } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Trash2, Upload } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   IMAGE_CONSENT_FORM_MAX_BYTES,
   IMAGE_CONSENT_FORM_MIME_EXT,
@@ -15,11 +15,11 @@ import {
   describeWishChanges,
   type ConsentChoices,
   type ImageUsageValue,
-} from "@contracts/legal/imageConsent";
-import { heicFailureMessage, isHeicFile, toBrowserImages } from "@features/media/heic/browserImages";
-import { ImageConsentFormViewer, type ViewableConsentForm } from "@features/image-consent/ImageConsentFormViewer";
-import { BlankConsentFormPreview } from "@features/image-consent/BlankConsentFormCard";
-import { formatDate, formatKeepAfterLeave, formatUsages } from "@features/image-consent/consentFormat";
+} from "@akfc/contracts/legal/imageConsent.ts";
+import { heicFailureMessage, isHeicFile, toBrowserImages } from "#features/media/heic/browserImages.ts";
+import { ImageConsentFormViewer, type ViewableConsentForm } from "#features/image-consent/ImageConsentFormViewer.tsx";
+import { BlankConsentFormPreview } from "#features/image-consent/BlankConsentFormCard.tsx";
+import { formatDate, formatKeepAfterLeave, formatUsages } from "#features/image-consent/consentFormat.ts";
 
 type KeepChoice = "unset" | "remove" | "keep";
 

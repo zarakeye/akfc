@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
-import { prisma } from "@backend/prisma";
-import { COOKIE_NAME, SESSION_DURATION_MS } from "@contracts/auth/constants";
+import { prisma } from "#prisma.ts";
+import { COOKIE_NAME, SESSION_DURATION_MS } from "@akfc/contracts/auth/constants.ts";
 import type { Session, User } from "@prisma/client";
-import type { SessionJwtPayload } from "@backend/lib/session/session.types";
+import type { SessionJwtPayload } from "#lib/session/session.types.ts";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

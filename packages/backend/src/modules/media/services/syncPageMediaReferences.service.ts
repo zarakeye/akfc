@@ -4,7 +4,7 @@ import { TRPCError } from '@trpc/server';
 import {
   extractMediaIdsFromContent,
   type PageContentV1,
-} from '@contracts/page';
+} from '@akfc/contracts/page/index.ts';
 
 /**
  * 🔗 syncPageMediaReferences

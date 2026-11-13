@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { trpcClient } from "@trpc/trpcClient";
-import { SessionClient } from "@contracts/auth/session.types";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { SessionClient } from "@akfc/contracts/auth/session.types.ts";
 
 /**
  * Session côté navigateur.

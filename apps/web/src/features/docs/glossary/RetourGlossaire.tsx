@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 
-import { useGlossaryOrigin } from "@features/docs/glossary/glossaryReturn"
+import { useGlossaryOrigin } from "#features/docs/glossary/glossaryReturn.ts"
 
 /** Le bouton qui ramène à l'endroit exact du terme cliqué. Absent quand on arrive directement. */
 export function RetourGlossaire() {

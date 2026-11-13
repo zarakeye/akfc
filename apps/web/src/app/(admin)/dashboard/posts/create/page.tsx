@@ -4,12 +4,12 @@ import { JSX, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { trpc } from "@trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   PostForm,
   type PostFormInput,
-} from "@features/admin/posts/forms/PostForm";
-import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+} from "#features/admin/posts/forms/PostForm.tsx";
+import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 /**
  * Création d'un article — `/(admin)/dashboard/posts/create`.

@@ -1,5 +1,5 @@
 import { Music } from "lucide-react";
-import type { AudioCollectionBlockV1 } from "@contracts/page";
+import type { AudioCollectionBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockDefinition } from "../../BlockDefinition.types";
 

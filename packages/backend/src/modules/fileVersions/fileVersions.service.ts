@@ -7,13 +7,13 @@ import {
   FILE_VERSION_MAX_AGE_DAYS,
   FILE_VERSIONS_KEPT,
   type FileVersionsOutput,
-} from "@contracts/fileVersions/fileVersion.dto";
+} from "@akfc/contracts/fileVersions/fileVersion.dto.ts";
 
-import { getR2Bucket, getR2PresignClient } from "@backend/modules/storage/adapters/r2/client";
-import { r2CopyFile, r2DeleteFile, r2ListByPrefix } from "@backend/modules/trash/services/r2TrashOps";
-import { deleteDerivatives } from "@backend/modules/media/services/mediaDerivatives.service";
-import { groupIdFromLogicalPath } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
-import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
+import { getR2Bucket, getR2PresignClient } from "#modules/storage/adapters/r2/client.ts";
+import { r2CopyFile, r2DeleteFile, r2ListByPrefix } from "#modules/trash/services/r2TrashOps.ts";
+import { deleteDerivatives } from "#modules/media/services/mediaDerivatives.service.ts";
+import { groupIdFromLogicalPath } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
+import { resolveGroupAccessForUser } from "#modules/memberGroups/resolveGroupAccessForUser.service.ts";
 
 /*
  * Versions des fichiers.

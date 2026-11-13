@@ -1,14 +1,14 @@
 import { Suspense, type JSX } from "react";
 
-import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { parsePageContentV1 } from "@contracts/page";
-import type { GroupedReaction } from "@backend/modules/reactions/router";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import type { GroupedReaction } from "@akfc/backend/modules/reactions/router.ts";
 
-import { UserPortrait } from "@features/social/UserPortrait";
-import { formatUserName, type DisplayUser } from "@features/social/userDisplay";
-import { ExpandableContent } from "@features/social/ExpandableContent";
-import { PollWidget } from "@features/social/PollWidget";
-import { PostInteractions } from "@features/social/PostInteractions";
+import { UserPortrait } from "#features/social/UserPortrait.tsx";
+import { formatUserName, type DisplayUser } from "#features/social/userDisplay.ts";
+import { ExpandableContent } from "#features/social/ExpandableContent.tsx";
+import { PollWidget } from "#features/social/PollWidget.tsx";
+import { PostInteractions } from "#features/social/PostInteractions.tsx";
 
 /**
  * Carte d'un post sur le mur de la home — Server Component.

@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import type { ImageUsageValue } from "@contracts/legal/imageConsent";
+import type { ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
 
 /**
  * Ordre des formulaires de droit à l'image : par la date des DROITS, pas par la date de dépôt.

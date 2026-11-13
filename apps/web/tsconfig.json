@@ -3,22 +3,8 @@
   "compilerOptions": {
     "moduleResolution": "bundler",
     "types": ["mdx"],
-    "paths": {
-      "@/*": ["./src/*"],  // indispensable pour shadcn/ui
-      "@web/*": ["./src/*"],
-      "@app/*": ["./src/app/*"],
-      "@contracts/*": ["../../packages/contracts/src/*"],
-      "@backend/*": ["../../packages/backend/src/*"],
-      "@features/*": ["./src/features/*"],
-      "@components/*": ["./src/components/*"],
-      "@hooks/*": ["./src/hooks/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@styles/*": ["./src/styles/*"],
-      "@types/*": ["./src/types/*"],
-      "@trpc/*": ["./src/core/trpc/*"],
-      "@config/*": ["../../packages/config/*"],
-      "@finder-core/*": ["../../packages/finder-core/src/*"]
-    }
+    // Pas d'alias ici : « #… » (même paquet) et « @akfc/… » (autre paquet) viennent des
+    // champs "imports" et "exports" des package.json, lus par TypeScript, Node et Next.
   },
   "include": [
     "next-env.d.ts",

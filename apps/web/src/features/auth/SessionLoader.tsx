@@ -2,10 +2,10 @@
 
 import { useEffect } from "react";
 
-import type { SessionClient } from "@contracts/auth/session.types";
-import { useSessionStore } from "@lib/stores/useSessionStore";
-import { trpcClient } from "@trpc/trpcClient";
-import { InitialSessionProvider } from "@features/auth/InitialSession";
+import type { SessionClient } from "@akfc/contracts/auth/session.types.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { InitialSessionProvider } from "#features/auth/InitialSession.tsx";
 
 /**
  * Initialise le store de session.

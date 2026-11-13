@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { FinderNode } from "@contracts/finder";
+import type { FinderNode } from "@akfc/contracts/finder/index.ts";
 
 /**
  * usePickerCartStore

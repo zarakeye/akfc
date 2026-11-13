@@ -2,7 +2,7 @@
 
 import { JSX } from 'react';
 import { LayoutGrid, Rows3, List } from 'lucide-react';
-import { useFinderStore, type FinderViewMode } from '@features/finder-core/state/useFinderStore';
+import { useFinderStore, type FinderViewMode } from '#features/finder-core/state/useFinderStore.ts';
 
 /**
  * Boutons pour switcher entre les 3 modes d'affichage du finder :

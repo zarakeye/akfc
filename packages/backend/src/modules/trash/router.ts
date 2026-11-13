@@ -1,25 +1,25 @@
 import { z } from "zod";
 
-import { router, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin, sameAppRoot } from "@backend/trpc/middleware";
+import { router, protectedProcedure } from "#trpc/core.ts";
+import { isAdmin, sameAppRoot } from "#trpc/middleware.ts";
 
-import type { ListBinOutput } from "@contracts/trash/trash.dto";
-import type { ReadTrashFolderOutput } from "@contracts/trash/trash-node.types";
+import type { ListBinOutput } from "@akfc/contracts/trash/trash.dto.ts";
+import type { ReadTrashFolderOutput } from "@akfc/contracts/trash/trash-node.types.ts";
 import type {
   TrashToBinOutput,
   RestoreFromBinOutput,
   DeleteForeverOutput,
-} from "@contracts/trash/trash.mutations";
+} from "@akfc/contracts/trash/trash.mutations.ts";
 
-import { listBin } from "@backend/modules/trash/services/listBin.service";
-import { readTrashFolder } from "@backend/modules/trash/services/readTrashFolder.service";
-import { trashToBin } from "@backend/modules/trash/services/trashToBin.service";
-import { assertCanTrashPaths } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
-import { restoreFromBin } from "@backend/modules/trash/services/restoreFromBin.service";
-import { deleteForever } from "@backend/modules/trash/services/deleteForever.service";
-import { assertCanRestoreEntries, listSpacesBin } from "@backend/modules/trash/services/trashRetention.service";
-import { purge, type PurgeOutput } from "@backend/modules/trash/services/purge.service";
-import { assertOutsideAvatars } from "@backend/modules/storage/mediaPaths";
+import { listBin } from "#modules/trash/services/listBin.service.ts";
+import { readTrashFolder } from "#modules/trash/services/readTrashFolder.service.ts";
+import { trashToBin } from "#modules/trash/services/trashToBin.service.ts";
+import { assertCanTrashPaths } from "#modules/memberGroups/assertCanTrashPaths.service.ts";
+import { restoreFromBin } from "#modules/trash/services/restoreFromBin.service.ts";
+import { deleteForever } from "#modules/trash/services/deleteForever.service.ts";
+import { assertCanRestoreEntries, listSpacesBin } from "#modules/trash/services/trashRetention.service.ts";
+import { purge, type PurgeOutput } from "#modules/trash/services/purge.service.ts";
+import { assertOutsideAvatars } from "#modules/storage/mediaPaths.ts";
 
 /**
  * trash.router.ts

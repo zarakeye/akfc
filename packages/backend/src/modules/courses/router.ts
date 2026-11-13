@@ -2,14 +2,14 @@ import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
-import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
-import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
+import { router, protectedProcedure, publicProcedure } from "#trpc/core.ts";
+import { isAdmin } from "#trpc/middleware.ts";
+import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaReferences.service.ts";
 
-import { pageContentSchemaV1 } from "@contracts/page";
-import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@contracts/time/hhmm.schema";
-import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
-import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
+import { pageContentSchemaV1 } from "@akfc/contracts/page/index.ts";
+import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@akfc/contracts/time/hhmm.schema.ts";
+import { assertOwnAvatars } from "#modules/media/services/assertOwnAvatars.service.ts";
+import { assertPublicContentRights } from "#modules/mediaPeople/publicContentRights.service.ts";
 
 /**
  * courses/router.ts

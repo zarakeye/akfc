@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-import type { MediaTextBlockV1, ResolvedMedia } from "@contracts/page";
+import type { MediaTextBlockV1, ResolvedMedia } from "@akfc/contracts/page/index.ts";
 
 import type { BlockViewProps } from "../../BlockDefinition.types";
 import { hasRichText, richTextHtml } from "../../richTextHtml";

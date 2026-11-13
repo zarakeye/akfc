@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { r2ListByPrefix } from "@backend/modules/trash/services/r2TrashOps";
+import { r2ListByPrefix } from "#modules/trash/services/r2TrashOps.ts";
 
 /**
  * Un dossier est-il VIDE au sens du finder ? Contrôle PHYSIQUE, volontairement

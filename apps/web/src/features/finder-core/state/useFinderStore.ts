@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { APP_ROOT } from '@config/app';
-import type { FinderNode } from '@contracts/finder';
+import { APP_ROOT } from '@akfc/config/app.ts';
+import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 
 /**
  * Les trois lentilles de statut. `'all'` n'est pas un statut — c'est

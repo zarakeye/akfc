@@ -1,4 +1,4 @@
-import type { EntityEnum, EntityLink, EntityMap, EntityModel } from "@features/docs/entities/prismaSchema";
+import type { EntityEnum, EntityLink, EntityMap, EntityModel } from "#features/docs/entities/prismaSchema.ts";
 
 /** En-tête d'un chapitre : entités mobilisées, et pour chacune les propriétés dont il parle. */
 export type ChapterEntities = Record<string, string[]>;

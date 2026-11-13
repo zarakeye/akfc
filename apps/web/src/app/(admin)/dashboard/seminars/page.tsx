@@ -2,7 +2,7 @@ import { JSX } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import SeminarsTable from "@features/admin/seminars/components/SeminarsTable";
+import SeminarsTable from "#features/admin/seminars/components/SeminarsTable.tsx";
 
 /** Liste des stages — `/(admin)/dashboard/seminars`. La table fetch via trpc. */
 export default function StagesPage(): JSX.Element {

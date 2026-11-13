@@ -3,8 +3,8 @@ import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { prisma } from "@backend/prisma";
-import { FamilyForm } from "@features/admin/discipline-families/forms/FamilyForm";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { FamilyForm } from "#features/admin/discipline-families/forms/FamilyForm.tsx";
 
 /** Édition — `/(admin)/dashboard/discipline-families/[id]/edit`. */
 export default async function EditFamilyPage({

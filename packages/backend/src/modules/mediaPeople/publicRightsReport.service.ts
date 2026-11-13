@@ -1,9 +1,9 @@
 import type { PageReferencerKind, PrismaClient } from "@prisma/client";
 
-import { CAROUSEL_SLUG, type UsageVerdict } from "@contracts/legal/mediaPeople";
-import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
-import { deriveMediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
-import { mediaVerdictsFor } from "@backend/modules/mediaPeople/mediaPeople.service";
+import { CAROUSEL_SLUG, type UsageVerdict } from "@akfc/contracts/legal/mediaPeople.ts";
+import { buildMediaProxyUrl } from "#modules/media/helpers/media-url.ts";
+import { deriveMediaKind } from "#modules/media/helpers/deriveMediaKind.ts";
+import { mediaVerdictsFor } from "#modules/mediaPeople/mediaPeople.service.ts";
 
 /** Où un média est montré sur le site public, avec le lien vers sa fiche d'administration. */
 export type PublicUsage = { label: string; href: string };

@@ -2,12 +2,12 @@ import type { JSX } from "react";
 
 import { Prisma } from "@prisma/client";
 
-import { prisma } from "@backend/prisma";
-import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
-import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { parsePageContentV1 } from "@contracts/page";
-import { UserPortrait } from "@features/social/UserPortrait";
-import { formatUserName, type DisplayUser } from "@features/social/userDisplay";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
+import { PageRenderer } from "#features/page-builder/PageRenderer.tsx";
+import { parsePageContentV1 } from "@akfc/contracts/page/index.ts";
+import { UserPortrait } from "#features/social/UserPortrait.tsx";
+import { formatUserName, type DisplayUser } from "#features/social/userDisplay.ts";
 import type { Metadata } from "next";
 
 /**

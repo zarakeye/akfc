@@ -3,13 +3,13 @@
 import { useState, type JSX } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "#core/trpc/trpcClient.ts";
 import {
   parseSitePhones,
   saveSiteContactSchema,
   SITE_PHONES_MAX,
   type SitePhone,
-} from "@contracts/siteContact/siteContact.schema";
+} from "@akfc/contracts/siteContact/siteContact.schema.ts";
 
 /**
  * Réglages du site → « Coordonnées publiques » : ce que le public et les partenaires voient sur

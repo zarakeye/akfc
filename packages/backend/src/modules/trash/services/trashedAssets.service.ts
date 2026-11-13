@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
-import { normalizePath } from "@backend/modules/trash/utils";
-import { r2ListByPrefix } from "@backend/modules/trash/services/r2TrashOps";
+import { normalizePath } from "#modules/trash/utils.ts";
+import { r2ListByPrefix } from "#modules/trash/services/r2TrashOps.ts";
 
 /**
  * Lien entre la corbeille et les lignes `MediaAsset`.

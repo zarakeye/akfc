@@ -10,7 +10,7 @@ import {
 import { StarterKit } from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extensions";
 
-import type { ProseMirrorContent } from "@contracts/shared/prosemirror";
+import type { ProseMirrorContent } from "@akfc/contracts/shared/prosemirror.ts";
 
 /**
  * Éditeur de commentaire — instance tiptap INDÉPENDANTE du PageBuilder.

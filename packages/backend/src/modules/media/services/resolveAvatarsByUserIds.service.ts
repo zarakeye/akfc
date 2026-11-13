@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import type { ResolvedMedia } from "@contracts/page";
+import type { ResolvedMedia } from "@akfc/contracts/page/index.ts";
 
 /**
  * Résout les avatars d'une liste d'utilisateurs en `ResolvedMedia`, pour les

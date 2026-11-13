@@ -9,9 +9,9 @@ import { Highlight } from "@tiptap/extension-highlight";
 import { Subscript } from "@tiptap/extension-subscript";
 import { Superscript } from "@tiptap/extension-superscript";
 
-import { HorizontalRule } from "@/features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node-extension";
-import { sanitizeRichText } from "@contracts/page/richText";
-import type { ResolvedMedia } from "@contracts/page";
+import { HorizontalRule } from "#features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node-extension.ts";
+import { sanitizeRichText } from "@akfc/contracts/page/richText.ts";
+import type { ResolvedMedia } from "@akfc/contracts/page/index.ts";
 
 /**
  * richTextHtml.ts — le texte riche d'un bloc, en HTML. Une seule écriture pour les rendus serveur
@@ -23,7 +23,7 @@ import type { ResolvedMedia } from "@contracts/page";
  *
  * Deux protections :
  *   - le contenu est ASSAINI avant rendu (liste blanche de nœuds, marques et attributs,
- *     @contracts/page/richText) : les attributs recopiés dans `style` et les liens `javascript:`
+ *     @akfc/contracts/page/richText.ts) : les attributs recopiés dans `style` et les liens `javascript:`
  *     ne passent pas, même pour un contenu enregistré avant la règle ;
  *   - `generateHTML` LÈVE sur un nœud qu'il ne connaît pas : un seul bloc abîmé ferait tomber
  *     toute la page. On rend alors une chaîne vide pour ce bloc, et on le journalise.

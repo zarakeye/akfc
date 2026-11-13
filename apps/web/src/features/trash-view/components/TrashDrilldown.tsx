@@ -5,7 +5,7 @@ import { Folder, FileText, ChevronRight, Loader2, ArrowLeft } from 'lucide-react
 import type {
   TrashFolderNode,
   TrashFileNode,
-} from '@contracts/trash/trash-node.types';
+} from '@akfc/contracts/trash/trash-node.types.ts';
 
 import { useTrashStore, type DrilldownState } from '../state/useTrashStore';
 import { useTrashDrilldown } from '../hooks/useTrashDrilldown';

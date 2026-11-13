@@ -1,5 +1,5 @@
 import { Images } from "lucide-react";
-import type { ImageGalleryBlockV1 } from "@contracts/page";
+import type { ImageGalleryBlockV1 } from "@akfc/contracts/page/index.ts";
 
 import type { BlockDefinition } from "../../BlockDefinition.types";
 

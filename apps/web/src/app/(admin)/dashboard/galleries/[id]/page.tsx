@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
-import { prisma } from "@backend/prisma";
-import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
-import { PresentationShell } from "@features/admin/common/components/PresentationShell";
-import { deriveMediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
+import { prisma } from "@akfc/backend/prisma.ts";
+import { buildMediaProxyUrl } from "@akfc/backend/modules/media/helpers/media-url.ts";
+import { PresentationShell } from "#features/admin/common/components/PresentationShell.tsx";
+import { deriveMediaKind } from "@akfc/backend/modules/media/helpers/deriveMediaKind.ts";
 
-import { CAROUSEL_SLUG } from "@contracts/legal/mediaPeople";
+import { CAROUSEL_SLUG } from "@akfc/contracts/legal/mediaPeople.ts";
 
 const VISIBILITY_LABELS: Record<string, string> = {
   PUBLIC: "Public",
