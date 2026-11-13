@@ -160,13 +160,18 @@ Et dès qu’on est dans ce type d’environnement, la question change de nature
 
 Dans ce projet, le dossier `prisma/` vit à la racine du workspace. Ce choix est loin d’être anodin. Il signifie que le schéma de données n’appartient pas à une seule application, ni à un seul package technique. Il appartient au système dans son ensemble.
 
-<CodeSnippet
-  language="txt"
-  title="La place de Prisma dans le monorepo"
-  filename="tree.txt"
-  kind="pattern"
-  codeJson='"akfc/\n├── apps/\n│   ├── web/              l’application Next.js\n│   └── mobile/           (prévue, encore vide)\n├── packages/\n│   ├── backend/          consomme le client Prisma\n│   ├── contracts/\n│   ├── finder-core/\n│   └── config/\n├── prisma/\n│   ├── schema.prisma     le modèle\n│   ├── migrations/       son histoire\n│   └── seed.sandbox.mjs  des données de démonstration\n└── prisma.config.ts"'
-/>
+<Arbre racine="akfc/" texte="
+apps/web/                  # l’application Next.js
+apps/mobile/               # prévue, encore vide
+packages/backend/          # consomme le client Prisma
+packages/contracts/
+packages/finder-core/
+packages/config/
+prisma/schema.prisma       # le modèle
+prisma/migrations/         # son histoire
+prisma/seed.sandbox.mjs    # des données de démonstration
+prisma.config.ts
+" />
 
 Ce placement raconte déjà quelque chose d’important.
 

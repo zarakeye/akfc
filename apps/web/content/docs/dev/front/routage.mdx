@@ -7,7 +7,6 @@ order: 1
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
 import DocsTable from "#features/docs/ui/DocsTable.tsx"
-import { FileTree, FileTreeItem } from "#features/docs/ui/FileTree.tsx"
 
 > **Précédemment.** Le projet est installé, vérifié par `pnpm check` avant chaque commit, et nous savons repérer les erreurs qui ne produisent aucun message. Nous entrons maintenant dans le code, par la question la plus fondamentale : quand une adresse est demandée, quel fichier répond ?
 
@@ -19,21 +18,20 @@ Dans l'App Router de Next.js, l'arborescence de `apps/web/src/app` **est** la ca
 
 Le premier niveau du dossier `app/` :
 
-<FileTree>
-  <FileTreeItem name="app/layout.tsx — le layout RACINE, commun à tout" />
-  <FileTreeItem name="app/(public) — le site du club">
-    <FileTreeItem name="layout.tsx — header, ruban des flashs info, footer" />
-    <FileTreeItem name="page.tsx — l’accueil, /" />
-    <FileTreeItem name="disciplines/[slug], agenda, gallery, profil, mes-espaces…" />
-  </FileTreeItem>
-  <FileTreeItem name="app/(admin) — la zone d’administration">
-    <FileTreeItem name="layout.tsx — garde SERVEUR : vérifie les rôles" />
-    <FileTreeItem name="dashboard/layout.tsx — header, barre latérale, zone qui défile" />
-    <FileTreeItem name="dashboard/posts, disciplines, library, users, groups…" />
-  </FileTreeItem>
-  <FileTreeItem name="app/docs — cette documentation" />
-  <FileTreeItem name="app/api — les points d’accès HTTP : tRPC, médias, calendrier…" />
-</FileTree>
+<Arbre racine="apps/web/src/" texte="
+app/layout.tsx                          # le layout RACINE, commun à tout
+app/(public)/                           # le site du club
+app/(public)/layout.tsx                 # header, ruban des flashs info, footer
+app/(public)/page.tsx                   # l’accueil, /
+app/(public)/disciplines/               # /disciplines/[slug] : une fiche de discipline
+app/(public)/agenda/                    # et de même : gallery, profil, mes-espaces…
+app/(admin)/                            # la zone d’administration
+app/(admin)/layout.tsx                  # garde SERVEUR : vérifie les rôles
+app/(admin)/dashboard/layout.tsx        # header, barre latérale, zone qui défile
+app/(admin)/dashboard/posts/            # et de même : disciplines, library, users, groups…
+app/docs/                               # cette documentation
+app/api/                                # les points d’accès HTTP : tRPC, médias, calendrier…
+" />
 
 Deux dossiers portent des parenthèses : `(public)` et `(admin)`.
 

@@ -70,3 +70,10 @@ test("la partie Docker s'affiche, schémas compris, et la 2.3 y renvoie", async 
   await page.goto("/docs/dev/configuration/next-config");
   await expect(page.getByRole("link", { name: /L’image Docker · Ce que next\.config\.ts prépare pour l’image/ })).toBeVisible();
 });
+
+test("plus aucune arborescence en texte : le routage et le modèle passent par <Arbre>", async ({ page }) => {
+  await page.goto("/docs/dev/front/routage");
+  await expect(page.getByRole("tree", { name: "Arborescence de apps/web/src/" })).toContainText("dashboard");
+  await page.goto("/docs/dev/donnees/pourquoi-le-modele");
+  await expect(page.getByRole("tree", { name: "Arborescence de akfc/" })).toContainText("schema.prisma");
+});

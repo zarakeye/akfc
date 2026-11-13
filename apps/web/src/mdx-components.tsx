@@ -10,7 +10,6 @@ import { GlossaireCartes } from "#features/docs/glossary/GlossaireCartes.tsx"
 import { CodeBlock } from "#features/docs/ui/CodeBlock.tsx"
 import CodeSnippet from "#features/docs/ui/CodeSnippet.tsx"
 import CodeSnippetWalkthrough from "#features/docs/ui/CodeSnippetWalkthrough.tsx"
-import { FileTree, FileTreeItem } from "#features/docs/ui/FileTree.tsx"
 import { Arbre } from "#features/docs/ui/Arbre.tsx"
 import { Infra } from "#features/docs/ui/Infra.tsx"
 import { Installer } from "#features/docs/ui/Installer.tsx"
@@ -79,9 +78,7 @@ export const mdxComponents: MDXComponents = {
   CodeWalkthrough,
   CodeSnippet,
   CodeSnippetWalkthrough,
-  FileTree,
-  FileTreeItem,
-  // Arborescence façon IDE, à partir d'un texte indenté.
+  // Arborescence façon IDE, à partir de chemins complets (la seule forme d'arborescence de la doc).
   Arbre,
   // La commande qui ajoute une dépendance, au chapitre de sa première utilisation.
   Installer,
