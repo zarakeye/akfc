@@ -4,12 +4,16 @@ import { FileText, Folder } from "lucide-react"
  * Arborescence façon explorateur d'IDE (VS Code) : des branches (├── └── │), le NOM seul de
  * chaque élément (jamais le chemin de son parent), et un commentaire facultatif aligné à droite.
  *
- *   <Arbre texte={`
+ *   <Arbre texte="
  *   apps/                  # les applications
  *     web/                 # l'application Next.js
  *       package.json
  *   pnpm-workspace.yaml    # la liste des paquets
- *   `} />
+ *   " />
+ *
+ * Un attribut texte ENTRE GUILLEMETS, sur plusieurs lignes : les pages MDX sont compilées sans
+ * expressions JavaScript (next-mdx-remote les retire), donc pas de texte={`…`}. Pas de « " »
+ * dans l'arborescence.
  *
  * Deux espaces d'indentation par niveau. Un nom qui finit par « / » est un dossier ; « # » ouvre
  * le commentaire. `racine` affiche le dossier de départ en tête (« akfc/ »).
@@ -21,7 +25,8 @@ interface Noeud {
   enfants: Noeud[]
 }
 
-function analyser(texte: string): Noeud[] {
+function analyser(texte: string | undefined): Noeud[] {
+  if (!texte) return []
   const racines: Noeud[] = []
   const pile: { niveau: number; noeud: Noeud }[] = []
   for (const brute of texte.split("\n")) {
@@ -71,7 +76,7 @@ function Branches({ noeuds, retrait }: { noeuds: Noeud[]; retrait: string }) {
   )
 }
 
-export function Arbre({ texte, racine }: { texte: string; racine?: string }) {
+export function Arbre({ texte, racine }: { texte?: string; racine?: string }) {
   const noeuds = analyser(texte)
   return (
     <div

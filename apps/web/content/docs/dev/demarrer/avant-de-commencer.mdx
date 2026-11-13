@@ -52,7 +52,7 @@ Gardons le dépôt ouvert à côté. Chaque chemin cité s'ouvre dans l'éditeur
 
 Le projet est un **monorepo** géré par pnpm : un seul dépôt Git, plusieurs paquets qui se connaissent par leur nom.
 
-<Arbre racine="akfc/" texte={`
+<Arbre racine="akfc/" texte="
 apps/                       # les applications
   web/                      # l'application Next.js : pages, composants, client tRPC
     content/
@@ -76,7 +76,7 @@ docker-compose.dev.yml      # la base, le stockage et la boîte mail de dévelop
 Dockerfile                  # l'image de production
 package.json                # les scripts du projet et la plupart des dépendances
 pnpm-workspace.yaml         # la liste des paquets du monorepo
-`} />
+" />
 
 Une règle découpe ce territoire : **`apps/web` affiche, `packages/backend` décide**. Le front ne parle jamais à la base ; il appelle une procédure tRPC, et c'est le backend qui vérifie les droits, valide l'entrée, lit ou écrit. Les types qui circulent entre les deux vivent dans `packages/contracts`. Ce découpage permet qu'un changement d'un côté casse la compilation de l'autre, et donc qu'une incompatibilité soit détectée sur notre machine plutôt que devant un membre.
 

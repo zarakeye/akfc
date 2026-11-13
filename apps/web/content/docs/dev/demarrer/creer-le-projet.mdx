@@ -57,7 +57,7 @@ cd ..
 
 Le générateur installe les dépendances, puis affiche `Success! Created web at …/akfc/apps/web`. Il a posé ceci :
 
-<Arbre racine="web/" texte={`
+<Arbre racine="web/" texte="
 public/                 # cinq images de démonstration (file.svg, globe.svg, next.svg…)
 src/
   app/
@@ -77,7 +77,7 @@ pnpm-lock.yaml          # ⚠ un fichier de verrouillage propre à web
 pnpm-workspace.yaml     # ⚠ un workspace propre à web
 postcss.config.mjs
 tsconfig.json
-`} />
+" />
 
 <Installer paquets="next react react-dom" dans="web" par="create-next-app" />
 <Installer paquets="typescript @types/node @types/react @types/react-dom tailwindcss @tailwindcss/postcss eslint eslint-config-next" dans="web" dev par="create-next-app" />
@@ -129,13 +129,13 @@ pnpm exec prisma init
 
 `prisma init` annonce ce qu’il crée, puis propose de brancher une base existante ou d’en créer une :
 
-<Arbre racine="akfc/" texte={`
+<Arbre racine="akfc/" texte="
 prisma/
   schema.prisma       # le schéma : un générateur, une source de données, aucun modèle
 prisma.config.ts      # la configuration de la CLI Prisma (chemins, URL de la base)
 .env                  # DATABASE_URL, avec une valeur d'exemple
 .gitignore            # ignore .env et /generated/prisma
-`} />
+" />
 
 ```prisma
 // prisma/schema.prisma (créé par prisma init, commentaires retirés)
@@ -156,7 +156,7 @@ Le schéma est vide, et la base n’existe pas encore. `prisma init` suggère `p
 
 Voici le dépôt après ces commandes, hors `node_modules` et `.git` :
 
-<Arbre racine="akfc/" texte={`
+<Arbre racine="akfc/" texte="
 apps/
   web/
     public/
@@ -186,7 +186,7 @@ package.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
 prisma.config.ts
-`} />
+" />
 
 Il démarre (`pnpm --filter web dev` affiche la page de démonstration de Next.js), mais ce n’est pas encore un monorepo utilisable : les paquets ne savent pas s’importer entre eux, chaque `tsconfig` vit sa vie, le client Prisma serait généré dans un dossier que rien n’importe, et `.env` mélange ce qui est secret et ce qui ne l’est pas.
 
