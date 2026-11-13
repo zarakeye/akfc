@@ -6,7 +6,6 @@ order: 0
 ---
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
-import { FileTree, FileTreeItem } from "#features/docs/ui/FileTree.tsx"
 import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 ## Une vitrine et un outil dans la même application
@@ -53,24 +52,31 @@ Gardons le dépôt ouvert à côté. Chaque chemin cité s'ouvre dans l'éditeur
 
 Le projet est un **monorepo** géré par pnpm : un seul dépôt Git, plusieurs paquets qui se connaissent par leur nom.
 
-<FileTree>
-  <FileTreeItem name="apps/web — l'application Next.js (pages, composants, client tRPC)">
-    <FileTreeItem name="src/app — les routes : (public) pour le site, (admin)/dashboard pour le tableau de bord, docs pour cette documentation" />
-    <FileTreeItem name="src/features — le code rangé par fonctionnalité (admin, finder, page-builder, tours…)" />
-    <FileTreeItem name="src/proxy.ts — le filtre d'authentification qui garde /dashboard et /profil" />
-    <FileTreeItem name="content/docs — les pages de documentation en MDX (guide, admin, dev)" />
-  </FileTreeItem>
-  <FileTreeItem name="packages/backend — l'API : routeurs tRPC, accès base, e-mails, stockage">
-    <FileTreeItem name="src/modules — un dossier par domaine (posts, disciplines, storage, tickets…)" />
-    <FileTreeItem name="src/trpc — la construction de tRPC : contexte, procédures publiques, protégées, admin" />
-  </FileTreeItem>
-  <FileTreeItem name="packages/contracts — les types et schémas partagés par le front et le back" />
-  <FileTreeItem name="packages/finder-core — le moteur du finder (l'explorateur de fichiers), indépendant du stockage" />
-  <FileTreeItem name="prisma — le schéma de la base (47 modèles) et ses migrations" />
-  <FileTreeItem name="scripts — les vérifications lancées par pnpm check" />
-  <FileTreeItem name="docker-compose.dev.yml — la base, le stockage et la boîte mail de développement" />
-  <FileTreeItem name="Dockerfile — l'image de production" />
-</FileTree>
+<Arbre racine="akfc/" texte={`
+apps/                       # les applications
+  web/                      # l'application Next.js : pages, composants, client tRPC
+    content/
+      docs/                 # cette documentation, en MDX (guide, admin, dev)
+    src/
+      app/                  # les routes : (public) pour le site, (admin)/dashboard, docs
+      features/             # le code rangé par fonctionnalité (admin, finder, page-builder, tours…)
+      proxy.ts              # le filtre d'authentification qui garde /dashboard et /profil
+packages/                   # le code partagé, en paquets
+  backend/                  # l'API : routeurs tRPC, accès base, e-mails, stockage
+    src/
+      modules/              # un dossier par domaine (posts, disciplines, storage, tickets…)
+      trpc/                 # la construction de tRPC : contexte, procédures publiques, protégées, admin
+  config/                   # la configuration partagée
+  contracts/                # les types et schémas partagés par le front et le back
+  finder-core/              # le moteur du finder (l'explorateur de fichiers), indépendant du stockage
+prisma/                     # le schéma de la base (50 modèles) et ses migrations
+scripts/                    # les vérifications lancées par pnpm check
+e2e/                        # les tests de bout en bout
+docker-compose.dev.yml      # la base, le stockage et la boîte mail de développement
+Dockerfile                  # l'image de production
+package.json                # les scripts du projet et la plupart des dépendances
+pnpm-workspace.yaml         # la liste des paquets du monorepo
+`} />
 
 Une règle découpe ce territoire : **`apps/web` affiche, `packages/backend` décide**. Le front ne parle jamais à la base ; il appelle une procédure tRPC, et c'est le backend qui vérifie les droits, valide l'entrée, lit ou écrit. Les types qui circulent entre les deux vivent dans `packages/contracts`. Ce découpage permet qu'un changement d'un côté casse la compilation de l'autre, et donc qu'une incompatibilité soit détectée sur notre machine plutôt que devant un membre.
 
@@ -123,10 +129,8 @@ Cette séparation est stricte. Elle permet d'essayer une migration, de lancer un
 
 ## À suivre
 
-Nous savons ce que fait le projet, comment il est rangé et ce qu'il ne doit jamais toucher. Reste à le faire tourner.
-
-Un `pnpm install` suivi de `pnpm dev` ne suffit pas : dès la première page, l'application interroge une base de données, demande son logo à un stockage S3, et s'attend à pouvoir envoyer des e-mails. Aucun de ces services n'existe encore sur notre machine.
+Nous savons ce que fait le projet, comment il est rangé et ce qu'il ne doit jamais toucher. Avant d'en écrire une ligne, il faut les outils qui le font tourner, et comprendre ce que chacun apporte.
 
 <Callout type="tip">
-**Chapitre suivant : la mise en route.** Trois services locaux qui parlent les mêmes protocoles que la production, deux fichiers de configuration pour deux lecteurs différents, et une boîte mail qui reçoit tout sans rien envoyer.
+**Chapitre suivant : les outils.** Git, Node.js et nvm, pnpm et corepack, Docker, l'éditeur et un client de base de données : ce que chacun fait pour le projet, et comment l'installer sur macOS, Linux ou Windows.
 </Callout>

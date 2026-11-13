@@ -1,0 +1,200 @@
+---
+title: "Les outils"
+description: "Ce que chaque outil apporte au projet, puis son installation sur macOS, Linux ou Windows : Git, Node.js par nvm, pnpm par corepack, Docker, l'éditeur VS Code et un client de base de données."
+section: "Démarrer"
+order: 1
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Une seule application sert la vitrine du club et son outil de gestion, rangée en paquets dans un monorepo. Le développement ne touche jamais aux données de production.
+
+Avant la première ligne de code, il faut une poignée d'outils sur la machine. Aucun n'est là par habitude : chacun répond à un besoin précis du projet, et ce chapitre dit lequel avant de dire comment l'installer.
+
+## Ce que chaque outil apporte
+
+<DocsTable columnsJson='["Outil", "Version", "Ce qu’il fait pour le projet"]' rowsJson='[["Git", "récente", "Garder l’historique du code, enregistrer chaque étape (un commit), revenir en arrière, partager le dépôt avec le serveur."], ["Node.js", "22, épinglée dans .nvmrc", "Exécuter le JavaScript hors du navigateur : Next.js, les scripts, les outils. La même version que l’image de production."], ["nvm", "0.40", "Installer Node.js dans le dossier personnel, et passer d’une version à l’autre selon le projet."], ["pnpm", "10.24, via corepack", "Installer les bibliothèques et relier entre eux les paquets du monorepo. La version est épinglée dans package.json."], ["Docker", "Docker Desktop (macOS, Windows), Docker Engine (Linux)", "Faire tourner, sans les installer sur la machine, la base PostgreSQL, le stockage et la boîte mail de développement ; puis construire l’image qui part en production."], ["VS Code", "récente", "Écrire le code, avec TypeScript, ESLint et Prisma qui signalent les erreurs pendant la frappe."], ["pgAdmin (facultatif)", "récente", "Regarder les tables et les lignes de la base de développement, et y lancer une requête SQL."]]' />
+
+### Pourquoi Docker
+
+Le site a besoin, dès sa première page, d'une base PostgreSQL, d'un stockage de fichiers compatible S3 et d'un serveur d'e-mails. Les installer directement sur la machine, c'est trois logiciels à configurer, à mettre à jour, et qui resteraient là d'un projet à l'autre. Docker les fait tourner dans des **conteneurs** : chacun part d'une image figée, à une version écrite dans le dépôt (`docker-compose.dev.yml`), démarre en une commande et disparaît en une autre, sans rien laisser sur le système.
+
+Docker sert ensuite une seconde fois : l'application elle-même est empaquetée dans une **image** pour partir en production. Les deux usages, et l'infrastructure qu'ils dessinent en local et sur le serveur, ont leur propre partie dans cette documentation, après la configuration du projet.
+
+Les commandes qui diffèrent d'un système à l'autre sont présentées par onglets ; le système choisi est retenu pour toute la documentation.
+
+### Windows : travailler dans WSL 2
+
+Le projet ne se développe pas dans PowerShell ni dans l'invite de commandes de Windows. Sous Windows, nous travaillons dans **WSL 2** (Windows Subsystem for Linux) : un vrai Linux, Ubuntu, qui tourne à côté de Windows. Tous les outils s'installent dans ce Linux, le dépôt y est cloné, et les commandes de cette documentation s'y tapent telles qu'elles sont données pour Linux.
+
+WSL s'installe une seule fois, depuis une invite de commandes Windows ouverte en administrateur ; c'est la seule commande Windows de ce chapitre :
+
+```bash
+wsl --install
+```
+
+Après le redémarrage, Ubuntu s'ouvre et demande un nom d'utilisateur et un mot de passe Linux. À partir de là, tout se passe dans son terminal.
+
+<Callout type="warning">
+Dans WSL, le dépôt se clone dans le dossier personnel Linux (`~/akfc`), pas sous `/mnt/c/…` : les fichiers de Windows vus depuis Linux sont plusieurs fois plus lents, et `pnpm install` comme le rechargement de Next.js en souffriraient.
+</Callout>
+
+### Git
+
+<OsTabs>
+<Os name="mac">
+
+macOS fournit Git avec les outils de développement d'Apple. La première commande `git` propose de les installer ; on peut aussi les demander directement :
+
+```bash
+xcode-select --install
+git --version
+```
+
+</Os>
+<Os name="linux">
+
+Sur Debian, Ubuntu et WSL :
+
+```bash
+sudo apt update
+sudo apt install -y git curl
+git --version
+```
+
+</Os>
+</OsTabs>
+
+### Node.js, par nvm
+
+Node.js ne s'installe pas depuis le site de Node, mais avec **nvm** (Node Version Manager). nvm installe une version de Node dans le dossier personnel, sans droits d'administrateur, et passe d'une version à l'autre d'un dossier à l'autre. La version du projet est écrite dans le fichier `.nvmrc` de la racine, qui ne contient qu'une ligne : `22`.
+
+nvm s'installe de la même façon sur macOS, Linux et WSL. Le script d'installation ajoute nvm au fichier de démarrage du terminal (`~/.zshrc` sur macOS, `~/.bashrc` sur Linux) : il faut ensuite **ouvrir un nouveau terminal**.
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
+```
+
+Puis, dans un nouveau terminal, à la racine du dépôt une fois cloné (`nvm install` lit `.nvmrc`), ou n'importe où en précisant la version :
+
+```bash
+nvm install 22
+node --version
+```
+
+`node --version` doit afficher `v22.…`. La même version est utilisée par l'image de production : `.nvmrc` et `NODE_VERSION` dans le `Dockerfile` doivent changer ensemble.
+
+### Docker
+
+<OsTabs>
+<Os name="mac">
+
+Sur macOS, Docker tourne dans **Docker Desktop**, une application qui démarre une petite machine virtuelle Linux. Avec Homebrew :
+
+```bash
+brew install --cask docker-desktop
+```
+
+Sans Homebrew, on télécharge Docker Desktop sur docker.com (version Apple Silicon ou Intel selon le Mac). Il faut ensuite **lancer l'application une fois** et accepter ses conditions : tant qu'elle ne tourne pas, la commande `docker` ne répond pas.
+
+```bash
+docker version
+docker compose version
+```
+
+</Os>
+<Os name="linux">
+
+Sur Linux, on installe **Docker Engine**, sans interface graphique. Le script officiel de Docker ajoute son dépôt de paquets et l'installe :
+
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+Pour lancer `docker` sans `sudo`, notre utilisateur rejoint le groupe `docker`, puis on se déconnecte et se reconnecte (ou on ouvre un nouveau terminal de session) :
+
+```bash
+sudo usermod -aG docker $USER
+docker run --rm hello-world
+docker compose version
+```
+
+</Os>
+<Os name="windows">
+
+Sous Windows, on installe **Docker Desktop pour Windows** (docker.com). Dans ses réglages : **General** → « Use the WSL 2 based engine » coché, puis **Resources → WSL integration** → activer l'intégration avec Ubuntu.
+
+Docker Desktop doit être lancé. Les commandes `docker` se tapent ensuite dans le terminal Ubuntu, comme sous Linux :
+
+```bash
+docker run --rm hello-world
+docker compose version
+```
+
+</Os>
+</OsTabs>
+
+`docker compose` (avec une espace) est le module Compose v2, fourni avec Docker Desktop et avec Docker Engine. L'ancienne commande `docker-compose` (avec un tiret) n'est plus utilisée par le projet.
+
+### pnpm, par corepack
+
+pnpm ne s'installe pas à la main. Node.js 22 fournit **corepack**, un outil qui procure le bon gestionnaire de paquets à chaque projet. On l'active **une fois par machine**, avant la toute première installation :
+
+```bash
+corepack enable
+```
+
+Cette commande n'est écrite dans aucun fichier du dépôt pour le poste de développement, et `pnpm install` ne peut pas la lancer lui-même : tant qu'elle n'a pas été tapée, la commande `pnpm` n'existe pas. Elle installe, à côté de `node`, un petit lanceur nommé `pnpm`.
+
+<Callout type="info">
+À partir de Node.js 25, corepack n'est plus fourni avec Node. Le projet est sur Node 22, qui le fournit encore ; sur une version plus récente, on l'installe d'abord à part avec `npm install -g corepack`, puis `corepack enable` s'utilise de la même façon.
+</Callout>
+
+Ce lanceur, à chaque appel, lit le champ `packageManager` du `package.json` le plus proche :
+
+```json
+// package.json (extrait)
+"packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a"
+```
+
+La première fois, il télécharge cette version exacte de pnpm, vérifie qu'elle correspond à l'empreinte qui suit `+sha512.`, puis l'exécute ; les fois suivantes, il la reprend dans son cache. Le champ ne s'écrit pas à la main : `corepack use pnpm@<version>` le remplit, empreinte comprise. C'est ainsi qu'on change de version de pnpm pour tout le monde : un commit qui modifie cette ligne.
+
+L'image de production procède de la même façon, au tout début de sa construction :
+
+```dockerfile
+# Dockerfile (extrait)
+RUN corepack enable
+```
+
+Épingler la version garantit que tous les développeurs et le serveur produisent le même `pnpm-lock.yaml` pour les mêmes dépendances, et donc installent exactement les mêmes paquets.
+
+### L'éditeur : VS Code
+
+N'importe quel éditeur convient, mais le projet est réglé pour **VS Code**. Le dossier `.vscode/` du dépôt n'y fixe qu'un réglage : `typescript.tsdk`, qui fait vérifier le code par le TypeScript installé dans le dépôt (celui de `pnpm typecheck`) plutôt que par celui fourni avec VS Code ; l'éditeur et la vérification disent alors la même chose. Quatre extensions valent d'être installées, depuis le panneau Extensions :
+
+<DocsTable columnsJson='["Extension", "Ce qu’elle apporte"]' rowsJson='[["ESLint (Microsoft)", "Les erreurs du lint soulignées pendant la frappe, avec les mêmes règles que pnpm lint."], ["Prisma (Prisma)", "La coloration et la vérification de prisma/schema.prisma, et le formatage à l’enregistrement."], ["Tailwind CSS IntelliSense (Tailwind Labs)", "L’autocomplétion des classes et l’aperçu de leur effet au survol."], ["MDX (unified)", "La coloration des pages de cette documentation."]]' />
+
+TypeScript, lui, est intégré à VS Code : il lit les `tsconfig` du dépôt et vérifie le code pendant la frappe. Quand la configuration change (un paquet renommé, un nouvel import), la commande **TypeScript: Restart TS Server** (palette, `Cmd+Maj+P` ou `Ctrl+Maj+P`) lui fait tout relire.
+
+### Un client de base de données : pgAdmin
+
+Pour regarder la base de développement autrement que par le site, deux possibilités :
+
+- `pnpm prisma studio`, fourni avec Prisma : une page web qui montre chaque modèle et ses lignes ;
+- **pgAdmin**, un client complet pour PostgreSQL (pgadmin.org), qui montre aussi les index, les contraintes et lance des requêtes SQL.
+
+pgAdmin se connecte à la base de développement une fois celle-ci démarrée (chapitre « Mise en route ») : hôte `127.0.0.1`, port `5435`, utilisateur `akfc`, mot de passe `akfc-dev`, base `akfc_db`. Ces identifiants n'existent que sur la machine.
+
+<Callout type="warning">
+pgAdmin ne se branche jamais sur la base de production. La règle de « Avant de commencer » vaut pour les outils comme pour le code.
+</Callout>
+
+## À suivre
+
+Les outils sont en place. Avant de cloner le projet tel qu'il est, voyons comment il est né : les commandes qui créent un monorepo Next.js avec Prisma à partir d'un dossier vide, et ce que chacune laisse derrière elle.
+
+<Callout type="tip">
+**Chapitre suivant : créer le projet.** create-next-app, un workspace pnpm, deux paquets, Prisma, et l'arborescence brute qu'ils produisent.
+</Callout>

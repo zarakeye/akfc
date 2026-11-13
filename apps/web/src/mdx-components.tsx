@@ -11,6 +11,8 @@ import { CodeBlock } from "#features/docs/ui/CodeBlock.tsx"
 import CodeSnippet from "#features/docs/ui/CodeSnippet.tsx"
 import CodeSnippetWalkthrough from "#features/docs/ui/CodeSnippetWalkthrough.tsx"
 import { FileTree, FileTreeItem } from "#features/docs/ui/FileTree.tsx"
+import { Arbre } from "#features/docs/ui/Arbre.tsx"
+import { Installer } from "#features/docs/ui/Installer.tsx"
 import { ArchitectureDiagram } from "#features/docs/ui/ArchitectureDiagram.tsx"
 import { CodeExample } from "#features/docs/ui/CodeExample.tsx"
 import { CodeWalkthrough } from "#features/docs/ui/CodeWalkthrough.tsx"
@@ -78,6 +80,10 @@ export const mdxComponents: MDXComponents = {
   CodeSnippetWalkthrough,
   FileTree,
   FileTreeItem,
+  // Arborescence façon IDE, à partir d'un texte indenté.
+  Arbre,
+  // La commande qui ajoute une dépendance, au chapitre de sa première utilisation.
+  Installer,
   ArchitectureDiagram,
   ProjectArchitectureTree,
   ProjectArchitectureLayers,

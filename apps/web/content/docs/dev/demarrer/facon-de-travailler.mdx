@@ -2,13 +2,13 @@
 title: "Façon de travailler"
 description: "Vérifier avant d'enregistrer, enregistrer par petits pas, et rendre visibles les erreurs qui ne produisent aucun message."
 section: "Démarrer"
-order: 2
+order: 5
 ---
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
 import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
-> **Précédemment.** Nous avons installé le projet avec une base, un stockage et une boîte mail locaux, et vérifié chaque service. L'application compile et tourne.
+> **Précédemment.** Nous avons vu naître le projet, puis nous l'avons installé avec une base, un stockage et une boîte mail locaux. L'application compile et tourne.
 
 ## Les erreurs silencieuses
 
@@ -17,6 +17,12 @@ Une erreur de compilation s'affiche, désigne une ligne et bloque. Certaines err
 Un exemple : Next.js ne lit ses fichiers de convention (`proxy.ts`, `instrumentation.ts`…) qu'à côté du dossier `app`. Notre application vit dans `apps/web/src/app` ; un `proxy.ts` posé dans `apps/web/` serait ignoré sans avertissement, et le filtre d'authentification ne s'exécuterait jamais.
 
 Le projet traite ces erreurs de la même façon : chacune a une vérification automatique, lancée avant chaque commit.
+
+## La carte des vérifications
+
+Le projet se vérifie à cinq niveaux. Les parties « Qualité » les détaillent chacun au moment où ils deviennent utiles ; cette carte dit dès maintenant ce qui existe, quand ça tourne, et où c’est expliqué. Quand un chapitre mentionne un test ou une garde avant sa partie, c’est à cette carte qu’il renvoie.
+
+<DocsTable columnsJson='["Niveau", "Ce qu’il attrape", "Quand il tourne", "Expliqué dans"]' rowsJson='[["Le typecheck (tsc)", "Une valeur du mauvais type, un import vers un fichier qui n’existe pas, une propriété oubliée.", "À chaque pnpm check, et pendant la frappe dans l’éditeur.", "Qualité (1) : Le typecheck et le lint"], ["Le lint (ESLint)", "Du code correct mais fragile : une règle de React contournée, une variable inutilisée, une promesse oubliée.", "À chaque pnpm check, et dans l’éditeur.", "Qualité (1) : Le typecheck et le lint"], ["Les gardes maison (scripts/)", "Ce que ni TypeScript ni ESLint ne savent : un fichier de convention mal placé, une cible de tutoriel disparue, un extrait de doc qui ne correspond plus au code.", "En tête de pnpm check : elles sont les plus rapides.", "Qualité (2) : Les gardes maison"], ["Les tests de bout en bout (Playwright)", "Un parcours réel qui casse : se connecter, publier, restaurer, dans un vrai navigateur, sur une base et un stockage réservés.", "À la demande (pnpm e2e), et à chaque push.", "Qualité (2) : Tester de bout en bout"], ["L’intégration continue (GitHub Actions)", "Ce qui passe sur notre machine et pas ailleurs : un fichier oublié dans le commit, une dépendance non déclarée.", "À chaque push, sur une machine neuve.", "Qualité (3) : L’intégration continue"]]' />
 
 ## pnpm check
 

@@ -1,0 +1,149 @@
+---
+title: "Organiser le dépôt"
+description: "De l’arborescence brute à celle du projet : ce qui est retiré, ce qui est ajouté, et chaque réglage fait à la main (un package.json racine privé et ses scripts, des paquets nommés @akfc qui s’importent par « # » et « @akfc/… », une configuration TypeScript commune, un client Prisma importable, deux fichiers d’environnement)."
+section: "Démarrer"
+order: 3
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Quelques commandes ont posé une application Next.js, un workspace pnpm, deux paquets vides et Prisma. L’ensemble démarre, mais rien n’y est encore réglé pour un monorepo.
+
+Ce chapitre part de l’arborescence brute du chapitre précédent et arrive à celle du projet. Il ne refait pas l’histoire commit par commit : il dit, pour chaque écart entre ce que les outils ont posé et ce que le projet utilise, **ce qui a été fait à la main, et pourquoi**. Les chapitres de la partie « Configuration » reprennent ensuite chaque fichier en détail.
+
+## La structure visée
+
+<Arbre racine="akfc/" texte={`
+apps/
+  web/
+    content/docs/          # la documentation, en MDX
+    public/                # les images et polices servies telles quelles
+    src/
+      app/                 # les routes (App Router)
+      components/          # les composants d'interface réutilisables
+      core/trpc/           # le client tRPC du navigateur
+      features/            # le code rangé par fonctionnalité
+      lib/                 # les utilitaires
+      instrumentation.ts   # ce qui s'exécute au démarrage du serveur
+      proxy.ts             # le filtre d'authentification
+    next.config.ts
+    package.json           # @akfc/web
+    tsconfig.json          # étend tsconfig.base.json
+packages/
+  backend/
+    src/
+      modules/             # un dossier par domaine
+      trpc/                # contexte, procédures, middlewares
+      prisma.ts            # le client Prisma unique
+    package.json           # @akfc/backend
+    tsconfig.json
+  config/                  # @akfc/config : la configuration partagée
+  contracts/
+    src/                   # un dossier par domaine : types et schémas Zod
+    package.json           # @akfc/contracts
+  finder-core/             # @akfc/finder-core : le moteur du finder
+prisma/
+  migrations/              # une migration SQL par évolution du schéma
+  schema.prisma
+scripts/                   # les gardes de pnpm check
+e2e/                       # les tests de bout en bout
+.env.example               # le modèle de toutes les variables, sans secret
+.env.dev.example           # les valeurs prêtes pour le développement local
+.nvmrc                     # la version de Node.js : 22
+docker-compose.dev.yml     # les services de développement
+Dockerfile                 # l'image de production
+package.json               # privé : les scripts et la plupart des dépendances
+pnpm-workspace.yaml
+prisma.config.ts           # avec la garde contre une base distante
+tsconfig.base.json         # les options TypeScript communes
+tsconfig.json              # Prisma, Playwright et les tests
+`} />
+
+## Ce qui a été retiré
+
+<DocsTable columnsJson='["Posé par", "Fichier", "Pourquoi il est parti"]' rowsJson='[["create-next-app", "apps/web/pnpm-lock.yaml, apps/web/pnpm-workspace.yaml", "Un monorepo n’a qu’un verrouillage et qu’une liste de paquets, à la racine (chapitre précédent)."], ["create-next-app", "src/app/page.tsx de démonstration", "La page d’accueil d’exemple de Next.js, remplacée par celle du club, rangée dans le groupe de routes (public)."], ["create-next-app", "apps/web/README.md", "Un mode d’emploi générique de Next.js ; la documentation du projet est celle-ci."], ["pnpm init", "main, license, keywords, le script test", "Un paquet privé, jamais publié, n’a ni point d’entrée par défaut ni licence de publication ; un script qui échoue exprès n’apprend rien."], ["prisma init", "generated/prisma (la sortie du générateur)", "Le client est généré dans node_modules/@prisma/client, là où le backend l’importe (plus bas)."]]' />
+
+Trois restes du générateur sont encore là : les cinq images de démonstration de `apps/web/public` (`file.svg`, `globe.svg`, `next.svg`, `vercel.svg`, `window.svg`), que rien n’affiche, et `AGENTS.md` et `CLAUDE.md`, des consignes pour les assistants de code que Next.js tient à jour. Les premières pourront partir lors d’un ménage ; les secondes sont gardées exprès.
+
+## Le package.json de la racine
+
+Le `package.json` créé par `pnpm init` devient celui du projet entier :
+
+```json
+// package.json (extrait)
+{
+  "name": "akfc_2",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+```
+
+`private: true` interdit toute publication sur le registre npm. `type: module` fait des fichiers `.js` et `.mjs` de la racine (les scripts de `scripts/`, les tests) des modules ES. Les scripts, eux, deviennent la seule porte d’entrée des commandes courantes : `pnpm dev`, `pnpm check`, `pnpm dev:infra`, `pnpm db:migrate`… Le chapitre « Le package.json et le monorepo » les détaille un par un.
+
+À côté, deux petits fichiers figent l’environnement : `.nvmrc` (une ligne, `22`) pour Node.js, et le champ `packageManager` pour pnpm, rempli par `corepack use pnpm@10.24.0`, empreinte comprise.
+
+## Des paquets qui se nomment et s’importent
+
+Les `package.json` des paquets reçoivent un nom de portée, `@akfc/…`, et deux champs qui décident comment on les importe :
+
+```json
+// packages/backend/package.json (extrait)
+{
+  "name": "@akfc/backend",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
+  "exports": {
+    "./*": "./src/*"
+  },
+```
+
+- `imports` : à l’intérieur du paquet, `#modules/tickets/router.ts` désigne `./src/modules/tickets/router.ts`.
+- `exports` : depuis un autre paquet, `@akfc/backend/modules/tickets/router.ts` désigne le même fichier, à condition que l’importeur déclare la dépendance `"@akfc/backend": "workspace:*"`.
+
+`create-next-app` avait posé un alias de `tsconfig`, `@/*`. Il est retiré : un seul mécanisme vaut pour tous les paquets, et c’est un standard de Node que TypeScript, webpack et Turbopack lisent tous. Le chapitre « Le package.json et le monorepo » le reprend.
+
+## Une configuration TypeScript commune
+
+Chaque paquet avait, ou aurait eu, son `tsconfig.json` complet. Les options communes montent dans `tsconfig.base.json`, à la racine, et chaque paquet l’**étend** :
+
+```json
+// apps/web/tsconfig.json (extrait)
+{
+  "extends": "../../tsconfig.base.json",
+```
+
+Deux options y sont ajoutées à la main par rapport à celles de `create-next-app` : `allowImportingTsExtensions`, qui permet d’écrire `.ts` ou `.tsx` dans un import (les champs `imports` et `exports` l’exigent), et `noEmit`, que cette option impose. Le chapitre « TypeScript et ses tsconfig » montre le fichier entier.
+
+## Prisma : un client importable et une garde
+
+Trois changements par rapport à `prisma init` :
+
+<DocsTable columnsJson='["Ce que prisma init a posé", "Ce que le projet utilise", "Pourquoi"]' rowsJson='[["provider = \"prisma-client\", output = \"../generated/prisma\"", "provider = \"prisma-client-js\", sans output", "Le client est généré dans node_modules/@prisma/client : le backend l’importe comme une bibliothèque, depuis n’importe quel paquet, et l’image de production le retrouve sans chemin à recopier."], ["prisma.config.ts : l’URL de la base, rien d’autre", "Une garde, assertLocalTarget, avant toute commande qui touche la base", "Un .env copié du serveur ferait sinon migrer la production depuis un poste de développement (chapitre « Mise en route »)."], ["Aucun script", "postinstall : pnpm prisma generate", "Le client est régénéré à chaque installation, et ne peut donc pas retarder sur le schéma."]]' />
+
+## Deux fichiers d’environnement
+
+`prisma init` avait écrit un `.env` avec une valeur d’exemple. Le projet sépare ce qui se partage de ce qui ne se partage pas :
+
+- `.env.example`, versionné : **toutes** les variables, avec des valeurs bidon et un commentaire chacune ;
+- `.env.dev.example`, versionné : les valeurs du développement local, prêtes à copier, qui ne valent que pour les services de `docker-compose.dev.yml` ;
+- `.env` et `apps/web/.env.local`, jamais versionnés (`.gitignore` ignore `.env*`, sauf les modèles) : les copies réelles, sur chaque machine.
+
+Pourquoi deux copies sur la machine, et lequel des deux fichiers lit qui : c’est l’objet de la section « La configuration : deux fichiers, deux lecteurs » de la mise en route.
+
+## Ce qui est venu ensuite
+
+Le reste de la structure n’est pas né d’un générateur : il a été écrit au fil des besoins, et chaque partie de cette documentation raconte le sien. `docker-compose.dev.yml` et le `Dockerfile` ont leur partie ; `scripts/` et `e2e/` appartiennent à la qualité ; `packages/finder-core` et `packages/config` sont nés quand du code a dû être partagé.
+
+<Callout type="concept">
+**Une règle pour toute nouvelle pièce du dépôt.** Avant d’ajouter un fichier de configuration, chercher s’il peut étendre ou rejoindre un fichier existant (un tsconfig qui étend la base, une variable dans les modèles d’environnement, un script dans le package.json racine). Une configuration de plus est une configuration de plus à tenir à jour.
+</Callout>
+
+## À suivre
+
+<Callout type="tip">
+**Chapitre suivant : la mise en route.** Le dépôt tel qu’il est aujourd’hui, sur notre machine : les services locaux, les deux fichiers de configuration, les tables, les données de démonstration et la première connexion.
+</Callout>

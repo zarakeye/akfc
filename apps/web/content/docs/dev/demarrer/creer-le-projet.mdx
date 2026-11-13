@@ -1,0 +1,201 @@
+---
+title: "Créer le projet"
+description: "La genèse du dépôt, rejouée depuis un dossier vide : Git et un package.json, create-next-app et ses options, un workspace pnpm, deux paquets vides, Prisma, et l’arborescence brute que ces commandes laissent derrière elles."
+section: "Démarrer"
+order: 2
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Git, Node.js, pnpm et Docker sont installés, et nous savons ce que chacun apporte.
+
+Le dépôt d’aujourd’hui ne dit pas comment il est né. Ce chapitre rejoue, depuis un dossier vide, les commandes qui produisent son ossature : une application Next.js, un monorepo pnpm, deux paquets, Prisma. Les versions sont celles du projet (Next.js 16.3, TypeScript 5.9, Prisma 6.19), et chaque arborescence montrée est celle **obtenue** en rejouant les commandes, pas une reconstitution.
+
+Le but n’est pas de recréer le projet : il existe, et le chapitre « Mise en route » le récupère tel quel. Le but est de voir ce que chaque outil fabrique de lui-même, pour comprendre ensuite, au chapitre suivant, ce que le projet a changé à la main et pourquoi.
+
+## Un dossier, Git, un package.json
+
+```bash
+mkdir akfc && cd akfc
+git init
+pnpm init
+```
+
+`git init` crée le dossier caché `.git`, qui contiendra tout l’historique. `pnpm init` écrit un `package.json` minimal :
+
+```json
+// package.json (créé par pnpm init)
+{
+  "name": "akfc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.28.0"
+}
+```
+
+Presque tout y est à revoir pour un monorepo privé (`main`, `license`, le script `test` qui échoue exprès) ; nous le ferons au chapitre suivant. Une ligne compte déjà : `packageManager`, que pnpm a écrite avec sa propre version. C’est elle que corepack lira pour donner à chacun la même version de pnpm (chapitre « Les outils »).
+
+## L’application : create-next-app
+
+Next.js fournit un générateur qui crée une application prête à démarrer. Nous la créons dans `apps/web`, l’emplacement des applications dans un monorepo :
+
+```bash
+mkdir apps && cd apps
+pnpm create next-app@16.3.7 web --ts --tailwind --eslint --app --src-dir --use-pnpm --import-alias "@/*" --turbopack --no-react-compiler --yes
+cd ..
+```
+
+<DocsTable columnsJson='["Option", "Ce qu’elle choisit"]' rowsJson='[["--ts", "TypeScript plutôt que JavaScript : un tsconfig.json et des fichiers .tsx."], ["--tailwind", "Tailwind CSS 4 et son intégration à PostCSS (postcss.config.mjs)."], ["--eslint", "ESLint et la configuration de Next.js (eslint.config.mjs)."], ["--app", "Le routeur App Router : les pages sous src/app, avec des layouts et des composants serveur."], ["--src-dir", "Le code sous src/, à part des fichiers de configuration."], ["--use-pnpm", "Installer les dépendances avec pnpm."], ["--import-alias \"@/*\"", "Un alias de tsconfig, @/…, vers src/. Le projet l’a remplacé depuis (chapitre suivant)."], ["--turbopack", "Turbopack pour le serveur de développement."], ["--no-react-compiler", "Sans le compilateur React ; le projet l’ajoute plus tard, à part."], ["--yes", "Ne pas poser les autres questions."]]' />
+
+Le générateur installe les dépendances, puis affiche `Success! Created web at …/akfc/apps/web`. Il a posé ceci :
+
+<Arbre racine="web/" texte={`
+public/                 # cinq images de démonstration (file.svg, globe.svg, next.svg…)
+src/
+  app/
+    favicon.ico
+    globals.css         # le CSS global, qui importe Tailwind
+    layout.tsx          # le gabarit commun à toutes les pages
+    page.tsx            # la page d'accueil de démonstration
+.gitignore
+AGENTS.md               # des consignes pour les assistants de code
+CLAUDE.md
+README.md
+eslint.config.mjs
+next-env.d.ts           # les types de Next.js, régénéré : à ne pas modifier
+next.config.ts          # vide : « config options here »
+package.json
+pnpm-lock.yaml          # ⚠ un fichier de verrouillage propre à web
+pnpm-workspace.yaml     # ⚠ un workspace propre à web
+postcss.config.mjs
+tsconfig.json
+`} />
+
+<Installer paquets="next react react-dom" dans="web" par="create-next-app" />
+<Installer paquets="typescript @types/node @types/react @types/react-dom tailwindcss @tailwindcss/postcss eslint eslint-config-next" dans="web" dev par="create-next-app" />
+
+Deux fichiers trahissent que le générateur ne savait pas qu’il était dans un monorepo : `pnpm-lock.yaml` et `pnpm-workspace.yaml`, créés **dans** `apps/web`. Lancé seul, create-next-app fait de son dossier un projet autonome. Le monorepo, lui, veut un seul fichier de verrouillage et une seule liste de paquets, à la racine.
+
+## Le workspace pnpm
+
+```bash
+rm apps/web/pnpm-lock.yaml apps/web/pnpm-workspace.yaml
+rm -rf apps/web/node_modules
+```
+
+Puis, à la racine, le fichier qui déclare où vivent les paquets :
+
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - apps/*
+  - packages/*
+```
+
+Tout dossier de `apps/` ou de `packages/` qui contient un `package.json` devient un paquet du workspace. Un `pnpm install` à la racine installe alors les dépendances de tous les paquets d’un coup, et écrit un seul `pnpm-lock.yaml` :
+
+```bash
+pnpm install
+```
+
+## Deux paquets vides : backend et contracts
+
+```bash
+mkdir -p packages/backend/src packages/contracts/src
+cd packages/backend && pnpm init && cd ../..
+cd packages/contracts && pnpm init && cd ../..
+```
+
+Chaque `pnpm init` écrit le même `package.json` minimal, nommé d’après le dossier (`backend`, `contracts`). Les deux paquets n’ont encore ni code, ni nom de portée, ni façon d’être importés : ce sera l’objet du chapitre suivant. Leur rôle, lui, est fixé dès maintenant. `backend` contiendra l’API ; `contracts`, les types et schémas que le front et le back partagent.
+
+## Prisma
+
+Prisma s’installe à la racine, parce qu’il sert à tout le dépôt : le schéma, les migrations, et le client qu’importera le backend.
+
+<Installer paquets="prisma typescript" dans="racine" dev />
+<Installer paquets="@prisma/client dotenv" dans="racine" />
+
+```bash
+pnpm exec prisma init
+```
+
+`prisma init` annonce ce qu’il crée, puis propose de brancher une base existante ou d’en créer une :
+
+<Arbre racine="akfc/" texte={`
+prisma/
+  schema.prisma       # le schéma : un générateur, une source de données, aucun modèle
+prisma.config.ts      # la configuration de la CLI Prisma (chemins, URL de la base)
+.env                  # DATABASE_URL, avec une valeur d'exemple
+.gitignore            # ignore .env et /generated/prisma
+`} />
+
+```prisma
+// prisma/schema.prisma (créé par prisma init, commentaires retirés)
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+Le schéma est vide, et la base n’existe pas encore. `prisma init` suggère `prisma dev`, une base Postgres lancée par Prisma lui-même. Le projet en a choisi une autre, que Docker fait tourner à côté du stockage et de la boîte mail : la même version de PostgreSQL qu’en production, à une adresse que rien ne peut confondre avec le serveur. C’est l’objet du chapitre « Mise en route », puis de la partie consacrée à Docker.
+
+## L’arborescence brute
+
+Voici le dépôt après ces commandes, hors `node_modules` et `.git` :
+
+<Arbre racine="akfc/" texte={`
+apps/
+  web/
+    public/
+    src/
+      app/
+    AGENTS.md
+    CLAUDE.md
+    README.md
+    eslint.config.mjs
+    next-env.d.ts
+    next.config.ts
+    package.json
+    postcss.config.mjs
+    tsconfig.json
+packages/
+  backend/
+    src/
+    package.json
+  contracts/
+    src/
+    package.json
+prisma/
+  schema.prisma
+.env
+.gitignore
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+prisma.config.ts
+`} />
+
+Il démarre (`pnpm --filter web dev` affiche la page de démonstration de Next.js), mais ce n’est pas encore un monorepo utilisable : les paquets ne savent pas s’importer entre eux, chaque `tsconfig` vit sa vie, le client Prisma serait généré dans un dossier que rien n’importe, et `.env` mélange ce qui est secret et ce qui ne l’est pas.
+
+<Callout type="insight">
+Un générateur choisit pour un cas général : une application seule, une base de démonstration. Lire ce qu’il a posé, avant de construire dessus, évite de garder par inertie des choix faits pour un autre projet.
+</Callout>
+
+## À suivre
+
+<Callout type="tip">
+**Chapitre suivant : organiser le dépôt.** La structure que vise le projet, et chaque réglage fait à la main pour y arriver : une configuration TypeScript commune, des paquets qui s’importent par leur nom, un client Prisma au bon endroit, des fichiers d’environnement séparés.
+</Callout>
