@@ -3613,7 +3613,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → User)",
-        "prisma/schema.prisma:1856"
+        "prisma/schema.prisma:1861"
        ]
       ]
      ]
@@ -3677,7 +3677,7 @@
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2341"
+        "prisma/schema.prisma:2346"
        ]
       ],
       [
@@ -3687,7 +3687,7 @@
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2381"
+        "prisma/schema.prisma:2386"
        ]
       ]
      ]
@@ -3705,7 +3705,7 @@
        ],
        [
         "onDelete: Cascade (ImageConsentRequest → User)",
-        "prisma/schema.prisma:2399"
+        "prisma/schema.prisma:2404"
        ]
       ]
      ]
@@ -3800,7 +3800,7 @@
        ],
        [
         "onDelete: SetNull (MemberDocument → User)",
-        "prisma/schema.prisma:1811"
+        "prisma/schema.prisma:1816"
        ]
       ]
      ]
@@ -3818,7 +3818,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → User)",
-        "prisma/schema.prisma:1836"
+        "prisma/schema.prisma:1841"
        ]
       ]
      ]
@@ -3836,7 +3836,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → User)",
-        "prisma/schema.prisma:1947"
+        "prisma/schema.prisma:1952"
        ]
       ]
      ]
@@ -4045,7 +4045,7 @@
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2190"
+        "prisma/schema.prisma:2195"
        ]
       ],
       [
@@ -4055,7 +4055,7 @@
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2199"
+        "prisma/schema.prisma:2204"
        ]
       ]
      ]
@@ -4076,7 +4076,7 @@
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2265"
+        "prisma/schema.prisma:2270"
        ]
       ],
       [
@@ -4086,7 +4086,7 @@
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2269"
+        "prisma/schema.prisma:2274"
        ]
       ]
      ]
@@ -4106,7 +4106,7 @@
        ],
        [
         "onDelete: SetNull (TicketMessage → User)",
-        "prisma/schema.prisma:2235"
+        "prisma/schema.prisma:2240"
        ]
       ]
      ]
@@ -8087,7 +8087,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ],
       [
@@ -8109,7 +8109,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -8371,7 +8371,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ],
       [
@@ -8393,7 +8393,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ]
      ]
@@ -8423,7 +8423,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ],
       [
@@ -8445,7 +8445,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ]
      ]
@@ -8521,7 +8521,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ],
       [
@@ -8543,7 +8543,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -8826,7 +8826,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ],
       [
@@ -8848,7 +8848,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ]
      ]
@@ -8878,7 +8878,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ],
       [
@@ -8900,7 +8900,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ]
      ]
@@ -8969,11 +8969,11 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:219"
        ]
       ]
      ]
@@ -8986,11 +8986,11 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:184"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ]
       ]
      ]
@@ -9003,15 +9003,15 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
        ],
        [
         "assertMayRead",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:86"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:88"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -9032,15 +9032,15 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
        ],
        [
         "assertMayRead",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:86"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:88"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -9061,21 +9061,21 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:184"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ]
       ],
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:219"
        ]
       ]
      ]
@@ -9097,15 +9097,15 @@
       [
        [
         "versionDownloadUrl",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:251"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -9118,15 +9118,15 @@
       [
        [
         "versionDownloadUrl",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:251"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -9139,15 +9139,15 @@
       [
        [
         "versionDownloadUrl",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:251"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ],
        [
         "assertMayRead",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:86"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:88"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -9168,15 +9168,15 @@
       [
        [
         "versionDownloadUrl",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:251"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ],
        [
         "assertMayRead",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:86"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:88"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -9199,6 +9199,70 @@
    "line": 40,
    "effects": [
     {
+     "model": "DocumentReceipt",
+     "op": "create",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "restoreVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "update",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "restoreVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.updateMany",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
+       ]
+      ],
+      [
+       [
+        "restoreVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "FileVersion",
      "op": "create",
      "fields": [
@@ -9218,15 +9282,15 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.create",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:98"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:100"
        ]
       ]
      ]
@@ -9239,29 +9303,29 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.delete",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:119"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:121"
        ]
       ],
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ]
      ]
@@ -9274,29 +9338,29 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ],
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:163"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
        ]
       ]
      ]
@@ -9311,15 +9375,15 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:122"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:124"
        ]
       ]
      ]
@@ -9332,15 +9396,15 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -9362,11 +9426,55 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "prisma.mediaAsset.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:283"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:311"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "restoreVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.memberDocument.findUnique",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:175"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "update",
+     "fields": [
+      "versionedAt"
+     ],
+     "trails": [
+      [
+       [
+        "restoreVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.memberDocument.update",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
        ]
       ]
      ]
@@ -9379,15 +9487,15 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "mayRestore",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:82"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:84"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -9408,15 +9516,15 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:273"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
        ],
        [
         "mayRestore",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:82"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:84"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -9446,15 +9554,15 @@
       [
        [
         "deleteVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:302"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:331"
        ],
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ]
      ]
@@ -9467,15 +9575,15 @@
       [
        [
         "deleteVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:302"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:331"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -9488,15 +9596,15 @@
       [
        [
         "deleteVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:302"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:331"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -15800,15 +15908,15 @@
       [
        [
         "prepareReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:141"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:143"
        ],
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.create",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:98"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:100"
        ]
       ]
      ]
@@ -15821,29 +15929,29 @@
       [
        [
         "prepareReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:141"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:143"
        ],
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ],
       [
        [
         "prepareReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:141"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:143"
        ],
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.delete",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:119"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:121"
        ]
       ]
      ]
@@ -15856,11 +15964,11 @@
       [
        [
         "prepareReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:141"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:143"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:144"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:146"
        ]
       ]
      ]
@@ -15875,15 +15983,15 @@
       [
        [
         "prepareReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:141"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:143"
        ],
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:122"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:124"
        ]
       ]
      ]
@@ -15951,11 +16059,11 @@
       [
        [
         "prepareReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:141"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:143"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:142"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:144"
        ]
       ]
      ]
@@ -16166,6 +16274,70 @@
      ]
     },
     {
+     "model": "DocumentReceipt",
+     "op": "create",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "confirmReplacement",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "update",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "confirmReplacement",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.updateMany",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
+       ]
+      ],
+      [
+       [
+        "confirmReplacement",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Event",
      "op": "read",
      "fields": [],
@@ -16207,19 +16379,19 @@
       [
        [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:156"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
        ],
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:163"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
        ],
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ]
      ]
@@ -16232,15 +16404,15 @@
       [
        [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:156"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
        ],
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:163"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
        ]
       ]
      ]
@@ -16255,11 +16427,11 @@
       [
        [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:156"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
        ],
        [
         "prisma.fileVersion.updateMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:157"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
        ]
       ]
      ]
@@ -16400,6 +16572,50 @@
        [
         "prisma.mediaAsset.upsert",
         "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:484"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmReplacement",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.memberDocument.findUnique",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:175"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "update",
+     "fields": [
+      "versionedAt"
+     ],
+     "trails": [
+      [
+       [
+        "confirmReplacement",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+       ],
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.memberDocument.update",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
        ]
       ]
      ]
@@ -18668,7 +18884,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 31,
+   "line": 41,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -18678,7 +18894,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:44"
+        "packages/backend/src/modules/memberDocuments/router.ts:54"
        ]
       ]
      ]
@@ -18691,7 +18907,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:44"
+        "packages/backend/src/modules/memberDocuments/router.ts:54"
        ]
       ]
      ]
@@ -18704,7 +18920,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:44"
+        "packages/backend/src/modules/memberDocuments/router.ts:54"
        ]
       ]
      ]
@@ -18717,7 +18933,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:44"
+        "packages/backend/src/modules/memberDocuments/router.ts:54"
        ]
       ]
      ]
@@ -18730,7 +18946,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:44"
+        "packages/backend/src/modules/memberDocuments/router.ts:54"
        ]
       ]
      ]
@@ -18757,7 +18973,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:44"
+        "packages/backend/src/modules/memberDocuments/router.ts:54"
        ]
       ]
      ]
@@ -18784,7 +19000,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:37"
+        "packages/backend/src/modules/memberDocuments/router.ts:47"
        ]
       ]
      ]
@@ -18796,7 +19012,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 84,
+   "line": 97,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -18806,7 +19022,7 @@
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:97"
+        "packages/backend/src/modules/memberDocuments/router.ts:110"
        ]
       ]
      ]
@@ -18819,7 +19035,7 @@
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:97"
+        "packages/backend/src/modules/memberDocuments/router.ts:110"
        ]
       ]
      ]
@@ -18832,7 +19048,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:86"
+        "packages/backend/src/modules/memberDocuments/router.ts:99"
        ]
       ]
      ]
@@ -18844,7 +19060,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 111,
+   "line": 124,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -18854,7 +19070,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:117"
+        "packages/backend/src/modules/memberDocuments/router.ts:130"
        ]
       ]
      ]
@@ -18867,7 +19083,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:117"
+        "packages/backend/src/modules/memberDocuments/router.ts:130"
        ]
       ]
      ]
@@ -18880,7 +19096,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:117"
+        "packages/backend/src/modules/memberDocuments/router.ts:130"
        ]
       ]
      ]
@@ -18893,7 +19109,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:117"
+        "packages/backend/src/modules/memberDocuments/router.ts:130"
        ]
       ]
      ]
@@ -18916,7 +19132,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:117"
+        "packages/backend/src/modules/memberDocuments/router.ts:130"
        ]
       ]
      ]
@@ -18945,7 +19161,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 146,
+   "line": 167,
    "effects": [
     {
      "model": "MemberDocument",
@@ -18955,19 +19171,19 @@
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:164"
+        "packages/backend/src/modules/memberDocuments/router.ts:185"
        ]
       ],
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:167"
+        "packages/backend/src/modules/memberDocuments/router.ts:188"
        ]
       ],
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:176"
+        "packages/backend/src/modules/memberDocuments/router.ts:197"
        ]
       ]
      ]
@@ -18980,13 +19196,13 @@
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:176"
+        "packages/backend/src/modules/memberDocuments/router.ts:197"
        ]
       ],
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:196"
+        "packages/backend/src/modules/memberDocuments/router.ts:217"
        ]
       ]
      ]
@@ -18999,13 +19215,13 @@
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:167"
+        "packages/backend/src/modules/memberDocuments/router.ts:188"
        ]
       ],
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:176"
+        "packages/backend/src/modules/memberDocuments/router.ts:197"
        ]
       ]
      ]
@@ -19018,13 +19234,13 @@
       [
        [
         "ctx.prisma.memberGroupMembership.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:158"
+        "packages/backend/src/modules/memberDocuments/router.ts:179"
        ]
       ],
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:176"
+        "packages/backend/src/modules/memberDocuments/router.ts:197"
        ]
       ]
      ]
@@ -19037,13 +19253,13 @@
       [
        [
         "ctx.prisma.memberGroupMembership.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:158"
+        "packages/backend/src/modules/memberDocuments/router.ts:179"
        ]
       ],
       [
        [
         "ctx.prisma.memberDocument.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:176"
+        "packages/backend/src/modules/memberDocuments/router.ts:197"
        ]
       ]
      ]
@@ -19056,7 +19272,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:148"
+        "packages/backend/src/modules/memberDocuments/router.ts:169"
        ]
       ]
      ]
@@ -19065,104 +19281,6 @@
    "emails": []
   },
   "memberDocument.markRead": {
-   "kind": "mutation",
-   "access": "membre",
-   "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 218,
-   "effects": [
-    {
-     "model": "DocumentReceipt",
-     "op": "create",
-     "fields": [
-      "memberDocumentId",
-      "readAt",
-      "userId"
-     ],
-     "trails": [
-      [
-       [
-        "ctx.prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/memberDocuments/router.ts:230"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "DocumentReceipt",
-     "op": "update",
-     "fields": [
-      "memberDocumentId",
-      "readAt",
-      "userId"
-     ],
-     "trails": [
-      [
-       [
-        "ctx.prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/memberDocuments/router.ts:230"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberDocument",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "ctx.prisma.memberDocument.findFirst",
-        "packages/backend/src/modules/memberDocuments/router.ts:223"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "memberDocumentReadableBy",
-        "packages/backend/src/modules/memberDocuments/visibleTo.ts:45"
-       ],
-       [
-        "collaborativeEntriesForMember",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:12"
-       ],
-       [
-        "prisma.memberGroup.findMany",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "memberDocumentReadableBy",
-        "packages/backend/src/modules/memberDocuments/visibleTo.ts:45"
-       ],
-       [
-        "collaborativeEntriesForMember",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:12"
-       ],
-       [
-        "prisma.memberGroupMembership.findMany",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:27"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
-  "memberDocument.markUnread": {
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
@@ -19260,11 +19378,109 @@
    ],
    "emails": []
   },
+  "memberDocument.markUnread": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 260,
+   "effects": [
+    {
+     "model": "DocumentReceipt",
+     "op": "create",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "ctx.prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/memberDocuments/router.ts:272"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "update",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "ctx.prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/memberDocuments/router.ts:272"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findFirst",
+        "packages/backend/src/modules/memberDocuments/router.ts:265"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "memberDocumentReadableBy",
+        "packages/backend/src/modules/memberDocuments/visibleTo.ts:45"
+       ],
+       [
+        "collaborativeEntriesForMember",
+        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:12"
+       ],
+       [
+        "prisma.memberGroup.findMany",
+        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "memberDocumentReadableBy",
+        "packages/backend/src/modules/memberDocuments/visibleTo.ts:45"
+       ],
+       [
+        "collaborativeEntriesForMember",
+        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:12"
+       ],
+       [
+        "prisma.memberGroupMembership.findMany",
+        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "memberDocument.publish": {
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 262,
+   "line": 283,
    "effects": [
     {
      "model": "MediaAsset",
@@ -19274,7 +19490,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:289"
+        "packages/backend/src/modules/memberDocuments/router.ts:310"
        ]
       ]
      ]
@@ -19294,7 +19510,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:318"
+        "packages/backend/src/modules/memberDocuments/router.ts:339"
        ]
       ]
      ]
@@ -19307,7 +19523,7 @@
       [
        [
         "ctx.prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:297"
+        "packages/backend/src/modules/memberDocuments/router.ts:318"
        ]
       ]
      ]
@@ -19320,7 +19536,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:318"
+        "packages/backend/src/modules/memberDocuments/router.ts:339"
        ]
       ]
      ]
@@ -19333,7 +19549,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:318"
+        "packages/backend/src/modules/memberDocuments/router.ts:339"
        ]
       ]
      ]
@@ -19346,7 +19562,7 @@
       [
        [
         "ctx.prisma.memberGroup.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:312"
+        "packages/backend/src/modules/memberDocuments/router.ts:333"
        ]
       ]
      ]
@@ -19359,7 +19575,7 @@
       [
        [
         "ctx.prisma.user.count",
-        "packages/backend/src/modules/memberDocuments/router.ts:311"
+        "packages/backend/src/modules/memberDocuments/router.ts:332"
        ]
       ]
      ]
@@ -19371,7 +19587,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 339,
+   "line": 360,
    "effects": [
     {
      "model": "MediaAsset",
@@ -19381,7 +19597,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:363"
+        "packages/backend/src/modules/memberDocuments/router.ts:384"
        ]
       ]
      ]
@@ -19400,7 +19616,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:379"
+        "packages/backend/src/modules/memberDocuments/router.ts:400"
        ]
       ]
      ]
@@ -19413,7 +19629,7 @@
       [
        [
         "ctx.prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:371"
+        "packages/backend/src/modules/memberDocuments/router.ts:392"
        ]
       ]
      ]
@@ -19428,7 +19644,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:379"
+        "packages/backend/src/modules/memberDocuments/router.ts:400"
        ]
       ]
      ]
@@ -19510,7 +19726,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 393,
+   "line": 414,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -19521,11 +19737,11 @@
       [
        [
         "ctx.prisma.memberDocument.delete",
-        "packages/backend/src/modules/memberDocuments/router.ts:396"
+        "packages/backend/src/modules/memberDocuments/router.ts:417"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -19538,7 +19754,7 @@
       [
        [
         "ctx.prisma.memberDocument.delete",
-        "packages/backend/src/modules/memberDocuments/router.ts:396"
+        "packages/backend/src/modules/memberDocuments/router.ts:417"
        ]
       ]
      ]
@@ -19552,11 +19768,11 @@
       [
        [
         "ctx.prisma.memberDocument.delete",
-        "packages/backend/src/modules/memberDocuments/router.ts:396"
+        "packages/backend/src/modules/memberDocuments/router.ts:417"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ]
      ]
@@ -19570,11 +19786,11 @@
       [
        [
         "ctx.prisma.memberDocument.delete",
-        "packages/backend/src/modules/memberDocuments/router.ts:396"
+        "packages/backend/src/modules/memberDocuments/router.ts:417"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ]
      ]
@@ -19586,7 +19802,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 401,
+   "line": 422,
    "effects": [
     {
      "model": "MediaAsset",
@@ -19596,7 +19812,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:402"
+        "packages/backend/src/modules/memberDocuments/router.ts:423"
        ]
       ]
      ]
@@ -19609,7 +19825,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:402"
+        "packages/backend/src/modules/memberDocuments/router.ts:423"
        ]
       ]
      ]
@@ -19621,7 +19837,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 416,
+   "line": 437,
    "effects": [
     {
      "model": "User",
@@ -19631,7 +19847,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:417"
+        "packages/backend/src/modules/memberDocuments/router.ts:438"
        ]
       ]
      ]
@@ -19643,7 +19859,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 431,
+   "line": 452,
    "effects": [
     {
      "model": "MediaAsset",
@@ -19653,7 +19869,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:434"
+        "packages/backend/src/modules/memberDocuments/router.ts:455"
        ]
       ]
      ]
@@ -19666,7 +19882,7 @@
       [
        [
         "ctx.prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:439"
+        "packages/backend/src/modules/memberDocuments/router.ts:460"
        ]
       ]
      ]
@@ -20008,7 +20224,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1970"
+        "prisma/schema.prisma:1975"
        ]
       ]
      ]
@@ -20089,7 +20305,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1919"
+        "prisma/schema.prisma:1924"
        ]
       ]
      ]
@@ -20111,7 +20327,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1943"
+        "prisma/schema.prisma:1948"
        ]
       ]
      ]
@@ -20764,7 +20980,7 @@
   },
   "prepareReplacement": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 141,
+   "line": 143,
    "effects": [
     {
      "model": "FileVersion",
@@ -20786,11 +21002,11 @@
       [
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.create",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:98"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:100"
        ]
       ]
      ]
@@ -20803,21 +21019,21 @@
       [
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ],
       [
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.delete",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:119"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:121"
        ]
       ]
      ]
@@ -20830,7 +21046,7 @@
       [
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:144"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:146"
        ]
       ]
      ]
@@ -20845,11 +21061,11 @@
       [
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:122"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:124"
        ]
       ]
      ]
@@ -20862,7 +21078,7 @@
       [
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:142"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:144"
        ]
       ]
      ]
@@ -20872,8 +21088,60 @@
   },
   "confirmReplacement": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 156,
+   "line": 158,
    "effects": [
+    {
+     "model": "DocumentReceipt",
+     "op": "create",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "update",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.updateMany",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
+       ]
+      ],
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+       ]
+      ]
+     ]
+    },
     {
      "model": "FileVersion",
      "op": "delete",
@@ -20882,15 +21150,15 @@
       [
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:163"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
        ],
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ]
      ]
@@ -20903,11 +21171,11 @@
       [
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:163"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
        ]
       ]
      ]
@@ -20922,7 +21190,43 @@
       [
        [
         "prisma.fileVersion.updateMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:157"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.memberDocument.findUnique",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:175"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "update",
+     "fields": [
+      "versionedAt"
+     ],
+     "trails": [
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.memberDocument.update",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
        ]
       ]
      ]
@@ -20932,7 +21236,7 @@
   },
   "listVersions": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 178,
+   "line": 206,
    "effects": [
     {
      "model": "FileVersion",
@@ -20942,7 +21246,7 @@
       [
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:219"
        ]
       ]
      ]
@@ -20955,7 +21259,7 @@
       [
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:184"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ]
       ]
      ]
@@ -20968,11 +21272,11 @@
       [
        [
         "assertMayRead",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:86"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:88"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -20993,11 +21297,11 @@
       [
        [
         "assertMayRead",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:86"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:88"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -21018,13 +21322,13 @@
       [
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:184"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ]
       ],
       [
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:219"
        ]
       ]
      ]
@@ -21034,7 +21338,7 @@
   },
   "versionDownloadUrl": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 251,
+   "line": 279,
    "effects": [
     {
      "model": "FileVersion",
@@ -21044,11 +21348,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -21061,11 +21365,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -21078,11 +21382,11 @@
       [
        [
         "assertMayRead",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:86"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:88"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -21103,11 +21407,11 @@
       [
        [
         "assertMayRead",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:86"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:88"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -21125,8 +21429,60 @@
   },
   "restoreVersion": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 273,
+   "line": 301,
    "effects": [
+    {
+     "model": "DocumentReceipt",
+     "op": "create",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "update",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.updateMany",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
+       ]
+      ],
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.documentReceipt.upsert",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+       ]
+      ]
+     ]
+    },
     {
      "model": "FileVersion",
      "op": "create",
@@ -21147,11 +21503,11 @@
       [
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.create",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:98"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:100"
        ]
       ]
      ]
@@ -21164,21 +21520,21 @@
       [
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.delete",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:119"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:121"
        ]
       ],
       [
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ]
      ]
@@ -21191,21 +21547,21 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ],
       [
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:163"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
        ]
       ]
      ]
@@ -21220,11 +21576,11 @@
       [
        [
         "snapshot",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:97"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:99"
        ],
        [
         "prisma.fileVersion.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:122"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:124"
        ]
       ]
      ]
@@ -21237,11 +21593,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -21263,7 +21619,43 @@
       [
        [
         "prisma.mediaAsset.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:283"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:311"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.memberDocument.findUnique",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:175"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "update",
+     "fields": [
+      "versionedAt"
+     ],
+     "trails": [
+      [
+       [
+        "announceNewVersion",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+       ],
+       [
+        "prisma.memberDocument.update",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
        ]
       ]
      ]
@@ -21276,11 +21668,11 @@
       [
        [
         "mayRestore",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:82"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:84"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -21301,11 +21693,11 @@
       [
        [
         "mayRestore",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:82"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:84"
        ],
        [
         "groupAccessOf",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:76"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:78"
        ],
        [
         "resolveGroupAccessForUser",
@@ -21323,7 +21715,7 @@
   },
   "deleteVersion": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 302,
+   "line": 331,
    "effects": [
     {
      "model": "FileVersion",
@@ -21333,11 +21725,11 @@
       [
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ]
      ]
@@ -21350,11 +21742,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -21367,11 +21759,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:229"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:230"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
        ]
       ]
      ]
@@ -21381,7 +21773,7 @@
   },
   "purgeFileVersions": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 317,
+   "line": 346,
    "effects": [
     {
      "model": "FileVersion",
@@ -21391,11 +21783,11 @@
       [
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ]
      ]
@@ -21408,23 +21800,23 @@
       [
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:319"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:348"
        ]
       ],
       [
        [
         "prisma.fileVersion.groupBy",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:325"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:354"
        ]
       ],
       [
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:163"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
        ]
       ]
      ]
@@ -25155,7 +25547,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1970"
+        "prisma/schema.prisma:1975"
        ]
       ]
      ]
@@ -25216,7 +25608,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1919"
+        "prisma/schema.prisma:1924"
        ]
       ]
      ]
@@ -25234,7 +25626,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1943"
+        "prisma/schema.prisma:1948"
        ]
       ]
      ]
@@ -25900,7 +26292,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ],
       [
@@ -25926,7 +26318,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -25983,15 +26375,15 @@
       [
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:317"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
        ],
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ]
      ]
@@ -26004,35 +26396,35 @@
       [
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:317"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:319"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:348"
        ]
       ],
       [
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:317"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
        ],
        [
         "prisma.fileVersion.groupBy",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:325"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:354"
        ]
       ],
       [
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:317"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
        ],
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:163"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
        ]
       ]
      ]
@@ -26337,7 +26729,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ],
       [
@@ -26363,7 +26755,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ]
      ]
@@ -26397,7 +26789,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ],
       [
@@ -26423,7 +26815,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ]
      ]
@@ -26511,7 +26903,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2258"
+        "prisma/schema.prisma:2263"
        ]
       ]
      ]
@@ -26529,7 +26921,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2228"
+        "prisma/schema.prisma:2233"
        ]
       ]
      ]
@@ -26679,7 +27071,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ],
       [
@@ -26709,7 +27101,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -26778,15 +27170,15 @@
        ],
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:317"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
        ],
        [
         "dropVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:126"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
        ],
        [
         "prisma.fileVersion.deleteMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:133"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
        ]
       ]
      ]
@@ -26803,11 +27195,11 @@
        ],
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:317"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:319"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:348"
        ]
       ],
       [
@@ -26817,11 +27209,11 @@
        ],
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:317"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
        ],
        [
         "prisma.fileVersion.groupBy",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:325"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:354"
        ]
       ],
       [
@@ -26831,15 +27223,15 @@
        ],
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:317"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
        ],
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:163"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
        ]
       ]
      ]
@@ -27196,7 +27588,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ],
       [
@@ -27226,7 +27618,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ]
      ]
@@ -27264,7 +27656,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ],
       [
@@ -27294,7 +27686,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ]
      ]
@@ -27406,7 +27798,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2258"
+        "prisma/schema.prisma:2263"
        ]
       ]
      ]
@@ -27428,7 +27820,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2228"
+        "prisma/schema.prisma:2233"
        ]
       ]
      ]
@@ -31549,7 +31941,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ],
       [
@@ -31567,7 +31959,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -31781,7 +32173,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ],
       [
@@ -31799,7 +32191,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ]
      ]
@@ -31825,7 +32217,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ],
       [
@@ -31843,7 +32235,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ]
      ]
@@ -31955,7 +32347,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ],
       [
@@ -31973,7 +32365,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -32204,7 +32596,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ],
       [
@@ -32222,7 +32614,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ]
      ]
@@ -32248,7 +32640,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ],
       [
@@ -32266,7 +32658,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ]
      ]
@@ -32562,7 +32954,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ],
       [
@@ -32584,7 +32976,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -32846,7 +33238,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ],
       [
@@ -32868,7 +33260,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ]
      ]
@@ -32898,7 +33290,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ],
       [
@@ -32920,7 +33312,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ]
      ]
@@ -33564,7 +33956,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ],
       [
@@ -33578,7 +33970,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1852"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -33744,7 +34136,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ],
       [
@@ -33758,7 +34150,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1966"
+        "prisma/schema.prisma:1971"
        ]
       ]
      ]
@@ -33780,7 +34172,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ],
       [
@@ -33794,7 +34186,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1837"
        ]
       ]
      ]

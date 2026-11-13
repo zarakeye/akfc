@@ -12,6 +12,8 @@ type ReaderDoc = {
   id: string;
   title: string;
   readAt: string | Date | null;
+  /** Dernière nouvelle version du fichier (null : jamais remplacé). */
+  versionedAt?: string | Date | null;
   mimeType?: string | null;
   format?: string | null;
 };
@@ -137,9 +139,16 @@ export function DocumentReaderPanel({
         aria-label={doc.title}
       >
         <header className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
-          <h2 className="min-w-0 flex-1 truncate text-base font-semibold text-gray-900">
-            {doc.title}
-          </h2>
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-base font-semibold text-gray-900">
+              {doc.title}
+            </h2>
+            {doc.versionedAt && (
+              <p className="text-xs text-gray-500">
+                Nouvelle version du {new Date(doc.versionedAt).toLocaleDateString("fr-FR")}
+              </p>
+            )}
+          </div>
 
           <button
             type="button"

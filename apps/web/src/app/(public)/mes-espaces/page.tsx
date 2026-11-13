@@ -12,6 +12,7 @@ import Finder from "@features/finder-core/components/Finder";
 import SpacesBinPanel from "@features/trash-view/components/SpacesBinPanel";
 import { useFinderStore } from "@features/finder-core/state/useFinderStore";
 import { trpc } from "@trpc/trpcClient";
+import { TRPCClientError } from "@trpc/client";
 import { uploadToR2 } from "@features/media/uploadToR2";
 import {
   memberFinderAdapter,
@@ -30,6 +31,8 @@ function MemberDepositBar(): JSX.Element | null {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Fichier du même nom déjà présent : on demande avant de le remplacer (nouvelle version).
+  const [toReplace, setToReplace] = useState<File | null>(null);
 
   const createR2 = trpc.storage.createR2Upload.useMutation();
   const registerR2 = trpc.storage.registerR2Upload.useMutation();
@@ -43,12 +46,9 @@ function MemberDepositBar(): JSX.Element | null {
   if (!space || space.access !== "EDITOR") return null;
   const groupId = space.groupId;
 
-  async function onFileChosen(e: ChangeEvent<HTMLInputElement>): Promise<void> {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
+  async function send(file: File, allowOverwrite: boolean): Promise<void> {
     setUploadError(null);
+    setToReplace(null);
     setUploading(true);
     try {
       const destination = { kind: "group" as const, groupId };
@@ -56,17 +56,29 @@ function MemberDepositBar(): JSX.Element | null {
       const registered = await uploadToR2({
         file,
         destination,
+        allowOverwrite,
         create: createR2.mutateAsync,
         register: registerR2.mutateAsync,
       });
 
+      // Déjà publié (remplacement) : le serveur le signale, rien à recréer.
       await deposit.mutateAsync({ path: registered.path, groupId });
       useFinderStore.getState().reloadFolderContent();
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Le dépôt a échoué.");
+      if (!allowOverwrite && err instanceof TRPCClientError && err.data?.code === "CONFLICT") {
+        setToReplace(file);
+      } else {
+        setUploadError(err instanceof Error ? err.message : "Le dépôt a échoué.");
+      }
     } finally {
       setUploading(false);
     }
+  }
+
+  function onFileChosen(e: ChangeEvent<HTMLInputElement>): void {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) void send(file, false);
   }
 
   return (
@@ -88,6 +100,25 @@ function MemberDepositBar(): JSX.Element | null {
       />
       {uploadError && (
         <span className="text-sm text-red-600">{uploadError}</span>
+      )}
+      {toReplace && (
+        <span className="flex flex-wrap items-center gap-2 text-sm text-gray-700" role="alert">
+          « {toReplace.name} » existe déjà. Le remplacer ? L&apos;actuel restera dans ses versions.
+          <button
+            type="button"
+            onClick={() => void send(toReplace, true)}
+            className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700"
+          >
+            Remplacer
+          </button>
+          <button
+            type="button"
+            onClick={() => setToReplace(null)}
+            className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium hover:bg-gray-50"
+          >
+            Annuler
+          </button>
+        </span>
       )}
     </div>
   );

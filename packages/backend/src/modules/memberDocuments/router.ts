@@ -24,6 +24,16 @@ const adminProcedure = protectedProcedure.use(isAdmin);
 /** Condition « ce document concerne l'utilisateur » (partagée avec la route de livraison). */
 const visibleToUser = memberDocumentVisibleTo;
 
+/**
+ * Borne des non-lus signalés : publié, ou remplacé par une nouvelle version, depuis le 1er janvier
+ * de l'année d'adhésion. Sous AND, pour se combiner aux autres OR de la requête.
+ */
+function freshSince(yearStart: Date | null) {
+  return yearStart
+    ? { AND: [{ OR: [{ publishedAt: { gte: yearStart } }, { versionedAt: { gte: yearStart } }] }] }
+    : {};
+}
+
 export const memberDocumentRouter = router({
   // ─── Membre ────────────────────────────────────────────────────────────
 
@@ -49,6 +59,7 @@ export const memberDocumentRouter = router({
         title: true,
         audience: true,
         publishedAt: true,
+        versionedAt: true,
         mediaAsset: {
           select: {
             displayName: true,
@@ -69,6 +80,8 @@ export const memberDocumentRouter = router({
         d.title ?? d.mediaAsset.displayName ?? d.mediaAsset.originalFileName,
       audience: d.audience,
       publishedAt: d.publishedAt,
+      // Date de la dernière nouvelle version (badge « Nouvelle version » s'il est non lu).
+      versionedAt: d.versionedAt,
       mimeType: d.mediaAsset.mimeType,
       format: d.mediaAsset.format,
       // Pas de reçu, ou reçu à readAt null (re-marqué non lu) = non lu.
@@ -99,7 +112,7 @@ export const memberDocumentRouter = router({
         ...visibleToUser(userId),
         // Non lu = aucun reçu daté pour ce membre.
         receipts: { none: { userId, readAt: { not: null } } },
-        ...(yearStart ? { publishedAt: { gte: yearStart } } : {}),
+        ...freshSince(yearStart),
       },
     });
   }),
@@ -118,11 +131,18 @@ export const memberDocumentRouter = router({
       where: {
         groups: { some: { groupId: { in: groupIds } } },
         receipts: { none: { userId, readAt: { not: null } } },
-        NOT: { publishedById: userId },
+        // Hors ses propres dépôts… sauf s'ils ont reçu, depuis, une nouvelle version d'un autre.
+        // (publishedById null, compte supprimé, explicite : NOT ne retient pas les NULL en SQL.)
+        OR: [
+          { publishedById: null },
+          { NOT: { publishedById: userId } },
+          { versionedAt: { not: null } },
+        ],
       },
       select: {
         id: true,
         title: true,
+        versionedAt: true,
         mediaAsset: { select: { originalFileName: true } },
         groups: { select: { group: { select: { id: true, name: true } } } },
       },
@@ -133,6 +153,7 @@ export const memberDocumentRouter = router({
     return docs.map((d) => ({
       id: d.id,
       title: d.title ?? d.mediaAsset?.originalFileName ?? "Document",
+      newVersion: d.versionedAt != null,
       groupName:
         d.groups.find((g) => groupIds.includes(g.group.id))?.group.name ??
         d.groups[0]?.group.name ??
@@ -153,7 +174,7 @@ export const memberDocumentRouter = router({
       ? new Date(Date.UTC(me.memberSince.getUTCFullYear(), 0, 1))
       : null;
     const unread = { receipts: { none: { userId, readAt: { not: null } } } };
-    const generalBound = yearStart ? { publishedAt: { gte: yearStart } } : {};
+    const generalBound = freshSince(yearStart);
 
     const myGroups = await ctx.prisma.memberGroupMembership.findMany({
       where: { userId },

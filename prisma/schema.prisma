@@ -1804,6 +1804,11 @@ model MemberDocument {
   /// Date de publication. Ordonne les listes (plus récent d'abord) et borne les
   /// documents « non lus » d'un membre (voir User.memberSince).
   publishedAt   DateTime @default(now())
+  /// Date de la dernière nouvelle version du fichier (remplacé, ou version
+  /// restaurée) ; null tant qu'il n'y en a pas eu. Une nouvelle version remet le
+  /// document à « non lu » pour tous, sauf pour qui l'a déposée (badge
+  /// « Nouvelle version »), et compte comme une publication pour la cloche.
+  versionedAt   DateTime?
   /// Membre qui a publié. null si son compte a été supprimé.
   publishedById String?
   /// Éditeur (N–1, User.memberDocumentsPublished). Détaché à la suppression du

@@ -14,6 +14,8 @@ type DocItem = {
   title: string;
   audience: "ALL_MEMBERS" | "SPECIFIC";
   publishedAt: string | Date;
+  /** Dernière nouvelle version du fichier (null : jamais remplacé). */
+  versionedAt: string | Date | null;
   readAt: string | Date | null;
   personal: boolean;
   groups: { id: string; name: string }[];
@@ -53,6 +55,9 @@ function DocList({
                 </span>
                 <span className="block text-xs text-gray-500">
                   {new Date(d.publishedAt).toLocaleDateString("fr-FR")}
+                  {d.versionedAt
+                    ? ` · nouvelle version du ${new Date(d.versionedAt).toLocaleDateString("fr-FR")}`
+                    : ""}
                   {showGroups && d.groups.length > 0
                     ? ` · ${groupLabel(d.groups.map((g) => g.name))}`
                     : ""}
@@ -61,7 +66,7 @@ function DocList({
               {unread && (
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
                   <CircleDot className="h-3 w-3" />
-                  Nouveau
+                  {d.versionedAt ? "Nouvelle version" : "Nouveau"}
                 </span>
               )}
             </button>

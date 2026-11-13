@@ -902,7 +902,9 @@ export const storageRouter = router({
         originalFileName: input.originalFileName,
       });
       // Un fichier remplacé : sa version préparée devient visible, ses vignettes sont refaites.
-      if (existing) await confirmReplacement(ctx.prisma, registered.mediaAssetId, input.path);
+      if (existing) {
+        await confirmReplacement(ctx.prisma, registered.mediaAssetId, input.path, ctx.sessionClient.user.id);
+      }
       return registered;
     }),
 });

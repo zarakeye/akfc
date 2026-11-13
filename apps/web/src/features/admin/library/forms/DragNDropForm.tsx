@@ -28,7 +28,8 @@ import { uploadToR2 } from '@features/media/uploadToR2';
  *
  * Avant l'envoi, on demande au serveur quels noms existent déjà dans la
  * destination. Si c'est le cas, l'utilisateur choisit (dialogue) : Annuler
- * (ces fichiers sont ignorés) ou Écraser. Jamais d'écrasement silencieux.
+ * (ces fichiers sont ignorés) ou Remplacer. Jamais d'écrasement silencieux ; le contenu remplacé
+ * est gardé dans les versions du fichier.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -1031,7 +1032,8 @@ export default function DragNDropForm(): JSX.Element {
             <h3 className="mb-2 font-semibold">Fichiers déjà présents</h3>
             <p className="mb-2 text-sm text-gray-600">
               {overwritePrompt.names.length} fichier(s) existent déjà dans la
-              bibliothèque :
+              bibliothèque. Les remplacer garde leur contenu actuel dans leurs
+              versions :
             </p>
             <ul className="mb-3 max-h-32 overflow-auto rounded border border-gray-200 bg-gray-50 p-2 text-xs">
               {overwritePrompt.names.map((n) => (
@@ -1053,13 +1055,13 @@ export default function DragNDropForm(): JSX.Element {
               </button>
               <button
                 type="button"
-                className="rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
+                className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
                 onClick={() => {
                   overwritePrompt.resolve('overwrite');
                   setOverwritePrompt(null);
                 }}
               >
-                Écraser
+                Remplacer
               </button>
             </div>
           </div>

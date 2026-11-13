@@ -170,7 +170,7 @@ Le badge de l’entrée « Documents » ne signale pas tout l’historique. Un m
   filename="router.ts"
   snippetStart="return ctx.prisma.memberDocument.count({"
   snippetLead="3"
-  snippetEnd="...(yearStart ? { publishedAt: { gte: yearStart } } : {}),"
+  snippetEnd="...freshSince(yearStart),"
   snippetHighlight="2"
   snippetTitle="Une borne : le début de l’année d’adhésion"
   fullFileTitle="Voir le fichier complet"

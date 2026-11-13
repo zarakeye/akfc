@@ -94,6 +94,11 @@ export function CollaborativeBell(): JSX.Element | null {
                   <span className="block truncate text-sm font-medium text-gray-900">
                     {it.title}
                   </span>
+                  {it.newVersion && (
+                    <span className="block text-xs font-medium text-emerald-700">
+                      Nouvelle version
+                    </span>
+                  )}
                   {it.groupName && (
                     <span className="block truncate text-xs text-gray-500">
                       {it.groupName}

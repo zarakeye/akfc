@@ -27,6 +27,8 @@ import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolve
  *   - Restaurer une version : le contenu actuel devient à son tour une version, puis la version
  *     choisie est recopiée à la place du fichier (et retirée de la liste : c'est le contenu actuel).
  *   - Conservation : les 10 plus récentes de chaque fichier, et pas plus d'un an (purge de nuit).
+ *   - Un document des membres qui change de contenu repasse à « non lu » (badge « Nouvelle
+ *     version »), sauf pour l'auteur du changement.
  *   - Droits : voir les versions = admin, ou membre de l'espace du groupe ; restaurer = admin, ou
  *     éditeur de l'espace du groupe ; supprimer une version = admin.
  */
@@ -153,10 +155,36 @@ export async function prepareReplacement(prisma: PrismaClient, fullPath: string)
  * Après le remplacement (registerR2Upload) : la version préparée devient visible, les vignettes de
  * l'ancien contenu sont effacées, et la conservation s'applique au fichier.
  */
-export async function confirmReplacement(prisma: PrismaClient, mediaAssetId: string, fullPath: string): Promise<void> {
+export async function confirmReplacement(
+  prisma: PrismaClient,
+  mediaAssetId: string,
+  fullPath: string,
+  actorId: string,
+): Promise<void> {
   await prisma.fileVersion.updateMany({ where: { mediaAssetId, confirmed: false }, data: { confirmed: true } });
   await deleteDerivatives(fullPath).catch(() => 0);
   await applyRetention(prisma, mediaAssetId);
+  await announceNewVersion(prisma, mediaAssetId, actorId);
+}
+
+/**
+ * Document des membres dont le fichier change de contenu : il repasse à « non lu » pour tous
+ * (badge « Nouvelle version », cloche), sauf pour qui a déposé ou restauré cette version.
+ */
+async function announceNewVersion(prisma: PrismaClient, mediaAssetId: string, actorId: string): Promise<void> {
+  const doc = await prisma.memberDocument.findUnique({ where: { mediaAssetId }, select: { id: true } });
+  if (!doc) return;
+  const now = new Date();
+  await prisma.memberDocument.update({ where: { id: doc.id }, data: { versionedAt: now } });
+  await prisma.documentReceipt.updateMany({
+    where: { memberDocumentId: doc.id, NOT: { userId: actorId } },
+    data: { readAt: null },
+  });
+  await prisma.documentReceipt.upsert({
+    where: { memberDocumentId_userId: { memberDocumentId: doc.id, userId: actorId } },
+    create: { memberDocumentId: doc.id, userId: actorId, readAt: now },
+    update: { readAt: now },
+  });
 }
 
 /** Les 10 plus récentes, et pas plus d'un an. */
@@ -296,6 +324,7 @@ export async function restoreVersion(params: { prisma: PrismaClient; user: User;
   await dropVersions(prisma, [v]);
   await deleteDerivatives(asset.fullPath).catch(() => 0);
   await applyRetention(prisma, asset.id);
+  await announceNewVersion(prisma, asset.id, user.id);
   return { fullPath: asset.fullPath };
 }
 

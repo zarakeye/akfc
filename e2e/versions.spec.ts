@@ -22,11 +22,11 @@ const V1 = Buffer.from(TINY_PDF);
 const V2 = Buffer.from(`${TINY_PDF}% deuxième version, plus longue\n`);
 
 /** Dépôt dans l'espace du groupe, comme le navigateur : demande signée, envoi, enregistrement. */
-async function upload(request: APIRequestContext, body: Buffer, allowOverwrite = false) {
+async function upload(request: APIRequestContext, body: Buffer, allowOverwrite = false, name = "programme.pdf") {
   const destination = { kind: "group", groupId: ATELIER.id };
   const auth = await trpcMutation(request, "storage.createR2Upload", {
     destination,
-    originalFileName: "programme.pdf",
+    originalFileName: name,
     mimeType: "application/pdf",
     maxBytes: body.length,
     ...(allowOverwrite ? { allowOverwrite: true } : {}),
@@ -40,7 +40,7 @@ async function upload(request: APIRequestContext, body: Buffer, allowOverwrite =
     expectedBytes: body.length,
     expectedMimeType: "application/pdf",
     destination,
-    originalFileName: "programme.pdf",
+    originalFileName: name,
   });
 }
 
@@ -107,5 +107,47 @@ test.describe.serial("Versions des fichiers", () => {
     const empty = (await trpcQuery(page.request, "fileVersion.list", { fullPath })).result as Versions;
     expect(empty.versions).toHaveLength(0);
     expect(empty.canDelete).toBe(true);
+  });
+});
+
+type MyDoc = { id: string; title: string; readAt: string | null; versionedAt: string | null };
+
+test.describe.serial("Nouvelle version d'un document des membres", () => {
+  let docId = "";
+
+  test("remplacer un document le remet à « non lu » pour les autres membres", async ({ page }) => {
+    // A dépose un document dans l'espace du groupe ; B le lit.
+    await loginAs(page, USERS.membreA.email);
+    const first = await upload(page.request, V1, false, "compte-rendu.pdf");
+    const path = (first.result as { path: string }).path;
+    const dep = await trpcMutation(page.request, "memberDocument.depositToGroupSpace", { path, groupId: ATELIER.id });
+    docId = (dep.result as { id: string }).id;
+
+    await page.context().clearCookies();
+    await loginAs(page, USERS.membreB.email);
+    expect((await trpcMutation(page.request, "memberDocument.markRead", { id: docId })).status).toBe(200);
+
+    // A le remplace : la version est annoncée à B, pas à A.
+    await page.context().clearCookies();
+    await loginAs(page, USERS.membreA.email);
+    expect((await upload(page.request, V2, true, "compte-rendu.pdf")).status).toBe(200);
+    const mine = ((await trpcQuery(page.request, "memberDocument.listForMe", undefined)).result as MyDoc[]).find((d) => d.id === docId);
+    expect(mine?.versionedAt).not.toBeNull();
+    expect(mine?.readAt).not.toBeNull();
+
+    await page.context().clearCookies();
+    await loginAs(page, USERS.membreB.email);
+    const theirs = ((await trpcQuery(page.request, "memberDocument.listForMe", undefined)).result as MyDoc[]).find((d) => d.id === docId);
+    expect(theirs?.readAt).toBeNull();
+    const bell = (await trpcQuery(page.request, "memberDocument.collaborativeUnreadForMe", undefined)).result as { id: string; newVersion: boolean }[];
+    expect(bell.find((d) => d.id === docId)?.newVersion).toBe(true);
+  });
+
+  test("la page Documents l'annonce : badge « Nouvelle version »", async ({ page }) => {
+    await loginAs(page, USERS.membreB.email);
+    await page.goto("/documents");
+    const item = page.getByRole("button").filter({ hasText: "compte" });
+    await expect(item).toContainText("Nouvelle version");
+    await expect(item).toContainText("nouvelle version du");
   });
 });
