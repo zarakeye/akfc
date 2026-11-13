@@ -45,6 +45,7 @@ function initialOf(s: Settings): SaveLegalSettingsInput {
     credits: str(s, "credits"),
     accountRetentionMonths: num(s, "accountRetentionMonths", 12),
     ticketRetentionMonths: num(s, "ticketRetentionMonths", 36),
+    trashRetentionDays: num(s, "trashRetentionDays", 90),
     backupRetentionDays: typeof s?.backupRetentionDays === "number" ? (s.backupRetentionDays as number) : null,
   };
 }
@@ -171,6 +172,23 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
           {monthsField("accountRetentionMonths", "Comptes des anciens membres", "Après la fin de la dernière adhésion.")}
           {monthsField("ticketRetentionMonths", "Demandes et messages", "Après le dernier échange ; les demandes closes sont ensuite supprimées.")}
         </div>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Corbeille</span>
+          <span className="flex items-center gap-2">
+            <input
+              type="number"
+              min={8}
+              max={3650}
+              className={`${inputClass} max-w-24`}
+              value={v.trashRetentionDays ?? 90}
+              onChange={(e) => set("trashRetentionDays", Number(e.target.value))}
+            />
+            <span className="text-sm text-gray-600">jours</span>
+          </span>
+          <span className="mt-1 block text-xs text-gray-400">
+            Un élément jeté est effacé définitivement après ce délai, la nuit ; la cloche prévient 7 jours avant.
+          </span>
+        </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium">Sauvegardes</span>
           <span className="flex items-center gap-2">

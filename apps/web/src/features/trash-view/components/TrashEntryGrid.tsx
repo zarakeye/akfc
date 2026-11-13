@@ -3,6 +3,7 @@
 import { JSX, useState } from 'react';
 import { Folder, FileText } from 'lucide-react';
 import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
+import { trashTooltip } from '@features/trash-view/lib/trashDates';
 
 // La MÊME fonction que `mapFileToFinderNode` utilise pour la grille du
 // finder : une seule façon de fabriquer une URL de média.
@@ -77,7 +78,7 @@ export default function TrashEntryGrid({
           ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200'
           : 'hover:shadow-md hover:border-gray-300'}
       `}
-      title={entry.previousPath}
+      title={trashTooltip(entry)}
       role="button"
       aria-pressed={selected}
     >

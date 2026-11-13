@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import Finder from "@features/finder-core/components/Finder";
+import SpacesBinPanel from "@features/trash-view/components/SpacesBinPanel";
 import { useFinderStore } from "@features/finder-core/state/useFinderStore";
 import { trpc } from "@trpc/trpcClient";
 import { uploadToR2 } from "@features/media/uploadToR2";
@@ -109,6 +110,7 @@ export default function MesEspacesPage(): JSX.Element {
         Mes espaces collaboratifs
       </h1>
       <MemberDepositBar />
+      <SpacesBinPanel />
       <div className="min-h-0 flex-1">
         <Finder
           adapter={memberFinderAdapter}

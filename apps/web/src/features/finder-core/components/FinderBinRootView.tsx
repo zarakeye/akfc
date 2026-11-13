@@ -11,6 +11,7 @@ import { useTrashStore } from '@features/trash-view/state/useTrashStore';
 
 import TrashEntryGrid from '@features/trash-view/components/TrashEntryGrid';
 import TrashEntryTableRow from '@features/trash-view/components/TrashEntryTableRow';
+import TrashTableHead from '@features/trash-view/components/TrashTableHead';
 import TrashEntryCompactRow from '@features/trash-view/components/TrashEntryCompactRow';
 import ViewModeSwitcher from '@features/trash-view/components/ViewModeSwitcher';
 import TrashToolbar from '@features/trash-view/components/TrashToolbar';
@@ -181,16 +182,7 @@ export default function FinderBinRootView(): JSX.Element {
       return (
         <div className="overflow-auto">
           <table className="w-full text-sm border-collapse">
-            <thead className="bg-gray-50 border-b text-gray-600 text-xs uppercase tracking-wider">
-              <tr>
-                <th className="px-3 py-2 text-left w-8"></th>
-                <th className="px-3 py-2 text-left w-8"></th>
-                <th className="px-3 py-2 text-left">Nom</th>
-                <th className="px-3 py-2 text-left">Chemin d&apos;origine</th>
-                <th className="px-3 py-2 text-left">Supprimé le</th>
-                <th className="px-3 py-2 text-right">Taille</th>
-              </tr>
-            </thead>
+            <TrashTableHead />
             <tbody className="divide-y divide-gray-100">
               {entries.map((entry) => (
                 <TrashEntryTableRow

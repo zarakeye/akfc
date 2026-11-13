@@ -39,7 +39,13 @@ test.describe("Corbeille", () => {
     expect(Date.parse(entry!.purgeAt) - Date.parse(entry!.trashedAt)).toBe(90 * DAY_MS);
   });
 
-  test("un lecteur du groupe ne restaure pas, un autre éditeur que l'auteur le peut", async ({ page }) => {
+  test("la cloche prévient les admins 7 jours avant l'effacement définitif", async ({ page }) => {
+    await loginAs(page, USERS.admin.email);
+    await page.goto("/");
+    await expect(page.getByRole("link", { name: /dont 1 effacé définitivement d'ici 7 jours/ })).toBeVisible();
+  });
+
+  test("un lecteur du groupe ne restaure pas, ni un membre ce qu'il n'a pas jeté hors des groupes", async ({ page }) => {
     // Le lecteur ne voit rien de l'espace dans sa corbeille, et la restauration lui est refusée.
     await loginAs(page, USERS.membreB.email);
     const asViewer = await trpcQuery(page.request, "trash.listSpacesBin", undefined);
@@ -54,13 +60,24 @@ test.describe("Corbeille", () => {
     const elsewhere = await trpcMutation(page.request, "trash.restoreFromBin", { appRoot: "AKFC", ids: [TRASHED_FOLDER.id] });
     expect(elsewhere.status).toBe(403);
 
-    // L'éditeur voit l'élément jeté par l'admin dans l'espace du groupe, et le restaure.
+    // L'éditeur, lui, voit l'élément jeté par l'admin dans l'espace du groupe.
     const asEditor = await trpcQuery(page.request, "trash.listSpacesBin", undefined);
     const entry = (asEditor.result as SpaceBinItem[]).find((e) => e.id === TRASHED_IN_GROUP.id);
     expect(entry?.groupName).toBe(ATELIER.name);
     expect(entry?.trashedByName).toBe(USERS.admin.firstName);
-    const restored = await trpcMutation(page.request, "trash.restoreFromBin", { appRoot: "AKFC", ids: [TRASHED_IN_GROUP.id] });
-    expect(restored.status).toBe(200);
+  });
+
+  test("un éditeur du groupe restaure, depuis « Mes espaces », ce qu'un autre a jeté", async ({ page }) => {
+    await loginAs(page, USERS.membreA.email);
+    await page.goto("/mes-espaces");
+    const bin = page.getByTestId("spaces-bin");
+    await bin.getByText(/Corbeille de mes espaces/).click();
+    const row = bin.getByRole("listitem").filter({ hasText: TRASHED_IN_GROUP.displayName });
+    await expect(row).toContainText(`${ATELIER.name} · jeté le`);
+    await expect(row).toContainText(`par ${USERS.admin.firstName}`);
+    await row.getByRole("button", { name: "Restaurer" }).click();
+    await expect(page.getByText(`« ${TRASHED_IN_GROUP.displayName} » est revenu à sa place`)).toBeVisible();
+
     const after = await trpcQuery(page.request, "trash.listSpacesBin", undefined);
     expect((after.result as SpaceBinItem[]).map((e) => e.id)).not.toContain(TRASHED_IN_GROUP.id);
   });

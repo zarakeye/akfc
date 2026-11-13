@@ -53,7 +53,12 @@ export const saveLegalSettingsSchema = z.object({
    * Séjour dans la corbeille, en jours, avant la suppression définitive par la purge de nuit.
    * Au moins 8 : les administrateurs sont prévenus 7 jours avant. Absent : inchangé.
    */
-  trashRetentionDays: z.number().int().min(8).max(3650).optional(),
+  trashRetentionDays: z
+    .number()
+    .int()
+    .min(8, "Corbeille : au moins 8 jours (le préavis est de 7 jours).")
+    .max(3650, "Corbeille : 3 650 jours au plus.")
+    .optional(),
 });
 export type SaveLegalSettingsInput = z.infer<typeof saveLegalSettingsSchema>;
 

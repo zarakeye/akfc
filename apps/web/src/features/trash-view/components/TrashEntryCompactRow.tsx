@@ -3,6 +3,7 @@
 import { JSX } from 'react';
 import { Folder, FileText } from 'lucide-react';
 import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
+import { trashTooltip } from '@features/trash-view/lib/trashDates';
 
 type Props = {
   entry: TrashEntryDTO;
@@ -57,7 +58,7 @@ export default function TrashEntryCompactRow({
       <span className="text-sm font-medium text-gray-900 truncate min-w-0 max-w-[40%]" title={entry.displayName}>
         {entry.displayName}
       </span>
-      <span className="text-xs text-gray-400 truncate flex-1 min-w-0" title={entry.previousPath}>
+      <span className="text-xs text-gray-400 truncate flex-1 min-w-0" title={trashTooltip(entry)}>
         {entry.previousPathShort}
       </span>
       <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap">

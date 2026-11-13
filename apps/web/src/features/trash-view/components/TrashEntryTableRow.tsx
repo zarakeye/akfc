@@ -3,6 +3,7 @@
 import { JSX } from 'react';
 import { Folder, FileText } from 'lucide-react';
 import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
+import { formatDay, purgeIsSoon } from '@features/trash-view/lib/trashDates';
 
 type Props = {
   entry: TrashEntryDTO;
@@ -15,7 +16,8 @@ type Props = {
 
 /**
  * Row en mode tableau. Affiche : checkbox, icône, nom, chemin d'origine,
- * date de mise en corbeille, taille.
+ * date de mise en corbeille, auteur, date d'effacement définitif (en rouge à
+ * moins de 7 jours), taille.
  *
  * La rangée entière est cliquable pour la sélection (toggle), le double-clic
  * sur un folder déclenche le drill-down.
@@ -75,6 +77,16 @@ export default function TrashEntryTableRow({
       </td>
       <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
         {formatDate(entry.trashedAt)}
+      </td>
+      <td className="px-3 py-2 text-sm text-gray-500">
+        <div className="truncate max-w-[160px]">{entry.trashedByName ?? '—'}</div>
+      </td>
+      <td
+        className={`px-3 py-2 text-sm whitespace-nowrap ${
+          purgeIsSoon(entry.purgeAt) ? 'font-medium text-red-600' : 'text-gray-500'
+        }`}
+      >
+        {formatDay(entry.purgeAt)}
       </td>
       <td className="px-3 py-2 text-sm text-gray-500 text-right whitespace-nowrap">
         {entry.sizeBytes !== undefined ? formatBytes(entry.sizeBytes) : '—'}

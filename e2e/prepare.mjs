@@ -295,6 +295,8 @@ for (const { user, guardian } of [
       displayName: TRASHED_FOLDER.displayName,
       previousPath: TRASHED_FOLDER.previousPath,
       storageRoot: TRASHED_FOLDER.storageRoot,
+      // Jeté il y a 85 jours : effacé dans 5 jours, la cloche des admins prévient.
+      trashedAt: new Date(Date.now() - 85 * 24 * 3600 * 1000),
     },
   });
 }

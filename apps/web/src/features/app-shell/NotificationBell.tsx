@@ -39,6 +39,7 @@ function buildMessage(
   persoPending: number,
   commonRepositoryPending: number,
   drafts: number,
+  binExpiringSoon = 0,
 ): string {
   const s = (n: number) => (n > 1 ? "s" : "");
 
@@ -83,7 +84,10 @@ function buildMessage(
   const parts: string[] = [];
   if (attente) parts.push(attente);
   if (drafts > 0) parts.push(`${drafts} contenu${s(drafts)} non publié${s(drafts)}`);
-  if (bin > 0) parts.push(`${bin} élément${s(bin)} dans la corbeille`);
+  if (bin > 0) {
+    const soon = binExpiringSoon > 0 ? ` dont ${binExpiringSoon} effacé${s(binExpiringSoon)} définitivement d'ici 7 jours` : "";
+    parts.push(`${bin} élément${s(bin)} dans la corbeille${soon}`);
+  }
   if (parts.length === 0) return "Bibliothèque";
   const last = parts.pop();
   return `Vous avez ${parts.length > 0 ? `${parts.join(", ")} et ${last}` : last}`;
@@ -133,6 +137,8 @@ export function NotificationBell(): JSX.Element | null {
   const bin = counts?.bin ?? 0;
   const persoPending = counts?.persoPending ?? 0;
   const commonRepositoryPending = counts?.commonRepositoryPending ?? 0;
+  // Préavis : éléments de la corbeille effacés définitivement dans les 7 jours (déjà comptés dans `bin`).
+  const binExpiringSoon = counts?.binExpiringSoon ?? 0;
 
   // Brouillons (admin) : pages éditoriales non publiées + entités en
   // brouillon. S'ajoutent au badge et au dropdown.
@@ -180,6 +186,7 @@ export function NotificationBell(): JSX.Element | null {
                 persoPending,
                 commonRepositoryPending,
                 draftTotal,
+                binExpiringSoon,
               )
             : "Bibliothèque"
         }
@@ -238,6 +245,12 @@ export function NotificationBell(): JSX.Element | null {
               <p className={pending > 0 ? 'mt-1.5 border-t border-white/15 pt-1.5' : ''}>
                 {bin} contenu{bin > 1 ? 's' : ''} dans la
                 corbeille
+                {binExpiringSoon > 0 && (
+                  <span className="block font-medium text-amber-300">
+                    dont {binExpiringSoon} effacé{binExpiringSoon > 1 ? 's' : ''} définitivement
+                    d&apos;ici 7 jours
+                  </span>
+                )}
               </p>
             )}
             {draftTotal > 0 && (
