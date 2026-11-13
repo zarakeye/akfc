@@ -21,7 +21,14 @@ export const USERS = {
   tagAccord: { id: "e2e-tag-accord", email: "tag-accord@e2e.test", firstName: "Hugo" },
   tagRefus: { id: "e2e-tag-refus", email: "tag-refus@e2e.test", firstName: "Inès" },
   tagMineur: { id: "e2e-tag-mineur", email: "tag-mineur@e2e.test", firstName: "Jules" },
+  // Un membre qui quitte le club : il a commenté, réagi et envoyé un fichier, puis son compte
+  // est supprimé. À lui seul, puisque le test le supprime.
+  partant: { id: "e2e-partant", email: "partant@e2e.test", firstName: "Kévin" },
 };
+
+/** L'actualité publiée que commente le membre partant, et le fichier qu'il a envoyé. */
+export const PARTANT_POST = { id: 900001, title: "Actualité du membre partant (e2e)" };
+export const PARTANT_MEDIA = { id: "e2e-media-partant", key: "AKFC/e2e/partant.png" };
 
 /** Le média sur lequel on tague des personnes. */
 export const TAG_MEDIA = { id: "e2e-media-tags", key: "AKFC/e2e/tags.png" };

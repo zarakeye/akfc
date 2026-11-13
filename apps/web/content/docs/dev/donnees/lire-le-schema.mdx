@@ -254,13 +254,14 @@ Une convention le rend lisible : chaque modèle et chaque champ porte un comment
 /// modèle : c'est l'appartenance à un groupe marqué `MemberGroup.isAdminGroup`.
 ///
 /// Suppression d'un membre (actions réelles en base) :
-/// - BLOQUÉE (RESTRICT) tant qu'il est auteur de posts, commentaires, réactions
-///   ou votes, instructeur principal d'une discipline, animateur principal d'un
-///   séminaire, organisateur d'un évènement, uploader d'un média, ou qu'il
-///   possède une ligne Preferences ;
+/// - BLOQUÉE (RESTRICT) tant qu'il est instructeur principal d'une discipline,
+///   animateur principal d'un séminaire ou organisateur d'un évènement : des
+///   données du club, à réattribuer d'abord (`user.delete` le dit en clair) ;
 /// - EFFACE avec lui (CASCADE) : sessions, jetons de réinitialisation, adhésions
 ///   aux groupes, destinations et accusés de lecture de documents, liens de
-///   co-animation de séminaires ;
+///   co-animation de séminaires, réactions, votes, préférences ;
+/// - ANONYMISE (SET NULL) : ses posts et ses commentaires restent, sans auteur
+///   (« Ancien membre » à l'affichage) ; ses médias restent, sans téléverseur ;
 /// - DÉTACHE (SET NULL) : créneaux dont il est l'instructeur attitré, documents
 ///   dont il est l'éditeur, entrées du journal d'audit.
 model User {

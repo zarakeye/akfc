@@ -21,6 +21,7 @@ import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolveP
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
 import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
 import { byEffectiveDesc } from "@backend/modules/imageConsent/formOrder";
+import { clubRolesBlockingDeletion } from "./clubRolesBlockingDeletion.service";
 
 /** Les champs du profil, et eux seuls : ni l'empreinte du mot de passe, ni les données légales. */
 const userProfileSelect = {
@@ -238,6 +239,10 @@ export const userRouter = router({
       if (input.id === ctx.sessionClient.user.id) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Vous ne pouvez pas supprimer votre propre compte." });
       }
+      // Ses rôles dans le club (instructeur, animateur, organisateur) se réattribuent d'abord ;
+      // le reste de sa vie sur le site part avec lui ou reste sans auteur (voir le schéma).
+      const blocking = await clubRolesBlockingDeletion(ctx.prisma, input.id);
+      if (blocking) throw new TRPCError({ code: "PRECONDITION_FAILED", message: blocking });
       const avatar = (await ctx.prisma.user.findUnique({ where: { id: input.id }, select: { avatar: true } }))?.avatar;
       const deleted = await ctx.prisma.$transaction(async (tx) => {
         // Formulaires de droit à l'image signés : gardés 5 ans comme preuve (purge nocturne).

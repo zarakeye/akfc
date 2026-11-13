@@ -22,13 +22,14 @@ datasource db {
 /// modèle : c'est l'appartenance à un groupe marqué `MemberGroup.isAdminGroup`.
 ///
 /// Suppression d'un membre (actions réelles en base) :
-/// - BLOQUÉE (RESTRICT) tant qu'il est auteur de posts, commentaires, réactions
-///   ou votes, instructeur principal d'une discipline, animateur principal d'un
-///   séminaire, organisateur d'un évènement, uploader d'un média, ou qu'il
-///   possède une ligne Preferences ;
+/// - BLOQUÉE (RESTRICT) tant qu'il est instructeur principal d'une discipline,
+///   animateur principal d'un séminaire ou organisateur d'un évènement : des
+///   données du club, à réattribuer d'abord (`user.delete` le dit en clair) ;
 /// - EFFACE avec lui (CASCADE) : sessions, jetons de réinitialisation, adhésions
 ///   aux groupes, destinations et accusés de lecture de documents, liens de
-///   co-animation de séminaires ;
+///   co-animation de séminaires, réactions, votes, préférences ;
+/// - ANONYMISE (SET NULL) : ses posts et ses commentaires restent, sans auteur
+///   (« Ancien membre » à l'affichage) ; ses médias restent, sans téléverseur ;
 /// - DÉTACHE (SET NULL) : créneaux dont il est l'instructeur attitré, documents
 ///   dont il est l'éditeur, entrées du journal d'audit.
 model User {
@@ -126,8 +127,7 @@ model User {
 
   // ── Authentification ─────────────────────────────────────────────────────
   /// Préférences d'affichage (0..1, Preferences.user ; clé portée par
-  /// Preferences.userId). Pas encore branchées. Une ligne existante bloque la
-  /// suppression du membre (RESTRICT).
+  /// Preferences.userId). Pas encore branchées. Effacées avec le membre.
   preferences           Preferences?
   /// Sessions de connexion ouvertes (1–N, Session.user). Effacées avec le membre.
   sessions              Session[]
@@ -143,13 +143,13 @@ model User {
   auditLogsAsTargetUser AuditLog[]           @relation("AuditTargetUser")
 
   // ── Vie sociale ──────────────────────────────────────────────────────────
-  /// Posts rédigés (1–N, Post.author). Bloquent la suppression du membre.
+  /// Posts rédigés (1–N, Post.author). Gardés sans auteur à sa suppression.
   posts                 Post[]
-  /// Commentaires rédigés (1–N, Comment.author). Bloquent la suppression du membre.
+  /// Commentaires rédigés (1–N, Comment.author). Gardés sans auteur à sa suppression.
   comments              Comment[]
-  /// Réactions données (1–N, Reaction.user). Bloquent la suppression du membre.
+  /// Réactions données (1–N, Reaction.user). Effacées avec le membre.
   reactions Reaction[]
-  /// Votes aux sondages (1–N, PollVote.user). Bloquent la suppression du membre.
+  /// Votes aux sondages (1–N, PollVote.user). Effacés avec le membre.
   pollVotes PollVote[]
 
   // ── Enseignement et médias ───────────────────────────────────────────────
@@ -165,7 +165,8 @@ model User {
   /// Séminaires qu'il co-anime (N–N, Seminar.animators, table _SeminarAnimators).
   /// Liens effacés avec lui.
   seminarsAsAnimator        Seminar[]     @relation("SeminarAnimators")
-  /// Médias qu'il a téléversés (1–N, MediaAsset.uploader). Bloquent sa suppression.
+  /// Médias qu'il a téléversés (1–N, MediaAsset.uploader). Gardés sans téléverseur à
+  /// sa suppression : un fichier appartient au club.
   uploadedMediaAssets       MediaAsset[]  @relation("UserMediaUploads")
   /// Évènements qu'il organise (1–N, Event.organizer). Bloquent sa suppression.
   eventsAsOrganizer         Event[]       @relation("EventOrganizer")
@@ -208,8 +209,7 @@ model User {
 /// Fonctionnalité PRÉVUE mais pas encore branchée : aucun code ne lit ni
 /// n'écrit ce modèle pour l'instant. D'autres préférences sont envisagées
 /// (par exemple : photo réelle ou avatar « persona »).
-/// ⚠ Au branchement : passer la relation `user` en onDelete: Cascade, sinon
-/// la ligne de préférences bloquera la suppression du membre (RESTRICT).
+/// La ligne est effacée avec le membre (onDelete: Cascade).
 model Preferences {
   /// Identifiant auto-incrémenté.
   id           Int     @id @default(autoincrement())
@@ -223,9 +223,8 @@ model Preferences {
   userId       String  @unique
   /// Texte libre (usage à préciser).
   description  String?
-  /// Membre (1–1, User.preferences). RESTRICT : une ligne existante bloque la
-  /// suppression du membre (voir l'avertissement du modèle).
-  user         User    @relation(fields: [userId], references: [id])
+  /// Membre (1–1, User.preferences). Effacée avec lui.
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 /// Session de connexion, stockée en base. Le cookie ne porte qu'un JWT contenant
@@ -1088,8 +1087,8 @@ model MediaAsset {
   eventId                Int?
 
   // ── Provenance ───────────────────────────────────────────────────────────
-  /// Membre qui a téléversé le fichier.
-  uploaderUserId         String
+  /// Membre qui a téléversé le fichier ; `null` une fois son compte supprimé.
+  uploaderUserId         String?
   /// Date réelle d'upload chez le fournisseur (reprise de l'ancien fournisseur
   /// pour les fichiers migrés). C'est la date exposée par l'API.
   uploadedAt             DateTime @default(now())
@@ -1108,9 +1107,9 @@ model MediaAsset {
   /// Évènement (N–1, Event.mediaAssets). Détaché si l'évènement est supprimé
   /// (SET NULL).
   event      Event?      @relation(fields: [eventId], references: [id])
-  /// Auteur de l'upload (N–1, User.uploadedMediaAssets). Bloque la suppression
-  /// du membre (RESTRICT).
-  uploader   User        @relation("UserMediaUploads", fields: [uploaderUserId], references: [id])
+  /// Auteur de l'upload (N–1, User.uploadedMediaAssets). Détaché à la suppression
+  /// du membre (SET NULL) : le fichier reste au club.
+  uploader   User?       @relation("UserMediaUploads", fields: [uploaderUserId], references: [id], onDelete: SetNull)
 
   /// Contenus qui utilisent le fichier (1–N, PageMediaReference.mediaAsset).
   /// Tant qu'il en existe, le fichier ne peut pas être supprimé (RESTRICT).
@@ -1298,8 +1297,8 @@ model Post {
   /// Corps de l'article, édité au PageBuilder (PageContentV1).
   content Json
 
-  /// Auteur (obligatoire).
-  authorId String
+  /// Auteur ; `null` une fois son compte supprimé (le post reste).
+  authorId String?
 
   /// Création.
   createdAt DateTime  @default(now())
@@ -1310,9 +1309,8 @@ model Post {
   /// future programme la publication.
   publicationDate DateTime?
 
-  /// Auteur (N–1, User.posts). Le membre ne peut pas être supprimé tant qu'il
-  /// en a (RESTRICT).
-  author User @relation(fields: [authorId], references: [id])
+  /// Auteur (N–1, User.posts). Détaché à la suppression du membre (SET NULL).
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   /// Commentaires (1–N, Comment.post). Effacés avec le post.
   comments Comment[]
@@ -1334,8 +1332,8 @@ model Comment {
   /// Texte, document ProseMirror (JSON). L'éditeur limite la mise en forme
   /// (gras, italique, liens ; ni titres, ni images, ni blocs).
   content   Json
-  /// Auteur.
-  authorId  String
+  /// Auteur ; `null` une fois son compte supprimé : le commentaire reste, anonyme.
+  authorId  String?
   /// Post commenté.
   postId    Int
   /// Commentaire parent. null → commentaire racine.
@@ -1345,9 +1343,9 @@ model Comment {
   /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
-  /// Auteur (N–1, User.comments). Le membre ne peut pas être supprimé tant
-  /// qu'il en a (RESTRICT).
-  author  User      @relation(fields: [authorId], references: [id])
+  /// Auteur (N–1, User.comments). Détaché à la suppression du membre (SET NULL) :
+  /// le commentaire s'affiche « Ancien membre ».
+  author  User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
   /// Post (N–1, Post.comments). Commentaire effacé avec le post.
   post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   /// Commentaire parent (N–1, Comment.replies). Réponse effacée avec lui.
@@ -1386,9 +1384,8 @@ model Reaction {
   /// Date de la réaction.
   createdAt  DateTime       @default(now())
 
-  /// Membre (N–1, User.reactions). Le membre ne peut pas être supprimé tant
-  /// qu'il en a (RESTRICT).
-  user User @relation(fields: [userId], references: [id])
+  /// Membre (N–1, User.reactions). Effacée avec lui.
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Un même emoji au plus une fois par membre et par cible.
   @@unique([userId, targetType, targetId, emoji])
@@ -1454,9 +1451,8 @@ model PollVote {
 
   /// Option (N–1, PollOption.votes). Vote effacé avec l'option.
   option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
-  /// Votant (N–1, User.pollVotes). Le membre ne peut pas être supprimé tant
-  /// qu'il a voté (RESTRICT).
-  user   User       @relation(fields: [userId], references: [id])
+  /// Votant (N–1, User.pollVotes). Effacé avec lui.
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Un membre vote au plus une fois pour une option donnée.
   @@unique([optionId, userId])

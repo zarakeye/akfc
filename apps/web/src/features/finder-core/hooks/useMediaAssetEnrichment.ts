@@ -106,7 +106,7 @@ export function useMediaAssetEnrichment(): void {
           status: meta.status as 'pending' | 'published' | 'bin',
           createdAt: meta.createdAt,
           uploadedBy: meta.uploadedBy,
-          uploaderId: meta.uploaderId,
+          uploaderId: meta.uploaderId ?? undefined,
           mimeType: meta.mimeType,
           width: meta.width ?? undefined,
           height: meta.height ?? undefined,

@@ -174,6 +174,7 @@ export function CommentsSection({
               key={node.id}
               node={node}
               currentUserId={currentUser?.id ?? null}
+              isAdmin={currentUser?.isAdmin ?? false}
               canComment={Boolean(currentUser)}
               onCreate={handleCreate}
               onUpdate={handleUpdate}
@@ -193,6 +194,8 @@ export function CommentsSection({
 interface CommentNodeProps {
   node: CommentNodeData;
   currentUserId: string | null;
+  /** Un administrateur peut supprimer tout commentaire (modération). */
+  isAdmin: boolean;
   canComment: boolean;
   onCreate: (
     content: ProseMirrorContent,
@@ -205,6 +208,7 @@ interface CommentNodeProps {
 function CommentNode({
   node,
   currentUserId,
+  isAdmin,
   canComment,
   onCreate,
   onUpdate,
@@ -213,6 +217,8 @@ function CommentNode({
   const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
   const isAuthor = currentUserId != null && node.authorId === currentUserId;
+  // Supprimer : l'auteur, ou un administrateur. Éditer : l'auteur seul.
+  const canDelete = isAuthor || isAdmin;
 
   return (
     <li className="flex flex-col gap-2">
@@ -257,14 +263,16 @@ function CommentNode({
                 </button>
               )}
               {isAuthor && (
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Éditer
+                </button>
+              )}
+              {canDelete && (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => setEditing(true)}
-                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Éditer
-                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -308,6 +316,7 @@ function CommentNode({
               key={child.id}
               node={child}
               currentUserId={currentUserId}
+              isAdmin={isAdmin}
               canComment={canComment}
               onCreate={onCreate}
               onUpdate={onUpdate}

@@ -109,7 +109,7 @@ import { buildUploadFileName } from '@backend/modules/storage/services/buildUplo
  * jour la ligne existante, auteur compris.
  */
 function mayReplace(
-  existing: { status: string; uploaderUserId: string },
+  existing: { status: string; uploaderUserId: string | null },
   user: { id: string; isAdmin: boolean },
   destination: UploadDestination,
 ): boolean {

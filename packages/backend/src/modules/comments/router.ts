@@ -5,6 +5,7 @@ import { z } from "zod";
 import { proseMirrorContentSchema } from "@contracts/shared/prosemirror";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
+import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 
 /**
  * Router des commentaires (arborescents).
@@ -131,7 +132,10 @@ export const commentRouter = router({
         select: { authorId: true },
       });
       if (!comment) throw new TRPCError({ code: "NOT_FOUND" });
-      if (comment.authorId !== ctx.sessionClient.user.id) {
+      // L'auteur, ou un administrateur : la modération. Sans elle, le commentaire d'un compte
+      // supprimé (auteur `null`) ne pourrait plus jamais être retiré.
+      const isAuthor = comment.authorId !== null && comment.authorId === ctx.sessionClient.user.id;
+      if (!isAuthor && !(await isAdminByGroup(ctx.prisma, ctx.sessionClient.user.id))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Vous ne pouvez supprimer que vos propres commentaires.",

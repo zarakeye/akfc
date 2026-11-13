@@ -21,6 +21,7 @@ import type { ResolvedMedia } from '@contracts/page';
 import { deriveMediaKind } from '@backend/modules/media/helpers/deriveMediaKind';
 import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
 import { assertStatusChangeDoesntUnpublishReferencedAssets } from '@backend/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service';
+import { FORMER_MEMBER_LABEL } from "@contracts/shared/formerMember";
 
 /* -------------------------------------------------------------------------- */
 /*                                  HELPERS                                   */
@@ -30,7 +31,9 @@ function composeDisplayName(user: {
   firstName: string | null;
   lastName: string | null;
   pseudo: string | null;
-}): string {
+} | null): string {
+  // Compte supprimé : le média reste au club, sans téléverseur.
+  if (!user) return FORMER_MEMBER_LABEL;
   if (user.pseudo && user.pseudo.trim()) return user.pseudo.trim();
   if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
   if (user.firstName) return user.firstName;
@@ -96,7 +99,7 @@ export const mediaRouter = router({
           status: string;
           createdAt: string;
           uploadedBy: string;
-          uploaderId: string;
+          uploaderId: string | null;
           mimeType: string;
           width: number | null;
           height: number | null;
@@ -112,7 +115,7 @@ export const mediaRouter = router({
           status: asset.status,
           createdAt: asset.uploadedAt.toISOString(),
           uploadedBy: composeDisplayName(asset.uploader),
-          uploaderId: asset.uploader.id,
+          uploaderId: asset.uploader?.id ?? null,
           mimeType: asset.mimeType,
           width: asset.width,
           height: asset.height,
@@ -438,7 +441,7 @@ export const mediaRouter = router({
           bytes: asset.bytes,
           createdAt: asset.uploadedAt.toISOString(),
           uploadedBy: composeDisplayName(asset.uploader),
-          uploaderId: asset.uploader.id,
+          uploaderId: asset.uploader?.id ?? null,
           description: asset.description,
           width: asset.width,
           height: asset.height,

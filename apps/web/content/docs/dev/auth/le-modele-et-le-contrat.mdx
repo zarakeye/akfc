@@ -105,7 +105,7 @@ Enfin, les relations du membre vers les tables de l’authentification, regroup�
   filename="schema.prisma"
   snippetStart="// ── Authentification ─────────────────────────────────────────────────────"
   snippetEnd="passwordResetTokens   PasswordResetToken[]"
-  snippetHighlight="5,7,10"
+  snippetHighlight="4,6,9"
   snippetTitle="Ce qui part avec le membre"
   fullFileTitle="Voir le fichier complet"
 />
@@ -211,7 +211,7 @@ L’adhésion relie le membre au groupe, et porte le seul droit fin du projet :
 
 Un schéma qui a vécu garde des traces. Les voici, toutes signalées dans `schema.prisma` par un ⚠ ; aucune ne sert, aucune ne gêne pour l’instant, toutes sont candidates à une migration de nettoyage.
 
-<DocsTable columnsJson='["Trace", "Ce qu’elle semble promettre", "Ce qu’il en est"]' rowsJson='[["Verification", "Des jetons de vérification génériques.", "Jamais lu ni écrit : vestige d’une ancienne librairie d’authentification."], ["User.emailVerified", "Une adresse vérifiée.", "Jamais lu ; seulement écrit à false par des services de restauration."], ["User.image", "Un portrait.", "Jamais écrit ; lu en repli quand avatar est vide. Le vrai portrait est avatar."], ["Preferences", "Des préférences d’affichage.", "Prévu, pas branché. Sa relation bloquerait la suppression d’un membre (RESTRICT) : à passer en Cascade au branchement."], ["AuditLog", "Un journal des actions sensibles.", "Jamais écrit ni lu."], ["PasswordResetToken.requestIp, userAgent", "Une trace de la demande.", "Écrits, jamais lus."]]' />
+<DocsTable columnsJson='["Trace", "Ce qu’elle semble promettre", "Ce qu’il en est"]' rowsJson='[["Verification", "Des jetons de vérification génériques.", "Jamais lu ni écrit : vestige d’une ancienne librairie d’authentification."], ["User.emailVerified", "Une adresse vérifiée.", "Jamais lu ; seulement écrit à false par des services de restauration."], ["User.image", "Un portrait.", "Jamais écrit ; lu en repli quand avatar est vide. Le vrai portrait est avatar."], ["Preferences", "Des préférences d’affichage.", "Prévu, pas branché. Sa relation est déjà en Cascade : une ligne partira avec son membre."], ["AuditLog", "Un journal des actions sensibles.", "Jamais écrit ni lu."], ["PasswordResetToken.requestIp, userAgent", "Une trace de la demande.", "Écrits, jamais lus."]]' />
 
 <Callout type="warning">
 Supprimer une trace, c’est une migration, donc une décision : vérifier d’abord qu’aucune donnée de production n’y vit (une table vide se supprime sans regret), et supprimer champ et code dans le même commit. Le commentaire ⚠ du schéma est là pour que personne ne bâtisse dessus en attendant.

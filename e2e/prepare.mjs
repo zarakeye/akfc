@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PASSWORD, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
+import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, PASSWORD, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -159,6 +159,20 @@ await prisma.memberDocument.create({
     audience: "SPECIFIC",
     publishedById: USERS.admin.id,
     recipients: { create: { userId: USERS.membreA.id } },
+  },
+});
+
+// Le membre partant : une actualité publiée qu'il commentera, et un fichier qu'il a envoyé.
+await prisma.post.create({
+  data: {
+    id: PARTANT_POST.id, title: PARTANT_POST.title, authorId: USERS.admin.id,
+    content: { version: 1, blocks: [] }, publicationDate: new Date("2026-01-01T00:00:00Z"),
+  },
+});
+await prisma.mediaAsset.create({
+  data: {
+    id: PARTANT_MEDIA.id, fullPath: PARTANT_MEDIA.key, mimeType: "image/png", format: "png",
+    originalFileName: "partant.png", bytes: 68, appRoot: "AKFC", status: "pending", uploaderUserId: USERS.partant.id,
   },
 });
 

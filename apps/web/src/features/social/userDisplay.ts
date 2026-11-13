@@ -10,6 +10,8 @@
  * assignables.
  */
 
+import { FORMER_MEMBER_LABEL } from "@contracts/shared/formerMember";
+
 export interface DisplayUser {
   id: string;
   firstName: string | null;
@@ -22,8 +24,9 @@ export interface DisplayUser {
   image: string | null;
 }
 
-/** Nom complet → pseudo → email (si connu) → « Membre ». */
-export function formatUserName(u: DisplayUser): string {
+/** Nom complet → pseudo → email (si connu) → « Membre ». Sans auteur (compte supprimé) : « Ancien membre ». */
+export function formatUserName(u: DisplayUser | null): string {
+  if (!u) return FORMER_MEMBER_LABEL;
   const full = [u.firstName, u.lastName]
     .filter((p): p is string => Boolean(p?.trim()))
     .join(" ")
