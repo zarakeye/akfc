@@ -8,12 +8,16 @@ import {
   legalInfoError,
   type LegalInfoValue,
 } from "#features/admin/users/legal/LegalInfoFields.tsx";
+import { CoursesPicker, courseLabel } from "#features/admin/users/courses/CoursesPicker.tsx";
+import { isMinorAudience } from "@akfc/contracts/courses/enrollment.ts";
 
 export interface CreateUserFormInput {
   email: string;
   groupIds: string[];
   /** Majorité (obligatoire) ; mineur : date de naissance et parent référent. */
   legal: LegalInfoValue;
+  /** Créneaux suivis comme élève (facultatif). */
+  courseIds: number[];
 }
 
 export interface CreateUserFormProps {
@@ -33,6 +37,9 @@ export function CreateUserForm({
   const [email, setEmail] = useState<string>("");
   const [groupIds, setGroupIds] = useState<string[]>([]);
   const [legal, setLegal] = useState<LegalInfoValue>(EMPTY_LEGAL_INFO);
+  const [courseIds, setCourseIds] = useState<number[]>([]);
+  // Créneaux pour enfants ou adolescents cochés : un indice de minorité, affiché sous les cours.
+  const [minorCourses, setMinorCourses] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -56,7 +63,7 @@ export function CreateUserForm({
     }
     setIsSubmitting(true);
     try {
-      await onSubmit({ email: email.trim(), groupIds, legal });
+      await onSubmit({ email: email.trim(), groupIds, legal, courseIds });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -102,6 +109,27 @@ export function CreateUserForm({
         <span className="text-xs text-muted-foreground">
           {groupIds.length === 0 ? "Au moins un groupe." : `${groupIds.length} groupe(s) sélectionné(s).`}
         </span>
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-1 text-sm" data-tour="users.form.courses">
+        <legend className="mb-1 font-medium">Cours suivis</legend>
+        <CoursesPicker
+          value={courseIds}
+          onChange={(ids, courses) => {
+            setCourseIds(ids);
+            const minors = courses.filter((c) => isMinorAudience(c.audience)).map(courseLabel);
+            setMinorCourses(minors);
+            // Un cours pour mineurs pré-coche « Mineur », tant que la majorité n'est pas choisie.
+            if (minors.length > 0 && legal.legalAge === null) setLegal({ ...legal, legalAge: "MINOR" });
+          }}
+        />
+        {minorCourses.length > 0 && (
+          <span role="note" className="text-xs text-sky-800 dark:text-sky-300">
+            {legal.legalAge === "ADULT"
+              ? `Attention : ${minorCourses.join(", ")} est un cours pour mineurs. Le membre est-il bien majeur ?`
+              : `Mineur pré-coché : ${minorCourses.join(", ")} est un cours pour mineurs. Vérifiez la majorité ci-dessous.`}
+          </span>
+        )}
       </fieldset>
 
       <fieldset className="flex flex-col gap-1 text-sm" data-tour="users.form.legal">

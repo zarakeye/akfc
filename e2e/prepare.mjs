@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
+import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -117,6 +117,12 @@ const seconde = await prisma.discipline.create({
     publicationDate: new Date("2026-01-01T00:00:00Z"),
   },
 });
+
+for (const c of Object.values(COURSES)) {
+  await prisma.course.create({
+    data: { ...c, disciplineId: seconde.id, requisites: [], content: { version: 1, blocks: [] } },
+  });
+}
 
 await prisma.discipline.create({
   data: { ...DISCIPLINES.brouillon, type: "MARTIAL_ART", categoryId: category.id, instructorId: USERS.admin.id },

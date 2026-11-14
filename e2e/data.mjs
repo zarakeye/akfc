@@ -58,6 +58,15 @@ export const DISCIPLINES = {
   seconde: { name: "Arnis (e2e)", slug: "e2e-arnis" },
 };
 
+/**
+ * Deux créneaux de la discipline « seconde » : un pour adolescents (le jeudi, comme le Tchoy Lee Fut
+ * des 12-16 ans), un pour adultes. Inscriptions aux cours et majorité pré-cochée.
+ */
+export const COURSES = /** @type {const} */ ({
+  ados: { day: "THURSDAY", beginTime: 1800, endTime: 1930, audience: "TEENAGERS" },
+  adultes: { day: "TUESDAY", beginTime: 2000, endTime: 2130, audience: "ADULTS" },
+});
+
 /** Deux familles, rangées à l'inverse de l'alphabet de leurs disciplines. */
 export const FAMILIES = {
   premiere: { name: "Famille de rang 1 (e2e)", slug: "e2e-famille-1", sortOrder: 1 },

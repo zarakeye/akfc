@@ -7,6 +7,7 @@ import { ImageConsentControl } from "#features/admin/users/components/ImageConse
 import { ImageConsentForms } from "#features/admin/users/components/ImageConsentForms.tsx";
 import { GuardianLinkPanel } from "#features/admin/users/components/GuardianLinkPanel.tsx";
 import { LegalInfoControl } from "#features/admin/users/legal/LegalInfoControl.tsx";
+import { CoursesControl } from "#features/admin/users/courses/CoursesControl.tsx";
 
 /** Présentation admin d'un utilisateur — `/(admin)/dashboard/users/[id]` (lecture seule). */
 export default async function UserPresentationPage({
@@ -55,6 +56,7 @@ export default async function UserPresentationPage({
           guardianRelation: user.guardianRelation ?? "",
         }}
       />
+      <CoursesControl userId={user.id} />
       {/* Remonté quand un dépôt change le statut, pour repartir de la valeur enregistrée. */}
       <ImageConsentControl
         key={`${user.imageConsent}-${user.imageConsentAt?.getTime() ?? 0}`}

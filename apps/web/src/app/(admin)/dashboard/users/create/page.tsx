@@ -22,6 +22,7 @@ export default function CreateUserPage(): JSX.Element {
     const res = await createMutation.mutateAsync({
       email: input.email,
       groupIds: input.groupIds,
+      courseIds: input.courseIds,
       legal: toLegalInput({ ...input.legal, legalAge: input.legal.legalAge ?? "UNKNOWN" }),
     });
     await utils.user.getAll.invalidate();

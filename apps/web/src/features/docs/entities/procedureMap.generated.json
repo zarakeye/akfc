@@ -36149,7 +36149,7 @@
   "page /dashboard/users/[id]": {
    "kind": "page",
    "file": "apps/web/src/app/(admin)/dashboard/users/[id]/page.tsx",
-   "line": 12,
+   "line": 13,
    "effects": [
     {
      "model": "User",
@@ -36159,7 +36159,7 @@
       [
        [
         "prisma.user.findUnique",
-        "apps/web/src/app/(admin)/dashboard/users/[id]/page.tsx:19"
+        "apps/web/src/app/(admin)/dashboard/users/[id]/page.tsx:20"
        ]
       ]
      ]
