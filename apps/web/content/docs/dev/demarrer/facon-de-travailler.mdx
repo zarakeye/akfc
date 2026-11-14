@@ -40,7 +40,7 @@ Elle enchaîne neuf étapes et s'arrête à la première qui échoue :
 Ce tableau suffit pour travailler dès maintenant. La partie « Qualité (1) », juste après la configuration et Docker, ouvre chaque maillon de la chaîne : ce qu'il vérifie, dans quel ordre, et ce qu'il ne voit pas.
 </Promesse>
 
-Les six scripts maison sont courts : chacun traque une seule erreur silencieuse et l'explique en français quand il la trouve (plus loin, partie « Qualité (2) », chapitre « Les gardes maison »). Quand une nouvelle erreur de ce genre apparaît, la réponse est une vérification de plus.
+Les scripts maison sont courts : chacun traque une seule erreur silencieuse et l'explique en français quand il la trouve (plus loin, partie « Qualité (2) », chapitre « Les gardes maison »). Quand une nouvelle erreur de ce genre apparaît, la réponse est une vérification de plus.
 
 <Callout type="warning">
 `pnpm clean` supprime le dossier `.next` que `pnpm dev` utilise. Après un `pnpm check`, si une modification n'apparaît pas dans le navigateur, arrêtons `pnpm dev` (Ctrl+C) et relançons-le. Si `pnpm dev` réécrit `.next` pendant la suppression, `pnpm check` peut aussi échouer sur « Directory not empty » : il suffit d'arrêter `pnpm dev` avant de vérifier.

@@ -13,6 +13,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type sharp from "sharp";
+import type { Sharp } from "sharp";
 
 type SharpFn = typeof sharp;
 let sharpLoad: Promise<SharpFn | null> | null = null;
@@ -164,7 +165,7 @@ async function put(key: string, body: Buffer, contentType: string): Promise<void
   );
 }
 
-function resize(sh: SharpFn, input: Buffer, variant: Exclude<MediaVariant, "original">): sharp.Sharp {
+function resize(sh: SharpFn, input: Buffer, variant: Exclude<MediaVariant, "original">): Sharp {
   const s = SIZES[variant];
   // rotate() applique l'orientation EXIF (photos de téléphone) ; les métadonnées (GPS…) ne sont pas recopiées.
   return sh(input, { failOn: "none" })

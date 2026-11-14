@@ -55,8 +55,8 @@ export async function sendWelcomeEmail(params: { to: string; password: string })
     ? `Ce message vient d'une adresse qui ne reçoit pas de réponses. Pour nous écrire : <a href="mailto:${esc(contact)}">${esc(contact)}</a>.`
     : "Ce message vient d'une adresse qui ne reçoit pas de réponses.";
 
-  // Options SMTP (et non génériques) : `dsn` n'existe que pour le transport SMTP.
-  const message: SMTPTransport.Options = {
+  // Options d'un message du transport SMTP : `dsn` n'existe que pour lui.
+  const message: SMTPTransport.MailOptions = {
     from: mailFrom(shortTitle),
     to,
     // Pas de replyTo : une réponse citerait le mot de passe.

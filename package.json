@@ -19,7 +19,7 @@
     "e2e": "node e2e/prepare.mjs && playwright test",
     "e2e:report": "playwright show-report",
     "docs:procedures": "node scripts/build-procedure-map.mjs --write",
-    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-components.mjs && node scripts/check-doc-installs.mjs && pnpm clean && pnpm typecheck && pnpm lint"
+    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-components.mjs && node scripts/check-doc-installs.mjs && node scripts/check-next-unique.mjs && pnpm clean && pnpm typecheck && pnpm lint"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
@@ -28,8 +28,8 @@
   },
   "pnpm": {
     "overrides": {
-      "@tiptap/pm": "3.27.3",
-      "@tiptap/core": "3.27.3"
+      "@tiptap/pm": "3.34.0",
+      "@tiptap/core": "3.34.0"
     }
   },
   "devDependencies": {
@@ -39,7 +39,6 @@
     "@types/lodash.throttle": "^4.1.9",
     "@types/mailparser": "3.9.0",
     "@types/node": "^20.19.41",
-    "@types/nodemailer": "^7.0.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9.39.4",

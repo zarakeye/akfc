@@ -17,7 +17,8 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
 
 <Installer paquets="nodemailer" dans="backend" />
-<Installer paquets="@types/nodemailer" dans="racine" dev />
+
+Depuis sa version 10, nodemailer livre ses propres types TypeScript : le paquet `@types/nodemailer`, longtemps nécessaire, ne l'est plus.
 
 ## Le mot de passe oublié : un sous-flux complet et sensible
 
