@@ -26,11 +26,29 @@ Chaque exemple suit le même chemin : le fichier dans `app/`, l'adresse à laque
 
 ### Les fichiers réservés
 
-Next ne lit, dans un dossier de `app/`, que les fichiers dont le nom est réservé. Le projet en utilise cinq ; trois autres, courants, n'existent pas encore dans le dépôt, et leur absence a des effets qu'il vaut mieux connaître.
+Next ne lit, dans un dossier de `app/`, que les fichiers dont le nom est réservé. Le projet en utilise six ; deux autres, courants, n'existent pas dans le dépôt, et leur absence a des effets qu'il vaut mieux connaître.
 
-<DocsTable columnsJson='["Fichier","Rôle","Dans le projet"]' rowsJson='[["page.tsx","Rend une page : sans lui, le segment n’est pas une adresse visitable.","87 pages. (public)/agenda/page.tsx répond à /agenda."],["layout.tsx","Enveloppe toutes les pages en dessous ; il n’est pas re-rendu quand on navigue entre elles.","6 layouts : la racine, (public), (admin), dashboard, docs et gallery. (public)/layout.tsx porte le header, le ruban des flashs info et le footer."],["route.ts","Un point d’accès HTTP : il exporte des fonctions GET, POST… au lieu d’un composant, et renvoie une réponse brute.","13 routes. api/trpc/[trpc]/route.ts reçoit tous les appels tRPC ; api/calendar/events/[id]/route.ts renvoie un fichier .ics."],["sitemap.ts, robots.ts","Du code qui produit un fichier, à une adresse fixée par Next.","/sitemap.xml et /robots.txt, calculés depuis la base."],["favicon.ico","Posé dans app/, il devient l’icône de l’onglet, sans balise à écrire.","app/favicon.ico."],["loading.tsx","Affiché pendant que la page se prépare côté serveur.","Absent. À la navigation, la page précédente reste affichée jusqu’à ce que la suivante soit prête ; seule la barre de chargement du navigateur bouge."],["error.tsx","Rattrape une erreur pendant le rendu, et propose de réessayer, sans quitter le layout.","Absent. Une erreur remplace toute la page par la page d’erreur par défaut de Next, en anglais, sans header ni footer."],["not-found.tsx","Affiché pour une adresse inconnue, ou quand une page appelle notFound().","Absent. La page 404 par défaut de Next (« This page could not be found »), dans le layout racine seulement, donc sans le header du site."]]' />
+<DocsTable columnsJson='["Fichier","Rôle","Dans le projet"]' rowsJson='[["page.tsx","Rend une page : sans lui, le segment n’est pas une adresse visitable.","87 pages. (public)/agenda/page.tsx répond à /agenda."],["layout.tsx","Enveloppe toutes les pages en dessous ; il n’est pas re-rendu quand on navigue entre elles.","6 layouts : la racine, (public), (admin), dashboard, docs et gallery. (public)/layout.tsx porte le header, le ruban des flashs info et le footer."],["route.ts","Un point d’accès HTTP : il exporte des fonctions GET, POST… au lieu d’un composant, et renvoie une réponse brute.","13 routes. api/trpc/[trpc]/route.ts reçoit tous les appels tRPC ; api/calendar/events/[id]/route.ts renvoie un fichier .ics."],["sitemap.ts, robots.ts","Du code qui produit un fichier, à une adresse fixée par Next.","/sitemap.xml et /robots.txt, calculés depuis la base."],["favicon.ico","Posé dans app/, il devient l’icône de l’onglet, sans balise à écrire.","app/favicon.ico."],["loading.tsx","Affiché pendant que la page se prépare côté serveur.","Absent. À la navigation, la page précédente reste affichée jusqu’à ce que la suivante soit prête ; seule la barre de chargement du navigateur bouge."],["error.tsx","Rattrape une erreur pendant le rendu, et propose de réessayer, sans quitter le layout.","Absent. Une erreur remplace toute la page par la page d’erreur par défaut de Next, en anglais, sans header ni footer."],["not-found.tsx","Affiché pour une adresse inconnue, ou quand une page appelle notFound(). Next répond alors avec le code 404 et demande aux moteurs de ne pas indexer la page.","Deux : app/not-found.tsx pour le site public et les adresses inconnues, (admin)/dashboard/not-found.tsx pour le panneau de contrôle. Les deux affichent le même contenu, PageIntrouvable ; seul le lien de retour change."]]' />
 
-Les trois absents ne sont pas une décision : ce sont les réglages par défaut, jamais remplacés. Une 404 aux couleurs du club, avec le header et un lien vers l'accueil, ne demanderait qu'un fichier `not-found.tsx` dans `app/`.
+Les deux absents ne sont pas une décision : ce sont les réglages par défaut, jamais remplacés.
+
+`not-found.tsx` montre bien comment Next choisit le fichier : il prend le plus proche **au-dessus** de la page qui appelle `notFound()`, et le rend dans les layouts de ce niveau. Une fiche de membre introuvable dans le dashboard tombe sur `(admin)/dashboard/not-found.tsx`, et garde le header et la barre latérale du panneau de contrôle. Une adresse inconnue, elle, n'appartient à aucun dossier : seul `app/not-found.tsx` la reçoit, enveloppé du seul layout racine, sans header ni footer. Pour que le visiteur ne perde pas le site, ce fichier appelle lui-même le layout public :
+
+```tsx
+// apps/web/src/app/not-found.tsx (extrait)
+export default async function NotFound(): Promise<JSX.Element> {
+  await connection();
+  return (
+    <PublicLayout>
+      <PageIntrouvable retour="/" libelleRetour="Retour à l’accueil" />
+    </PublicLayout>
+  );
+}
+```
+
+La ligne `await connection()` compte. Next **pré-rend** la page 404 pendant `next build`, une fois pour toutes. Or le layout public lit la base (le logo, les flashs info) : pendant la construction de l'image Docker, où la base n'est pas joignable, le build échouerait. `connection()`, de `next/server`, dit à Next d'attendre une vraie requête : la page est rendue à chaque visite, avec le logo et les flashs du moment.
+
+Une discipline publique introuvable remonte au même fichier : `(public)` n'a pas de `not-found.tsx` à lui.
 
 Tout autre fichier d'un dossier de `app/` est un module ordinaire, que Next ignore. `providers.tsx`, à la racine et dans `dashboard/`, n'a rien de réservé malgré son nom : c'est un composant client, importé par le layout voisin.
 
@@ -46,6 +64,7 @@ Un dernier outil n'est pas un export mais une fonction : `notFound()`, de `next/
 
 <Arbre racine="apps/web/src/" texte="
 app/layout.tsx                          # le layout RACINE, commun à tout
+app/not-found.tsx                       # la page introuvable (404) du site
 app/(public)/                           # le site du club
 app/(public)/layout.tsx                 # header, ruban des flashs info, footer
 app/(public)/page.tsx                   # l’accueil, /
@@ -54,6 +73,7 @@ app/(public)/agenda/                    # et de même : gallery, profil, mes-esp
 app/(admin)/                            # la zone d’administration
 app/(admin)/layout.tsx                  # garde SERVEUR : vérifie les rôles
 app/(admin)/dashboard/layout.tsx        # header, barre latérale, zone qui défile
+app/(admin)/dashboard/not-found.tsx     # la page introuvable du panneau de contrôle
 app/(admin)/dashboard/posts/            # et de même : disciplines, library, users, groups…
 app/docs/                               # cette documentation
 app/api/                                # les points d’accès HTTP : tRPC, médias, calendrier…
