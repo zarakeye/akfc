@@ -56,8 +56,13 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
   if (s.legalAge === "UNKNOWN") {
     return (
       <div className="rounded-lg border border-border p-4 text-sm text-gray-600">
-        Le club n&apos;a pas encore renseigné votre majorité : en attendant, l&apos;autorisation se donne par le
-        formulaire papier, à remettre signé à un instructeur.
+        <p className="font-semibold text-foreground">Pourquoi pas de formulaire en ligne ?</p>
+        <p className="mt-1">
+          Le club n&apos;a pas encore indiqué si vous êtes majeur(e) ou mineur(e) : un mineur ne signe pas lui-même,
+          c&apos;est son parent qui valide. Écrivez à contact@akfc.fr pour qu&apos;un administrateur le renseigne ; le
+          formulaire en ligne apparaîtra ici. En attendant, vous pouvez imprimer le formulaire, le signer et le remettre
+          à un instructeur.
+        </p>
         {prefilled && <p className="mt-3">{prefilled}</p>}
       </div>
     );

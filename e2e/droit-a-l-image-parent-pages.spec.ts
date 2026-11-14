@@ -4,7 +4,7 @@ import { loginAs, waitForEmail } from "./helpers";
 import { MINOR, USERS } from "./data.mjs";
 
 /**
- * Le même circuit, par les pages : le mineur indique ses souhaits depuis son profil, le parent
+ * Le même circuit, par les pages : le mineur indique ses souhaits depuis « Mon droit à l'image », le parent
  * (sans compte) valide sur /autorisation-parent/<jeton>, l'administrateur voit ce qu'il a changé.
  */
 test("souhaits du mineur, page du parent, changements visibles sur la fiche", async ({ page, browser }) => {
@@ -14,7 +14,7 @@ test("souhaits du mineur, page du parent, changements visibles sur la fiche", as
   // 1. Le mineur : ses souhaits (espace membres et réseaux sociaux), envoyés à son parent.
   await loginAs(page, USERS.mineurPages.email);
   const since = new Date();
-  await page.goto("/profil");
+  await page.goto("/profil/droit-a-l-image");
   await page.getByRole("button", { name: "Indiquer mes souhaits" }).click();
   await page.getByRole("radio", { name: "Espace membres : oui" }).check();
   await page.getByRole("radio", { name: "Réseaux sociaux du club : oui" }).check();

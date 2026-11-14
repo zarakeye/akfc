@@ -74,6 +74,13 @@ export default function UserMenu(): JSX.Element | null {
           >
             Mon profil
           </Link>
+          <Link
+            href="/profil/droit-a-l-image"
+            className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+            onClick={menu.close}
+          >
+            Mon droit à l&apos;image
+          </Link>
           {!isAdmin && (
             <Link
               href="/deposer"

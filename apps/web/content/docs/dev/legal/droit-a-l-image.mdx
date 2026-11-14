@@ -63,7 +63,7 @@ Le formulaire papier propose une ligne Oui / Non par usage. Le site reprend exac
 
 Le tableau `as const` donne à la fois la liste (pour les cases à cocher, dans l’ordre du formulaire) et le type (`ImageUsageValue`, l’union de ses valeurs) ; le dictionnaire des libellés est vérifié par le compilateur : un usage ajouté sans libellé ne compile pas.
 
-Le formulaire vierge est un PDF du site. Le membre le trouve dans son profil, avec une explication : l’autorisation est facultative, chaque usage se choisit, et le formulaire se remet à un responsable du club. Il demande aussi ce que deviennent les images **après le départ** du membre : le club peut continuer à utiliser celles déjà prises, ou les retire sous un an. Le choix est enregistré tel quel (`keepAfterLeave`), avec une troisième valeur, `null`, pour un formulaire d’une version qui ne posait pas la question.
+Le formulaire vierge est un PDF du site. Le membre le trouve sur la page « Mon droit à l’image » (`/profil/droit-a-l-image`, ouverte depuis le menu du compte ou le profil), avec une explication : l’autorisation est facultative, chaque usage se choisit, et le formulaire se remet à un responsable du club. Il demande aussi ce que deviennent les images **après le départ** du membre : le club peut continuer à utiliser celles déjà prises, ou les retire sous un an. Le choix est enregistré tel quel (`keepAfterLeave`), avec une troisième valeur, `null`, pour un formulaire d’une version qui ne posait pas la question.
 
 ## Un formulaire signé, déposé par un administrateur
 
@@ -206,7 +206,7 @@ Le club ne prouve rien avec un statut coché : il prouve avec le document signé
 
 ## À suivre
 
-Le formulaire papier reste la voie de tous. Un membre majeur peut aussi donner son accord lui-même, depuis son profil : le site doit alors produire ce que produisait la signature — un document, une date, une version du texte, et la certitude que c’est bien lui.
+Le formulaire papier reste la voie de tous. Un membre majeur peut aussi donner son accord lui-même, depuis la même page : le site doit alors produire ce que produisait la signature — un document, une date, une version du texte, et la certitude que c’est bien lui.
 
 <Callout type="tip">
 **Chapitre suivant : le consentement en ligne.** La majorité vérifiée, le mot de passe qui vaut signature, un récapitulatif PDF figé, la version du texte, et ce qui reste à faire pour les mineurs.

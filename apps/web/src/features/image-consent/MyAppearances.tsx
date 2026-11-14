@@ -49,7 +49,7 @@ export function MyAppearances(): JSX.Element {
             <div className="mt-2">
               <VerdictBadges verdicts={data.states} labeled />
             </div>
-            <Link href="/profil" className="mt-3 inline-block text-sm font-medium text-emerald-700 hover:underline">
+            <Link href="/profil/droit-a-l-image" className="mt-3 inline-block text-sm font-medium text-emerald-700 hover:underline">
               Donner ou modifier mon autorisation →
             </Link>
           </section>

@@ -8,7 +8,7 @@ import { trpc } from "#core/trpc/trpcClient.ts";
 import { UserPortrait } from "#features/social/UserPortrait.tsx";
 import { formatUserName, type DisplayUser } from "#features/social/userDisplay.ts";
 import { InstructorBioEditor } from "#features/social/InstructorBioEditor.tsx";
-import { MyImageConsent } from "#features/image-consent/MyImageConsent.tsx";
+import { ImageConsentSummary } from "#features/image-consent/ImageConsentSummary.tsx";
 
 /**
  * Page « Mon profil » — accessible à tout membre connecté (le proxy garde
@@ -101,9 +101,9 @@ export default function ProfilePage(): JSX.Element {
           </a>
         </div>
 
-        {/* Droit à l'image : formulaire vierge, statut, formulaires signés (aperçu au clic). */}
+        {/* Droit à l'image : le statut, et le bouton vers la page dédiée (formulaire en ligne, formulaires signés). */}
         <div data-tour="profil.image-consent">
-          <MyImageConsent />
+          <ImageConsentSummary />
           <Link
             href="/profil/ou-j-apparais"
             className="mt-3 inline-block text-sm font-medium text-emerald-700 hover:underline"
