@@ -29,11 +29,12 @@
   "pnpm": {
     "overrides": {
       "@tiptap/pm": "3.34.0",
-      "@tiptap/core": "3.34.0"
+      "@tiptap/core": "3.34.0",
+      "@tailwindcss/typography>postcss-selector-parser": "^6.1.6"
     }
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.1056.0",
+    "@aws-sdk/client-s3": "^3.1169.0",
     "@playwright/test": "1.56.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/lodash.throttle": "^4.1.9",
