@@ -3258,7 +3258,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 55,
+   "line": 69,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -3268,7 +3268,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:59"
+        "packages/backend/src/modules/users/router.ts:73"
        ]
       ]
      ]
@@ -3281,7 +3281,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:59"
+        "packages/backend/src/modules/users/router.ts:73"
        ]
       ]
      ]
@@ -3294,7 +3294,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:59"
+        "packages/backend/src/modules/users/router.ts:73"
        ]
       ]
      ]
@@ -3307,7 +3307,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:59"
+        "packages/backend/src/modules/users/router.ts:73"
        ]
       ]
      ]
@@ -3320,7 +3320,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:59"
+        "packages/backend/src/modules/users/router.ts:73"
        ]
       ]
      ]
@@ -3332,7 +3332,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 87,
+   "line": 101,
    "effects": [
     {
      "model": "User",
@@ -3342,7 +3342,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:91"
+        "packages/backend/src/modules/users/router.ts:105"
        ]
       ]
      ]
@@ -3354,8 +3354,38 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 106,
+   "line": 120,
    "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "existingCourseIds",
+        "packages/backend/src/modules/users/router.ts:55"
+       ],
+       [
+        "prisma.course.count",
+        "packages/backend/src/modules/users/router.ts:61"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "CourseEnrollment",
+     "op": "create",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.create",
+        "packages/backend/src/modules/users/router.ts:158"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroup",
      "op": "read",
@@ -3364,13 +3394,13 @@
       [
        [
         "ctx.prisma.memberGroup.count",
-        "packages/backend/src/modules/users/router.ts:121"
+        "packages/backend/src/modules/users/router.ts:138"
        ]
       ],
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/users/router.ts:174"
+        "packages/backend/src/modules/users/router.ts:192"
        ]
       ]
      ]
@@ -3383,7 +3413,7 @@
       [
        [
         "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:141"
+        "packages/backend/src/modules/users/router.ts:158"
        ]
       ]
      ]
@@ -3427,6 +3457,7 @@
      "model": "User",
      "op": "create",
      "fields": [
+      "courseEnrollments",
       "email",
       "memberGroupMemberships",
       "password"
@@ -3435,7 +3466,7 @@
       [
        [
         "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:141"
+        "packages/backend/src/modules/users/router.ts:158"
        ]
       ]
      ]
@@ -3448,7 +3479,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:175"
+        "packages/backend/src/modules/users/router.ts:193"
        ]
       ]
      ]
@@ -3463,7 +3494,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 205,
+   "line": 223,
    "effects": [
     {
      "model": "User",
@@ -3473,7 +3504,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:209"
+        "packages/backend/src/modules/users/router.ts:227"
        ]
       ]
      ]
@@ -3493,7 +3524,94 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:211"
+        "packages/backend/src/modules/users/router.ts:229"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "user.coursesOf": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 238,
+   "effects": [
+    {
+     "model": "CourseEnrollment",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.courseEnrollment.findMany",
+        "packages/backend/src/modules/users/router.ts:242"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "user.setCourses": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 253,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "existingCourseIds",
+        "packages/backend/src/modules/users/router.ts:55"
+       ],
+       [
+        "prisma.course.count",
+        "packages/backend/src/modules/users/router.ts:61"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "CourseEnrollment",
+     "op": "create",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.courseEnrollment.createMany",
+        "packages/backend/src/modules/users/router.ts:262"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "CourseEnrollment",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.courseEnrollment.deleteMany",
+        "packages/backend/src/modules/users/router.ts:261"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findUnique",
+        "packages/backend/src/modules/users/router.ts:257"
        ]
       ]
      ]
@@ -3505,7 +3623,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 225,
+   "line": 276,
    "effects": [
     {
      "model": "User",
@@ -3520,7 +3638,7 @@
       [
        [
         "ctx.prisma.user.updateMany",
-        "packages/backend/src/modules/users/router.ts:229"
+        "packages/backend/src/modules/users/router.ts:280"
        ]
       ]
      ]
@@ -3532,7 +3650,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 237,
+   "line": 288,
    "effects": [
     {
      "model": "User",
@@ -3545,7 +3663,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:241"
+        "packages/backend/src/modules/users/router.ts:292"
        ]
       ]
      ]
@@ -3557,7 +3675,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 249,
+   "line": 300,
    "effects": [
     {
      "model": "AuditLog",
@@ -3571,21 +3689,21 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
-        "prisma/schema.prisma:333"
+        "prisma/schema.prisma:335"
        ]
       ],
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
-        "prisma/schema.prisma:335"
+        "prisma/schema.prisma:337"
        ]
       ]
      ]
@@ -3601,11 +3719,29 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (Comment → User)",
-        "prisma/schema.prisma:1404"
+        "prisma/schema.prisma:1436"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "CourseEnrollment",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:327"
+       ],
+       [
+        "onDelete: Cascade (CourseEnrollment → User)",
+        "prisma/schema.prisma:777"
        ]
       ]
      ]
@@ -3636,11 +3772,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → User)",
-        "prisma/schema.prisma:1861"
+        "prisma/schema.prisma:1893"
        ]
       ]
      ]
@@ -3673,11 +3809,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (FileVersion → User)",
-        "prisma/schema.prisma:1248"
+        "prisma/schema.prisma:1280"
        ]
       ]
      ]
@@ -3694,27 +3830,27 @@
       [
        [
         "tx.imageConsentForm.updateMany",
-        "packages/backend/src/modules/users/router.ts:266"
+        "packages/backend/src/modules/users/router.ts:317"
        ]
       ],
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2346"
+        "prisma/schema.prisma:2378"
        ]
       ],
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2386"
+        "prisma/schema.prisma:2418"
        ]
       ]
      ]
@@ -3728,11 +3864,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (ImageConsentRequest → User)",
-        "prisma/schema.prisma:2404"
+        "prisma/schema.prisma:2436"
        ]
       ]
      ]
@@ -3765,11 +3901,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (MediaAsset → User)",
-        "prisma/schema.prisma:1118"
+        "prisma/schema.prisma:1150"
        ]
       ]
      ]
@@ -3783,11 +3919,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (MediaPerson → User)",
-        "prisma/schema.prisma:1162"
+        "prisma/schema.prisma:1194"
        ]
       ]
      ]
@@ -3803,11 +3939,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (MediaPerson → User)",
-        "prisma/schema.prisma:1165"
+        "prisma/schema.prisma:1197"
        ]
       ]
      ]
@@ -3823,11 +3959,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (MemberDocument → User)",
-        "prisma/schema.prisma:1816"
+        "prisma/schema.prisma:1848"
        ]
       ]
      ]
@@ -3841,11 +3977,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → User)",
-        "prisma/schema.prisma:1841"
+        "prisma/schema.prisma:1873"
        ]
       ]
      ]
@@ -3859,11 +3995,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → User)",
-        "prisma/schema.prisma:1952"
+        "prisma/schema.prisma:1984"
        ]
       ]
      ]
@@ -3938,11 +4074,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (PasswordResetToken → User)",
-        "prisma/schema.prisma:275"
+        "prisma/schema.prisma:277"
        ]
       ]
      ]
@@ -3956,11 +4092,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (PollVote → User)",
-        "prisma/schema.prisma:1511"
+        "prisma/schema.prisma:1543"
        ]
       ]
      ]
@@ -3976,11 +4112,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (Post → User)",
-        "prisma/schema.prisma:1369"
+        "prisma/schema.prisma:1401"
        ]
       ]
      ]
@@ -3994,11 +4130,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (Preferences → User)",
-        "prisma/schema.prisma:233"
+        "prisma/schema.prisma:235"
        ]
       ]
      ]
@@ -4012,11 +4148,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (Reaction → User)",
-        "prisma/schema.prisma:1444"
+        "prisma/schema.prisma:1476"
        ]
       ]
      ]
@@ -4047,11 +4183,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: Cascade (Session → User)",
-        "prisma/schema.prisma:251"
+        "prisma/schema.prisma:253"
        ]
       ]
      ]
@@ -4068,21 +4204,21 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2195"
+        "prisma/schema.prisma:2227"
        ]
       ],
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2204"
+        "prisma/schema.prisma:2236"
        ]
       ]
      ]
@@ -4099,21 +4235,21 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2270"
+        "prisma/schema.prisma:2302"
        ]
       ],
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2274"
+        "prisma/schema.prisma:2306"
        ]
       ]
      ]
@@ -4129,11 +4265,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (TicketMessage → User)",
-        "prisma/schema.prisma:2240"
+        "prisma/schema.prisma:2272"
        ]
       ]
      ]
@@ -4149,11 +4285,11 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ],
        [
         "onDelete: SetNull (TrashEntry → User)",
-        "prisma/schema.prisma:1291"
+        "prisma/schema.prisma:1323"
        ]
       ]
      ]
@@ -4166,7 +4302,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:276"
+        "packages/backend/src/modules/users/router.ts:327"
        ]
       ]
      ]
@@ -4179,7 +4315,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:263"
+        "packages/backend/src/modules/users/router.ts:314"
        ]
       ]
      ]
@@ -4191,7 +4327,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 288,
+   "line": 339,
    "effects": [
     {
      "model": "User",
@@ -4201,7 +4337,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:291"
+        "packages/backend/src/modules/users/router.ts:342"
        ]
       ]
      ]
@@ -4213,7 +4349,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 306,
+   "line": 357,
    "effects": [
     {
      "model": "User",
@@ -4223,7 +4359,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:310"
+        "packages/backend/src/modules/users/router.ts:361"
        ]
       ]
      ]
@@ -4235,7 +4371,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 332,
+   "line": 383,
    "effects": [
     {
      "model": "Folder",
@@ -4279,7 +4415,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:335"
+        "packages/backend/src/modules/users/router.ts:386"
        ]
       ],
       [
@@ -4311,7 +4447,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 364,
+   "line": 415,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4547,7 +4683,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/users/router.ts:391"
+        "packages/backend/src/modules/users/router.ts:442"
        ]
       ]
      ]
@@ -4559,7 +4695,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 417,
+   "line": 468,
    "effects": [
     {
      "model": "Course",
@@ -4569,7 +4705,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:418"
+        "packages/backend/src/modules/users/router.ts:469"
        ]
       ]
      ]
@@ -4582,7 +4718,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:418"
+        "packages/backend/src/modules/users/router.ts:469"
        ]
       ]
      ]
@@ -4595,7 +4731,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:418"
+        "packages/backend/src/modules/users/router.ts:469"
        ]
       ]
      ]
@@ -4608,7 +4744,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:418"
+        "packages/backend/src/modules/users/router.ts:469"
        ]
       ]
      ]
@@ -4621,7 +4757,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:418"
+        "packages/backend/src/modules/users/router.ts:469"
        ]
       ]
      ]
@@ -4634,7 +4770,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:418"
+        "packages/backend/src/modules/users/router.ts:469"
        ]
       ]
      ]
@@ -4647,7 +4783,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:418"
+        "packages/backend/src/modules/users/router.ts:469"
        ]
       ]
      ]
@@ -4659,7 +4795,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 459,
+   "line": 510,
    "effects": [
     {
      "model": "Course",
@@ -4669,7 +4805,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:460"
+        "packages/backend/src/modules/users/router.ts:511"
        ]
       ]
      ]
@@ -4682,7 +4818,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:460"
+        "packages/backend/src/modules/users/router.ts:511"
        ]
       ]
      ]
@@ -4695,7 +4831,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:460"
+        "packages/backend/src/modules/users/router.ts:511"
        ]
       ]
      ]
@@ -4708,7 +4844,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:460"
+        "packages/backend/src/modules/users/router.ts:511"
        ]
       ]
      ]
@@ -4720,7 +4856,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 485,
+   "line": 536,
    "effects": [
     {
      "model": "SiteSettings",
@@ -4730,7 +4866,7 @@
       [
        [
         "ctx.prisma.siteSettings.findUnique",
-        "packages/backend/src/modules/users/router.ts:494"
+        "packages/backend/src/modules/users/router.ts:545"
        ]
       ]
      ]
@@ -4745,7 +4881,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:500"
+        "packages/backend/src/modules/users/router.ts:551"
        ]
       ]
      ]
@@ -4757,7 +4893,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 513,
+   "line": 564,
    "effects": [
     {
      "model": "User",
@@ -4767,7 +4903,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:515"
+        "packages/backend/src/modules/users/router.ts:566"
        ]
       ]
      ]
@@ -8110,11 +8246,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ],
       [
@@ -8132,11 +8268,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ]
      ]
@@ -8162,7 +8298,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -8180,7 +8316,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ]
      ]
@@ -8206,7 +8342,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ],
       [
@@ -8224,7 +8360,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ]
      ]
@@ -8306,7 +8442,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ],
       [
@@ -8324,7 +8460,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ]
      ]
@@ -8350,7 +8486,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ],
       [
@@ -8368,7 +8504,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ]
      ]
@@ -8394,11 +8530,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ],
       [
@@ -8416,11 +8552,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ]
      ]
@@ -8446,11 +8582,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ],
       [
@@ -8468,11 +8604,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ]
      ]
@@ -8544,11 +8680,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ],
       [
@@ -8566,11 +8702,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ]
      ]
@@ -8596,7 +8732,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -8614,7 +8750,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ]
      ]
@@ -8661,7 +8797,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ],
       [
@@ -8679,7 +8815,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ]
      ]
@@ -8761,7 +8897,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ],
       [
@@ -8779,7 +8915,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ]
      ]
@@ -8805,7 +8941,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ],
       [
@@ -8823,7 +8959,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ]
      ]
@@ -8849,11 +8985,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ],
       [
@@ -8871,11 +9007,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ]
      ]
@@ -8901,11 +9037,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ],
       [
@@ -8923,11 +9059,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ]
      ]
@@ -9735,7 +9871,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 136,
+   "line": 137,
    "effects": [
     {
      "model": "Course",
@@ -9745,7 +9881,42 @@
       [
        [
         "ctx.prisma.course.findMany",
-        "packages/backend/src/modules/courses/router.ts:137"
+        "packages/backend/src/modules/courses/router.ts:138"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "course.listForEnrollment": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/courses/router.ts",
+   "line": 152,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.course.findMany",
+        "packages/backend/src/modules/courses/router.ts:153"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.course.findMany",
+        "packages/backend/src/modules/courses/router.ts:153"
        ]
       ]
      ]
@@ -9757,7 +9928,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 147,
+   "line": 167,
    "effects": [
     {
      "model": "Course",
@@ -9767,7 +9938,7 @@
       [
        [
         "ctx.prisma.course.findFirst",
-        "packages/backend/src/modules/courses/router.ts:150"
+        "packages/backend/src/modules/courses/router.ts:170"
        ]
       ]
      ]
@@ -9779,7 +9950,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 164,
+   "line": 184,
    "effects": [
     {
      "model": "Category",
@@ -9789,7 +9960,7 @@
       [
        [
         "ctx.prisma.discipline.findUnique",
-        "packages/backend/src/modules/courses/router.ts:176"
+        "packages/backend/src/modules/courses/router.ts:196"
        ]
       ]
      ]
@@ -9811,7 +9982,7 @@
       [
        [
         "tx.course.create",
-        "packages/backend/src/modules/courses/router.ts:215"
+        "packages/backend/src/modules/courses/router.ts:235"
        ]
       ]
      ]
@@ -9824,7 +9995,7 @@
       [
        [
         "ctx.prisma.discipline.findUnique",
-        "packages/backend/src/modules/courses/router.ts:176"
+        "packages/backend/src/modules/courses/router.ts:196"
        ]
       ]
      ]
@@ -10039,7 +10210,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/courses/router.ts:198"
+        "packages/backend/src/modules/courses/router.ts:218"
        ]
       ]
      ]
@@ -10051,7 +10222,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 251,
+   "line": 271,
    "effects": [
     {
      "model": "Course",
@@ -10061,7 +10232,7 @@
       [
        [
         "ctx.prisma.course.findUnique",
-        "packages/backend/src/modules/courses/router.ts:264"
+        "packages/backend/src/modules/courses/router.ts:284"
        ]
       ]
      ]
@@ -10082,7 +10253,7 @@
       [
        [
         "tx.course.update",
-        "packages/backend/src/modules/courses/router.ts:311"
+        "packages/backend/src/modules/courses/router.ts:331"
        ]
       ]
      ]
@@ -10297,7 +10468,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/courses/router.ts:281"
+        "packages/backend/src/modules/courses/router.ts:301"
        ]
       ]
      ]
@@ -10309,7 +10480,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 349,
+   "line": 369,
    "effects": [
     {
      "model": "Course",
@@ -10319,7 +10490,25 @@
       [
        [
         "tx.course.delete",
-        "packages/backend/src/modules/courses/router.ts:365"
+        "packages/backend/src/modules/courses/router.ts:385"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "CourseEnrollment",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.course.delete",
+        "packages/backend/src/modules/courses/router.ts:385"
+       ],
+       [
+        "onDelete: Cascade (CourseEnrollment → Course)",
+        "prisma/schema.prisma:780"
        ]
       ]
      ]
@@ -11276,7 +11465,7 @@
        ],
        [
         "onDelete: Cascade (EventDiscipline → Discipline)",
-        "prisma/schema.prisma:1725"
+        "prisma/schema.prisma:1757"
        ]
       ]
      ]
@@ -12386,7 +12575,7 @@
        ],
        [
         "onDelete: Cascade (SeminarSession → Seminar)",
-        "prisma/schema.prisma:886"
+        "prisma/schema.prisma:918"
        ]
       ]
      ]
@@ -13344,7 +13533,7 @@
        ],
        [
         "onDelete: Cascade (EventDiscipline → Event)",
-        "prisma/schema.prisma:1723"
+        "prisma/schema.prisma:1755"
        ]
       ]
      ]
@@ -13362,7 +13551,7 @@
        ],
        [
         "onDelete: Cascade (EventSession → Event)",
-        "prisma/schema.prisma:1014"
+        "prisma/schema.prisma:1046"
        ]
       ]
      ]
@@ -14125,7 +14314,7 @@
        ],
        [
         "onDelete: Cascade (Comment → Post)",
-        "prisma/schema.prisma:1406"
+        "prisma/schema.prisma:1438"
        ]
       ],
       [
@@ -14135,11 +14324,11 @@
        ],
        [
         "onDelete: Cascade (Comment → Post)",
-        "prisma/schema.prisma:1406"
+        "prisma/schema.prisma:1438"
        ],
        [
         "onDelete: Cascade (Comment → Comment)",
-        "prisma/schema.prisma:1408"
+        "prisma/schema.prisma:1440"
        ]
       ]
      ]
@@ -14248,7 +14437,7 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1469"
+        "prisma/schema.prisma:1501"
        ]
       ]
      ]
@@ -14266,11 +14455,11 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1469"
+        "prisma/schema.prisma:1501"
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1486"
+        "prisma/schema.prisma:1518"
        ]
       ]
      ]
@@ -14288,15 +14477,15 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1469"
+        "prisma/schema.prisma:1501"
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1486"
+        "prisma/schema.prisma:1518"
        ],
        [
         "onDelete: Cascade (PollVote → PollOption)",
-        "prisma/schema.prisma:1509"
+        "prisma/schema.prisma:1541"
        ]
       ]
      ]
@@ -17680,7 +17869,7 @@
        ],
        [
         "onDelete: Cascade (Comment → Comment)",
-        "prisma/schema.prisma:1408"
+        "prisma/schema.prisma:1440"
        ]
       ]
      ]
@@ -18063,7 +18252,7 @@
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1486"
+        "prisma/schema.prisma:1518"
        ]
       ]
      ]
@@ -18081,11 +18270,11 @@
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1486"
+        "prisma/schema.prisma:1518"
        ],
        [
         "onDelete: Cascade (PollVote → PollOption)",
-        "prisma/schema.prisma:1509"
+        "prisma/schema.prisma:1541"
        ]
       ]
      ]
@@ -18593,7 +18782,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → Gallery)",
-        "prisma/schema.prisma:1663"
+        "prisma/schema.prisma:1695"
        ]
       ]
      ]
@@ -19768,7 +19957,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ]
      ]
@@ -19799,7 +19988,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ]
      ]
@@ -19817,7 +20006,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ]
      ]
@@ -20251,7 +20440,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1975"
+        "prisma/schema.prisma:2007"
        ]
       ]
      ]
@@ -20332,7 +20521,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1924"
+        "prisma/schema.prisma:1956"
        ]
       ]
      ]
@@ -20354,7 +20543,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1948"
+        "prisma/schema.prisma:1980"
        ]
       ]
      ]
@@ -25574,7 +25763,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1975"
+        "prisma/schema.prisma:2007"
        ]
       ]
      ]
@@ -25635,7 +25824,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1924"
+        "prisma/schema.prisma:1956"
        ]
       ]
      ]
@@ -25653,7 +25842,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1948"
+        "prisma/schema.prisma:1980"
        ]
       ]
      ]
@@ -26315,11 +26504,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ],
       [
@@ -26341,11 +26530,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ]
      ]
@@ -26374,7 +26563,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -26396,7 +26585,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -26481,7 +26670,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ],
       [
@@ -26503,7 +26692,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ]
      ]
@@ -26648,7 +26837,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ],
       [
@@ -26670,7 +26859,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ]
      ]
@@ -26700,7 +26889,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ],
       [
@@ -26722,7 +26911,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ]
      ]
@@ -26752,11 +26941,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ],
       [
@@ -26778,11 +26967,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ]
      ]
@@ -26812,11 +27001,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ],
       [
@@ -26838,11 +27027,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ]
      ]
@@ -26930,7 +27119,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2263"
+        "prisma/schema.prisma:2295"
        ]
       ]
      ]
@@ -26948,7 +27137,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2233"
+        "prisma/schema.prisma:2265"
        ]
       ]
      ]
@@ -27094,11 +27283,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ],
       [
@@ -27124,11 +27313,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ]
      ]
@@ -27161,7 +27350,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -27187,7 +27376,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -27292,7 +27481,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ],
       [
@@ -27318,7 +27507,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ]
      ]
@@ -27491,7 +27680,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ],
       [
@@ -27517,7 +27706,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ]
      ]
@@ -27551,7 +27740,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ],
       [
@@ -27577,7 +27766,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ]
      ]
@@ -27611,11 +27800,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ],
       [
@@ -27641,11 +27830,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ]
      ]
@@ -27679,11 +27868,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ],
       [
@@ -27709,11 +27898,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ]
      ]
@@ -27825,7 +28014,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2263"
+        "prisma/schema.prisma:2295"
        ]
       ]
      ]
@@ -27847,7 +28036,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2233"
+        "prisma/schema.prisma:2265"
        ]
       ]
      ]
@@ -31964,11 +32153,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ],
       [
@@ -31982,11 +32171,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ]
      ]
@@ -32008,7 +32197,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -32022,7 +32211,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ]
      ]
@@ -32044,7 +32233,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ],
       [
@@ -32058,7 +32247,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ]
      ]
@@ -32124,7 +32313,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ],
       [
@@ -32138,7 +32327,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ]
      ]
@@ -32160,7 +32349,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ],
       [
@@ -32174,7 +32363,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ]
      ]
@@ -32196,11 +32385,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ],
       [
@@ -32214,11 +32403,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ]
      ]
@@ -32240,11 +32429,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ],
       [
@@ -32258,11 +32447,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ]
      ]
@@ -32370,11 +32559,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ],
       [
@@ -32388,11 +32577,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ]
      ]
@@ -32414,7 +32603,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -32428,7 +32617,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ]
      ]
@@ -32467,7 +32656,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ],
       [
@@ -32481,7 +32670,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ]
      ]
@@ -32547,7 +32736,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ],
       [
@@ -32561,7 +32750,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ]
      ]
@@ -32583,7 +32772,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ],
       [
@@ -32597,7 +32786,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ]
      ]
@@ -32619,11 +32808,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ],
       [
@@ -32637,11 +32826,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ]
      ]
@@ -32663,11 +32852,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ],
       [
@@ -32681,11 +32870,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ]
      ]
@@ -32977,11 +33166,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ],
       [
@@ -32999,11 +33188,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ]
      ]
@@ -33029,7 +33218,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -33047,7 +33236,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ]
      ]
@@ -33073,7 +33262,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ],
       [
@@ -33091,7 +33280,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ]
      ]
@@ -33173,7 +33362,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ],
       [
@@ -33191,7 +33380,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ]
      ]
@@ -33217,7 +33406,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ],
       [
@@ -33235,7 +33424,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ]
      ]
@@ -33261,11 +33450,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ],
       [
@@ -33283,11 +33472,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ]
      ]
@@ -33313,11 +33502,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ],
       [
@@ -33335,11 +33524,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ]
      ]
@@ -33979,11 +34168,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ],
       [
@@ -33993,11 +34182,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1889"
        ]
       ]
      ]
@@ -34015,7 +34204,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ],
       [
@@ -34025,7 +34214,7 @@
        ],
        [
         "onDelete: Cascade (FileVersion → MediaAsset)",
-        "prisma/schema.prisma:1230"
+        "prisma/schema.prisma:1262"
        ]
       ]
      ]
@@ -34043,7 +34232,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ],
       [
@@ -34053,7 +34242,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1668"
+        "prisma/schema.prisma:1700"
        ]
       ]
      ]
@@ -34103,7 +34292,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ],
       [
@@ -34113,7 +34302,7 @@
        ],
        [
         "onDelete: Cascade (MediaPerson → MediaAsset)",
-        "prisma/schema.prisma:1160"
+        "prisma/schema.prisma:1192"
        ]
       ]
      ]
@@ -34131,7 +34320,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ],
       [
@@ -34141,7 +34330,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ]
       ]
      ]
@@ -34159,11 +34348,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ],
       [
@@ -34173,11 +34362,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1971"
+        "prisma/schema.prisma:2003"
        ]
       ]
      ]
@@ -34195,11 +34384,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ],
       [
@@ -34209,11 +34398,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1796"
+        "prisma/schema.prisma:1828"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1837"
+        "prisma/schema.prisma:1869"
        ]
       ]
      ]

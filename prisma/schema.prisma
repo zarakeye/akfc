@@ -159,6 +159,8 @@ model User {
   /// Créneaux dont il est l'instructeur attitré (1–N, Course.instructor). À sa
   /// suppression, le créneau retombe sur l'instructeur principal de la discipline.
   coursesAsInstructor       Course[]      @relation("CourseInstructor")
+  /// Créneaux qu'il suit comme élève (1–N, CourseEnrollment.user). Effacés avec le membre.
+  courseEnrollments         CourseEnrollment[]
   /// Séminaires dont il est l'animateur principal (1–N, Seminar.primaryAnimator).
   /// Bloquent sa suppression.
   seminarsAsPrimaryAnimator Seminar[]     @relation("SeminarPrimaryAnimator")
@@ -747,9 +749,39 @@ model Course {
   /// créneau retombe sur l'instructeur principal (SET NULL).
   instructor User? @relation("CourseInstructor", fields: [instructorId], references: [id])
 
+  /// Élèves inscrits (1–N, CourseEnrollment.course). Effacés avec le créneau.
+  enrollments CourseEnrollment[]
+
   @@unique([disciplineId, day, beginTime, audience])
   @@index([disciplineId])
   @@index([instructorId])
+}
+
+/// Inscription d'un membre, comme élève, à un créneau (Course). Saisie par un administrateur à la
+/// création du compte ou sur la fiche du membre. Sert d'indice à la majorité : un créneau pour
+/// enfants ou adolescents pré-coche « Mineur » à la création (le choix reste à l'administrateur).
+model CourseEnrollment {
+  /// Identifiant auto-incrémenté.
+  id Int @id @default(autoincrement())
+
+  /// Membre inscrit.
+  userId String
+
+  /// Créneau suivi.
+  courseId Int
+
+  /// Date de l'inscription sur le site.
+  createdAt DateTime @default(now())
+
+  /// Membre (N–1, User.courseEnrollments). Effacée avec lui (CASCADE).
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Créneau (N–1, Course.enrollments). Effacée avec lui (CASCADE).
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // Un membre au plus une fois par créneau.
+  @@unique([userId, courseId])
+  @@index([courseId])
 }
 
 /// Séminaire (« stage » dans l'interface) : manifestation ponctuelle et

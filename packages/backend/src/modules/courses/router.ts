@@ -8,6 +8,7 @@ import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaRe
 
 import { pageContentSchemaV1 } from "@akfc/contracts/page/index.ts";
 import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@akfc/contracts/time/hhmm.schema.ts";
+import type { EnrollableCourse } from "@akfc/contracts/courses/enrollment.ts";
 import { assertOwnAvatars } from "#modules/media/services/assertOwnAvatars.service.ts";
 import { assertPublicContentRights } from "#modules/mediaPeople/publicContentRights.service.ts";
 
@@ -142,6 +143,25 @@ export const courseRouter = router({
         { beginTime: "asc" },
       ],
     });
+  }),
+
+  /**
+   * Créneaux proposés à l'inscription d'un membre (admins) : tous, brouillons compris, avec le nom
+   * de leur discipline, triés par discipline, jour puis heure.
+   */
+  listForEnrollment: protectedProcedure.use(isAdmin).query(async ({ ctx }): Promise<EnrollableCourse[]> => {
+    const courses = await ctx.prisma.course.findMany({
+      select: {
+        id: true,
+        day: true,
+        beginTime: true,
+        endTime: true,
+        audience: true,
+        discipline: { select: { name: true } },
+      },
+      orderBy: [{ discipline: { name: "asc" } }, { day: "asc" }, { beginTime: "asc" }],
+    });
+    return courses.map(({ discipline, ...c }) => ({ ...c, disciplineName: discipline.name }));
   }),
 
   getById: publicProcedure

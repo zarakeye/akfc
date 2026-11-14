@@ -51,6 +51,20 @@ function toUserProfile(user: UserProfileRow) {
   } satisfies UserProfile;
 }
 
+/** Les créneaux demandés, sans doublon, après vérification qu'ils existent tous. */
+async function existingCourseIds(
+  prisma: { course: { count: (args: { where: { id: { in: number[] } } }) => Promise<number> } },
+  requested: number[],
+): Promise<number[]> {
+  const ids = [...new Set(requested)];
+  if (ids.length === 0) return ids;
+  const found = await prisma.course.count({ where: { id: { in: ids } } });
+  if (found !== ids.length) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Créneau inconnu : rechargez la page." });
+  }
+  return ids;
+}
+
 export const userRouter = router({
   getAll: protectedProcedure
     .use(isAdmin)
@@ -114,10 +128,13 @@ export const userRouter = router({
         groupIds: z.array(z.string().min(1)).min(1, "Choisissez au moins un groupe."),
         /** Majorité et, pour un mineur, date de naissance et parent référent (tous obligatoires). */
         legal: legalInfoInput,
+        /** Créneaux suivis comme élève (facultatif). */
+        courseIds: z.array(z.number().int().positive()).max(50).default([]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const groupIds = [...new Set(input.groupIds)];
+      const courseIds = await existingCourseIds(ctx.prisma, input.courseIds);
       const found = await ctx.prisma.memberGroup.count({ where: { id: { in: groupIds } } });
       if (found !== groupIds.length) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Groupe inconnu : rechargez la page." });
@@ -149,6 +166,7 @@ export const userRouter = router({
                 access: "EDITOR" as const,
               })),
             },
+            courseEnrollments: { create: courseIds.map((id) => ({ course: { connect: { id } } })) },
           },
           omit: { password: true },
         });
@@ -213,6 +231,39 @@ export const userRouter = router({
         data: legalInfoData(input.legal, u.email, { requireComplete: false }),
         select: { id: true },
       });
+      return { ok: true };
+    }),
+
+  /** Créneaux suivis par un membre comme élève (admins) : leurs identifiants. */
+  coursesOf: protectedProcedure
+    .use(isAdmin)
+    .input(z.object({ userId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.prisma.courseEnrollment.findMany({
+        where: { userId: input.userId },
+        select: { courseId: true },
+      });
+      return rows.map((r) => r.courseId);
+    }),
+
+  /**
+   * Remplace les créneaux suivis par un membre (admins). Les inscriptions gardées conservent leur
+   * date ; les autres sont retirées, les nouvelles ajoutées.
+   */
+  setCourses: protectedProcedure
+    .use(isAdmin)
+    .input(z.object({ userId: z.string().min(1), courseIds: z.array(z.number().int().positive()).max(50) }))
+    .mutation(async ({ ctx, input }) => {
+      const u = await ctx.prisma.user.findUnique({ where: { id: input.userId }, select: { id: true } });
+      if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "Compte introuvable." });
+      const courseIds = await existingCourseIds(ctx.prisma, input.courseIds);
+      await ctx.prisma.$transaction([
+        ctx.prisma.courseEnrollment.deleteMany({ where: { userId: input.userId, courseId: { notIn: courseIds } } }),
+        ctx.prisma.courseEnrollment.createMany({
+          data: courseIds.map((courseId) => ({ userId: input.userId, courseId })),
+          skipDuplicates: true,
+        }),
+      ]);
       return { ok: true };
     }),
 
