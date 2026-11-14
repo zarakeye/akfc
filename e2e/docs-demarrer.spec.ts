@@ -77,3 +77,11 @@ test("plus aucune arborescence en texte : le routage et le modèle passent par <
   await page.goto("/docs/dev/donnees/pourquoi-le-modele");
   await expect(page.getByRole("tree", { name: "Arborescence de akfc/" })).toContainText("schema.prisma");
 });
+
+test("le routage détaille dossiers, fichiers réservés (absents compris) et exports d'une page", async ({ page }) => {
+  await page.goto("/docs/dev/front/routage");
+  for (const cell of ["[...path]", "not-found.tsx", "loading.tsx", "generateMetadata", "favicon.ico"]) {
+    await expect(page.getByRole("cell", { name: cell, exact: true }), cell).toBeVisible();
+  }
+  await expect(page.getByText("{ path: [\"AKFC\", \"courses\", \"salut.jpg\"] }", { exact: false })).toBeVisible();
+});

@@ -14,9 +14,35 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 Dans l'App Router de Next.js, l'arborescence de `apps/web/src/app` **est** la carte du site. Il n'existe aucune liste de routes à maintenir : chaque dossier crée un segment d'URL, et quelques fichiers aux noms réservés disent ce que ce segment fait. Ajouter une page revient à créer un dossier et un fichier ; la retrouver, à lire son adresse.
 
-<DocsTable columnsJson='["Fichier","Rôle","Dans le projet"]' rowsJson='[["page.tsx","Rend une page : sans lui, le segment n’est pas une adresse visitable.","app/(public)/agenda/page.tsx répond à /agenda"],["layout.tsx","Enveloppe toutes les pages en dessous ; il n’est pas re-rendu quand on navigue entre elles.","app/(public)/layout.tsx : header, ruban des flashs info, footer"],["route.ts","Un point d’accès HTTP brut (GET, POST…) au lieu d’une page.","app/api/trpc/[trpc]/route.ts"],["[slug]","Un segment variable, reçu dans params.","/disciplines/tchoy-lee-fut"],["[...slug]","Un segment qui avale tout le reste du chemin.","/docs/dev/front/routage"],["sitemap.ts, robots.ts","Du code qui produit des fichiers.","/sitemap.xml, /robots.txt"]]' />
+Trois sortes de conventions se partagent ce rôle : le **nom d'un dossier** décide de l'adresse, le **nom d'un fichier** de ce qu'il fait, et ce qu'un fichier **exporte** de la façon dont Next le rend.
 
-Le premier niveau du dossier `app/` :
+### Les noms de dossiers
+
+Chaque exemple suit le même chemin : le fichier dans `app/`, l'adresse à laquelle il répond, et ce que le code reçoit dans `params`.
+
+<DocsTable columnsJson='["Forme du dossier","Ce qu’elle fait","Exemple : fichier → adresse → params"]' rowsJson='[["agenda","Un segment fixe de l’adresse.","(public)/agenda/page.tsx → /agenda → rien"],["[slug], [id]","Un segment variable : sa valeur arrive dans params, sous le nom écrit entre crochets.","(public)/disciplines/[slug]/page.tsx → /disciplines/tchoy-lee-fut → { slug: \"tchoy-lee-fut\" } ; (admin)/dashboard/users/[id]/page.tsx → /dashboard/users/<identifiant> → { id: \"<identifiant>\" }"],["[...path]","Attrape tout le reste du chemin, segment par segment, dans un tableau. Il en faut au moins un : /docs seul ne passe pas par docs/[...slug], d’où un docs/page.tsx à côté.","api/media/r2/[...path]/route.ts → /api/media/r2/AKFC/courses/salut.jpg → { path: [\"AKFC\", \"courses\", \"salut.jpg\"] } ; docs/[...slug]/page.tsx → /docs/dev/front/routage → { slug: [\"dev\", \"front\", \"routage\"] }"],["(public), (admin)","Un groupe : range des routes et leur donne un layout commun, sans apparaître dans l’adresse (section suivante).","(admin)/dashboard/users/page.tsx → /dashboard/users → rien"]]' />
+
+`params` est une **promesse** : une page l'attend (`const { slug } = await params`) avant de s'en servir. `api` n'a rien de spécial : c'est un dossier fixe comme `agenda`, que le projet réserve aux fichiers `route.ts`.
+
+### Les fichiers réservés
+
+Next ne lit, dans un dossier de `app/`, que les fichiers dont le nom est réservé. Le projet en utilise cinq ; trois autres, courants, n'existent pas encore dans le dépôt, et leur absence a des effets qu'il vaut mieux connaître.
+
+<DocsTable columnsJson='["Fichier","Rôle","Dans le projet"]' rowsJson='[["page.tsx","Rend une page : sans lui, le segment n’est pas une adresse visitable.","87 pages. (public)/agenda/page.tsx répond à /agenda."],["layout.tsx","Enveloppe toutes les pages en dessous ; il n’est pas re-rendu quand on navigue entre elles.","6 layouts : la racine, (public), (admin), dashboard, docs et gallery. (public)/layout.tsx porte le header, le ruban des flashs info et le footer."],["route.ts","Un point d’accès HTTP : il exporte des fonctions GET, POST… au lieu d’un composant, et renvoie une réponse brute.","13 routes. api/trpc/[trpc]/route.ts reçoit tous les appels tRPC ; api/calendar/events/[id]/route.ts renvoie un fichier .ics."],["sitemap.ts, robots.ts","Du code qui produit un fichier, à une adresse fixée par Next.","/sitemap.xml et /robots.txt, calculés depuis la base."],["favicon.ico","Posé dans app/, il devient l’icône de l’onglet, sans balise à écrire.","app/favicon.ico."],["loading.tsx","Affiché pendant que la page se prépare côté serveur.","Absent. À la navigation, la page précédente reste affichée jusqu’à ce que la suivante soit prête ; seule la barre de chargement du navigateur bouge."],["error.tsx","Rattrape une erreur pendant le rendu, et propose de réessayer, sans quitter le layout.","Absent. Une erreur remplace toute la page par la page d’erreur par défaut de Next, en anglais, sans header ni footer."],["not-found.tsx","Affiché pour une adresse inconnue, ou quand une page appelle notFound().","Absent. La page 404 par défaut de Next (« This page could not be found »), dans le layout racine seulement, donc sans le header du site."]]' />
+
+Les trois absents ne sont pas une décision : ce sont les réglages par défaut, jamais remplacés. Une 404 aux couleurs du club, avec le header et un lien vers l'accueil, ne demanderait qu'un fichier `not-found.tsx` dans `app/`.
+
+Tout autre fichier d'un dossier de `app/` est un module ordinaire, que Next ignore. `providers.tsx`, à la racine et dans `dashboard/`, n'a rien de réservé malgré son nom : c'est un composant client, importé par le layout voisin.
+
+### Ce qu'une page exporte
+
+Le fichier `page.tsx` peut exporter, en plus de son composant, quelques noms que Next lit lui-même :
+
+<DocsTable columnsJson='["Export","Ce que Next en fait","Dans le projet"]' rowsJson='[["default","Le composant de la page. Il peut être async : il s’exécute sur le serveur, lit la base, et reçoit params.","Toutes les pages. Celle d’une discipline lit la discipline par son slug (section « Les pages et l’API »)."],["metadata","Un objet fixe : titre, description, indexation, aperçu de partage.","11 fichiers, dont (public)/agenda/page.tsx et le layout de la documentation."],["generateMetadata","Les mêmes informations, calculées à partir de params et de la base.","8 pages. La fiche d’une discipline prend son nom pour titre, et demande aux moteurs de ne pas l’indexer si elle n’est pas publiée."],["dynamic = \"force-dynamic\"","Rend la page à chaque requête, jamais pendant la construction : son contenu vient de la base, qui change sans nouveau déploiement, et qui n’est pas joignable quand l’image est construite.","Le layout racine (donc tout le site), le sitemap, les pages légales, la page RGPD, la route tRPC."]]' />
+
+Un dernier outil n'est pas un export mais une fonction : `notFound()`, de `next/navigation`. Appelée dans une page, elle interrompt le rendu et affiche la 404. 19 pages s'en servent, dont celle d'une discipline, quand le slug n'existe pas ou que la discipline n'est pas encore publiée.
+
+### Le premier niveau de app/
 
 <Arbre racine="apps/web/src/" texte="
 app/layout.tsx                          # le layout RACINE, commun à tout
