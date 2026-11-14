@@ -13,6 +13,7 @@ import {
 } from "@akfc/contracts/legal/imageConsent.ts";
 import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import { deleteColumn } from "#features/admin/common/delete/index.ts";
+import { LegalAgeSortPanel } from "#features/admin/users/legal/LegalAgeSortPanel.tsx";
 
 type UserRow = { id: string; email: string; name: string; groups: string; majority: string; photos: string; proof: string; kind: string; supprimer: string };
 
@@ -148,6 +149,16 @@ export default function UsersTable(): JSX.Element {
 
   return (
     <div>
+      <LegalAgeSortPanel
+        comptes={all
+          .filter((u) => (showDemo || !u.isDemo) && u.legalAge === "UNKNOWN")
+          .map((u) => ({
+            id: u.id,
+            email: u.email,
+            name: [u.firstName, u.lastName].filter(Boolean).join(" ").trim(),
+            isDemo: u.isDemo,
+          }))}
+      />
       <DemoAccountsToggle count={demoCount} shown={showDemo} onToggle={() => setShowDemo((v) => !v)} />
       <Table
         columns={columns}

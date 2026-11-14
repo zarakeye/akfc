@@ -24,6 +24,8 @@ export const USERS = {
   // Un membre qui quitte le club : il a commenté, réagi et envoyé un fichier, puis son compte
   // est supprimé. À lui seul, puisque le test le supprime.
   partant: { id: "e2e-partant", email: "partant@e2e.test", firstName: "Kévin" },
+  // Majorité non renseignée, passé en majeur par le tri de la liste des utilisateurs. À lui seul.
+  majorite: { id: "e2e-majorite", email: "majorite@e2e.test", firstName: "Lucas" },
 };
 
 /** L'actualité publiée que commente le membre partant, et le fichier qu'il a envoyé. */

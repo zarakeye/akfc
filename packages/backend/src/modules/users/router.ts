@@ -216,6 +216,23 @@ export const userRouter = router({
       return { ok: true };
     }),
 
+  /**
+   * Tri des comptes existants (admins) : passe en MAJEURS les comptes choisis dont la majorité n'est
+   * pas renseignée. Les autres (déjà majeurs ou mineurs) ne sont pas touchés, même s'ils figurent
+   * dans la liste : un mineur ne redevient jamais majeur par erreur d'une sélection. Un mineur, lui,
+   * se renseigne fiche par fiche (parent référent, date de naissance) avec setLegalInfo.
+   */
+  markAdults: protectedProcedure
+    .use(isAdmin)
+    .input(z.object({ userIds: z.array(z.string().min(1)).min(1).max(500) }))
+    .mutation(async ({ ctx, input }) => {
+      const { count } = await ctx.prisma.user.updateMany({
+        where: { id: { in: input.userIds }, legalAge: "UNKNOWN" },
+        data: { legalAge: "ADULT", guardianName: null, guardianEmail: null, guardianRelation: null },
+      });
+      return { count };
+    }),
+
   /** Droit à l'image (admins) : autorisation recueillie par le club pour ce membre. */
   setImageConsent: protectedProcedure
     .use(isAdmin)
