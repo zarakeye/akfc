@@ -226,12 +226,12 @@ Un fichier déposé dans la bibliothèque n’est pas immédiatement utilisable 
 Deux gardes maintiennent la cohérence entre le statut et les pages :
 
 - **à l’enregistrement d’une page**, la synchronisation des références refuse tout média qui n’est pas publié (ci-dessus) ;
-- **au changement de statut**, `assertStatusChangeDoesntUnpublishReferencedAssets` refuse de remettre en attente un fichier qu’une page affiche encore, en nommant les pages concernées. Sans elle, un administrateur pourrait casser sans le savoir une page qui pointe vers ce fichier.
+- **au changement de statut**, `assertStatusChangeDoesntUnpublishReferencedAssets` refuse de remettre en attente un fichier qu’une page ou une galerie affiche encore, en nommant les pages concernées. Sans elle, un administrateur pourrait casser sans le savoir une page qui pointe vers ce fichier, ou retirer une photo d’une galerie sans un mot.
 
 La relation `PageMediaReference → MediaAsset` est en `onDelete: Restrict` : un fichier affiché ne peut pas non plus être supprimé.
 
 <Callout type="warning">
-Un fichier référencé par une page **ne peut ni quitter le statut publié, ni être supprimé**. Une limite connue : les galeries (`GalleryItem`) ne sont pas consultées par la garde de statut. Le statut et son ancien lien avec les dossiers de stockage relèvent de la partie « Stockage et médias ».
+Un fichier référencé par une page **ne peut ni quitter le statut publié, ni être supprimé** ; un fichier montré dans une galerie (`GalleryItem`) ne peut pas non plus quitter le statut publié. Le statut et son ancien lien avec les dossiers de stockage relèvent de la partie « Stockage et médias ».
 
 <Promesse vers="dev/stockage/enregistrer-ce-qui-est-arrive" section="En attente : une promesse faite à l’administrateur">
 Un fichier déposé naît **en attente** : il existe dans le stockage et en base, mais aucune page publique ne peut l’afficher tant qu’un administrateur ne l’a pas validé.

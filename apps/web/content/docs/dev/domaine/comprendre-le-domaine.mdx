@@ -133,7 +133,7 @@ L’origine n’a pas toujours été une entité : c’était un texte libre, ju
 **Un instructeur principal obligatoire.** C’est le responsable pédagogique de la discipline. Les créneaux peuvent avoir le leur ; à défaut, c’est lui qui s’applique (chapitre 2, « Les deux instructeurs d’un créneau »).
 
 <Callout type="tip">
-La discipline est l’**art** au sens conceptuel ; le cours est le **créneau** dans lequel cet art est enseigné. Une discipline peut n’avoir aucun cours actif et exister quand même, par exemple si le club arrête temporairement de l’enseigner. Un cours, à l’inverse, ne peut pas exister sans sa discipline : sa suppression est d’ailleurs bloquée tant qu’elle a des créneaux, des stages ou des événements.
+La discipline est l’**art** au sens conceptuel ; le cours est le **créneau** dans lequel cet art est enseigné. Une discipline peut n’avoir aucun cours actif et exister quand même, par exemple si le club arrête temporairement de l’enseigner. Un cours, à l’inverse, ne peut pas exister sans sa discipline : `discipline.delete` refuse d’ailleurs de supprimer une discipline tant qu’elle a des créneaux, des stages ou des événements.
 </Callout>
 
 ## Le cours : un créneau, pas une date
@@ -144,7 +144,7 @@ La discipline est l’**art** au sens conceptuel ; le cours est le **créneau** 
   filename="schema.prisma"
   snippetStart="model Course {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="9,12,16,20,24,47"
+  snippetHighlight="9,12,16,20,24,50"
   snippetTitle="Le modèle Course"
   fullFileTitle="Voir le fichier complet"
 />
@@ -163,7 +163,7 @@ Les horaires sont des entiers au format HHMM (`1830` pour 18h30), et non des `Da
 Une catégorie porte une **clé** choisie dans une liste fixe (`course`, `seminar`, `event`…), en plus de son libellé. Le libellé s’affiche et se renomme ; la clé ne change jamais, et c’est elle que le code compare.
 </Promesse>
 
-**`requisites`** est une liste de prérequis libres (« 14 ans révolus », « certificat médical ») et **`content`** la présentation complète du cours, au constructeur de pages.
+**`requisites`** est une liste de prérequis libres (« 14 ans révolus », « certificat médical ») et **`content`** la présentation complète du cours, au constructeur de pages. Un créneau a enfin ses élèves (`enrollments`, une ligne `CourseEnrollment` par membre inscrit) : le chapitre « Majorité, statut et cours », dans la partie sur les membres, y revient.
 
 ## Le stage : un contenant de séances
 
@@ -251,7 +251,7 @@ L’événement est **l’entité la plus libre** du domaine : pas obligatoireme
   filename="schema.prisma"
   snippetStart="model Post {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="6,9,12,21,28,32"
+  snippetHighlight="6,9,12,21,24,27"
   snippetTitle="Le modèle Post"
   fullFileTitle="Voir le fichier complet"
 />
@@ -270,13 +270,13 @@ L’actualité est l’**outil éditorial transversal** du club : indépendante 
 
 Les instructeurs, animateurs et organisateurs ne sont pas des entités à part : ce sont des membres (`User`), reliés par des relations nommées (`DisciplineInstructor`, `CourseInstructor`, `SeminarPrimaryAnimator`, `SeminarAnimators`, `EventOrganizer`). Un instructeur se connecte avec son compte de membre, et a son profil, sa photo, sa biographie.
 
-Il n’existe d’ailleurs pas de rôle « instructeur » en base : **l’instructeur se définit par ce qu’il anime**. Le sélecteur des formulaires d’administration (`user.getAssignableInstructors`) propose les membres du groupe Administrateurs, plus tous ceux qui ont déjà une responsabilité — instructeur d’une discipline ou d’un créneau, animateur d’un stage, organisateur d’un événement. Cette dernière condition manquait : un organisateur qui n’était ni administrateur ni instructeur disparaissait du sélecteur, et le formulaire d’édition de son événement affichait un choix vide.
+Le statut d’instructeur n’est pas non plus un champ de `User` : **être instructeur, c’est appartenir au groupe système « Instructeurs »** (`MemberGroup.systemKind`, vu dans la partie « Données (1) »). Le sélecteur des formulaires d’administration (`user.getAssignableInstructors`) propose les membres de ce groupe, plus, par sécurité, ceux qui ont déjà une responsabilité (instructeur d’une discipline ou d’un créneau, animateur d’un stage) et les organisateurs d’événements. Cette dernière condition est voulue : un organisateur n’est pas forcément instructeur, et sans elle il disparaîtrait du sélecteur, laissant un choix vide dans le formulaire d’édition de son événement. À l’inverse, un membre ne peut pas quitter le groupe Instructeurs tant qu’il est affecté à une discipline, un créneau ou un stage (`assertCanLeaveInstructors`).
 
 Ce que devient une responsabilité quand son titulaire part dépend de la relation :
 
-<DocsTable columnsJson='["Relation", "À la suppression du membre", "Pourquoi"]' rowsJson='[["Instructeur principal d’une discipline", "Refusée (Restrict)", "Une discipline sans responsable n’a pas de sens : il faut d’abord la confier à quelqu’un d’autre."], ["Animateur principal d’un stage", "Refusée (Restrict)", "Même raison : le stage perdrait son responsable."], ["Organisateur d’un événement", "Refusée (Restrict)", "Même raison."], ["Instructeur attitré d’un créneau", "Le créneau retombe sur l’instructeur de la discipline (SetNull)", "Le créneau a une valeur par défaut : rien n’est perdu."], ["Co-animateur d’un stage", "Retiré de la liste", "Le stage garde son animateur principal."], ["Auteur d’une actualité", "Refusée (Restrict)", "L’article perdrait sa signature."]]' />
+<DocsTable columnsJson='["Relation", "À la suppression du membre", "Pourquoi"]' rowsJson='[["Instructeur principal d’une discipline", "Refusée (Restrict)", "Une discipline sans responsable n’a pas de sens : il faut d’abord la confier à quelqu’un d’autre."], ["Animateur principal d’un stage", "Refusée (Restrict)", "Même raison : le stage perdrait son responsable."], ["Organisateur d’un événement", "Refusée (Restrict)", "Même raison."], ["Instructeur attitré d’un créneau", "Le créneau retombe sur l’instructeur de la discipline (SetNull)", "Le créneau a une valeur par défaut : rien n’est perdu."], ["Co-animateur d’un stage", "Retiré de la liste", "Le stage garde son animateur principal."], ["Élève inscrit à un créneau", "L’inscription est effacée (Cascade)", "Une inscription sans élève n’a pas de sens."], ["Auteur d’une actualité", "L’article reste, sans auteur (SetNull)", "L’actualité garde sa valeur pour le club ; « Ancien membre » s’affiche à la place de la signature."]]' />
 
-Supprimer le compte d’un instructeur n’efface donc jamais une discipline par accident.
+Supprimer le compte d’un instructeur n’efface donc jamais une discipline par accident, et le départ d’un auteur n’efface pas ses articles.
 
 ## Récapitulatif
 
@@ -286,7 +286,7 @@ Trois idées à garder de ce chapitre :
 
 1. **La discipline est conceptuelle, le cours est le créneau** : une distinction qui structure tout le reste.
 2. **Le stage et l’événement sont des contenants** : leurs dates vivent dans des séances.
-3. **Les personnes sont des membres** : leurs responsabilités sont des relations, et la suppression d’un membre responsable est refusée tant qu’il l’est.
+3. **Les personnes sont des membres** : leur statut d’instructeur est une appartenance à un groupe, leurs responsabilités sont des relations, et la suppression d’un membre responsable est refusée tant qu’il l’est.
 
 
 ## À suivre
