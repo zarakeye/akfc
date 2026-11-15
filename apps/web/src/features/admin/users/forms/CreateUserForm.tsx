@@ -11,6 +11,7 @@ import {
   type CreationLegalValue,
 } from "#features/admin/users/legal/CreationLegalFields.tsx";
 import { CoursesPicker, courseLabel } from "#features/admin/users/courses/CoursesPicker.tsx";
+import { TaughtCoursesPicker } from "#features/admin/users/courses/TaughtCoursesPicker.tsx";
 import { isMinorAudience } from "@akfc/contracts/courses/enrollment.ts";
 import { isAdultGroup } from "@akfc/contracts/groups/systemGroups.ts";
 
@@ -25,8 +26,10 @@ export interface CreateUserFormInput {
   legal: CreationLegalValue;
   /** Un groupe système est coché : majeur d'office, sans saisie. */
   adultByStatus: boolean;
-  /** Créneaux suivis comme élève (facultatif). */
+  /** Créneaux suivis (facultatif) ; pour un instructeur, sans être élève. */
   courseIds: number[];
+  /** Instructeur : les créneaux qu'il donne. */
+  taughtCourseIds: number[];
 }
 
 export interface CreateUserFormProps {
@@ -48,6 +51,7 @@ export function CreateUserForm({
   const [groupIds, setGroupIds] = useState<string[]>([]);
   const [legal, setLegal] = useState<CreationLegalValue>(EMPTY_CREATION_LEGAL);
   const [courseIds, setCourseIds] = useState<number[]>([]);
+  const [taughtCourseIds, setTaughtCourseIds] = useState<number[]>([]);
   // Créneaux pour enfants ou adolescents cochés : un indice de minorité, affiché sous les cours.
   const [minorCourses, setMinorCourses] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +62,8 @@ export function CreateUserForm({
   const statusGroups = (groups ?? []).filter(isAdultGroup);
   const otherGroups = (groups ?? []).filter((g) => !isAdultGroup(g)).sort((a, b) => a.name.localeCompare(b.name, "fr"));
   const adultByStatus = statusGroups.some((g) => groupIds.includes(g.id));
+  const instructor = statusGroups.some((g) => g.systemKind === "INSTRUCTORS" && groupIds.includes(g.id));
+  const taught = instructor ? taughtCourseIds : [];
   const toggleGroup = (id: string, on: boolean) =>
     setGroupIds((prev) => (on ? [...prev, id] : prev.filter((x) => x !== id)));
   const legalAge = adultByStatus ? "ADULT" : creationLegalAge(legal);
@@ -79,7 +85,14 @@ export function CreateUserForm({
     }
     setIsSubmitting(true);
     try {
-      await onSubmit({ email: email.trim(), groupIds, legal, adultByStatus, courseIds });
+      await onSubmit({
+        email: email.trim(),
+        groupIds,
+        legal,
+        adultByStatus,
+        courseIds: courseIds.filter((id) => !taught.includes(id)),
+        taughtCourseIds: taught,
+      });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -128,10 +141,23 @@ export function CreateUserForm({
         )}
       </fieldset>
 
+      {instructor && (
+        <fieldset className="flex flex-col gap-1 text-sm">
+          <legend className="mb-1 font-medium">Cours donnés</legend>
+          <TaughtCoursesPicker userId={null} value={taughtCourseIds} onChange={setTaughtCourseIds} />
+        </fieldset>
+      )}
+
       <fieldset className="flex flex-col gap-1 text-sm" data-tour="users.form.courses">
-        <legend className="mb-1 font-medium">Cours suivis</legend>
+        <legend className="mb-1 font-medium">{instructor ? "Autres cours suivis (facultatif)" : "Cours suivis"}</legend>
+        {instructor && (
+          <span className="text-xs text-muted-foreground">
+            Un instructeur suit d&apos;autres cours gratuitement, sans être compté comme élève.
+          </span>
+        )}
         <CoursesPicker
-          value={courseIds}
+          value={courseIds.filter((id) => !taught.includes(id))}
+          except={taught}
           exclusiveMinor={!adultByStatus}
           onChange={(ids, courses) => {
             setCourseIds(ids);

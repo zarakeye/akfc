@@ -225,10 +225,10 @@
    "formulaire signé",
    "formulaires signés"
   ],
-  "definition": "Le formulaire papier de droit à l'image, signé par le membre (ou son parent), que vous déposez sur sa fiche. C'est lui qui prouve l'accord.",
+  "definition": "Le récapitulatif PDF d'une autorisation de droit à l'image, validée en ligne par le membre majeur ou par le parent d'un mineur (ou, autrefois, un formulaire papier déposé). C'est lui qui prouve l'accord ; rien ne se dépose sur la fiche.",
   "definiEn": {
    "vers": "admin/gerer-un-membre",
-   "section": "Déposer un formulaire signé"
+   "section": "Les formulaires"
   }
  },
  {

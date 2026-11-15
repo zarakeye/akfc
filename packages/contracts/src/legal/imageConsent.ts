@@ -42,17 +42,9 @@ export const IMAGE_USAGE_LABEL: Record<ImageUsageValue, string> = {
   PRESS: "Presse locale",
 };
 
-/** Formulaire vierge à imprimer (apps/web/public). */
+/** Formulaire vierge, en consultation (apps/web/public ; modèle des récapitulatifs remplis). */
 export const IMAGE_CONSENT_BLANK_FORM_URL = "/documents/autorisation-droit-image.pdf";
 
-/** Formulaire signé : PDF ou photo (le HEIC des téléphones est converti en JPEG dans le navigateur). */
-export const IMAGE_CONSENT_FORM_MIME_EXT: Record<string, string> = {
-  "application/pdf": "pdf",
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
-export const IMAGE_CONSENT_FORM_MAX_BYTES = 15 * 1024 * 1024;
 
 /**
  * Version du texte d'autorisation (formulaire PDF et formulaire en ligne). Enregistrée avec chaque

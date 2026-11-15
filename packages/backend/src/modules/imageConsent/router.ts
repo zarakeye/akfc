@@ -1,14 +1,11 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "#trpc/core.ts";
 import { isAdmin } from "#trpc/middleware.ts";
 import { IMAGE_USAGE_VALUES } from "@akfc/contracts/legal/imageConsent.ts";
 import {
-  createImageConsentFormUpload,
   deleteImageConsentForm,
   imageConsentFormSelect,
-  registerImageConsentForm,
 } from "#modules/imageConsent/imageConsentForm.service.ts";
 import { confirmMemberConsent, onlineConsentState } from "#modules/imageConsent/imageConsentOnline.service.ts";
 import {
@@ -31,45 +28,10 @@ const choicesInput = z.object({
 const tokenInput = z.object({ token: z.string().min(1).max(100) });
 
 /**
- * Droit à l'image : formulaires signés. Dépôt et suppression réservés aux admins ; le membre
- * consulte les siens (`mine`). Le fichier est servi par /api/media/image-consent/[id].
+ * Droit à l'image : tout se fait en ligne (le membre majeur confirme, le parent d'un mineur valide).
+ * Les admins consultent et suppriment les formulaires ; le membre consulte les siens (`mine`). Le fichier est servi par /api/media/image-consent/[id].
  */
 export const imageConsentRouter = router({
-  /** Envoi direct sur R2 : URL signée (PUT) + chemin à renvoyer à `register`. */
-  createUpload: adminProcedure
-    .input(z.object({ userId: z.string().min(1), mimeType: z.string().min(1), bytes: z.number().int().positive() }))
-    .mutation(({ input }) => createImageConsentFormUpload(input)),
-
-  /** Après l'envoi : enregistre le formulaire ; le statut change si ses droits sont les plus récents. */
-  register: adminProcedure
-    .input(
-      z.object({
-        userId: z.string().min(1),
-        path: z.string().min(1),
-        fileName: z.string().max(300),
-        usages: z.array(z.enum(IMAGE_USAGE_VALUES)),
-        keepAfterLeave: z.boolean().nullable(),
-        signedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Midi UTC : le jour saisi reste le même jour dans tous les fuseaux d'Europe.
-      const signedAt = input.signedAt ? new Date(`${input.signedAt}T12:00:00Z`) : null;
-      if (signedAt && signedAt.getTime() > Date.now() + 24 * 3600 * 1000) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "La date de signature est dans le futur." });
-      }
-      return registerImageConsentForm({
-        prisma: ctx.prisma,
-        userId: input.userId,
-        uploadedById: ctx.sessionClient.user.id,
-        path: input.path,
-        fileName: input.fileName,
-        usages: input.usages,
-        keepAfterLeave: input.keepAfterLeave,
-        signedAt,
-      });
-    }),
-
   /** Formulaires d'un membre, du plus récent au plus ancien par date des droits (fiche admin). */
   listForUser: adminProcedure.input(z.object({ userId: z.string().min(1) })).query(async ({ ctx, input }) => {
     const forms = await ctx.prisma.imageConsentForm.findMany({

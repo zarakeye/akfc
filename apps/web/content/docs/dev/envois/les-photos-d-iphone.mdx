@@ -5,19 +5,12 @@ section: "Les envois de fichiers"
 order: 3
 entities:
   MediaAsset: [fullPath, mimeType]
-  ImageConsentForm: [mimeType, fileName, size]
 stories:
   - title: Un membre choisit une photo d’iPhone comme avatar
     actor: Membre
     steps:
       - label: La photo est convertie en JPEG sur son appareil, avant le recadrage ; il confirme, et l’envoi est autorisé
         call: avatar.createUpload
-        section: Où chaque formulaire convertit
-  - title: Un administrateur dépose un formulaire signé photographié au téléphone
-    actor: Administrateur
-    steps:
-      - label: La photo est convertie au moment de l’envoi, puis contrôlée comme un JPEG
-        call: imageConsent.createUpload
         section: Où chaque formulaire convertit
 ---
 
@@ -86,7 +79,7 @@ Une fonction qui rend `{ files, failed }` plutôt que de lever une erreur laisse
 
 Toutes les zones de dépôt ajoutent `HEIC_ACCEPT` à leurs types acceptés : sans lui, le composant de dépôt refuserait le fichier avant même qu’on puisse le convertir. Ensuite, chacune place la conversion au premier moment où elle a besoin d’**afficher** la photo.
 
-<DocsTable columnsJson='["Formulaire", "Quand", "Pourquoi à ce moment"]' rowsJson='[["Bibliothèque, espace personnel, dépôt des membres", "À l’entrée dans la liste", "La liste montre une vignette, et le recadrage doit lire l’image."], ["Avatar", "Avant d’ouvrir le recadrage", "Le recadrage dessine l’image dans un canvas : il lui faut un format que le navigateur décode."], ["Formulaire signé", "Au clic sur Envoyer", "Rien n’est affiché avant : on convertit au dernier moment, puis on contrôle le JPEG obtenu."]]' />
+<DocsTable columnsJson='["Formulaire", "Quand", "Pourquoi à ce moment"]' rowsJson='[["Bibliothèque, espace personnel, dépôt des membres", "À l’entrée dans la liste", "La liste montre une vignette, et le recadrage doit lire l’image."], ["Avatar", "Avant d’ouvrir le recadrage", "Le recadrage dessine l’image dans un canvas : il lui faut un format que le navigateur décode."]]' />
 
 Dans la bibliothèque, un lot sans HEIC entre immédiatement ; un lot qui en contient attend la conversion, avec un message (« Conversion de 3 photos iPhone (HEIC) en JPEG… ») :
 
@@ -98,19 +91,6 @@ Dans la bibliothèque, un lot sans HEIC entre immédiatement ; un lot qui en con
   snippetEnd="(fin du bloc)"
   snippetHighlight="3,5,7"
   snippetTitle="La bibliothèque convertit avant la liste"
-  fullFileTitle="Voir le fichier complet"
-/>
-
-Pour le formulaire signé, la conversion n’est pas un confort : le contrat (`IMAGE_CONSENT_FORM_MIME_EXT`) n’accepte que PDF, JPEG, PNG et WebP. Le HEIC est converti, **puis** contrôlé comme n’importe quelle photo :
-
-<CodeExample
-  language="tsx"
-  filepath="apps/web/src/features/admin/users/components/ImageConsentForms.tsx"
-  filename="ImageConsentForms.tsx"
-  snippetStart="let toSend = file;"
-  snippetLines="9"
-  snippetHighlight="2,4,5,8"
-  snippetTitle="Convertir, puis contrôler"
   fullFileTitle="Voir le fichier complet"
 />
 
@@ -141,12 +121,12 @@ L’image du projet se construit en plusieurs étapes, et l’une d’elles ajou
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi convertir ?", "Seul Safari affiche le HEIC ; envoyé tel quel, il serait illisible pour les autres visiteurs."], ["Où ?", "Sur l’appareil, en WebAssembly (libheif, paquet heic-to). Aucune photo ne passe par un service tiers."], ["Quel coût ?", "Environ 3 Mo, téléchargés seulement quand une photo HEIC est choisie."], ["Pourquoi une à une ?", "La mémoire des téléphones."], ["Et si la conversion échoue ?", "La photo est écartée, les autres partent, et le message propose de l’exporter en JPEG."], ["Quand chaque formulaire convertit-il ?", "Au premier moment où il doit afficher la photo ; le formulaire signé, à l’envoi."], ["Et les HEIC déjà stockés ?", "Le serveur les décode avec libheif pour fabriquer leurs vignettes."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi convertir ?", "Seul Safari affiche le HEIC ; envoyé tel quel, il serait illisible pour les autres visiteurs."], ["Où ?", "Sur l’appareil, en WebAssembly (libheif, paquet heic-to). Aucune photo ne passe par un service tiers."], ["Quel coût ?", "Environ 3 Mo, téléchargés seulement quand une photo HEIC est choisie."], ["Pourquoi une à une ?", "La mémoire des téléphones."], ["Et si la conversion échoue ?", "La photo est écartée, les autres partent, et le message propose de l’exporter en JPEG."], ["Quand chaque formulaire convertit-il ?", "Au premier moment où il doit afficher la photo."], ["Et les HEIC déjà stockés ?", "Le serveur les décode avec libheif pour fabriquer leurs vignettes."]]' />
 
 ## À suivre
 
 Les formulaires de lot et les photos d’iPhone partagent une hypothèse : le fichier est déjà là, sur l’appareil. Ce n’est pas toujours le cas. Un avatar peut naître devant la caméra, être recadré trois fois avant d’être confirmé, et doit apparaître partout dès qu’il l’est.
 
 <Callout type="tip">
-**Chapitre suivant : un fichier, un usage.** L’avatar et ses trois sources, une proposition locale qu’on confirme, une capture en miroir, une image qui ne clignote pas au remplacement ; le formulaire signé ; et le dépôt d’un PDF dans un espace de groupe.
+**Chapitre suivant : un fichier, un usage.** L’avatar et ses trois sources, une proposition locale qu’on confirme, une capture en miroir, une image qui ne clignote pas au remplacement ; et le dépôt d’un PDF dans un espace de groupe.
 </Callout>

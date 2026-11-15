@@ -1,6 +1,6 @@
 ---
-title: "Sept portes, trois familles"
-description: "Tous les endroits du site par où un fichier entre, et pourquoi ils ne passent pas tous par le même circuit : la famille commune (une destination, uploadToR2), les circuits dédiés de l’avatar et du formulaire de droit à l’image, les petits fichiers envoyés en base64 ; le contrôle des logos SVG, aligné entre le site et les partenaires ; et comment choisir sa famille pour un nouvel envoi."
+title: "Six portes, trois familles"
+description: "Tous les endroits du site par où un fichier entre, et pourquoi ils ne passent pas tous par le même circuit : la famille commune (une destination, uploadToR2), le circuit dédié de l’avatar, les petits fichiers envoyés en base64 ; le contrôle des logos SVG, aligné entre le site et les partenaires ; et comment choisir sa famille pour un nouvel envoi."
 section: "Les envois de fichiers"
 order: 1
 entities:
@@ -36,7 +36,7 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** La partie « Stockage et médias » a suivi un fichier côté serveur : la signature d’un envoi pour une destination, puis la relecture chez le stockage avant d’écrire la ligne `MediaAsset`. La partie « Le finder » a montré comment on le retrouve. Entre les deux, il manquait le navigateur.
 
-Un site associatif reçoit des fichiers de partout : des photos de stage, des plannings en PDF, un portrait, un formulaire signé photographié au téléphone, le logo d’un partenaire. Chacun arrive par un écran différent, écrit par quelqu’un d’autre, à un moment différent du projet. La tentation est de laisser chaque écran inventer son envoi. Le risque est connu : sept formulaires, sept façons d’oublier un contrôle.
+Un site associatif reçoit des fichiers de partout : des photos de stage, des plannings en PDF, un portrait, le logo d’un partenaire. Chacun arrive par un écran différent, écrit par quelqu’un d’autre, à un moment différent du projet. La tentation est de laisser chaque écran inventer son envoi. Le risque est connu : six formulaires, six façons d’oublier un contrôle.
 
 Cette partie fait le tour de ces portes, en quatre chapitres : ici, l’inventaire et les trois circuits qu’elles empruntent ; ensuite, les formulaires qui envoient des lots ; puis les photos d’iPhone, que seul Safari sait lire ; enfin, les envois d’un seul fichier pour un seul usage.
 
@@ -44,17 +44,17 @@ Cette partie fait le tour de ces portes, en quatre chapitres : ici, l’inventai
 
 <Parcours />
 
-## Sept portes 🚪
+## Six portes 🚪
 
-<DocsTable columnsJson='["Écran", "Qui", "Ce qui entre", "Circuit"]' rowsJson='[["Bibliothèque, Ajouter (/dashboard/library/add)", "Un administrateur", "Jusqu’à 20 fichiers : images, vidéos, sons, documents, archives.", "Commun"], ["Mes photos, sur le profil (/profil)", "Un instructeur titulaire", "Des photos, dans son espace personnel, sous quota.", "Commun"], ["Déposer (/deposer)", "Un membre connecté", "Des fichiers pour une discipline, un stage, un événement ou le dépôt commun.", "Commun"], ["Mes espaces (/mes-espaces)", "Un éditeur d’un espace de groupe", "Un PDF, qui devient un document du groupe.", "Commun"], ["Profil, avatar", "Chaque membre, pour lui-même", "Un portrait recadré, depuis un fichier ou la caméra.", "Dédié"], ["Fiche d’un membre, droit à l’image", "Un administrateur", "Le formulaire signé : un PDF ou une photo.", "Dédié"], ["Réglages et partenaires", "Un administrateur", "Le logo du site (SVG) et ceux des partenaires.", "Dans la requête"]]' />
+<DocsTable columnsJson='["Écran", "Qui", "Ce qui entre", "Circuit"]' rowsJson='[["Bibliothèque, Ajouter (/dashboard/library/add)", "Un administrateur", "Jusqu’à 20 fichiers : images, vidéos, sons, documents, archives.", "Commun"], ["Mes photos, sur le profil (/profil)", "Un instructeur titulaire", "Des photos, dans son espace personnel, sous quota.", "Commun"], ["Déposer (/deposer)", "Un membre connecté", "Des fichiers pour une discipline, un stage, un événement ou le dépôt commun.", "Commun"], ["Mes espaces (/mes-espaces)", "Un éditeur d’un espace de groupe", "Un PDF, qui devient un document du groupe.", "Commun"], ["Profil, avatar", "Chaque membre, pour lui-même", "Un portrait recadré, depuis un fichier ou la caméra.", "Dédié"], ["Réglages et partenaires", "Un administrateur", "Le logo du site (SVG) et ceux des partenaires.", "Dans la requête"]]' />
 
-Sept portes, et seulement trois circuits. Le banc d’essai de l’éditeur de texte (`/simpleEditor`) simule aussi un envoi d’image, mais il n’est jamais servi en production : ce n’est pas une porte.
+Six portes, et seulement trois circuits. Le formulaire de droit à l’image n’en est pas une : il se remplit en ligne, et c’est le serveur qui produit son PDF. Le banc d’essai de l’éditeur de texte (`/simpleEditor`) simule aussi un envoi d’image, mais il n’est jamais servi en production : ce n’est pas une porte.
 
 ## Trois familles
 
-<DocsTable columnsJson='["Famille", "Où va le fichier", "Ligne en base", "Pourquoi ce choix"]' rowsJson='[["La famille commune", "Dans la bibliothèque, sous un dossier que le serveur déduit d’une destination.", "Une ligne MediaAsset, d’abord en attente.", "Ce sont des médias : on les range, on les valide, on les place dans des pages."], ["Les circuits dédiés", "Sous une clé que le serveur calcule pour un membre précis, hors bibliothèque.", "Un champ du membre (avatar) ou une ligne ImageConsentForm.", "Ce ne sont pas des médias : un portrait, une preuve juridique. Personne ne doit pouvoir les déplacer dans le finder."], ["Dans la requête", "Dans une clé réservée du stockage (logo du site) ou dans la base (logos des partenaires).", "Aucune : un champ de réglage.", "Quelques fichiers de 512 Ko au plus : une URL signée coûterait plus qu’elle ne rapporte."]]' />
+<DocsTable columnsJson='["Famille", "Où va le fichier", "Ligne en base", "Pourquoi ce choix"]' rowsJson='[["La famille commune", "Dans la bibliothèque, sous un dossier que le serveur déduit d’une destination.", "Une ligne MediaAsset, d’abord en attente.", "Ce sont des médias : on les range, on les valide, on les place dans des pages."], ["Le circuit dédié", "Sous une clé que le serveur calcule pour un membre précis, hors bibliothèque.", "Un champ du membre (avatar).", "Ce n’est pas un média : un portrait. Personne ne doit pouvoir les déplacer dans le finder."], ["Dans la requête", "Dans une clé réservée du stockage (logo du site) ou dans la base (logos des partenaires).", "Aucune : un champ de réglage.", "Quelques fichiers de 512 Ko au plus : une URL signée coûterait plus qu’elle ne rapporte."]]' />
 
-Le critère n’est pas technique, il est métier : **qu’est-ce que ce fichier, pour le club ?** Un média vit dans la bibliothèque et suit son cycle (en attente, validé, placé). Un portrait appartient à un membre et à lui seul. Un formulaire signé est une pièce justificative, gardée cinq ans après un départ. Un logo est un réglage. Chaque nature a ses droits, sa place et sa durée de vie ; le circuit en découle.
+Le critère n’est pas technique, il est métier : **qu’est-ce que ce fichier, pour le club ?** Un média vit dans la bibliothèque et suit son cycle (en attente, validé, placé). Un portrait appartient à un membre et à lui seul. Un formulaire de droit à l’image, pièce justificative gardée cinq ans après un départ, n’entre même pas par une porte : le serveur le produit. Un logo est un réglage. Chaque nature a ses droits, sa place et sa durée de vie ; le circuit en découle.
 
 ## La famille commune : une destination
 
@@ -79,13 +79,13 @@ Le contrat des destinations en prévoit une septième, `new-discipline`, pour pr
 **Injecter les mutations.** Passer `createR2Upload.mutateAsync` en paramètre plutôt que l’appeler dans la fonction : c’est la même idée que l’adaptateur du finder. La séquence ne connaît pas tRPC ; elle connaît deux promesses. Un test pourrait les remplacer par des fonctions en mémoire.
 </Callout>
 
-## Les circuits dédiés
+## Le circuit dédié
 
-L’avatar et le formulaire signé envoient eux aussi leur fichier **directement** au stockage, avec une URL signée. Mais ils n’appellent pas `uploadToR2`, et ce n’est pas un oubli : leurs procédures n’ont pas la même forme.
+L’avatar envoie lui aussi son fichier **directement** au stockage, avec une URL signée. Mais il n’appelle pas `uploadToR2`, et ce n’est pas un oubli : ses procédures n’ont pas la même forme.
 
-<DocsTable columnsJson='["", "Famille commune", "Avatar", "Formulaire signé"]' rowsJson='[["Procédures", "storage.createR2Upload, storage.registerR2Upload", "avatar.createUpload, avatar.register", "imageConsent.createUpload, imageConsent.register"], ["Ce que reçoit la signature", "Une destination, un nom, un type, une taille.", "Un type et une taille. Le membre est lu dans la session.", "Le membre concerné, un type et une taille. Réservé aux administrateurs."], ["Ce que reçoit l’enregistrement", "Le chemin, la taille et le type attendus, la destination, le nom.", "Le chemin seul.", "Le chemin, le nom, les usages cochés, la date de signature, la conservation."], ["Clé calculée", "Un dossier de la bibliothèque et un nom nettoyé.", "Une clé par membre, écrasée à chaque changement.", "Une clé unique par formulaire, hors bibliothèque."]]' />
+<DocsTable columnsJson='["", "Famille commune", "Avatar"]' rowsJson='[["Procédures", "storage.createR2Upload, storage.registerR2Upload", "avatar.createUpload, avatar.register"], ["Ce que reçoit la signature", "Une destination, un nom, un type, une taille.", "Un type et une taille. Le membre est lu dans la session."], ["Ce que reçoit l’enregistrement", "Le chemin, la taille et le type attendus, la destination, le nom.", "Le chemin seul."], ["Clé calculée", "Un dossier de la bibliothèque et un nom nettoyé.", "Une clé par membre, écrasée à chaque changement."]]' />
 
-Les trois temps (autoriser, envoyer, enregistrer) sont donc écrits en clair dans `AvatarUploader` et dans `ImageConsentForms`. Une fonction générique de plus, paramétrée par les deux formes, aurait caché plus qu’elle n’aurait factorisé : chaque circuit dédié n’a qu’un appelant.
+Les trois temps (autoriser, envoyer, enregistrer) sont donc écrits en clair dans `AvatarUploader`. Une fonction générique de plus aurait caché plus qu’elle n’aurait factorisé : ce circuit n’a qu’un appelant.
 
 <Callout type="insight">
 Factoriser une séquence n’a de sens que si ses appelants partagent un contrat. Quatre formulaires qui parlent de destinations : une fonction. Deux écrans qui ont chacun leurs procédures : deux séquences de dix lignes, lisibles là où elles servent.
@@ -139,7 +139,7 @@ Les deux logos actuels du club passent le contrôle tels quels. Un test de bout 
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Combien de portes ?", "Sept écrans par où un fichier entre ; trois circuits."], ["Qu’est-ce qui choisit le circuit ?", "La nature du fichier pour le club : un média, un document attaché à une personne, un réglage."], ["Que donne un formulaire de la famille commune ?", "Une destination, un fichier et ses deux mutations. Jamais un chemin."], ["Pourquoi l’avatar n’utilise-t-il pas uploadToR2 ?", "Ses procédures n’ont pas la même forme : pas de destination, une clé par membre."], ["Pourquoi un logo passe-t-il dans la requête ?", "512 Ko au plus : le serveur lit le fichier entier et peut vérifier son contenu avant de l’écrire."], ["Qu’est-ce qui a changé ?", "Le logo du site passe désormais par validateLogo, comme ceux des partenaires."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Combien de portes ?", "Six écrans par où un fichier entre ; trois circuits."], ["Qu’est-ce qui choisit le circuit ?", "La nature du fichier pour le club : un média, un document attaché à une personne, un réglage."], ["Que donne un formulaire de la famille commune ?", "Une destination, un fichier et ses deux mutations. Jamais un chemin."], ["Pourquoi l’avatar n’utilise-t-il pas uploadToR2 ?", "Ses procédures n’ont pas la même forme : pas de destination, une clé par membre."], ["Pourquoi un logo passe-t-il dans la requête ?", "512 Ko au plus : le serveur lit le fichier entier et peut vérifier son contenu avant de l’écrire."], ["Qu’est-ce qui a changé ?", "Le logo du site passe désormais par validateLogo, comme ceux des partenaires."]]' />
 
 ## À suivre
 

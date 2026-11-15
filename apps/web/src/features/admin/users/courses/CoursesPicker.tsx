@@ -17,21 +17,30 @@ export function courseLabel(c: EnrollableCourse): string {
  *
  * `exclusiveMinor` (un simple membre) : un créneau pour mineurs coché, les autres se grisent, sauf
  * ceux « Tous publics ». Un adolescent ne suit pas un cours d'adultes.
+ *
+ * `except` : des créneaux à ne pas proposer (ceux qu'un instructeur donne : il ne les suit pas).
  */
 export function CoursesPicker({
   value,
   onChange,
   exclusiveMinor = false,
+  except = [],
 }: {
   value: number[];
   onChange: (ids: number[], courses: EnrollableCourse[]) => void;
   exclusiveMinor?: boolean;
+  except?: number[];
 }): JSX.Element {
-  const { data: courses, isLoading } = trpc.course.listForEnrollment.useQuery();
+  const { data: all, isLoading } = trpc.course.listForEnrollment.useQuery();
+  const courses = all?.filter((c) => !except.includes(c.id));
 
   if (isLoading) return <p className="text-xs text-muted-foreground">Chargement des cours…</p>;
   if (!courses || courses.length === 0) {
-    return <p className="text-xs text-muted-foreground">Aucun cours n&apos;est encore créé.</p>;
+    return (
+      <p className="text-xs text-muted-foreground">
+        {all && all.length > 0 ? "Aucun autre cours." : "Aucun cours n'est encore créé."}
+      </p>
+    );
   }
 
   const minorChosen =

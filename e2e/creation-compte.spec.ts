@@ -65,7 +65,11 @@ test("un cours pour ados grise les autres cours, sauf « Tous publics »", async
   await page.getByRole("checkbox", { name: new RegExp(`${nom} — Jeudi 18h00–19h30 · Ados`) }).check();
   await expect(adultes).toBeDisabled();
 
-  // Un instructeur, lui, peut suivre n'importe quel cours.
+  // Un instructeur, lui, peut suivre n'importe quel autre cours (il a aussi ses cours donnés).
   await page.getByRole("checkbox", { name: "Instructeur" }).check();
-  await expect(adultes).toBeEnabled();
+  await expect(
+    page
+      .getByRole("group", { name: "Autres cours suivis (facultatif)" })
+      .getByRole("checkbox", { name: new RegExp(`${nom} — Mardi 20h00–21h30 · Adultes`) }),
+  ).toBeEnabled();
 });

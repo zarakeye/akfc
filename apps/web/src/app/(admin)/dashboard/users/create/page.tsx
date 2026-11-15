@@ -23,6 +23,7 @@ export default function CreateUserPage(): JSX.Element {
       email: input.email,
       groupIds: input.groupIds,
       courseIds: input.courseIds,
+      taughtCourseIds: input.taughtCourseIds,
       legal: input.adultByStatus
         ? { ...toCreationLegalInput(input.legal), legalAge: "ADULT" }
         : toCreationLegalInput(input.legal),

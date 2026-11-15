@@ -130,6 +130,13 @@ function visibleTo(ctx: { sessionClient: { user?: { isAdmin?: boolean } | null }
 /*                                  ROUTER                                    */
 /* -------------------------------------------------------------------------- */
 
+const INSTRUCTOR_NAME_SELECT = { id: true, firstName: true, lastName: true, pseudo: true, email: true } as const;
+
+/** « Prénom Nom », sinon le pseudo, sinon l'adresse. */
+function instructorName(u: { firstName: string | null; lastName: string | null; pseudo: string | null; email: string }): string {
+  return [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.pseudo || u.email;
+}
+
 export const courseRouter = router({
   /**
    * Liste tous les cours, triés par discipline puis jour puis heure.
@@ -157,11 +164,21 @@ export const courseRouter = router({
         beginTime: true,
         endTime: true,
         audience: true,
-        discipline: { select: { name: true } },
+        instructor: { select: INSTRUCTOR_NAME_SELECT },
+        discipline: { select: { name: true, instructor: { select: INSTRUCTOR_NAME_SELECT } } },
       },
       orderBy: [{ discipline: { name: "asc" } }, { day: "asc" }, { beginTime: "asc" }],
     });
-    return courses.map(({ discipline, ...c }) => ({ ...c, disciplineName: discipline.name }));
+    return courses.map(({ discipline, instructor, ...c }) => {
+      const effective = instructor ?? discipline.instructor;
+      return {
+        ...c,
+        disciplineName: discipline.name,
+        instructorId: effective.id,
+        instructorName: instructorName(effective),
+        instructorFromDiscipline: instructor === null,
+      };
+    });
   }),
 
   getById: publicProcedure

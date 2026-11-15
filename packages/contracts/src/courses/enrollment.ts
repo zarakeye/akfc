@@ -18,4 +18,9 @@ export interface EnrollableCourse {
   beginTime: number;
   endTime: number;
   audience: string;
+  /** Instructeur effectif : celui du créneau, sinon celui de la discipline. */
+  instructorId: string | null;
+  instructorName: string | null;
+  /** L'instructeur vient de la discipline (le créneau n'en a pas d'attitré). */
+  instructorFromDiscipline: boolean;
 }

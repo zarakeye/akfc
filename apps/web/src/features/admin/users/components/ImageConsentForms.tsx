@@ -1,27 +1,21 @@
 "use client";
 
-import { useRef, useState, type JSX } from "react";
+import { useState, type JSX } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Trash2, Upload } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 
 import { trpc } from "#core/trpc/trpcClient.ts";
 import {
-  IMAGE_CONSENT_FORM_MAX_BYTES,
-  IMAGE_CONSENT_FORM_MIME_EXT,
   IMAGE_CONSENT_SOURCE_LABEL,
-  IMAGE_USAGE_LABEL,
   IMAGE_USAGE_VALUES,
   compareWishes,
   describeWishChanges,
   type ConsentChoices,
   type ImageUsageValue,
 } from "@akfc/contracts/legal/imageConsent.ts";
-import { heicFailureMessage, isHeicFile, toBrowserImages } from "#features/media/heic/browserImages.ts";
 import { ImageConsentFormViewer, type ViewableConsentForm } from "#features/image-consent/ImageConsentFormViewer.tsx";
 import { BlankConsentFormPreview } from "#features/image-consent/BlankConsentFormCard.tsx";
 import { formatDate, formatKeepAfterLeave, formatUsages } from "#features/image-consent/consentFormat.ts";
-
-type KeepChoice = "unset" | "remove" | "keep";
 
 /** Souhaits du membre gardés avec une validation par le parent (JSON), ou null. */
 function readWishes(v: unknown): ConsentChoices | null {
@@ -33,76 +27,24 @@ function readWishes(v: unknown): ConsentChoices | null {
 }
 
 /**
- * Fiche d'un utilisateur (admin) : formulaires de droit à l'image signés. Dépôt du PDF ou de la
- * photo du formulaire, avec les usages cochés « Oui » ; le statut du membre en découle. Le membre
- * retrouve le formulaire dans son profil.
+ * Fiche d'un utilisateur (admin) : ses formulaires de droit à l'image, du plus récent au plus ancien.
+ * Rien ne s'y dépose : tout se fait en ligne (le membre majeur confirme, le parent d'un mineur
+ * valide) ; les anciens formulaires papier restent consultables. Le membre les retrouve dans
+ * « Mon droit à l'image ».
  */
 export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
   const router = useRouter();
   const utils = trpc.useUtils();
   const list = trpc.imageConsent.listForUser.useQuery({ userId });
-  const createUpload = trpc.imageConsent.createUpload.useMutation();
-  const register = trpc.imageConsent.register.useMutation();
   const remove = trpc.imageConsent.remove.useMutation();
 
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [usages, setUsages] = useState<ImageUsageValue[]>([]);
-  const [keep, setKeep] = useState<KeepChoice>("unset");
-  const [signedAt, setSignedAt] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<"applied" | "archived" | null>(null);
   const [open, setOpen] = useState<ViewableConsentForm | null>(null);
   const [blankOpen, setBlankOpen] = useState(false);
 
   const refresh = async (): Promise<void> => {
     await Promise.all([utils.imageConsent.listForUser.invalidate({ userId }), utils.user.getAll.invalidate()]);
     router.refresh();
-  };
-
-  const reset = (): void => {
-    setFile(null);
-    setUsages([]);
-    setKeep("unset");
-    setSignedAt("");
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
-  const submit = async (): Promise<void> => {
-    if (!file) return;
-    setError(null);
-    setDone(null);
-    try {
-      let toSend = file;
-      if (isHeicFile(file)) {
-        setBusy("Conversion de la photo iPhone (HEIC) en JPEG…");
-        const r = await toBrowserImages([file]);
-        if (!r.files[0]) throw new Error(heicFailureMessage(r.failed));
-        toSend = r.files[0];
-      }
-      if (!IMAGE_CONSENT_FORM_MIME_EXT[toSend.type]) throw new Error("Format non accepté : PDF, JPEG, PNG ou WebP.");
-      if (toSend.size > IMAGE_CONSENT_FORM_MAX_BYTES) throw new Error("Fichier trop volumineux (15 Mo au plus).");
-      setBusy("Envoi…");
-      const auth = await createUpload.mutateAsync({ userId, mimeType: toSend.type, bytes: toSend.size });
-      const res = await fetch(auth.uploadUrl, { method: "PUT", headers: { "Content-Type": toSend.type }, body: toSend });
-      if (!res.ok) throw new Error(`Envoi refusé (HTTP ${res.status})`);
-      const saved = await register.mutateAsync({
-        userId,
-        path: auth.path,
-        fileName: toSend.name,
-        usages,
-        keepAfterLeave: keep === "unset" ? null : keep === "keep",
-        signedAt: signedAt || null,
-      });
-      reset();
-      setDone(saved.applied ? "applied" : "archived");
-      await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(null);
-    }
   };
 
   const del = async (id: string): Promise<void> => {
@@ -115,9 +57,6 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
       setError(err instanceof Error ? err.message : String(err));
     }
   };
-
-  const toggle = (u: ImageUsageValue): void =>
-    setUsages((prev) => (prev.includes(u) ? prev.filter((x) => x !== u) : [...prev, u]));
 
   return (
     <fieldset className="mt-6 rounded-lg border border-border p-4 text-sm" data-tour="users.image-consent.forms">
@@ -169,7 +108,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
         </ul>
       ) : (
         <p className="mb-4 text-muted-foreground">
-          Aucun formulaire déposé.{" "}
+          Aucun formulaire : l&apos;autorisation se donne en ligne.{" "}
           <button type="button" onClick={() => setBlankOpen(true)} className="text-emerald-700 hover:underline">
             Voir le formulaire vierge
           </button>
@@ -177,69 +116,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
         </p>
       )}
 
-      <div className="space-y-3 rounded-md bg-muted/40 p-3">
-        <p className="font-medium">Déposer un formulaire signé</p>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-          onChange={(e) => {
-            setFile(e.target.files?.[0] ?? null);
-            setDone(null);
-          }}
-          className="block w-full text-sm"
-        />
-        <div>
-          <p className="mb-1 text-muted-foreground">Usages cochés « Oui » sur le formulaire (aucun = refus) :</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            {IMAGE_USAGE_VALUES.map((u) => (
-              <label key={u} className="inline-flex items-center gap-1.5">
-                <input type="checkbox" checked={usages.includes(u)} onChange={() => toggle(u)} />
-                {IMAGE_USAGE_LABEL[u]}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-wrap items-end gap-4">
-          <label className="grid gap-1">
-            <span className="text-muted-foreground">Après le départ</span>
-            <select
-              value={keep}
-              onChange={(e) => setKeep(e.target.value as KeepChoice)}
-              className="rounded border px-2 py-1.5"
-            >
-              <option value="unset">Non précisé</option>
-              <option value="remove">Retrait sous un an</option>
-              <option value="keep">Usage continu autorisé</option>
-            </select>
-          </label>
-          <label className="grid gap-1">
-            <span className="text-muted-foreground">Date de signature</span>
-            <input
-              type="date"
-              value={signedAt}
-              onChange={(e) => setSignedAt(e.target.value)}
-              className="rounded border px-2 py-1"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => void submit()}
-            disabled={!file || busy !== null}
-            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-          >
-            <Upload className="h-4 w-4" />
-            {busy ?? "Déposer"}
-          </button>
-        </div>
-        {done === "applied" && <p className="text-emerald-700">Formulaire enregistré ; le statut du membre est à jour.</p>}
-        {done === "archived" && (
-          <p className="text-amber-700">
-            Formulaire archivé : signé avant les droits en vigueur, il ne change pas le statut du membre.
-          </p>
-        )}
-        {error && <p className="text-red-600">{error}</p>}
-      </div>
+      {error && <p className="text-red-600">{error}</p>}
 
       <ImageConsentFormViewer form={open} onClose={() => setOpen(null)} />
       {blankOpen && <BlankConsentFormPreview onClose={() => setBlankOpen(false)} />}

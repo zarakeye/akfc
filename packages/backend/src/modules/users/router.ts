@@ -53,6 +53,13 @@ function toUserProfile(user: UserProfileRow) {
   } satisfies UserProfile;
 }
 
+/** Les créneaux que donne un membre : attitré, ou instructeur de la discipline sans attitré. */
+function taughtByWhere(userId: string) {
+  return {
+    OR: [{ instructorId: userId }, { instructorId: null, discipline: { instructorId: userId } }],
+  } satisfies Prisma.CourseWhereInput;
+}
+
 /** Les créneaux demandés, sans doublon, après vérification qu'ils existent tous. */
 async function existingCourseIds(
   prisma: { course: { count: (args: { where: { id: { in: number[] } } }) => Promise<number> } },
@@ -134,13 +141,17 @@ export const userRouter = router({
         groupIds: z.array(z.string().min(1)),
         /** Majorité et, pour un mineur, date de naissance et parent référent (tous obligatoires). */
         legal: legalInfoInput,
-        /** Créneaux suivis comme élève (facultatif). */
+        /** Créneaux suivis (facultatif) ; pour un instructeur, sans être élève. */
         courseIds: z.array(z.number().int().positive()).max(50).default([]),
+        /** Instructeur : les créneaux qu'il donne (il en devient l'instructeur attitré). */
+        taughtCourseIds: z.array(z.number().int().positive()).max(50).default([]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const groupIds = [...new Set(input.groupIds)];
-      const courseIds = await existingCourseIds(ctx.prisma, input.courseIds);
+      const taughtCourseIds = await existingCourseIds(ctx.prisma, input.taughtCourseIds);
+      // Un créneau qu'il donne, il ne le « suit » pas.
+      const courseIds = (await existingCourseIds(ctx.prisma, input.courseIds)).filter((id) => !taughtCourseIds.includes(id));
       const chosenGroups = await ctx.prisma.memberGroup.findMany({
         where: { id: { in: groupIds } },
         select: { name: true, isAdminGroup: true, systemKind: true },
@@ -150,6 +161,9 @@ export const userRouter = router({
       }
       // Administrateurs, Instructeurs, Bureau : leurs membres sont majeurs d'office.
       const adultGroup = chosenGroups.find(isAdultGroup);
+      if (taughtCourseIds.length > 0 && !chosenGroups.some((g) => g.systemKind === "INSTRUCTORS")) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Seul un instructeur donne des cours : cochez le statut Instructeur." });
+      }
       // Mot de passe généré côté serveur (jamais saisi par l'admin), robuste par
       // construction, puis envoyé au SEUL membre (voir welcomeEmailWithPassword.ts).
       // isFirstLogin=true (défaut Prisma) : le site lui propose de compléter son profil.
@@ -192,6 +206,9 @@ export const userRouter = router({
           },
           omit: { password: true },
         });
+        if (taughtCourseIds.length > 0) {
+          await ctx.prisma.course.updateMany({ where: { id: { in: taughtCourseIds } }, data: { instructorId: user.id } });
+        }
       } catch (err) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
           throw new TRPCError({ code: "CONFLICT", message: "Un membre utilise déjà cette adresse e-mail." });
@@ -291,7 +308,8 @@ export const userRouter = router({
 
   /**
    * Remplace les créneaux suivis par un membre (admins). Les inscriptions gardées conservent leur
-   * date ; les autres sont retirées, les nouvelles ajoutées.
+   * date ; les autres sont retirées, les nouvelles ajoutées. Un instructeur ne « suit » pas un
+   * créneau qu'il donne : ceux-là sont ignorés.
    */
   setCourses: protectedProcedure
     .use(isAdmin)
@@ -299,13 +317,46 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const u = await ctx.prisma.user.findUnique({ where: { id: input.userId }, select: { id: true } });
       if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "Compte introuvable." });
-      const courseIds = await existingCourseIds(ctx.prisma, input.courseIds);
+      const taught = await ctx.prisma.course.findMany({ where: taughtByWhere(input.userId), select: { id: true } });
+      const courseIds = (await existingCourseIds(ctx.prisma, input.courseIds)).filter(
+        (id) => !taught.some((t) => t.id === id),
+      );
       await ctx.prisma.$transaction([
         ctx.prisma.courseEnrollment.deleteMany({ where: { userId: input.userId, courseId: { notIn: courseIds } } }),
         ctx.prisma.courseEnrollment.createMany({
           data: courseIds.map((courseId) => ({ userId: input.userId, courseId })),
           skipDuplicates: true,
         }),
+      ]);
+      return { ok: true };
+    }),
+
+  /**
+   * Les créneaux qu'un instructeur donne (admins) : il devient l'instructeur ATTITRÉ des créneaux
+   * cochés (à la place de celui qui l'était) ; décoché, un créneau dont il était l'attitré revient
+   * à l'instructeur de sa discipline. Seul un membre du groupe Instructeurs donne des cours. S'il
+   * suivait l'un de ces créneaux, il ne le suit plus : il le donne.
+   */
+  setTaughtCourses: protectedProcedure
+    .use(isAdmin)
+    .input(z.object({ userId: z.string().min(1), courseIds: z.array(z.number().int().positive()).max(50) }))
+    .mutation(async ({ ctx, input }) => {
+      const u = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { memberGroupMemberships: { where: { group: { systemKind: "INSTRUCTORS" } }, select: { groupId: true } } },
+      });
+      if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "Compte introuvable." });
+      if (u.memberGroupMemberships.length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Seul un membre du groupe Instructeurs donne des cours." });
+      }
+      const courseIds = await existingCourseIds(ctx.prisma, input.courseIds);
+      await ctx.prisma.$transaction([
+        ctx.prisma.course.updateMany({
+          where: { instructorId: input.userId, id: { notIn: courseIds } },
+          data: { instructorId: null },
+        }),
+        ctx.prisma.course.updateMany({ where: { id: { in: courseIds } }, data: { instructorId: input.userId } }),
+        ctx.prisma.courseEnrollment.deleteMany({ where: { userId: input.userId, courseId: { in: courseIds } } }),
       ]);
       return { ok: true };
     }),

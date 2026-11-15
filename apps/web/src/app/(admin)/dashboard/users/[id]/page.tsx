@@ -7,7 +7,6 @@ import { ImageRightsSection } from "#features/admin/users/components/ImageRights
 import { LegalStatusControl } from "#features/admin/users/legal/LegalStatusControl.tsx";
 import { CoursesControl } from "#features/admin/users/courses/CoursesControl.tsx";
 import { ADULT_GROUP_WHERE } from "@akfc/backend/modules/memberGroups/systemGroups.service.ts";
-import { AUDIENCE_LABELS, DAY_LABELS, formatTime } from "#lib/format/index.ts";
 
 /** Présentation admin d'un utilisateur — `/(admin)/dashboard/users/[id]` (lecture seule). */
 export default async function UserPresentationPage({
@@ -25,17 +24,12 @@ export default async function UserPresentationPage({
         select: { group: { select: { name: true } } },
         take: 1,
       },
-      coursesAsInstructor: {
-        select: { day: true, beginTime: true, endTime: true, audience: true, discipline: { select: { name: true } } },
-        orderBy: [{ day: "asc" }, { beginTime: "asc" }],
-      },
     },
   });
   if (!user) notFound();
-  const taught = user.coursesAsInstructor.map(
-    (c) =>
-      `${c.discipline.name} — ${DAY_LABELS[c.day] ?? c.day} ${formatTime(c.beginTime)}–${formatTime(c.endTime)} · ${AUDIENCE_LABELS[c.audience] ?? c.audience}`,
-  );
+  // Instructeur : membre du groupe système Instructeurs (il donne des cours, il n'y est pas élève).
+  const isInstructor =
+    (await prisma.memberGroupMembership.count({ where: { userId: user.id, group: { systemKind: "INSTRUCTORS" } } })) > 0;
 
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
@@ -73,7 +67,7 @@ export default async function UserPresentationPage({
           guardianPhone: user.guardianPhone ?? "",
         }}
       />
-      <CoursesControl userId={user.id} taught={taught} />
+      <CoursesControl userId={user.id} isInstructor={isInstructor} />
       <ImageRightsSection
         userId={user.id}
         consent={user.imageConsent}

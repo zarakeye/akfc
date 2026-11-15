@@ -1,20 +1,20 @@
 ---
 title: "Le droit à l’image"
-description: "L’autorisation d’utiliser l’image d’un membre, usage par usage : un formulaire signé déposé par un administrateur, rangé hors de la bibliothèque et servi à ses seuls ayants droit, un statut qui en découle, un historique qui fait preuve, et une preuve gardée cinq ans après le départ."
+description: "L’autorisation d’utiliser l’image d’un membre, usage par usage : des formulaires validés en ligne, rangés hors de la bibliothèque et servi à ses seuls ayants droit, un statut qui en découle, un historique qui fait preuve, et une preuve gardée cinq ans après le départ."
 section: "Légal (2) : les données et l’image des membres"
 order: 2
 entities:
   ImageConsentForm: [userId, memberName, usages, keepAfterLeave, signedAt, storageKey, source, detachedAt, uploadedById]
   User: [imageConsent, imageConsentAt]
 stories:
-  - title: Le club enregistre une autorisation signée
-    actor: Administrateur
+  - title: Le club garde une autorisation
+    actor: Membre majeur (ou parent d'un mineur)
     steps:
-      - label: Depuis la fiche du membre, il demande une autorisation d'envoi pour le formulaire scanné
-        call: imageConsent.createUpload
-        section: Un formulaire signé, déposé par un administrateur
-      - label: Le formulaire est vérifié et enregistré avec ses usages ; s'il porte les droits les plus récents, le statut du membre en découle, dans la même transaction
-        call: imageConsent.register
+      - label: Il valide ses choix en ligne ; un récapitulatif PDF est rangé hors de la bibliothèque, avec ses usages
+        call: imageConsent.confirmMine
+        section: Où les formulaires sont rangés
+      - label: Ses droits étant les plus récents, le statut du membre en découle, dans la même transaction
+        call: imageConsent.confirmMine
         section: Un statut qui découle du formulaire
   - title: Le membre consulte son autorisation
     actor: Membre connecté
@@ -38,17 +38,17 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Une purge tient chaque nuit les durées annoncées ; les comptes ne sont jamais supprimés sans décision ; chaque membre exporte ses données.
 
-Le club prend des photos et des vidéos pendant les cours et les stages. Un membre reconnaissable sur une image a son mot à dire sur sa diffusion, et pas d’un bloc : il peut accepter la galerie des membres et refuser les réseaux sociaux. Son accord doit être **écrit**, signé (par un parent pour un mineur), et le club doit pouvoir le **prouver** (article 7.1 du RGPD). Le site ne remplace pas la signature : il conserve le document signé, en tire un statut, et le rend consultable au membre.
+Le club prend des photos et des vidéos pendant les cours et les stages. Un membre reconnaissable sur une image a son mot à dire sur sa diffusion, et pas d’un bloc : il peut accepter la galerie des membres et refuser les réseaux sociaux. Son accord doit être **écrit**, signé (par un parent pour un mineur), et le club doit pouvoir le **prouver** (article 7.1 du RGPD). Le site recueille cet accord en ligne, en garde le document, en tire un statut, et le rend consultable au membre.
 
 ## Les parcours du chapitre
 
-Trois parcours traversent ce chapitre : le dépôt d’un formulaire signé, la consultation par le membre, et ce que devient la preuve après son départ.
+Trois parcours traversent ce chapitre : l’enregistrement d’une autorisation, la consultation par le membre, et ce que devient la preuve après son départ.
 
 <Parcours />
 
 ## Des usages choisis un par un 📸
 
-Le formulaire papier propose une ligne Oui / Non par usage. Le site reprend exactement ces lignes, dans le même ordre, depuis une description partagée par le backend et le front :
+Le formulaire du club propose une ligne Oui / Non par usage. Le site reprend exactement ces lignes, dans le même ordre, depuis une description partagée par le backend et le front :
 
 <CodeExample
   language="ts"
@@ -65,11 +65,9 @@ Le tableau `as const` donne à la fois la liste (pour les cases à cocher, dans 
 
 Le formulaire vierge est un PDF du site. Le membre le trouve sur la page « Mon droit à l’image » (`/profil/droit-a-l-image`, ouverte depuis le menu du compte ou le profil), avec une explication : l’autorisation est facultative, chaque usage se choisit, et elle se donne en ligne (chapitre suivant). Le formulaire vierge s’y lit, sans bouton Télécharger ni Imprimer : seuls les formulaires validés se téléchargent. Le serveur s’en sert aussi comme modèle des récapitulatifs qu’il remplit. Il demande aussi ce que deviennent les images **après le départ** du membre : le club peut continuer à utiliser celles déjà prises, ou les retire sous un an. Le choix est enregistré tel quel (`keepAfterLeave`), avec une troisième valeur, `null`, pour un formulaire d’une version qui ne posait pas la question.
 
-## Un formulaire signé, déposé par un administrateur
+## Où les formulaires sont rangés
 
-Seul un administrateur dépose un formulaire, depuis la fiche du membre : le fichier (PDF ou photo), les usages cochés « Oui », le choix après le départ et la date de signature. Une photo prise avec un téléphone en HEIC est convertie en JPEG dans le navigateur avant l’envoi.
-
-L’envoi suit le circuit signé du stockage : le serveur délivre une URL valable cinq minutes, le navigateur envoie le fichier directement, puis le serveur enregistre. Mais la clé n’est **pas** dans la bibliothèque :
+Chaque autorisation validée, par le membre majeur ou par le parent d’un mineur (chapitre suivant), produit un récapitulatif PDF, rangé avec ses usages. Les formulaires papier qu’un administrateur déposait avant que tout passe en ligne restent, marqués « papier » (`source: PAPER`) ; on n’en dépose plus : seule compte la volonté que le membre, ou son parent, exprime lui-même. Aucun de ces fichiers n’est dans la bibliothèque :
 
 <CodeExample
   language="ts"
@@ -86,16 +84,6 @@ L’envoi suit le circuit signé du stockage : le serveur délivre une URL valab
 
 ## Un statut qui découle du formulaire
 
-<CodeWalkthrough
-  language="ts"
-  filepath="packages/backend/src/modules/imageConsent/imageConsentForm.service.ts"
-  filename="imageConsentForm.service.ts"
-  snippetStart="export async function registerImageConsentForm(params: {"
-  snippetEnd="(fin du bloc)"
-  title="registerImageConsentForm — vérifier, enregistrer, déduire"
-  stepsJson='[{"title": "Dans l’espace de CE membre", "body": "Le chemin renvoyé par le navigateur doit être dans le dossier du membre visé, sans `..`, avec une extension acceptée (qui donne le type attendu). Le serveur ne croit pas deux informations séparées (le membre, le chemin) qui devraient concorder : il vérifie qu’elles concordent.", "scope": "12-16", "focus": "14-14"}, {"title": "Le fichier, tel que le stockage l’a reçu", "body": "Présent, d’une taille raisonnable, du type exact attendu — lus chez le stockage. Un fichier refusé est supprimé.", "scope": "17-25", "focus": "22-23"}, {"title": "Le nom du membre, copié", "body": "Le nom est copié dans le formulaire (`memberName`) : après le départ du membre, le formulaire détaché doit encore dire de qui il est la preuve. La même lecture rapporte la date des droits en vigueur (`imageConsentAt`).", "scope": "27-37", "focus": "36-36"}, {"title": "Des droits plus récents, ou une archive", "body": "Un formulaire donne ses droits à sa date de **signature** (à défaut, le jour du dépôt). Il ne change le statut que si cette date n’est pas antérieure aux droits en vigueur. Un formulaire de mars, retrouvé et déposé en octobre après une confirmation en ligne de septembre, est gardé comme preuve, sans rien changer.", "scope": "38-41", "focus": "41-41"}, {"title": "Le formulaire, et le statut s’il change", "body": "La création du formulaire et la mise à jour du statut se font dans une même transaction ; la mise à jour n’y figure que si les droits sont les plus récents. `imageConsentAt` reçoit la date des droits, pas l’heure du dépôt : c’est elle que le prochain dépôt comparera.", "scope": "42-67", "focus": "62-62"}, {"title": "La boîte du club prévenue — si quelque chose a changé", "body": "Un formulaire archivé ne change rien : pas d’avis. Sinon un avis, avec les usages du formulaire précédent (par date des droits) : un RETRAIT d’autorisation (une photo publique à dépublier) se voit d’un coup d’œil. Son échec n’annule rien. `applied` dit à l’écran d’administration lequel des deux messages afficher.", "scope": "68-77", "focus": "68-68"}]'
-/>
-
 Chaque membre a un statut, `imageConsent` : **Non recueillie**, **Accordée** ou **Refusée**. Il n’est pas saisi à côté du formulaire, il en est **déduit** :
 
 <CodeExample
@@ -109,11 +97,11 @@ Chaque membre a un statut, `imageConsent` : **Non recueillie**, **Accordée** ou
   fullFileTitle="Voir le fichier complet"
 />
 
-Accordée dès qu’un usage est autorisé, refusée sinon. Les anciens formulaires ne sont pas remplacés : un membre qui change d’avis remet un nouveau formulaire, qui s’ajoute à l’historique. Les précédents restent comme preuve de ce qui était autorisé à leur date.
+Accordée dès qu’un usage est autorisé, refusée sinon. Les anciens formulaires ne sont pas remplacés : un membre qui change d’avis valide de nouveaux choix, qui s’ajoutent à l’historique. Les précédents restent comme preuve de ce qui était autorisé à leur date.
 
 La règle du club tient en une phrase : **les droits ne changent que si des droits plus récents sont enregistrés**. « Plus récent » se lit à la date des droits — la signature d’un formulaire papier, la confirmation d’un formulaire en ligne, la saisie d’un administrateur — et jamais à la date du dépôt :
 
-<DocsTable columnsJson='["Ce qui arrive", "Le statut"]' rowsJson='[["Un formulaire signé après les droits en vigueur est déposé", "Change, et prend la date de signature."], ["Un formulaire signé AVANT les droits en vigueur est déposé (retrouvé dans un classeur, par exemple)", "Ne change pas : le formulaire est archivé comme preuve ; l’administrateur en est averti."], ["Un formulaire est supprimé (déposé sur la mauvaise fiche…)", "Ne change pas. Si le statut était faux, l’administrateur le corrige sur la fiche, où il peut le fixer à la main."], ["Le membre confirme en ligne (plus loin, chapitre 4)", "Change : une confirmation est toujours datée du jour, donc la plus récente."]]' />
+<DocsTable columnsJson='["Ce qui arrive", "Le statut"]' rowsJson='[["Le membre, ou son parent, valide en ligne (chapitre suivant)", "Change : une validation est toujours datée du jour, donc la plus récente."], ["Un ancien formulaire papier, signé AVANT les droits en vigueur", "N’a pas changé le statut : il est resté comme preuve."], ["Un formulaire est supprimé (posé sur la mauvaise fiche…)", "Ne change pas. Si le statut était faux, l’administrateur le corrige sur la fiche, où il peut le fixer à la main."]]' />
 
 Les listes de formulaires suivent le même ordre (`byEffectiveDesc`) : sur la fiche comme dans le profil, le premier est celui dont les droits sont les plus récents.
 
@@ -129,10 +117,10 @@ Les listes de formulaires suivent le même ordre (`byEffectiveDesc`) : sur la fi
 />
 
 <Callout type="info">
-Une règle qui dépend du temps se décide sur la date **de ce qu’elle décrit**, pas sur la date à laquelle le site l’apprend. Un formulaire de mars déposé en octobre décrit le mois de mars.
+Une règle qui dépend du temps se décide sur la date **de ce qu’elle décrit**, pas sur la date à laquelle le site l’apprend. Un formulaire signé en mars et enregistré en octobre décrit le mois de mars.
 </Callout>
 
-<DocsTable columnsJson='["Où", "Ce qu’on y voit"]' rowsJson='[["Table des utilisateurs (admin)", "Une colonne « Photos » : le statut de chaque membre, en couleur."], ["Fiche du membre (admin)", "Le statut, modifiable ; les formulaires déposés, avec aperçu, et le dépôt d’un nouveau."], ["Profil du membre", "Son statut, les usages autorisés par le dernier formulaire, ses formulaires (aperçu), le formulaire vierge, et la confirmation en ligne s’il est majeur (plus loin, chapitre 4)."]]' />
+<DocsTable columnsJson='["Où", "Ce qu’on y voit"]' rowsJson='[["Table des utilisateurs (admin)", "Une colonne « Photos » : le statut de chaque membre, en couleur."], ["Fiche du membre (admin)", "Le statut, modifiable ; les formulaires, avec aperçu ; aucun dépôt : tout se fait en ligne."], ["Profil du membre", "Son statut, les usages autorisés par le dernier formulaire, ses formulaires (aperçu, téléchargement), le formulaire vierge à lire, et la validation en ligne (chapitre suivant)."]]' />
 
 <Callout type="warning">
 Le statut **informe**, il ne bloque rien. La visibilité d’une photo se décide par galerie (publique, ou réservée aux membres connectés), et le site ne sait pas qui figure sur une image. C’est à l’administrateur qui publie de consulter la colonne « Photos » avant de rendre une galerie publique.
@@ -153,7 +141,7 @@ Un formulaire signé n’a ni URL publique ni URL signée transmissible. Une rou
   fullFileTitle="Voir le fichier complet"
 />
 
-Tout autre membre reçoit 404, comme si le formulaire n’existait pas. La réponse porte `Cache-Control: private, no-store` et `nosniff` ; les types acceptés au dépôt (PDF, JPEG, PNG, WebP) s’affichent sans risque. Les procédures qui listent les formulaires ne renvoient jamais la clé de stockage :
+Tout autre membre reçoit 404, comme si le formulaire n’existait pas. La réponse porte `Cache-Control: private, no-store` et `nosniff` ; les types rangés (PDF, et JPEG, PNG ou WebP pour d’anciens formulaires papier photographiés) s’affichent sans risque. Les procédures qui listent les formulaires ne renvoient jamais la clé de stockage :
 
 <CodeExample
   language="ts"
@@ -202,11 +190,11 @@ Le club ne prouve rien avec un statut coché : il prouve avec le document signé
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment le membre donne-t-il son accord ?", "Par un formulaire signé, usage par usage, remis au club ; un administrateur le dépose sur sa fiche (ou, majeur, il confirme en ligne : chapitre 4)."], ["Où est rangé le fichier ?", "Sous _private/image-consent/, hors de l’application ; servi par une route au membre concerné et aux administrateurs, 404 pour les autres."], ["D’où vient le statut ?", "Du formulaire déposé, dans la même transaction, si ses droits sont les plus récents : accordée dès qu’un usage est autorisé, refusée sinon."], ["Un vieux formulaire déposé change-t-il le statut ?", "Non : les droits ne changent que pour des droits plus récents (date de signature, pas de dépôt) ; il est archivé comme preuve. Une suppression ne change rien non plus."], ["Le statut empêche-t-il de publier une photo ?", "Non : il informe l’administrateur, qui décide de la visibilité de chaque galerie."], ["Que deviennent les formulaires au départ du membre ?", "Détachés du compte supprimé, gardés cinq ans comme preuve, puis purgés (fichier d’abord)."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment le membre donne-t-il son accord ?", "En ligne, usage par usage : majeur, il confirme lui-même ; mineur, son parent valide (chapitre suivant). Un administrateur ne dépose plus de formulaire papier."], ["Où est rangé le fichier ?", "Sous _private/image-consent/, hors de l’application ; servi par une route au membre concerné et aux administrateurs, 404 pour les autres."], ["D’où vient le statut ?", "Du formulaire validé, dans la même transaction, si ses droits sont les plus récents : accordée dès qu’un usage est autorisé, refusée sinon."], ["Un vieux formulaire déposé change-t-il le statut ?", "Non : les droits ne changent que pour des droits plus récents (date de signature, pas de dépôt) ; il est archivé comme preuve. Une suppression ne change rien non plus."], ["Le statut empêche-t-il de publier une photo ?", "Non : il informe l’administrateur, qui décide de la visibilité de chaque galerie."], ["Que deviennent les formulaires au départ du membre ?", "Détachés du compte supprimé, gardés cinq ans comme preuve, puis purgés (fichier d’abord)."]]' />
 
 ## À suivre
 
-Le formulaire papier reste la voie de tous. Un membre majeur peut aussi donner son accord lui-même, depuis la même page : le site doit alors produire ce que produisait la signature — un document, une date, une version du texte, et la certitude que c’est bien lui.
+Reste à voir comment le site produit, en ligne, ce que produisait une signature : un document, une date, une version du texte, et la certitude que c’est bien le membre, ou son parent.
 
 <Callout type="tip">
 **Chapitre suivant : le consentement en ligne.** La majorité vérifiée, le mot de passe qui vaut signature, un récapitulatif PDF figé, la version du texte, et ce qui reste à faire pour les mineurs.
