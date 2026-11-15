@@ -16,7 +16,7 @@ Dans l'App Router, un composant est **serveur par défaut**. Il s'exécute sur l
 
 Un composant **client** est envoyé au navigateur, où il s'exécute aussi. Il peut garder un état (`useState`), réagir aux événements, utiliser les API du navigateur. Il ne peut ni lire la base, ni lire un secret.
 
-<DocsTable columnsJson='["","Composant serveur","Composant client"]' rowsJson='[["S’exécute","sur le serveur, à chaque requête (ou au build)","sur le serveur pour le premier HTML, puis dans le navigateur"],["Peut être async, lire Prisma, les cookies, les secrets","oui","non"],["Peut utiliser useState, useEffect, des gestionnaires d’événements","non","oui"],["Son code part dans le JavaScript du navigateur","non","oui"],["Dans le projet","les pages publiques, les layouts racine, public et (admin)","le header, les formulaires, le finder, le tableau de bord : près de 290 fichiers"]]' />
+<DocsTable columnsJson='["","Composant serveur","Composant client"]' rowsJson='[["S’exécute","sur le serveur, à chaque requête (ou au build)","sur le serveur pour le premier HTML, puis dans le navigateur"],["Peut être async, lire Prisma, les cookies, les secrets","oui","non"],["Peut utiliser useState, useEffect, des gestionnaires d’événements","non","oui"],["Son code part dans le JavaScript du navigateur","non","oui"],["Dans le projet","les pages publiques, les layouts racine, public et (admin)","le header, les formulaires, le finder, le tableau de bord : environ 300 fichiers"]]' />
 
 Le choix par défaut sert le site public : une page serveur arrive complète, sans JavaScript à télécharger pour l'afficher, et sans aller-retour pour charger ses données. Le JavaScript n'est envoyé que pour ce qui doit être interactif.
 
@@ -24,29 +24,30 @@ Le choix par défaut sert le site public : une page serveur arrive complète, sa
 
 `'use client'` ne marque pas un composant : il marque une **frontière de module**. Le fichier qui le porte, et tout ce qu'il importe, devient du code client.
 
-```tsx
-// apps/web/src/app/(admin)/dashboard/layout.tsx (extrait)
-'use client';
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(admin)/dashboard/layout.tsx"
+  filename="layout.tsx"
+  snippetStart="'use client';"
+  snippetLines="8"
+  snippetHighlight="1"
+  snippetTitle="La directive, en tête du fichier"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-import { JSX, useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { PanelLeft, X } from 'lucide-react';
+Une conséquence directe : **tout ce qu'exporte** un fichier marqué `'use client'` devient une référence client, y compris une simple fonction sans hook. Un composant serveur peut rendre un composant client, mais il ne peut pas **appeler** une fonction exportée par ce fichier : il ne reçoit qu'une référence, pas le code. Le projet range donc à part les fonctions pures dont les deux côtés ont besoin :
 
-import Header from '#features/app-shell/Header.tsx';
-import ControlPanelSidebar from '#features/app-shell/ControlPanelSidebar.tsx';
-```
-
-Une conséquence directe : un module qui mélange une fonction pure et un hook devient client tout entier, et sa fonction pure n'est plus utilisable par un composant serveur. Le projet sépare donc les deux :
-
-```ts
-// apps/web/src/features/social/userDisplay.ts (extrait)
-/**
- * Helpers PURS d'affichage d'un utilisateur (aucun hook → importable côté
- * SERVEUR comme client). Séparés de `UserPortrait` (composant client qui lit
- * le store de version d'avatar) : mélanger un hook client et ces fonctions
- * dans un même module rendait `formatUserName` « client », donc inappelable
- * depuis un Server Component (ex. PostCard rendant PageRenderer).
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/social/userDisplay.ts"
+  filename="userDisplay.ts"
+  snippetStart="* Helpers PURS d'affichage d'un utilisateur"
+  snippetLead="1"
+  snippetLines="6"
+  snippetHighlight="2,3"
+  snippetTitle="Des fonctions pures, à part"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 <Callout type="tip">
 On place `'use client'` le plus bas possible dans l'arbre : sur le composant qui a vraiment besoin d'interactivité, pas sur la page qui le contient. Une fonction utilitaire sans hook vit dans un fichier sans directive, utilisable des deux côtés.
@@ -66,24 +67,31 @@ Un gestionnaire d'événement (`onClick`) ne peut donc pas venir d'un composant 
 
 Un composant serveur peut rendre un composant client : c'est le cas courant. Le layout public, serveur, lit le logo en base et le passe au header, client, comme valeur initiale :
 
-```tsx
-// apps/web/src/app/(public)/layout.tsx (extrait)
-<div className="sticky top-0 z-50 bg-background">
-  <Header initialLogoUrl={initialLogoUrl} initialBrand={initialBrand} />
-  <FirstLoginRedirect />
-</div>
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/layout.tsx"
+  filename="layout.tsx"
+  snippetStart='<div className="sticky top-0 z-50 bg-background">'
+  snippetLines="4"
+  snippetHighlight="2"
+  snippetTitle="Le layout public (serveur) rend le header (client)"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 L'inverse est impossible par import : un fichier importé par un composant client devient client à son tour. Un composant client ne peut pas importer une page qui lit la base.
 
 Il peut en revanche **recevoir** du contenu serveur, déjà rendu, par une propriété, le plus souvent `children`. C'est exactement ce que fait le layout du tableau de bord : il est client (tiroir, clavier), mais chaque page qu'il enveloppe reste un composant serveur, rendu sur le serveur puis passé comme `children` :
 
-```tsx
-// apps/web/src/app/(admin)/dashboard/layout.tsx (extrait)
-<main className="relative min-h-0 flex-1 overflow-y-auto p-4 lg:p-10">
-  {children}
-</main>
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(admin)/dashboard/layout.tsx"
+  filename="layout.tsx"
+  snippetStart='<main className="relative min-h-0 flex-1 overflow-y-auto p-4 lg:p-10">'
+  snippetLines="3"
+  snippetHighlight="2"
+  snippetTitle="Le layout client place les pages serveur"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Le layout client ne sait rien de ces pages ; il place un contenu qu'il reçoit tout fait. C'est ce qui permet à une page du tableau de bord de lire la base elle-même, bien qu'elle s'affiche à l'intérieur d'un composant client.
 
@@ -93,18 +101,37 @@ Pour mettre du serveur dans du client, on ne l'importe pas : on le **passe** (ch
 
 ## Le code serveur ne part jamais dans le navigateur
 
-Ce que le navigateur ne doit jamais recevoir est protégé à trois niveaux.
+Ce que le navigateur ne doit jamais recevoir est protégé à quatre niveaux.
 
 **Le code du backend.** Le front n'importe du backend que des **types** : `import type` est effacé à la compilation.
 
-```ts
-// apps/web/src/core/trpc/trpcClient.ts (extrait)
-import type { AppRouter } from "@akfc/backend/modules/index.ts"
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/core/trpc/trpcClient.ts"
+  filename="trpcClient.ts"
+  snippetStart='import type { AppRouter } from "@akfc/backend/modules/index.ts"'
+  snippetLines="1"
+  snippetHighlight="1"
+  snippetTitle="Du backend, seulement des types"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Un import ordinaire de Prisma depuis un composant client ne donnerait de toute façon rien d'utilisable : le paquet ne fournit au navigateur qu'une version qui refuse de s'exécuter, puisqu'une base de données ne se joint pas depuis un navigateur.
 
 **Les secrets.** Dans un composant client, `process.env.JWT_SECRET` vaut `undefined` : Next ne transmet au navigateur que les variables dont le nom commence par `NEXT_PUBLIC_`, et il les **inscrit en clair** dans le JavaScript au moment du build. Le projet n'en a que deux, publiques par nature : le nom court du site (`NEXT_PUBLIC_APP_SHORT_NAME`, racine du stockage) et l'adresse du site (`NEXT_PUBLIC_SITE_URL`). Un secret ne porte jamais ce préfixe.
+
+**Les modules serveur, marqués.** Un fichier qui lit la base et qu'un composant client ne doit jamais importer commence par `import "server-only"`. Le paquet ne contient rien d'utile ; il fait échouer le **build** si un composant client l'importe, directement ou par un intermédiaire. L'erreur arrive avant la mise en ligne, au lieu d'un backend envoyé au navigateur ou d'une page qui casse :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/PageRenderer.tsx"
+  filename="PageRenderer.tsx"
+  snippetStart="// Composant SERVEUR (base, médias)"
+  snippetLines="3"
+  snippetHighlight="3"
+  snippetTitle="server-only : l'erreur au build plutôt qu'en production"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 **Les données.** C'est le seul niveau qui ne soit pas automatique, et le plus important : il fait l'objet de la section suivante.
 
@@ -116,33 +143,29 @@ La règle du projet est donc de **choisir chaque champ** de ce qui sort du serve
 
 La session en est l'exemple central : elle va dans toutes les pages, et `getSessionFromRequest` ne demande à la base que les champs utiles, sans jamais lire la ligne `User` entière, qui contient l'empreinte du mot de passe :
 
-```ts
-// packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
-  user: {
-    select: {
-      id: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      pseudo: true,
-      avatar: true,
-      isFirstLogin: true,
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetStart="const sessionSelect = {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4-12"
+  snippetTitle="La session ne lit que les champs utiles"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Les données publiques sur les membres (auteur d'un commentaire, membre qui a réagi, instructeur présenté sur le site) suivent la même règle, plus stricte encore : **pas d'adresse e-mail**. Le type d'affichage la rend facultative, et les `select` publics ne la demandent pas :
 
-```ts
-// packages/backend/src/modules/comments/router.ts (extrait)
-// Données PUBLIQUES (getByPost est public) : jamais d'adresse e-mail.
-const authorSelect = {
-  id: true,
-  firstName: true,
-  lastName: true,
-  pseudo: true,
-  avatar: true,
-  image: true,
-} as const;
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/comments/router.ts"
+  filename="router.ts"
+  snippetStart="// Données PUBLIQUES (getByPost est public) : jamais d'adresse e-mail."
+  snippetEnd="} as const;"
+  snippetHighlight="1"
+  snippetTitle="Des données publiques, sans adresse"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Entre membres, la règle est la même : l'adresse personnelle d'un membre n'est lisible que par les administrateurs (et par l'intéressé). Un membre qui traite des demandes voit le nom du demandeur, pas son adresse ; les listes de fichiers d'un espace de groupe nomment l'expéditeur sans jamais retomber sur son adresse. La seule adresse montrée aux membres connectés est l'**adresse du club** d'un instructeur (`User.clubEmail`, un alias @akfc.fr de contact@ attribué par un administrateur), affichée sur la page des instructeurs : c'est précisément l'adresse faite pour être donnée.
 
@@ -166,19 +189,22 @@ Trois sources de différence reviennent souvent :
 
 Le thème illustre le dernier cas. Le layout racine lit le cookie et pose la classe `dark` dès le HTML ; l'interrupteur change ensuite cette classe directement dans le navigateur, sans nouveau rendu serveur :
 
-```tsx
-// apps/web/src/app/layout.tsx (extrait)
-// Thème lu dans le cookie du visiteur : la classe `dark` est posée dès le HTML serveur.
-// suppressHydrationWarning : l'interrupteur change ensuite la classe côté client, sans
-// nouveau rendu serveur ; React ne doit pas s'en plaindre.
-<html lang="fr" className={isDark ? "dark" : undefined} suppressHydrationWarning>
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/layout.tsx"
+  filename="layout.tsx"
+  snippetStart="// Thème lu dans le cookie du visiteur"
+  snippetLines="4"
+  snippetHighlight="4"
+  snippetTitle="Le thème, posé dès le HTML serveur"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 `suppressHydrationWarning` ne s'applique qu'à l'élément qui le porte, et seulement à ses attributs : il ne masque rien d'autre.
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Que déclare « use client » ?","Une frontière de module : le fichier et ses imports deviennent du code client."],["Que peut-on passer à un composant client ?","Des valeurs sérialisables (y compris Date, Map, JSX, server actions), pas de fonction ordinaire."],["Comment mettre du serveur dans du client ?","En le passant comme children ou comme propriété, jamais par import."],["Qu’est-ce qui protège les secrets ?","Seules les variables NEXT_PUBLIC_ vont au navigateur ; aucun secret ne porte ce préfixe."],["Qu’est-ce qui protège les données ?","Un select explicite et un type de projection pour tout ce qui sort ; pas d’e-mail dans les données publiques."],["Comment éviter les erreurs d’hydratation ?","Le serveur fournit les valeurs que le client ne connaît pas encore (contexte, cookie)."]]' />
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Que déclare « use client » ?","Une frontière de module : le fichier et ses imports deviennent du code client."],["Que peut-on passer à un composant client ?","Des valeurs sérialisables (y compris Date, Map, JSX, server actions), pas de fonction ordinaire."],["Comment mettre du serveur dans du client ?","En le passant comme children ou comme propriété, jamais par import."],["Qu’est-ce qui protège les secrets ?","Seules les variables NEXT_PUBLIC_ vont au navigateur ; aucun secret ne porte ce préfixe."],["Et si un composant client importe un module serveur ?","Le module commence par import \"server-only\" : le build échoue."],["Un composant serveur peut-il appeler une fonction d’un fichier « use client » ?","Non : il n’en reçoit qu’une référence ; les fonctions pures vivent dans un fichier sans directive."],["Qu’est-ce qui protège les données ?","Un select explicite et un type de projection pour tout ce qui sort ; pas d’e-mail dans les données publiques."],["Comment éviter les erreurs d’hydratation ?","Le serveur fournit les valeurs que le client ne connaît pas encore (contexte, cookie)."]]' />
 
 ## À suivre
 
