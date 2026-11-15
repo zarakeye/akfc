@@ -38,9 +38,7 @@ La correction suit le modèle de **menu de navigation à volets** (« disclosure
 
 <DocsTable columnsJson='["Geste","Effet"]' rowsJson='[["Tab jusqu’au titre, puis Entrée ou Espace","Ouvre ou ferme le menu ; le bouton annonce son état (aria-expanded)."],["Tab dans le menu ouvert","Parcourt ses liens ; les liens d’un menu fermé sont masqués, donc sautés."],["Échap","Ferme le menu et remet le curseur sur son titre, pour ne pas perdre sa place."],["Tab après le dernier lien","Ferme le menu en sortant."],["Survol, clic ailleurs","Comme avant pour la souris : ouvre au survol, ferme en sortant ou en cliquant ailleurs."]]' />
 
-Un détail évite un conflit entre souris et clavier. À la souris, le survol a déjà ouvert le menu : un clic sur le titre qui l'inverserait le refermerait sous le pointeur. Le bouton ne bascule donc que pour un « clic » produit par le clavier, que le navigateur signale par `detail === 0` :
-
-Le dernier pas du parcours ci-dessus évite un conflit entre souris et clavier.
+Un détail évite un conflit entre souris et clavier. À la souris, le survol a déjà ouvert le menu : un clic sur le titre qui l'inverserait le refermerait sous le pointeur. Le bouton ne bascule donc que pour un « clic » produit par le clavier, que le navigateur signale par `detail === 0` (dernière étape du parcours ci-dessus).
 
 Le curseur clavier doit aussi rester **visible**. Les nouveaux boutons portent un contour émeraude quand ils le reçoivent au clavier (`focus-visible:outline-emerald-400`), et pas au clic de souris, où il serait inutile.
 
