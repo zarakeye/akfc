@@ -55,7 +55,9 @@ export default async function UserPresentationPage({
         )}
       </dl>
       {/* La date de naissance ne part jamais vers le navigateur : seulement si elle est renseignée. */}
+      {/* Clé : un changement fait ailleurs (passage majeur, date) repart des données du serveur. */}
       <LegalStatusControl
+        key={`${user.legalAge}-${user.birthDate ? "d" : "-"}-${user.guardianEmail ?? ""}`}
         userId={user.id}
         adultGroupName={user.memberGroupMemberships[0]?.group.name ?? null}
         initial={{

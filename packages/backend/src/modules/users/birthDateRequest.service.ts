@@ -35,7 +35,7 @@ async function loadMinorWithGuardian(prisma: PrismaClient, userId: string) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Ce circuit concerne les membres mineurs." });
   }
   if (!m.guardianName?.trim() || !m.guardianEmail) {
-    throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Le club doit d'abord renseigner ton parent référent." });
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Le club doit d'abord renseigner votre parent référent." });
   }
   return m;
 }
@@ -45,7 +45,7 @@ export async function requestBirthDateFromGuardian(prisma: PrismaClient, userId:
   const m = await loadMinorWithGuardian(prisma, userId);
   const existing = await prisma.birthDateRequest.findUnique({ where: { userId }, select: { sentAt: true } });
   if (existing && Date.now() - existing.sentAt.getTime() < GUARDIAN_LINK_COOLDOWN_MS) {
-    throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Un lien vient d'être envoyé : réessaie dans quelques minutes." });
+    throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Un lien vient d'être envoyé : réessayez dans quelques minutes." });
   }
   const token = crypto.randomBytes(32).toString("base64url");
   const sentAt = new Date();
@@ -66,7 +66,7 @@ export async function requestBirthDateFromGuardian(prisma: PrismaClient, userId:
     // Lien jamais parti : on ne laisse pas croire qu'il attend le parent.
     await prisma.birthDateRequest.deleteMany({ where: { userId } });
     console.error("[date de naissance] lien au parent non envoyé :", err instanceof Error ? err.message : err);
-    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "L'e-mail à ton parent n'a pas pu partir. Réessaie plus tard." });
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "L'e-mail à votre parent n'a pas pu partir. Réessayez plus tard." });
   }
   return { sentToMasked: maskEmail(to), expiresAt };
 }

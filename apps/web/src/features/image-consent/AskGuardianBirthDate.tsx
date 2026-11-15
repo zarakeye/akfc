@@ -20,7 +20,7 @@ export function AskGuardianBirthDate({ hasDate }: { hasDate: boolean }): JSX.Ele
   return (
     <div className="space-y-1 rounded-md border border-border p-3 text-xs">
       <p className="text-gray-600">
-        C&apos;est ton parent référent qui {hasDate ? "corrige ta date de naissance (ou l'efface)" : "renseigne ta date de naissance"}.
+        C&apos;est votre parent référent qui {hasDate ? "corrige votre date de naissance (ou l'efface)" : "renseigne votre date de naissance"}.
       </p>
       {sent && (
         <p role="status" className="text-emerald-700 dark:text-emerald-400">

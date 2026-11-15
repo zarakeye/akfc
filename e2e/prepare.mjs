@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
+import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, BIRTH_DATE, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -280,6 +280,25 @@ for (const { user, guardian, birthDate } of [
     where: { id: user.id },
     data: {
       lastName: MINOR.lastName,
+      legalAge: "MINOR",
+      birthDate,
+      birthDateVerified: birthDate !== null,
+      guardianName: guardian.name,
+      guardianEmail: guardian.email,
+      guardianRelation: guardian.relation,
+    },
+  });
+}
+
+// Deux mineurs, chacun avec son parent référent, pour la date de naissance demandée au parent.
+for (const { user, guardian, birthDate } of [
+  { user: USERS.mineurDate, guardian: BIRTH_DATE.guardianLou, birthDate: new Date(BIRTH_DATE.louBirthDate) },
+  { user: USERS.mineurMajeur, guardian: BIRTH_DATE.guardianTom, birthDate: null },
+]) {
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      lastName: BIRTH_DATE.lastName,
       legalAge: "MINOR",
       birthDate,
       birthDateVerified: birthDate !== null,

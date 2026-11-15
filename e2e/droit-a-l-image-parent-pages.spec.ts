@@ -59,7 +59,7 @@ test("souhaits du mineur, page du parent, changements visibles sur la fiche", as
   const birth = page.getByLabel("Date de naissance");
   await expect(birth).toHaveValue("2012-09-10");
   await expect(birth).toBeDisabled();
-  await expect(page.getByText("C'est votre parent référent qui la confirme")).toBeVisible();
+  await expect(page.getByText("C'est votre parent référent qui corrige votre date de naissance")).toBeVisible();
 
   // 3. L'administrateur voit, sur la fiche, ce que le parent a changé.
   await loginAs(page, USERS.admin.email);

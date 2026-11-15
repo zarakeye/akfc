@@ -57,6 +57,7 @@ test("le parent reçoit les souhaits du mineur, les modifie et valide ; ses choi
   });
   expect(done.error, "validation du parent").toBeUndefined();
   expect(done.result).toEqual({
+    becameAdult: false,
     changes: [
       "Site public : souhaité Non → Oui",
       "Réseaux sociaux du club : souhaité Oui → Non",

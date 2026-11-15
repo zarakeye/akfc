@@ -195,6 +195,25 @@ Ce que le profil propose, selon la situation :
 
 Le verrou de la date est décidé par le serveur (`onlineConsentState` le dit au formulaire, l’action du profil l’applique) : un champ grisé côté navigateur n’empêcherait personne d’envoyer une autre valeur.
 
+### La date de naissance, par le parent
+
+Un mineur ne modifie pas sa date de naissance : c’est elle qui le dit mineur, et qui le fera passer majeur. Depuis son profil, il **demande** à son parent référent de la renseigner, la corriger ou l’effacer. Le circuit copie celui de l’autorisation, en plus petit : une demande par membre (`BirthDateRequest`), l’empreinte seule du jeton en base, un lien de 7 jours à usage unique, le même délai entre deux envois. Le droit à l’image n’y est pas touché.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/birthDateRequest.service.ts"
+  filename="birthDateRequest.service.ts"
+  snippetStart="export async function confirmBirthDateByGuardian(params: {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="18,19,20,29"
+  snippetTitle="Le parent valide : une date, aucune, ou une date de majeur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une date de **majeur** est le cas délicat : une faute de frappe ferait sortir l’enfant de l’autorité de son parent. Sur les deux pages du parent (celle-ci et celle de l’autorisation), une alerte s’affiche dès la saisie, et le bouton reste grisé tant que le parent ne corrige pas ou ne coche pas « Je confirme cette date ». Le serveur refait le contrôle (`ADULT_BIRTH_DATE_UNCONFIRMED`). Confirmée, la date fait passer le membre majeur ; sur la page de l’autorisation, les choix du parent ne sont alors pas enregistrés : un parent ne signe pas pour un majeur.
+
+Reste le jeune qui a 18 ans sans que le site le sache (pas de date, ou une fausse). Sur justificatif, un administrateur le passe majeur (`user.markAdultWithProof`) : sans date, la date connue étant celle qui le disait mineur.
+
 ### À 18 ans
 
 Chaque nuit, avec les purges, `promoteNewAdults` passe majeurs les mineurs dont la date vérifiée atteint 18 ans. Le passage lui-même, `makeAdult`, sert aussi quand un parent confirme une date de majeur, ou quand un administrateur passe un compte majeur sur justificatif : les coordonnées du parent sont effacées, les demandes encore ouvertes supprimées, et le jeune reçoit un e-mail. Ses droits ne changent pas d’un coup : ceux que son parent a signés restent valables jusqu’à ce qu’il confirme ou modifie les siens, depuis « Mon droit à l’image ». Entre l’anniversaire et la nuit, `effectiveLegalAge` le traite déjà en majeur.

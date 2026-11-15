@@ -32,6 +32,18 @@ export const USERS = {
   bureau: { id: "e2e-bureau", email: "bureau@e2e.test", firstName: "Ysé" },
   // Inscrit mineur, il a eu 18 ans : son parent avait signé, il reconfirme. À lui seul.
   dixHuit: { id: "e2e-dix-huit", email: "dix-huit@e2e.test", firstName: "Noé" },
+  // Mineurs qui demandent à leur parent leur date de naissance (corrigée ; date de majeur confirmée).
+  // Adresses en « zz- » : la liste des utilisateurs, triée par adresse, garde les autres en page 1.
+  mineurDate: { id: "e2e-mineur-date", email: "zz-lou@e2e.test", firstName: "Lou" },
+  mineurMajeur: { id: "e2e-mineur-majeur", email: "zz-tom@e2e.test", firstName: "Tom" },
+};
+
+/** Les deux mineurs de la date de naissance : un nom, un parent (Lou a une date, Tom aucune). */
+export const BIRTH_DATE = {
+  lastName: "Datier",
+  louBirthDate: "2013-02-02T00:00:00.000Z",
+  guardianLou: { name: "Inès Datier", email: "zz-parent-lou@e2e.test", relation: "mère" },
+  guardianTom: { name: "Paul Datier", email: "zz-parent-tom@e2e.test", relation: "père" },
 };
 
 /** Le membre devenu majeur : sa date de naissance (vérifiée) et l'autorisation signée par son parent. */
