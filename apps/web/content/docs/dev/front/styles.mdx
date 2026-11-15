@@ -21,14 +21,16 @@ Ce chapitre suit le chemin d'une couleur et d'un espacement, de leur déclaratio
 
 Tailwind fournit des classes utilitaires (`flex`, `px-4`, `text-sm`) que l'on compose directement dans le JSX. Sa version 4 se configure **en CSS**, dans le fichier qui l'importe, et non plus dans un fichier JavaScript :
 
-```css
-// apps/web/src/app/globals.css (extrait)
-@import "tailwindcss";
-@import "tw-animate-css";
-@plugin "@tailwindcss/typography";
-
-@custom-variant dark (&:is(.dark *));
-```
+<CodeExample
+  language="css"
+  filepath="apps/web/src/app/globals.css"
+  filename="globals.css"
+  snippetStart='@import "tailwindcss";'
+  snippetLines="5"
+  snippetHighlight="1,3,5"
+  snippetTitle="Tailwind 4 se configure dans la feuille de style"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 La première ligne charge Tailwind ; la deuxième, une bibliothèque d'animations ; `@plugin` ajoute le plugin de typographie, qui fournit la classe `prose` utilisée pour les articles et les documents. Tailwind 4 trouve seul les fichiers à analyser : aucune liste de chemins n'est à tenir à jour. Côté outillage, une seule ligne de PostCSS suffit (`@tailwindcss/postcss` dans `apps/web/postcss.config.mjs`).
 
@@ -38,43 +40,46 @@ La quatrième ligne redéfinit la variante `dark:`. Par défaut, Tailwind 4 l'as
 
 ## Les couleurs du thème sont des variables
 
-Une couleur n'est jamais écrite dans un composant récent. Elle est désignée par son **rôle** : le fond (`background`), le texte (`foreground`), une carte (`card`), un texte discret (`muted-foreground`), une bordure (`border`). Chaque rôle est une variable CSS, avec une valeur pour le thème clair et une autre pour le thème sombre :
+Les surfaces et les textes d'un composant récent ne sont pas écrits en couleurs : ils sont désignés par leur **rôle** : le fond (`background`), le texte (`foreground`), une carte (`card`), un texte discret (`muted-foreground`), une bordure (`border`). Chaque rôle est une variable CSS, avec une valeur pour le thème clair et une autre pour le thème sombre :
 
-```css
-// apps/web/src/app/globals.css (extrait)
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.13 0.028 261.692);
-  --card: oklch(1 0 0);
-  /* … */
-}
+<CodeExample
+  language="css"
+  filepath="apps/web/src/app/globals.css"
+  filename="globals.css"
+  snippetStart="--radius: 0.625rem;"
+  snippetLead="1"
+  snippetLines="5"
+  snippetHighlight="3,4,5"
+  snippetTitle="Les rôles du thème clair, sur :root"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-.dark {
-  --background: oklch(0.24 0.012 260);
-  --foreground: oklch(0.985 0.002 247.839);
-  --card: oklch(0.285 0.013 260);
-  /* … */
-}
-```
+<CodeExample
+  language="css"
+  filepath="apps/web/src/app/globals.css"
+  filename="globals.css"
+  snippetStart="--background: oklch(0.24 0.012 260);"
+  snippetLead="1"
+  snippetLines="4"
+  snippetHighlight="2,4"
+  snippetTitle="Les mêmes rôles, redéfinis sous .dark"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Les valeurs sont en **OKLCH** : luminosité, chroma (intensité de la couleur), teinte. Contrairement au RVB, la luminosité y correspond à ce que perçoit l'œil. Éclaircir une surface d'un cran revient à augmenter le premier nombre, sans toucher à la teinte : c'est ainsi que les surfaces sombres (`0.24` pour le fond, `0.285` pour les cartes, `0.34` pour les zones atténuées) restent de la même famille.
 
 Le bloc `@theme inline` relie ces variables aux classes de Tailwind :
 
-```css
-// apps/web/src/app/globals.css (extrait)
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  /* … */
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  /* … */
-  --color-card: var(--card);
-  /* … */
-}
-```
+<CodeExample
+  language="css"
+  filepath="apps/web/src/app/globals.css"
+  filename="globals.css"
+  snippetStart="@theme inline {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,3"
+  snippetTitle="@theme inline : des classes pour chaque rôle"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Chaque `--color-xxx` déclaré dans `@theme` crée les classes `bg-xxx`, `text-xxx`, `border-xxx`. Le mot `inline` demande à Tailwind d'écrire la **référence** à la variable dans la classe générée : `bg-background` devient `background-color: var(--background)`. La variable est donc résolue sur l'élément qui porte la classe, et sa valeur change dès qu'un ancêtre porte `.dark`.
 
@@ -88,32 +93,44 @@ Le site s'affiche en clair par défaut. Le visiteur peut passer en sombre avec l
 
 Le choix est gardé dans un **cookie**, que le layout racine lit pendant le rendu serveur :
 
-```tsx
-// apps/web/src/app/layout.tsx (extrait)
-const isDark = (await cookies()).get(THEME_COOKIE)?.value === "dark";
-// …
-<html lang="fr" className={isDark ? "dark" : undefined} suppressHydrationWarning>
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/layout.tsx"
+  filename="layout.tsx"
+  snippetStart="const isDark = (await cookies())"
+  snippetEnd='<html lang="fr"'
+  snippetHighlight="1,15"
+  snippetTitle="Le layout racine lit le cookie et pose la classe"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 La page arrive donc déjà dans le bon thème. Un `localStorage` ne serait lisible qu'une fois le JavaScript chargé : la page s'afficherait d'abord en clair, puis basculerait (le « flash » bien connu), ou il faudrait un script bloquant avant le rendu. Le cookie évite les deux.
 
 L'interrupteur change la classe de `<html>` et réécrit le cookie :
 
-```ts
-// apps/web/src/features/theme/theme.ts (extrait)
-export function applyTheme(theme: Theme): void {
-  document.documentElement.classList.toggle("dark", theme === "dark");
-  // Un an ; lisible par le serveur (pas HttpOnly : c'est une préférence d'affichage, pas un secret).
-  document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=31536000; samesite=lax`;
-}
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/theme/theme.ts"
+  filename="theme.ts"
+  snippetStart="export function applyTheme(theme: Theme): void {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,4"
+  snippetTitle="applyTheme : la classe et le cookie"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Le composant `ThemeToggle` ne garde pas l'état du thème dans un `useState`. Il le lit directement sur `<html>`, avec `useSyncExternalStore` et un `MutationObserver` qui le prévient quand la classe change :
 
-```tsx
-// apps/web/src/features/theme/ThemeToggle.tsx (extrait)
-const theme = useSyncExternalStore<Theme>(subscribeTheme, readTheme, () => "light");
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/theme/ThemeToggle.tsx"
+  filename="ThemeToggle.tsx"
+  snippetStart="const theme = useSyncExternalStore"
+  snippetLines="1"
+  snippetHighlight="1"
+  snippetTitle="Le thème lu sur <html>, pas gardé dans un état"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 `<html>` reste ainsi la seule source de vérité. Le header et la documentation affichent chacun un interrupteur, et les deux restent d'accord sans état partagé à synchroniser. Le troisième argument est la valeur utilisée pendant l'hydratation : React rend d'abord l'icône du thème clair, puis relit `<html>` et corrige l'icône au premier rendu client, sans erreur d'hydratation.
 
@@ -123,51 +140,44 @@ Les composants les plus anciens fixent encore leurs couleurs : `bg-white`, `text
 
 Plutôt que de modifier tous ces composants d'un coup, un fichier les réoriente vers les variables du thème, **en mode sombre seulement** :
 
-```css
-// apps/web/src/styles/dark-legacy.css (extrait)
-/* Fonds clairs → surfaces du thème */
-.dark .bg-white { background-color: var(--card); }
-.dark .bg-gray-50,
-.dark .bg-gray-100,
-.dark .bg-slate-50,
-.dark .bg-slate-100 { background-color: var(--muted); }
-/* … */
-
-/* Textes sombres → textes du thème */
-.dark .text-gray-900,
-.dark .text-gray-800,
-.dark .text-gray-700,
-.dark .text-slate-900,
-.dark .text-slate-800,
-.dark .text-slate-700 { color: var(--foreground); }
-```
+<CodeExample
+  language="css"
+  filepath="apps/web/src/styles/dark-legacy.css"
+  filename="dark-legacy.css"
+  snippetStart="/* Fonds clairs → surfaces du thème */"
+  snippetLines="22"
+  snippetHighlight="2,11"
+  snippetTitle="Les couleurs en dur, réorientées en mode sombre"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Ce fichier est importé par le layout racine **hors de toute couche** (`@layer`). C'est ce qui lui donne la priorité : Tailwind range ses utilitaires dans `@layer utilities`, et une règle sans couche l'emporte sur toute règle en couche, quelle que soit sa spécificité. Aucun `!important` n'est nécessaire.
 
 Le même fichier traite la classe `prose`. Le plugin de typographie fixe ses couleurs pour un fond clair. En mode sombre, ses variables `--tw-prose-*` sont remplacées par les valeurs « inversées » que le plugin fournit, avec le corps du texte sur `--foreground`.
 
 <Callout type="tip">
-La règle pour le code neuf : les **rôles du thème** (`bg-card`, `text-muted-foreground`, `border-border`). La variante `dark:` est réservée aux exceptions, comme les chevrons du carrousel posés sur une photo. Chaque composant qui passe aux rôles du thème rend une règle de `dark-legacy.css` inutile.
+La règle pour le code neuf : les **rôles du thème** pour les surfaces, les textes et les bordures (`bg-card`, `text-muted-foreground`, `border-border`). La variante `dark:` est réservée aux exceptions, comme les chevrons du carrousel posés sur une photo. Chaque composant qui passe aux rôles du thème rend une règle de `dark-legacy.css` inutile.
 </Callout>
+
+### Les couleurs d'état
+
+Le thème n'a pas de rôle pour dire qu'une action a réussi, qu'il faut faire attention, ou qu'une erreur est survenue. Ces couleurs-là sont écrites telles quelles : le vert (`text-emerald-700`, `bg-emerald-50`), l'orange (`bg-amber-50`, `text-amber-900`), le rouge (`text-red-600`). Elles vont **par paires** (un fond clair et un texte foncé de la même teinte), ce qui les garde lisibles dans les deux thèmes ; certaines ajoutent une variante `dark:` (`dark:text-emerald-400`). `dark-legacy.css` ne les touche pas : en mode sombre, un encadré d'alerte reste clair sur le fond sombre. C'est voulu pour l'instant, et c'est la limite de l'approche : donner au thème des rôles d'état (succès, alerte, erreur) les ferait basculer comme le reste.
 
 ## Le rendu des pages : les variables `--akfc-*`
 
 Les pages construites au constructeur (l'accueil, « L'association », les fiches de discipline) partagent un second jeu de variables. Celles-ci règlent la typographie et la mise en page plutôt que les couleurs : l'interlignage, l'écart entre paragraphes, la taille des titres, la largeur de la colonne de texte, la gouttière entre deux colonnes.
 
-```css
-// apps/web/src/app/globals.css (extrait)
-:root {
-  --akfc-leading: 1.65;
-  --akfc-para-gap: 1em;
-  --akfc-heading-gap: 1.8em;
-  /* … */
-  --akfc-h1-min: 1.6rem;
-  --akfc-h1-max: 2.75rem;
-  /* … */
-  --akfc-measure: 68ch;
-  /* … */
-}
-```
+<CodeExample
+  language="css"
+  filepath="apps/web/src/app/globals.css"
+  filename="globals.css"
+  snippetStart="--akfc-leading: 1.65;"
+  snippetLead="1"
+  snippetLines="4"
+  snippetHighlight="2,3,4"
+  snippetTitle="Les variables de rendu des pages (début)"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Quelques choix de valeurs :
 
@@ -177,23 +187,32 @@ Quelques choix de valeurs :
 
 Pour les titres, seules les bornes sont des variables. Le `clamp(minimum, valeur préférée, maximum)` est écrit sur la règle du titre :
 
-```css
-// apps/web/src/app/globals.css (extrait)
-.akfc-prose h1 { font-size: clamp(var(--akfc-h1-min), 1.1rem + 2.2vw, var(--akfc-h1-max)); }
-```
+<CodeExample
+  language="css"
+  filepath="apps/web/src/app/globals.css"
+  filename="globals.css"
+  snippetStart=".akfc-prose h1 {"
+  snippetLines="1"
+  snippetHighlight="1"
+  snippetTitle="Un titre fluide, borné par deux variables"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Le laboratoire règle ainsi la taille sur téléphone et sur grand écran, sans perdre la progression entre les deux.
 
 Une variable calculée à partir d'une autre est déclarée **sur la classe qui l'utilise**, et non sur `:root` :
 
-```css
-// apps/web/src/app/globals.css (extrait)
-.akfc-prose {
-  --akfc-base-size: clamp(1rem, 0.9rem + 0.5vw, var(--akfc-base-max));
-  font-size: var(--akfc-base-size);
-  line-height: var(--akfc-leading);
-}
-```
+<CodeExample
+  language="css"
+  filepath="apps/web/src/app/globals.css"
+  filename="globals.css"
+  snippetStart="--akfc-base-size: clamp"
+  snippetLead="1"
+  snippetLines="4"
+  snippetHighlight="2"
+  snippetTitle="Une variable composée, déclarée là où elle sert"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Une variable composée est calculée sur l'élément où elle est déclarée. Déclarée sur `:root`, `--akfc-base-size` serait calculée sur `<html>` et ne verrait pas une surcharge de `--akfc-base-max` posée plus bas dans la page. Déclarée sur `.akfc-prose`, elle est calculée là où le texte s'affiche et prend en compte toute surcharge d'un ancêtre. C'est précisément ce que fait le laboratoire de rendu.
 
@@ -205,14 +224,16 @@ Les valeurs de `globals.css` sont des **valeurs de repli**. Un administrateur pe
 
 Les curseurs n'écrivent pas dans une feuille parallèle. Ils surchargent les vraies variables, en style inline, sur le conteneur de l'aperçu :
 
-```tsx
-// apps/web/src/features/design-lab/BlockStyleLab.tsx (extrait)
-const styleOverrides = {
-  ...Object.fromEntries(KNOBS.map((k) => [k.key, `${values[k.key]}${k.unit}`])),
-  "--akfc-media-col": ratio.media,
-  "--akfc-text-col": ratio.text,
-} as CSSProperties;
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/design-lab/BlockStyleLab.tsx"
+  filename="BlockStyleLab.tsx"
+  snippetStart="const styleOverrides = {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2"
+  snippetTitle="L’aperçu surcharge les vraies variables"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Les blocs de l'aperçu sont les composants du site. Ils héritent des variables de leur conteneur, et ce que montre le laboratoire est donc ce que rendra la page publique.
 
@@ -228,56 +249,63 @@ Une **procédure** est une fonction du serveur que le navigateur appelle par son
 
 Ces valeurs finiront dans une balise `<style>` servie à tous les visiteurs. Le routeur contrôle donc strictement ce qui peut y entrer :
 
-```ts
-// packages/backend/src/modules/siteStyle/router.ts (extrait)
-const variableName = z
-  .string()
-  .regex(/^--akfc-[a-z0-9-]{1,40}$/, "Nom de variable non conforme");
-
-const variableValue = z
-  .string()
-  .max(64)
-  .regex(/^[a-zA-Z0-9 .,%()#/_-]*$/, "Valeur de variable non conforme");
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/siteStyle/router.ts"
+  filename="router.ts"
+  snippetStart="const variableName = z"
+  snippetLines="8"
+  snippetHighlight="3,8"
+  snippetTitle="Ce qui peut entrer dans la feuille du site"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Le nom porte obligatoirement le préfixe `--akfc-`. La valeur ne peut contenir ni `;`, ni `}`, ni `<` : aucune valeur ne peut fermer la déclaration ou la balise pour y glisser autre chose.
 
 L'enregistrement est réservé aux administrateurs, comme celui du texte d'accueil et des pages de contenu :
 
-```ts
-// packages/backend/src/modules/siteStyle/router.ts (extrait)
-/** Le style vaut pour le site entier : seul un administrateur l'enregistre. */
-const adminProcedure = protectedProcedure.use(isAdmin);
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/siteStyle/router.ts"
+  filename="router.ts"
+  snippetStart="/** Le style vaut pour le site entier"
+  snippetLines="2"
+  snippetHighlight="2"
+  snippetTitle="Réservé aux administrateurs"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Le tableau de bord ne s'affiche qu'aux administrateurs, mais une procédure tRPC peut être appelée directement, sans passer par aucune page. Le contrôle doit donc se trouver dans la procédure elle-même. C'est la règle déjà appliquée aux server actions dans le chapitre sur la frontière.
+Le tableau de bord ne s'affiche qu'aux administrateurs, mais une procédure tRPC peut être appelée directement, sans passer par aucune page. Le contrôle doit donc se trouver dans la procédure elle-même. Une server action obéit à la même règle : point d'accès public, elle lit elle-même la session (chapitre « Le compte et le profil »).
 
 ### L'injection : une feuille calculée au rendu serveur
 
 Le layout racine lit la ligne et la transforme en une déclaration CSS :
 
-```tsx
-// apps/web/src/app/layout.tsx (extrait)
-function serializeSiteStyle(variables: Record<string, string>): string {
-  const body = Object.entries(variables)
-    .map(([key, value]) => `${key}:${value};`)
-    .join("");
-  return `html:root{${body}}`;
-}
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/layout.tsx"
+  filename="layout.tsx"
+  snippetStart="function serializeSiteStyle("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="5"
+  snippetTitle="La ligne en base devient une déclaration CSS"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Le sélecteur `html:root` pèse plus lourd que `:root` (spécificité 0,0,2 contre 0,0,1). La surcharge l'emporte donc sur les valeurs de repli **quel que soit l'ordre** des feuilles dans la page, que Next peut modifier au gré du découpage du CSS.
 
 La déclaration est rendue dans une balise `<style>` à laquelle React 19 donne un traitement particulier :
 
-```tsx
-// apps/web/src/app/layout.tsx (extrait)
-{styleOverride && (
-  <style href={styleKey} precedence="high">
-    {styleOverride}
-  </style>
-)}
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/layout.tsx"
+  filename="layout.tsx"
+  snippetStart="{styleOverride && ("
+  snippetLines="5"
+  snippetHighlight="2"
+  snippetTitle="Une balise <style> hissée dans le <head>"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Avec `href` et `precedence`, React **hisse** la balise dans le `<head>`, même rendue depuis `<body>`, et ne l'insère qu'une fois par valeur de `href`. Cette valeur est construite à partir de `updatedAt`. Elle change donc à chaque enregistrement, et React insère la nouvelle feuille au lieu de considérer qu'il l'a déjà.
 
@@ -289,7 +317,7 @@ Trois niveaux, une seule priorité : les valeurs de repli de `globals.css` (`:ro
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où se configure Tailwind ?","Dans globals.css : @import, @plugin, @custom-variant, @theme. Aucun fichier de configuration JavaScript."],["Comment une couleur suit-elle le thème ?","Elle est désignée par son rôle (bg-card, text-foreground) ; le rôle est une variable redéfinie sous .dark."],["Où vit le choix du visiteur ?","Dans un cookie lu par le layout racine : la classe dark est posée dès le HTML serveur."],["Et les couleurs codées en dur ?","dark-legacy.css les réoriente vers les variables du thème, en mode sombre, hors couche CSS. Le code neuf utilise les rôles du thème."],["Qu’est-ce qui règle la typographie des pages ?","Les variables --akfc-*, déclarées sur :root ; leurs compositions sur la classe qui les utilise."],["Comment un administrateur règle-t-il le style ?","Au laboratoire de rendu : aperçu en style inline, enregistrement dans SiteStyle (procédure réservée aux administrateurs, noms et valeurs filtrés), injection par le layout en html:root."]]' />
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où se configure Tailwind ?","Dans globals.css : @import, @plugin, @custom-variant, @theme. Aucun fichier de configuration JavaScript."],["Comment une couleur suit-elle le thème ?","Elle est désignée par son rôle (bg-card, text-foreground) ; le rôle est une variable redéfinie sous .dark."],["Et les couleurs d’état (succès, alerte, erreur) ?","Écrites telles quelles, par paires lisibles dans les deux thèmes ; le thème n’a pas encore de rôle pour elles."],["Où vit le choix du visiteur ?","Dans un cookie lu par le layout racine : la classe dark est posée dès le HTML serveur."],["Et les couleurs codées en dur ?","dark-legacy.css les réoriente vers les variables du thème, en mode sombre, hors couche CSS. Le code neuf utilise les rôles du thème."],["Qu’est-ce qui règle la typographie des pages ?","Les variables --akfc-*, déclarées sur :root ; leurs compositions sur la classe qui les utilise."],["Comment un administrateur règle-t-il le style ?","Au laboratoire de rendu : aperçu en style inline, enregistrement dans SiteStyle (procédure réservée aux administrateurs, noms et valeurs filtrés), injection par le layout en html:root."]]' />
 
 ## À suivre
 
