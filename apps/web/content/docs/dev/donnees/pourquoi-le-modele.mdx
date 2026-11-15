@@ -14,7 +14,7 @@ import PrismaCoreMemoryDiagram from "#features/docs/diagrams/PrismaCoreMemoryDia
 
 > **Précédemment.** Le front est en place : routes et layouts, frontière serveur / client, styles pilotés par des variables, jusqu’au réglage de style enregistré en base. Les layouts serveur et les pages publiques lisent la base directement, le tableau de bord passe par des procédures tRPC ; dans les deux cas, c’est Prisma qui parle à PostgreSQL.
 
-## Pourquoi tout commence par le modèle
+## Une application commence par ce qu’elle manipule
 
 Quand on découvre une stack moderne, on a souvent envie d’aller vite.  
 De voir quelque chose s’afficher. De faire répondre une route. De connecter rapidement le frontend au backend, et sentir que “ça marche”.
@@ -38,30 +38,17 @@ Sans cette étape, le backend bricole ses types, le frontend redéfinit des stru
 Avec Prisma, le modèle est centralisé, les types sont générés, et la cohérence devient structurelle.
 
 <Callout type="info">
-Dans ce projet, Prisma n’est pas un simple ORM.
-
-👉 c’est la source de vérité du modèle de données côté TypeScript
-
-Tout ce qui suit — formulaires, tRPC, authentification — s’appuie sur ce socle.
+Dans ce projet, Prisma n’est pas un simple ORM : c’est la source de vérité du modèle de données côté TypeScript. Tout ce qui suit — formulaires, tRPC, authentification — s’appuie sur ce socle.
 </Callout>
 
 ## Une chaîne complète, du stockage à l’interface
 
 Pour comprendre l’importance de cette étape, il faut voir l’ensemble du système. Dans ce projet, les différentes couches s’enchaînent ainsi : PostgreSQL stocke les données, Prisma les structure et les typifie, les formulaires capturent l’intention utilisateur, tRPC transporte ces données sans casser le typage, et React les consomme côté interface.
 
-Ce point est essentiel parce qu’il renverse une idée reçue : le typage ne commence pas dans le frontend, il ne commence pas non plus dans l’API.
-
-👉 Il commence dans la modélisation des données.
+Ce point est essentiel parce qu’il renverse une idée reçue : le typage ne commence ni dans le frontend ni dans l’API. **Il commence dans la modélisation des données.**
 
 <Callout type="info">
-Si nous commençons directement par tRPC ou par les formulaires, nous verrons des types circuler…
-
-…sans savoir d’où ils viennent.
-
-Et à ce moment-là :
-
-👉 l’architecture devient magique  
-👉 au lieu de devenir compréhensible
+Si nous commençons directement par tRPC ou par les formulaires, nous verrons des types circuler sans savoir d’où ils viennent. L’architecture paraîtrait magique, au lieu de devenir compréhensible.
 </Callout>
 
 ## Avant de commencer : les mots de cette partie
@@ -96,35 +83,15 @@ Cette partie parle de base de données dès sa première page, et les mêmes mot
 Cette partie **lit** le modèle. Les migrations, les transactions et le SQL écrit à la main servent à **écrire** dans la base et à la faire évoluer : ils ont leur partie à eux, « Données (2) », au moment où le site commence à enregistrer ce que saisissent ses utilisateurs.
 </Promesse>
 
-## Ce que nous allons faire dans cette partie
-
-Dans cette partie, nous n’allons pas simplement “installer Prisma”. Nous allons intégrer Prisma dans un monorepo moderne, comprendre le rôle du `schema.prisma`, lire les entités réelles du projet, analyser leurs relations, comprendre comment Prisma génère des types, puis voir comment ces types deviennent la base du backend.
-
-L’objectif n’est pas seulement technique.
-
-👉 L’objectif est de comprendre comment une application devient cohérente — et pourquoi tout le reste du projet dépend de cette étape.
-
-À la fin de cette partie, nous ne verrons plus Prisma comme un outil isolé. Nous le verrons comme la fondation du système. Et c’est précisément pour cette raison que cette partie vient avant les formulaires, tRPC et l’authentification.
-
-Parce qu’une fois la donnée correctement modélisée, une première question apparaît naturellement :
-
-👉 **que montre le site de ce modèle ?**
-
-C’est ce que traitent les deux parties suivantes : le domaine du club (ce qu’il modélise, et ce qu’en voit le visiteur), puis le header qui mène à tout cela. Viendra ensuite la seconde question, **comment un utilisateur fait-il entrer des données dans ce modèle ?**, avec « Données (2) » et les formulaires. Un site vitrine montre avant d’enregistrer : nous suivons le même ordre.
-
----
-
 ## 🗺️ Ce que nous allons traverser
 
-Nous n’allons pas simplement « installer Prisma ». Nous allons reconstruire, étape par étape, la manière dont un modèle de données devient la fondation typée sur laquelle tout le reste de l’application se tient. Trois mouvements, répartis sur cinq chapitres.
+Nous n’allons pas simplement « installer Prisma ». Nous allons voir, étape par étape, comment un modèle de données devient la fondation typée sur laquelle tout le reste de l’application se tient : trois mouvements, répartis sur les cinq chapitres de cette partie. Leurs sections sont numérotées d’une seule traite, de 1 à 5 : la section 1 est dans ce chapitre, la section 5 dans le dernier.
 
 - **Mouvement 1 — Installer et lire** (ce chapitre et le suivant). Nous branchons Prisma au bon endroit dans le monorepo, puis nous apprenons à lire `schema.prisma` non plus comme un fichier technique, mais comme la carte d’un système.
 - **Mouvement 2 — Modéliser le système** (chapitres 3 et 4). Nous regardons les entités cœur — membres, sessions, groupes — comme une architecture, puis nous voyons les relations pour ce qu’elles sont vraiment : des décisions qui engagent l’avenir du projet. Le projet lui-même en donnera la preuve, avec un modèle qui a dû changer.
-- **Mouvement 3 — Rendre le modèle vivant** (plus loin, chapitre 5). Nous franchissons le pas qui transforme un schéma déclaratif en code exécutable, typé, que le site peut interroger.
+- **Mouvement 3 — Rendre le modèle vivant** (chapitre 5). Nous franchissons le pas qui transforme un schéma déclaratif en code exécutable, typé, que le site peut interroger.
 
-Un quatrième temps, écrire de façon cohérente et faire évoluer la base, attendra que le site ait quelque chose à écrire : ce sera la partie « Données (2) », juste avant les formulaires. Elle se termine par une ouverture vers la suite du parcours — les formulaires, tRPC, l’authentification — qui montre pourquoi tout cela repose, silencieusement, sur le modèle que nous allons construire.
-
----
+Une fois la donnée modélisée, une première question apparaît : **que montre le site de ce modèle ?** C’est ce que traitent les deux parties suivantes : le domaine du club (ce qu’il modélise, et ce qu’en voit le visiteur), puis le header qui mène à tout cela. Viendra ensuite la seconde question, **comment un utilisateur fait-il entrer des données dans ce modèle ?** Écrire de façon cohérente et faire évoluer la base, ce sera la partie « Données (2) », juste avant les formulaires. Un site vitrine montre avant d’enregistrer : nous suivons le même ordre.
 
 ## Mouvement 1 — Installer et lire
 
@@ -143,18 +110,9 @@ Voici les deux étapes que nous allons traverser :
 
 Quand on dit “installer Prisma”, beaucoup de tutoriels s’arrêtent à une commande. On installe deux paquets, on lance une initialisation, et on passe immédiatement au schéma. Techniquement, c’est suffisant pour démarrer.
 
-Mais dans un projet réel, ce n’est jamais là que les problèmes commencent.
+Mais dans un projet réel, ce n’est jamais là que les problèmes commencent. Dans ce projet, Prisma n’est pas branché dans une petite application isolée. Il est branché dans un **monorepo fullstack** où plusieurs couches vivent déjà ensemble : le frontend Next.js, les packages partagés, le backend, les contrats, les scripts de seed, et les migrations.
 
----
-
-Dans ce projet, Prisma n’est pas branché dans une petite application isolée. Il est branché dans un **monorepo fullstack** où plusieurs couches vivent déjà ensemble : le frontend Next.js, les packages partagés, le backend, les contrats, les scripts de seed, et les migrations.
-
-Et dès qu’on est dans ce type d’environnement, la question change de nature.
-
-👉 il ne s’agit plus seulement d’installer Prisma  
-👉 il s’agit de savoir **où il doit vivre pour ne pas devenir une dépendance de plus**
-
----
+Dans ce type d’environnement, la question change de nature : il ne s’agit plus seulement d’installer Prisma, mais de savoir **où il doit vivre pour ne pas devenir une dépendance de plus**.
 
 ### 1.1 — Pourquoi Prisma est installé à la racine
 
@@ -178,18 +136,11 @@ Ce placement raconte déjà quelque chose d’important.
 Le modèle de données n’est pas caché dans `apps/web`, parce qu’il ne concerne pas seulement l’interface.  
 Il n’est pas non plus enfoui dans `packages/backend`, même si le backend est celui qui consomme directement le client Prisma.
 
-👉 Il est placé à la racine parce qu’il représente une couche plus fondamentale.
-
-Une couche sur laquelle toutes les autres vont venir s’appuyer.
+Il est placé à la racine parce qu’il représente une couche plus fondamentale, sur laquelle toutes les autres vont venir s’appuyer.
 
 <Callout type="info">
-Dans ce monorepo, Prisma vit à la racine parce que la donnée précède les applications qui l’utilisent.
-
-👉 le schéma n’appartient pas à une page  
-👉 il appartient au système
+Dans ce monorepo, Prisma vit à la racine parce que la donnée précède les applications qui l’utilisent : le schéma n’appartient pas à une page, il appartient au système.
 </Callout>
-
----
 
 ### 1.2 — Les dépendances : ce qu’on installe vraiment
 
@@ -235,12 +186,6 @@ Après chaque `pnpm install`, le client est régénéré à partir du schéma : 
 
 Deux autres dépendances y figuraient, `pg` et `@prisma/adapter-pg` (avec les types de la première), alors qu'aucun fichier ne les importait : Prisma parle à PostgreSQL avec son propre moteur. C'étaient les restes d'un essai, et elles ont été retirées. Une dépendance inutile n'est pas gratuite : elle s'installe, se met à jour, et fait croire à un mécanisme qui n'existe pas.
 
-👉 c'est exactement dans ce contexte réel que Prisma doit être compris
-
----
-
----
-
 ### 1.3 — `prisma.config.ts` : une configuration qui ancre Prisma dans le repo
 
 Dans les versions récentes de Prisma, la configuration ne vit plus seulement dans `schema.prisma`. Une partie essentielle peut être remontée dans `prisma.config.ts`. Et dans ce projet, c’est exactement ce qui a été fait.
@@ -252,29 +197,12 @@ Dans les versions récentes de Prisma, la configuration ne vit plus seulement da
   snippetStart="import 'dotenv/config'"
   snippetEnd="})"
   title="prisma.config.ts — relier Prisma au vrai environnement du monorepo"
-  stepsJson='[{"title": "Le fichier charge l’environnement dès l’entrée", "body": "L’import de dotenv/config lit le fichier .env de la racine avant toute autre chose. Prisma ne travaille pas dans le vide : il dépend de variables d’environnement réelles (chapitre « Les variables d’environnement »).", "scope": "1-1", "focus": "1-1"}, {"title": "Une garde avant toute commande", "body": "Une commande qui touche la base refuse une adresse distante : un `.env` recopié du serveur migrerait sinon la production depuis le poste de développement. `generate`, `validate` et `format` ne lisent que le schéma et passent (partie « Démarrer », chapitre « Mise en route »).", "scope": "3-12", "focus": "9-12"}, {"title": "La configuration explicite l’emplacement du schéma", "body": "schema: \"prisma/schema.prisma\" ancre clairement le modèle de données à la racine du repo. Prisma sait donc où se trouve la source de vérité du domaine.", "scope": "15-15", "focus": "15-15"}, {"title": "Les URLs de connexion sont distinguées proprement", "body": "Le fichier branche DATABASE_URL et DIRECT_DATABASE_URL. La seconde est une connexion directe à PostgreSQL, que Prisma utilise pour les migrations quand la première passe par un regroupeur de connexions.", "scope": "16-19", "focus": "16-19"}, {"title": "Des blocs commentés, gardés comme mémoire", "body": "Les blocs generators et migrations sont commentés : la configuration effective du client est dans schema.prisma (chapitre suivant). Ils racontent ce qui a été essayé, et restent prêts à resservir.", "scope": "20-29", "focus": "20-29"}]'
+  stepsJson='[{"title": "Le fichier charge l’environnement dès l’entrée", "body": "L’import de dotenv/config lit le fichier .env de la racine avant toute autre chose. Prisma ne travaille pas dans le vide : il dépend de variables d’environnement réelles (chapitre « Les variables d’environnement »).", "scope": "1-1", "focus": "1-1"}, {"title": "Une garde avant toute commande", "body": "Une commande qui touche la base refuse une adresse distante : un `.env` recopié du serveur migrerait sinon la production depuis le poste de développement. `generate`, `validate` et `format` ne lisent que le schéma et passent (partie « Démarrer », chapitre « Mise en route »).", "scope": "3-12", "focus": "9-12"}, {"title": "La configuration explicite l’emplacement du schéma", "body": "schema: \"prisma/schema.prisma\" ancre clairement le modèle de données à la racine du repo. Prisma sait donc où se trouve la source de vérité du domaine.", "scope": "15-15", "focus": "15-15"}, {"title": "Les URLs de connexion sont distinguées proprement", "body": "Le fichier branche DATABASE_URL et DIRECT_DATABASE_URL. La seconde est une connexion directe à PostgreSQL, que Prisma utilise pour les migrations quand la première passe par un regroupeur de connexions.", "scope": "16-19", "focus": "16-19"}]'
 />
 
-Ce fichier est précieux pédagogiquement parce qu’il casse une idée fausse : Prisma ne se résume pas à un schéma.
+Ce fichier casse une idée fausse : Prisma ne se résume pas à un schéma, il a besoin d’un ancrage dans l’environnement réel du projet.
 
-👉 il a besoin d’un ancrage dans l’environnement réel du projet
-
----
-
-### 1.4 — Le schéma n’est pas encore le sujet, mais son emplacement compte déjà
-
-À ce stade, nous ne lisons pas encore les modèles.
-
-Mais le simple fait que `schema.prisma` existe déjà change quelque chose.
-
-👉 la donnée n’est plus implicite  
-👉 elle commence à être décrite  
-
-Et c’est ce basculement qui compte.
-
----
-
-### 1.5 — Le client Prisma : brancher le schéma au backend réel
+### 1.4 — Le client Prisma : brancher le schéma au backend réel
 
 Une fois Prisma installé et configuré, encore faut-il éviter un piège très classique : créer le client n’importe où, n’importe comment. Dans une application qui recharge souvent en développement, ou dans un backend structuré en plusieurs modules, ce genre d’improvisation finit vite par produire de l’instabilité.
 
@@ -321,16 +249,13 @@ Une seconde précaution vit ailleurs : `@prisma/client` est déclaré comme paqu
 
 Là encore, le point n’est pas seulement technique. Il est architectural. Centraliser le client Prisma, c’est reconnaître que l’accès aux données est une dépendance transversale du backend. Cela évite que chaque module s’organise dans son coin et renforce l’idée que Prisma n’est pas une petite dépendance utilitaire, mais une colonne vertébrale technique.
 
-### 1.6 — Ce que cette installation révèle déjà
+### 1.5 — Ce que cette installation révèle déjà
 
 À ce stade, nous n’avons pas encore parlé des modèles eux-mêmes. Et pourtant, une grande partie de l’architecture se lit déjà.
 
 On voit que le schéma vit à la racine, que Prisma est configuré explicitement, que l’environnement PostgreSQL est branché proprement, que le client est centralisé côté backend, et que le monorepo traite la donnée comme une fondation commune.
 
-Autrement dit, avant même de modéliser `User`, `Session` ou `MemberGroup`, le projet dit déjà quelque chose de très fort :
-
-👉 la donnée est une couche de premier rang  
-👉 pas une conséquence tardive de l’API
+Autrement dit, avant même de modéliser `User`, `Session` ou `MemberGroup`, le projet dit déjà quelque chose de très fort : la donnée est une couche de premier rang, pas une conséquence tardive de l’API.
 
 <Callout type="info">
 Installer Prisma proprement, ce n’est pas seulement rendre des commandes exécutables.
@@ -338,17 +263,11 @@ Installer Prisma proprement, ce n’est pas seulement rendre des commandes exéc
 C’est commencer à donner une place stable à la donnée dans l’architecture.
 </Callout>
 
-### 1.7 — Ce que cette section prépare
+### 1.6 — Ce que cette section prépare
 
-Maintenant que Prisma est branché au bon endroit, une nouvelle question apparaît naturellement :
+Maintenant que Prisma est branché au bon endroit, une nouvelle question apparaît : **que décrit exactement le schéma de ce projet ?** À partir de maintenant, nous n’allons plus seulement parler d’installation. Nous allons lire le `schema.prisma` comme une carte du système, comprendre les entités fondamentales, et voir comment les relations racontent déjà une grande partie de l’architecture.
 
-👉 **que décrit exactement le schéma de ce projet ?**
-
-C’est là que la série devient vraiment intéressante. Parce qu’à partir de maintenant, nous n’allons plus seulement parler d’installation. Nous allons lire le `schema.prisma` comme une carte du système, comprendre les entités fondamentales, et voir comment les relations racontent déjà une grande partie de l’architecture.
-
----
-
-👉 **Où nous en sommes :** Prisma n’est plus une dépendance parmi d’autres — il a trouvé sa place à la racine du monorepo, avec une configuration qui l’ancre dans le projet et un client prêt à être consommé côté backend. Nous savons désormais *où* vit la donnée et *par quoi* elle est décrite. Reste à apprendre à lire cette description — à ouvrir `schema.prisma` non comme un fichier de configuration, mais comme la carte d’un système.
+**Où nous en sommes :** Prisma n’est plus une dépendance parmi d’autres — il a trouvé sa place à la racine du monorepo, avec une configuration qui l’ancre dans le projet et un client prêt à être consommé côté backend. Nous savons désormais *où* vit la donnée et *par quoi* elle est décrite. Reste à apprendre à lire cette description — à ouvrir `schema.prisma` non comme un fichier de configuration, mais comme la carte d’un système.
 
 ---
 
