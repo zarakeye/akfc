@@ -26,6 +26,7 @@ import {
   describeWishChanges,
   effectiveLegalAge,
   missingForMinor,
+  parseMinorBirthDate,
   type ConsentChoices,
   type ImageUsageValue,
 } from "@akfc/contracts/legal/imageConsent.ts";
@@ -38,7 +39,9 @@ import {
  *    un lien personnel, à usage unique, valable 7 jours. Seule l'empreinte SHA-256 du jeton est
  *    gardée (ImageConsentRequest.tokenHash) : la base ne permet pas de reconstituer le lien.
  * 3. Le parent ouvre le formulaire pré-rempli des souhaits (`guardianRequestByToken`), peut tout
- *    changer, se déclare représentant légal et valide (`confirmGuardianConsent`). Ses choix font foi.
+ *    changer, confirme (ou renseigne) la date de naissance, se déclare représentant légal et valide
+ *    (`confirmGuardianConsent`). Ses choix font foi ; la date qu'il donne devient celle de la fiche
+ *    (vérifiée) : c'est elle qui fera passer le membre majeur à ses 18 ans.
  * 4. À la validation : PDF figé (avec une page « souhaits du membre / choix du parent »), nouvelle
  *    version (source ONLINE_GUARDIAN, souhaits gardés dans memberWishes), statut mis à jour, lien
  *    grillé ; avis à la boîte du club et e-mail au membre, changements mis en évidence.
@@ -162,6 +165,8 @@ export async function guardianRequestByToken(prisma: PrismaClient, token: string
     /** Souhaits du membre, à pré-cocher. */
     usages: req.usages,
     keepAfterLeave: req.keepAfterLeave,
+    /** Date de naissance connue (« AAAA-MM-JJ »), à confirmer ou corriger ; null : à renseigner. */
+    birthDate: m.birthDate ? m.birthDate.toISOString().slice(0, 10) : null,
     expiresAt: req.expiresAt,
     textVersion: IMAGE_CONSENT_TEXT_VERSION,
     /** Devenu majeur entre-temps : le parent ne peut plus valider. */
@@ -175,10 +180,14 @@ export async function confirmGuardianConsent(params: {
   token: string;
   usages: readonly ImageUsageValue[];
   keepAfterLeave: boolean | null;
+  /** Date de naissance confirmée par le parent (« AAAA-MM-JJ »). */
+  birthDate: string;
 }): Promise<{ changes: string[] }> {
   const { prisma } = params;
   const req = await findByToken(prisma, params.token);
-  const m = req.user;
+  const birthDate = parseMinorBirthDate(params.birthDate);
+  if (typeof birthDate === "string") throw new TRPCError({ code: "BAD_REQUEST", message: birthDate });
+  const m = { ...req.user, birthDate };
   if (effectiveLegalAge(m) !== "MINOR") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Ce membre est devenu majeur : il confirme désormais lui-même son autorisation." });
   }
@@ -232,14 +241,20 @@ export async function confirmGuardianConsent(params: {
           textVersion: IMAGE_CONSENT_TEXT_VERSION,
           signerName: guardianName,
           signerQuality: relation,
-          memberBirthDate: m.birthDate,
+          memberBirthDate: birthDate,
           memberWishes: { usages: [...wishes.usages], keepAfterLeave: wishes.keepAfterLeave },
         },
         select: { id: true },
       });
       await tx.user.update({
         where: { id: req.userId },
-        data: { imageConsent: consentFromUsages(final.usages), imageConsentAt: confirmedAt },
+        data: {
+          imageConsent: consentFromUsages(final.usages),
+          imageConsentAt: confirmedAt,
+          // La date du parent fait foi : c'est elle qui décidera du passage à la majorité.
+          birthDate,
+          birthDateVerified: true,
+        },
         select: { id: true },
       });
     });

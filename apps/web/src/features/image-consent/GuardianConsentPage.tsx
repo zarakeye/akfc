@@ -12,8 +12,9 @@ import { formatDate } from "#features/image-consent/consentFormat.ts";
 
 /**
  * Page du parent référent : le formulaire pré-rempli des souhaits du membre mineur, qu'il peut
- * changer ; il se déclare représentant légal et valide. Ses choix font foi ; les lignes qui
- * s'écartent des souhaits sont marquées « modifié », comme dans le PDF.
+ * changer ; il confirme (ou renseigne) sa date de naissance, se déclare représentant légal et
+ * valide. Ses choix font foi ; les lignes qui s'écartent des souhaits sont marquées « modifié »,
+ * comme dans le PDF. La date qu'il donne devient celle de la fiche du membre.
  */
 export function GuardianConsentPage({ token }: { token: string }): JSX.Element {
   const request = trpc.imageConsent.guardianRequest.useQuery({ token }, { retry: false, refetchOnWindowFocus: false });
@@ -42,6 +43,7 @@ type RequestData = inferRouterOutputs<AppRouter>["imageConsent"]["guardianReques
 function GuardianForm({ token, data: r }: { token: string; data: RequestData }): JSX.Element {
   const [usages, setUsages] = useState<ImageUsageValue[]>(r.usages);
   const [keep, setKeep] = useState<boolean>(r.keepAfterLeave ?? false);
+  const [birthDate, setBirthDate] = useState<string>(r.birthDate ?? "");
   const [legal, setLegal] = useState(false);
   const [textOpen, setTextOpen] = useState(false);
   const confirm = trpc.imageConsent.confirmGuardian.useMutation();
@@ -80,7 +82,7 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
       className="mt-6 space-y-5"
       onSubmit={(e) => {
         e.preventDefault();
-        if (legal) confirm.mutate({ token, usages, keepAfterLeave: keep, isLegalRepresentative: true });
+        if (legal && birthDate) confirm.mutate({ token, usages, keepAfterLeave: keep, birthDate, isLegalRepresentative: true });
       }}
     >
       <p>
@@ -101,6 +103,21 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
         wishes={{ usages: r.usages, keepAfterLeave: r.keepAfterLeave }}
       />
 
+      <label className="flex max-w-xs flex-col gap-1">
+        <span className="font-medium">Date de naissance de {r.memberName}</span>
+        <input
+          type="date"
+          required
+          value={birthDate}
+          onChange={(e) => setBirthDate(e.target.value)}
+          className="rounded border border-gray-300 px-2 py-1.5"
+        />
+        <span className="text-xs text-gray-500">
+          {r.birthDate ? "Vérifiez-la, corrigez-la si besoin." : "Le club ne la connaît pas encore."} Elle reste
+          visible de {r.memberName} ; à ses 18 ans, il décidera lui-même.
+        </span>
+      </label>
+
       <label className="flex items-start gap-2">
         <input type="checkbox" className="mt-1" checked={legal} onChange={(e) => setLegal(e.target.checked)} />
         <span>
@@ -112,7 +129,7 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
       {confirm.error && <p className="text-red-600">{confirm.error.message}</p>}
       <button
         type="submit"
-        disabled={!legal || confirm.isPending}
+        disabled={!legal || !birthDate || confirm.isPending}
         className="rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
       >
         {confirm.isPending ? "Enregistrement…" : "Je valide l'autorisation"}

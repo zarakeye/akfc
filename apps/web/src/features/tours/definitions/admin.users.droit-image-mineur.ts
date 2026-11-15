@@ -23,7 +23,7 @@ export const adminUsersDroitImageMineur: Tour = {
     {
       target: "users.legal",
       title: "Son parent référent",
-      body: "Mineur (ou sa date de naissance, qui décide), puis le nom, la qualité (mère, père, tuteur…) et l'adresse e-mail du parent, d'après le dossier d'inscription de la MJC. Le mineur ne peut pas les changer : le lien part toujours à l'adresse saisie ici. Sans ces informations, ni lien ni formulaire pré-rempli.",
+      body: "Mineur (ou sa date de naissance, qui décide), puis le nom, la qualité (mère, père, tuteur…) et l'adresse e-mail du parent, d'après le dossier d'inscription de la MJC. Le mineur ne peut pas les changer : le lien part toujours à l'adresse saisie ici. Sans ces informations, pas de lien. La date de naissance, si vous ne l'avez pas, c'est le parent qui la donne en validant.",
       advance: { kind: "next" },
     },
     {

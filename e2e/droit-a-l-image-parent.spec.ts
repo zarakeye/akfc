@@ -6,7 +6,8 @@ import { MINOR, USERS } from "./data.mjs";
 /**
  * Droit à l'image d'un mineur, validé en ligne par son parent référent (par l'API : les pages
  * viennent dans l'incrément suivant). Le parent n'a pas de compte : seul le lien reçu par e-mail
- * lui donne accès au formulaire, pré-rempli des souhaits du membre, qu'il peut changer.
+ * lui donne accès au formulaire, pré-rempli des souhaits du membre, qu'il peut changer ; il confirme
+ * sa date de naissance.
  */
 test("le parent reçoit les souhaits du mineur, les modifie et valide ; ses choix font foi", async ({ page, playwright, baseURL }) => {
   // 1. Le mineur, connecté, indique ses souhaits : le lien part à l'adresse saisie par le club.
@@ -34,18 +35,25 @@ test("le parent reçoit les souhaits du mineur, les modifie et valide ; ses choi
     guardianRelation: MINOR.guardian.relation,
     usages: ["MEMBER_SPACE", "SOCIAL_NETWORKS"],
     keepAfterLeave: true,
+    birthDate: MINOR.birthDate.slice(0, 10),
   });
   expect(JSON.stringify(shown.result)).not.toContain("@");
 
   // Sans se déclarer représentant légal, rien n'est enregistré.
   const refused = await trpcMutation(parent, "imageConsent.confirmGuardian", {
-    token, usages: ["MEMBER_SPACE"], keepAfterLeave: false, isLegalRepresentative: false,
+    token, usages: ["MEMBER_SPACE"], keepAfterLeave: false, birthDate: "2012-05-04", isLegalRepresentative: false,
   });
   expect(refused.error?.data.code).toBe("BAD_REQUEST");
 
+  // Une date qui ferait du membre un majeur : refusée, il signerait lui-même.
+  const adultDate = await trpcMutation(parent, "imageConsent.confirmGuardian", {
+    token, usages: ["MEMBER_SPACE"], keepAfterLeave: false, birthDate: "2000-01-01", isLegalRepresentative: true,
+  });
+  expect(adultDate.error?.message).toContain("serait majeur");
+
   // 3. Le parent change : site public oui, réseaux non, retrait après le départ.
   const done = await trpcMutation(parent, "imageConsent.confirmGuardian", {
-    token, usages: ["PUBLIC_SITE", "MEMBER_SPACE"], keepAfterLeave: false, isLegalRepresentative: true,
+    token, usages: ["PUBLIC_SITE", "MEMBER_SPACE"], keepAfterLeave: false, birthDate: "2012-05-04", isLegalRepresentative: true,
   });
   expect(done.error, "validation du parent").toBeUndefined();
   expect(done.result).toEqual({
@@ -58,7 +66,7 @@ test("le parent reçoit les souhaits du mineur, les modifie et valide ; ses choi
 
   // Le lien est grillé : une seconde validation, ou une simple lecture, échoue.
   const again = await trpcMutation(parent, "imageConsent.confirmGuardian", {
-    token, usages: [], keepAfterLeave: null, isLegalRepresentative: true,
+    token, usages: [], keepAfterLeave: null, birthDate: "2012-05-04", isLegalRepresentative: true,
   });
   expect(again.error?.data.code).toBe("NOT_FOUND");
   expect((await trpcQuery(parent, "imageConsent.guardianRequest", { token })).error?.data.code).toBe("NOT_FOUND");

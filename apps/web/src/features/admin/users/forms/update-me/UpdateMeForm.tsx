@@ -53,7 +53,8 @@ export default function UpdateMeForm(): JSX.Element {
 
   const profileQuery = trpc.user.getCurrentUserProfile.useQuery();
   // Date de naissance vérifiée par un instructeur : non modifiable ici.
-  const birthDateLocked = trpc.imageConsent.onlineState.useQuery().data?.birthDateLocked === true;
+  const birthDateLock = trpc.imageConsent.onlineState.useQuery().data?.birthDateLock ?? null;
+  const birthDateLocked = birthDateLock !== null;
 
   const [state, formAction] = useActionState<UpdateMeFormState, FormData>(
     updateMeFormAction,
@@ -252,7 +253,13 @@ export default function UpdateMeForm(): JSX.Element {
               disabled={birthDateLocked}
               {...register("birthDate")}
             />
-            {birthDateLocked && (
+            {birthDateLock === "GUARDIAN" && (
+              <span className="text-xs text-gray-500">
+                C&apos;est votre parent référent qui la confirme ou la corrige, quand il valide votre droit à
+                l&apos;image : indiquez vos souhaits, il recevra le lien.
+              </span>
+            )}
+            {birthDateLock === "CLUB" && (
               <span className="text-xs text-gray-500">
                 Renseignée par le club : pour la corriger, adressez-vous à un instructeur.
               </span>

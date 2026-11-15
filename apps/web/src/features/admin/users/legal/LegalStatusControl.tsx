@@ -2,7 +2,6 @@
 
 import { useState, type JSX } from "react";
 import { useRouter } from "next/navigation";
-import { FileDown } from "lucide-react";
 
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { LEGAL_AGE_LABEL, type LegalAgeValue } from "@akfc/contracts/legal/imageConsent.ts";
@@ -176,13 +175,6 @@ export function LegalStatusControl({
         >
           {save.isPending ? "Enregistrement…" : "Enregistrer"}
         </button>
-        <a
-          href={`/api/media/image-consent/prefilled?userId=${encodeURIComponent(userId)}`}
-          className="inline-flex items-center gap-1.5 text-emerald-700 hover:underline"
-        >
-          <FileDown className="h-4 w-4" />
-          Formulaire de droit à l&apos;image pré-rempli
-        </a>
       </div>
       {save.isSuccess && <p className="mt-2 text-emerald-700">Enregistré.</p>}
       {save.error && <p className="mt-2 text-red-600">{save.error.message}</p>}

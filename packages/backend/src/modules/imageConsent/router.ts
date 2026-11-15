@@ -123,18 +123,24 @@ export const imageConsentRouter = router({
     .input(z.object({ userId: z.string().min(1) }))
     .mutation(({ ctx, input }) => resendGuardianLink(ctx.prisma, input.userId)),
 
-  /** Page du parent (sans compte) : le formulaire pré-rempli des souhaits du membre. */
+  /** Page du parent (sans compte) : les souhaits du membre, pré-cochés, et sa date de naissance. */
   guardianRequest: publicProcedure.input(tokenInput).query(({ ctx, input }) => guardianRequestByToken(ctx.prisma, input.token)),
 
   /** Le parent valide : il se déclare représentant légal ; ses choix font foi. */
   confirmGuardian: publicProcedure
-    .input(tokenInput.merge(choicesInput).extend({ isLegalRepresentative: z.literal(true) }))
+    .input(
+      tokenInput.merge(choicesInput).extend({
+        isLegalRepresentative: z.literal(true),
+        birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Indiquez sa date de naissance."),
+      }),
+    )
     .mutation(({ ctx, input }) =>
       confirmGuardianConsent({
         prisma: ctx.prisma,
         token: input.token,
         usages: input.usages,
         keepAfterLeave: input.keepAfterLeave,
+        birthDate: input.birthDate,
       }),
     ),
 

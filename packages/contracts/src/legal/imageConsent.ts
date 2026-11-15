@@ -93,14 +93,13 @@ export function effectiveLegalAge(
 }
 
 /**
- * Mineur : ce qui manque pour envoyer la demande au parent ou télécharger le formulaire pré-rempli
- * (libellés à afficher). Vide = complet. Tout doit être renseigné, la date de naissance vérifiée.
+ * Mineur : ce qui manque pour envoyer la demande au parent (libellés à afficher). Vide = complet.
+ * La date de naissance n'en fait pas partie : c'est le parent qui la confirme (ou la renseigne)
+ * en validant l'autorisation.
  */
 export function missingForMinor(m: {
   firstName: string | null;
   lastName: string | null;
-  birthDate: Date | null;
-  birthDateVerified: boolean;
   guardianName: string | null;
   guardianEmail: string | null;
   guardianRelation: string | null;
@@ -108,11 +107,21 @@ export function missingForMinor(m: {
   const missing: string[] = [];
   if (!m.lastName?.trim()) missing.push("nom du membre");
   if (!m.firstName?.trim()) missing.push("prénom du membre");
-  if (!m.birthDate || !m.birthDateVerified) missing.push("date de naissance (saisie par un instructeur)");
   if (!m.guardianName?.trim()) missing.push("nom du parent référent");
   if (!m.guardianEmail?.trim()) missing.push("adresse e-mail du parent référent");
   if (!m.guardianRelation?.trim()) missing.push("qualité du parent référent (mère, père, tuteur…)");
   return missing;
+}
+
+/**
+ * Date de naissance d'un mineur, confirmée par son parent : « AAAA-MM-JJ », passée, moins de
+ * 18 ans. Renvoie la date (minuit UTC) ou le message d'erreur à afficher.
+ */
+export function parseMinorBirthDate(value: string, now: Date = new Date()): Date | string {
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00Z`) : null;
+  if (!d || Number.isNaN(d.getTime()) || d > now || ageOn(d, now) > 120) return "Date de naissance invalide.";
+  if (ageOn(d, now) >= 18) return "À cette date, le membre serait majeur : c'est lui qui donne son autorisation. Contactez le club si sa fiche est erronée.";
+  return d;
 }
 
 /** Statut déduit d'un formulaire : accordée dès qu'un usage est autorisé. */

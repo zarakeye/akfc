@@ -3,7 +3,7 @@
 import { useState, type JSX } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@akfc/backend/modules/index.ts";
-import { FileDown, PenLine, Send } from "lucide-react";
+import { PenLine, Send } from "lucide-react";
 
 import { trpc } from "#core/trpc/trpcClient.ts";
 import type { ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
@@ -17,8 +17,9 @@ import { formatDate } from "#features/image-consent/consentFormat.ts";
  *   mot de passe ; le club reçoit un avis, et le récapitulatif PDF rejoint ses formulaires.
  * - Mineur : il indique ses SOUHAITS ; un lien personnel part à son parent référent, qui valide
  *   (page /autorisation-parent/…). La page dit ce qui manque au club, et où en est la demande.
- * - Majorité non renseignée : le formulaire papier, en attendant.
- * Le formulaire pré-rempli à imprimer est proposé dès que les informations le permettent.
+ * - Majorité non renseignée : le club doit d'abord la renseigner.
+ * Tout se fait en ligne : une fois le majeur ou le parent ayant validé, le récapitulatif PDF des
+ * autorisations et refus rejoint les formulaires du membre.
  */
 export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValue[]; keepAfterLeave: boolean | null } | null }): JSX.Element | null {
   const utils = trpc.useUtils();
@@ -39,18 +40,8 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
   const s = state.data;
   if (!s) return null;
 
-  const prefilled = s.canDownloadPrefilled ? (
-    // Téléchargement d'un PDF servi par une route d'API, pas une page : <Link> (navigation
-    // côté client) ne convient pas, un vrai lien <a> si.
-    // eslint-disable-next-line @next/next/no-html-link-for-pages
-    <a href="/api/media/image-consent/prefilled" className="inline-flex items-center gap-1.5 text-emerald-700 hover:underline">
-      <FileDown className="h-4 w-4" />
-      Formulaire pré-rempli à imprimer
-    </a>
-  ) : null;
-
   if (s.legalAge === "MINOR") {
-    return <MinorWishes state={s} latest={latest} prefilled={prefilled} onText={() => setTextOpen(true)} textOpen={textOpen} onCloseText={() => setTextOpen(false)} />;
+    return <MinorWishes state={s} latest={latest} onText={() => setTextOpen(true)} textOpen={textOpen} onCloseText={() => setTextOpen(false)} />;
   }
 
   if (s.legalAge === "UNKNOWN") {
@@ -60,10 +51,8 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
         <p className="mt-1">
           Le club n&apos;a pas encore indiqué si vous êtes majeur(e) ou mineur(e) : un mineur ne signe pas lui-même,
           c&apos;est son parent qui valide. Écrivez à contact@akfc.fr pour qu&apos;un administrateur le renseigne ; le
-          formulaire en ligne apparaîtra ici. En attendant, vous pouvez imprimer le formulaire, le signer et le remettre
-          à un instructeur.
+          formulaire en ligne apparaîtra ici.
         </p>
-        {prefilled && <p className="mt-3">{prefilled}</p>}
       </div>
     );
   }
@@ -71,6 +60,12 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
   return (
     <div className="rounded-lg border border-border p-4 text-sm">
       <p className="font-semibold">Donner ou modifier votre autorisation en ligne</p>
+      {s.reconfirm && (
+        <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900" role="status">
+          Vous êtes majeur(e) : c&apos;est désormais vous qui décidez. Les choix de votre parent restent valables
+          jusqu&apos;à ce que vous confirmiez ou modifiiez les vôtres.
+        </p>
+      )}
       {!s.canConfirmOnline ? (
         <p className="mt-1 text-amber-800">Renseignez d&apos;abord vos nom et prénom dans votre profil.</p>
       ) : !open ? (
@@ -81,9 +76,8 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
             className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700"
           >
             <PenLine className="h-4 w-4" />
-            {latest ? "Modifier mes choix" : "Donner mon autorisation"}
+            {s.reconfirm ? "Confirmer ou modifier mes choix" : latest ? "Modifier mes choix" : "Donner mon autorisation"}
           </button>
-          {prefilled}
         </div>
       ) : (
         <form
@@ -147,14 +141,12 @@ type OnlineState = inferRouterOutputs<AppRouter>["imageConsent"]["onlineState"];
 function MinorWishes({
   state: s,
   latest,
-  prefilled,
   onText,
   textOpen,
   onCloseText,
 }: {
   state: OnlineState;
   latest: { usages: ImageUsageValue[]; keepAfterLeave: boolean | null } | null;
-  prefilled: JSX.Element | null;
   onText: () => void;
   textOpen: boolean;
   onCloseText: () => void;
@@ -178,7 +170,7 @@ function MinorWishes({
       <p className="mt-1 text-gray-600">
         Vous êtes mineur : c&apos;est votre parent référent qui autorise l&apos;usage de votre image
         {s.guardianEmailMasked ? <> (adresse enregistrée par le club : {s.guardianEmailMasked})</> : null}. Vous indiquez vos
-        souhaits ; il les reçoit pré-cochés, peut les modifier, puis valide.
+        souhaits ; il les reçoit pré-cochés, peut les modifier, confirme votre date de naissance, puis valide.
       </p>
 
       {s.missing.length > 0 ? (
@@ -238,7 +230,6 @@ function MinorWishes({
           </div>
         </form>
       )}
-      {prefilled && <p className="mt-3 text-gray-600">Version papier : {prefilled}</p>}
       {textOpen && <BlankConsentFormPreview onClose={onCloseText} />}
     </div>
   );

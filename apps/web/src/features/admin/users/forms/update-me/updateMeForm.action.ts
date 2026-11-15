@@ -3,6 +3,7 @@
 import { prisma } from "@akfc/backend/prisma.ts";
 import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts";
 import { updateMeFormSchema } from "@akfc/contracts/forms/updateMeForm.schema.ts";
+import { ageOn, effectiveLegalAge } from "@akfc/contracts/legal/imageConsent.ts";
 import { Prisma } from "@prisma/client";
 
 import type { UpdateMeFormState } from "./updateMeForm.types";
@@ -65,10 +66,24 @@ export async function updateMeFormAction(
 
   const data = parsed.data;
 
-  // Date de naissance saisie ou vérifiée par un instructeur (mineurs, dossier MJC) : le membre ne
-  // peut plus la modifier ; elle justifie l'accord parental du droit à l'image.
-  const current = await prisma.user.findUnique({ where: { id: userId }, select: { birthDateVerified: true } });
-  const birthDateLocked = current?.birthDateVerified === true;
+  // Date de naissance : le membre la voit toujours. Mineur : il ne la modifie pas, son parent la
+  // confirme ou la corrige en validant le droit à l'image. Majeur : il la corrige, sans pouvoir
+  // devenir mineur par erreur de saisie. Majorité non renseignée : modifiable, sauf date du club.
+  const current = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { birthDate: true, birthDateVerified: true, legalAge: true },
+  });
+  const legalAge = current ? effectiveLegalAge(current) : "UNKNOWN";
+  const birthDateLocked = legalAge === "MINOR" || (legalAge === "UNKNOWN" && current?.birthDateVerified === true);
+  const newBirthDate = data.birthDate ? new Date(`${data.birthDate}T00:00:00Z`) : null;
+  if (!birthDateLocked && legalAge === "ADULT" && newBirthDate && ageOn(newBirthDate, new Date()) < 18) {
+    return {
+      status: "error",
+      error: "Votre profil n'a pas été enregistré.",
+      fieldErrors: { birthDate: "Cette date ferait de vous un mineur : vérifiez-la, ou écrivez au club." },
+    };
+  }
+  const birthDateChanged = (newBirthDate?.getTime() ?? null) !== (current?.birthDate?.getTime() ?? null);
 
   const updateData = {
     firstName: data.firstName,
@@ -76,7 +91,8 @@ export async function updateMeFormAction(
     pseudo: data.pseudo ?? null,
     aboutMe: data.aboutMe ?? null,
     phone: data.phone ?? null,
-    ...(birthDateLocked ? {} : { birthDate: data.birthDate ? new Date(data.birthDate) : null }),
+    // Corrigée par le membre : ce n'est plus la date vérifiée par le club ou le parent.
+    ...(birthDateLocked || !birthDateChanged ? {} : { birthDate: newBirthDate, birthDateVerified: false }),
     isFirstLogin: false,
   } satisfies Prisma.UserUpdateInput;
 

@@ -5,6 +5,7 @@ import { sweepOrphanDerivatives } from "#modules/media/services/mediaDerivatives
 import { purgeFileVersions } from "#modules/fileVersions/fileVersions.service.ts";
 import { purgeExpiredTrash } from "#modules/trash/services/trashRetention.service.ts";
 import { purgeDetachedImageConsentForms } from "#modules/imageConsent/imageConsentForm.service.ts";
+import { promoteNewAdults } from "#modules/users/comingOfAge.service.ts";
 
 /*
  * Durées de conservation (RGPD) APPLIQUÉES, pas seulement annoncées :
@@ -13,7 +14,8 @@ import { purgeDetachedImageConsentForms } from "#modules/imageConsent/imageConse
  *   - sessions expirées et liens de réinitialisation périmés : supprimés ;
  *   - formulaires de droit à l'image d'un compte supprimé depuis plus de 5 ans : supprimés ;
  *   - éléments de la corbeille jetés depuis plus de N jours (réglage trashRetentionDays) : supprimés ;
- *   - anciennes versions des fichiers : les 10 plus récentes de chaque fichier, pas plus d'un an.
+ *   - anciennes versions des fichiers : les 10 plus récentes de chaque fichier, pas plus d'un an ;
+ *   - mineur qui a 18 ans : majeur, coordonnées de son parent effacées (comingOfAge.service.ts).
  * Les comptes ne sont JAMAIS supprimés automatiquement (le site ne connaît pas la fin d'adhésion) :
  * listInactiveAccounts les signale aux administrateurs (registre RGPD), qui décident.
  */
@@ -65,7 +67,12 @@ export async function purgeExpiredData(db: PrismaClient, now = new Date()) {
     console.error("[rgpd/purge] versions :", err instanceof Error ? err.message : err);
     return 0;
   });
+  const newAdults = await promoteNewAdults(db, now).catch((err) => {
+    console.error("[rgpd/purge] passage à la majorité :", err instanceof Error ? err.message : err);
+    return 0;
+  });
   return {
+    newAdults,
     tickets: tickets.count,
     sessions: sessions.count,
     resetTokens: resetTokens.count,
@@ -120,6 +127,7 @@ export function startRetentionSchedule(db: PrismaClient): boolean {
     lastDay = parisClock(now).day;
     purgeExpiredData(db, now)
       .then((r) => {
+        if (r.newAdults) console.log(`[majorité] ${r.newAdults} membre(s) devenu(s) majeur(s)`);
         if (r.tickets || r.sessions || r.resetTokens || r.guardianRequests || r.derivatives || r.imageConsentForms || r.trash || r.versions) {
           console.log(`[rgpd/purge] ${r.tickets} demande(s) close(s), ${r.sessions} session(s), ${r.resetTokens} lien(s) de réinitialisation, ${r.guardianRequests} demande(s) au parent expirée(s), ${r.derivatives} vignette(s) orpheline(s), ${r.imageConsentForms} formulaire(s) de droit à l'image, ${r.trash} élément(s) de la corbeille, ${r.versions} ancienne(s) version(s) supprimé(s)`);
         }

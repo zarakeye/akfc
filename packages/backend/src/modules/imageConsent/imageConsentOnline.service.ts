@@ -8,7 +8,7 @@ import { getR2Bucket, getR2Client } from "#modules/storage/adapters/r2/client.ts
 import { sendImageConsentNotice } from "#email/templates/imageConsentNotice.ts";
 import { buildConsentPdf } from "#modules/imageConsent/consentPdf.service.ts";
 import { IMAGE_CONSENT_ROOT } from "#modules/imageConsent/imageConsentForm.service.ts";
-import { latestFormUsages } from "#modules/imageConsent/formOrder.ts";
+import { byEffectiveDesc, latestFormUsages } from "#modules/imageConsent/formOrder.ts";
 import { pendingGuardianRequest } from "#modules/imageConsent/imageConsentGuardian.service.ts";
 import {
   IMAGE_CONSENT_TEXT_VERSION,
@@ -78,11 +78,19 @@ export async function onlineConsentState(prisma: PrismaClient, userId: string) {
     legalAge,
     /** Majeur dont le nom est renseigné : il confirme lui-même, en ligne. */
     canConfirmOnline: legalAge === "ADULT" && fullName(m) !== "",
-    /** Mineur : ce qui manque avant l'envoi au parent et le formulaire pré-rempli. */
+    /** Mineur : ce qui manque avant l'envoi au parent. */
     missing,
-    /** Formulaire pré-rempli téléchargeable (mineur : seulement si tout est renseigné). */
-    canDownloadPrefilled: legalAge !== "MINOR" || missing.length === 0,
-    birthDateLocked: m.birthDateVerified,
+    /**
+     * Date de naissance non modifiable dans le profil : « GUARDIAN » pour un mineur (c'est son
+     * parent qui la confirme ou la corrige, en validant l'autorisation), « CLUB » si la majorité
+     * n'est pas renseignée et que la date vient du club ; null : le membre (majeur) la corrige.
+     */
+    birthDateLock: legalAge === "MINOR" ? ("GUARDIAN" as const) : legalAge === "UNKNOWN" && m.birthDateVerified ? ("CLUB" as const) : null,
+    /**
+     * Majeur dont les droits en vigueur ont été signés par son parent (devenu majeur depuis) : ils
+     * restent valables jusqu'à ce qu'il confirme ou modifie les siens.
+     */
+    reconfirm: legalAge === "ADULT" && (await latestSignedByGuardian(prisma, userId)),
     /** Adresse du parent, masquée (le membre ne la voit pas en entier). */
     guardianEmailMasked: m.guardianEmail ? maskEmail(m.guardianEmail) : null,
     /** Mineur dont tout est renseigné : il indique ses souhaits, le lien part à son parent. */
@@ -90,6 +98,16 @@ export async function onlineConsentState(prisma: PrismaClient, userId: string) {
     /** Mineur : la demande en cours (souhaits, lien envoyé, validité), ou null. */
     pendingGuardian: legalAge === "MINOR" ? await pendingGuardianRequest(prisma, userId) : null,
   };
+}
+
+/** Le formulaire en vigueur (le plus récent par date des droits) a-t-il été signé par un parent ? */
+async function latestSignedByGuardian(prisma: PrismaClient, userId: string): Promise<boolean> {
+  const forms = await prisma.imageConsentForm.findMany({
+    where: { userId },
+    select: { signerQuality: true, source: true, signedAt: true, createdAt: true },
+  });
+  const latest = forms.sort(byEffectiveDesc)[0];
+  return Boolean(latest && (latest.source === "ONLINE_GUARDIAN" || latest.signerQuality));
 }
 
 /** « c•••@example.com ». */

@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
+import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -270,24 +270,57 @@ await prisma.user.update({
   });
 }
 
-// Deux mineurs dont le club a tout renseigné : leur parent référent peut recevoir le lien.
-for (const { user, guardian } of [
-  { user: USERS.mineur, guardian: MINOR.guardian },
-  { user: USERS.mineurPages, guardian: MINOR.guardianPages },
+// Deux mineurs dont le club a renseigné le parent référent : il peut recevoir le lien. Le second
+// n'a pas de date de naissance : c'est son parent qui la donne, en validant.
+for (const { user, guardian, birthDate } of [
+  { user: USERS.mineur, guardian: MINOR.guardian, birthDate: new Date(MINOR.birthDate) },
+  { user: USERS.mineurPages, guardian: MINOR.guardianPages, birthDate: null },
 ]) {
   await prisma.user.update({
     where: { id: user.id },
     data: {
       lastName: MINOR.lastName,
       legalAge: "MINOR",
-      birthDate: new Date(MINOR.birthDate),
-      birthDateVerified: true,
+      birthDate,
+      birthDateVerified: birthDate !== null,
       guardianName: guardian.name,
       guardianEmail: guardian.email,
       guardianRelation: guardian.relation,
     },
   });
 }
+
+// Inscrit mineur, il a 18 ans depuis (date vérifiée) ; son parent avait signé en ligne.
+await prisma.user.update({
+  where: { id: USERS.dixHuit.id },
+  data: {
+    lastName: DIX_HUIT.lastName,
+    legalAge: "MINOR",
+    birthDate: new Date(DIX_HUIT.birthDate),
+    birthDateVerified: true,
+    guardianName: DIX_HUIT.guardian.name,
+    guardianEmail: DIX_HUIT.guardian.email,
+    guardianRelation: DIX_HUIT.guardian.relation,
+    imageConsent: "GRANTED",
+    imageConsentAt: new Date("2017-09-15T00:00:00Z"),
+  },
+});
+await prisma.imageConsentForm.create({
+  data: {
+    userId: USERS.dixHuit.id,
+    memberName: `${USERS.dixHuit.firstName} ${DIX_HUIT.lastName}`,
+    storageKey: DIX_HUIT.formKey,
+    mimeType: "application/pdf",
+    fileName: "autorisation-droit-image-2017-09-15.pdf",
+    size: 1,
+    usages: ["MEMBER_SPACE"],
+    keepAfterLeave: false,
+    signedAt: new Date("2017-09-15T00:00:00Z"),
+    source: "ONLINE_GUARDIAN",
+    signerName: DIX_HUIT.guardian.name,
+    signerQuality: DIX_HUIT.guardian.relation,
+  },
+});
 
 // Un dossier dans la corbeille, avec un fichier : l'effacement définitif porte sur le dossier entier.
 {

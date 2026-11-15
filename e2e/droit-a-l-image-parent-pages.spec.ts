@@ -35,7 +35,14 @@ test("souhaits du mineur, page du parent, changements visibles sur la fiche", as
   await parent.getByRole("radio", { name: "Réseaux sociaux du club : non" }).check();
   await expect(parent.getByText("modifié")).toHaveCount(1);
 
+  // Le club ne connaît pas sa date de naissance : c'est le parent qui la donne.
   const submit = parent.getByRole("button", { name: "Je valide l'autorisation" });
+  await parent.getByRole("checkbox").check();
+  const date = parent.getByLabel(`Date de naissance de ${name}`);
+  await expect(date).toHaveValue("");
+  await expect(submit, "pas de validation sans la date de naissance").toBeDisabled();
+  await date.fill("2012-09-10");
+  await parent.getByRole("checkbox").uncheck();
   await expect(submit, "pas de validation sans se déclarer représentant légal").toBeDisabled();
   await parent.getByRole("checkbox").check();
   await submit.click();
@@ -46,6 +53,13 @@ test("souhaits du mineur, page du parent, changements visibles sur la fiche", as
   await parent.reload();
   await expect(parent.getByText("Ce lien n'est plus valable", { exact: false })).toBeVisible();
   await parentContext.close();
+
+  // Le mineur voit sa date de naissance dans son profil, sans pouvoir la changer : c'est son parent.
+  await page.goto("/profil/edit");
+  const birth = page.getByLabel("Date de naissance");
+  await expect(birth).toHaveValue("2012-09-10");
+  await expect(birth).toBeDisabled();
+  await expect(page.getByText("C'est votre parent référent qui la confirme")).toBeVisible();
 
   // 3. L'administrateur voit, sur la fiche, ce que le parent a changé.
   await loginAs(page, USERS.admin.email);

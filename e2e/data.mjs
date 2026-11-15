@@ -30,6 +30,16 @@ export const USERS = {
   profil: { id: "e2e-profil", email: "profil@e2e.test", firstName: "Maël" },
   // Majorité non renseignée, ajouté au groupe système Bureau (devient majeur). À lui seul.
   bureau: { id: "e2e-bureau", email: "bureau@e2e.test", firstName: "Ysé" },
+  // Inscrit mineur, il a eu 18 ans : son parent avait signé, il reconfirme. À lui seul.
+  dixHuit: { id: "e2e-dix-huit", email: "dix-huit@e2e.test", firstName: "Noé" },
+};
+
+/** Le membre devenu majeur : sa date de naissance (vérifiée) et l'autorisation signée par son parent. */
+export const DIX_HUIT = {
+  lastName: "Dixhuit",
+  birthDate: "2000-03-01T00:00:00.000Z",
+  guardian: { name: "Rémi Dixhuit", email: "parent-dix-huit@e2e.test", relation: "père" },
+  formKey: "_private/image-consent/e2e-dix-huit/parent.pdf",
 };
 
 /** L'actualité publiée que commente le membre partant, et le fichier qu'il a envoyé. */
