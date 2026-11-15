@@ -137,10 +137,9 @@ export const userRouter = router({
         // Même règle que la connexion : nettoyée, en minuscules (sinon le membre ne retrouverait
         // pas son compte en tapant son adresse autrement).
         email: emailSchema,
-        /** Un ou plusieurs groupes (au moins un). */
         /** Groupes du membre ; aucun pour un simple membre. */
         groupIds: z.array(z.string().min(1)),
-        /** Majorité et, pour un mineur, date de naissance et parent référent (tous obligatoires). */
+        /** Majorité et, pour un mineur, son parent référent (nom et adresse obligatoires ; date facultative). */
         legal: legalInfoInput,
         /** Créneaux suivis (facultatif) ; pour un instructeur, sans être élève. */
         courseIds: z.array(z.number().int().positive()).max(50).default([]),

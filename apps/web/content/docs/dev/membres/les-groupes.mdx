@@ -4,7 +4,7 @@ description: "Ce qu’est un groupe : une liste de diffusion, un niveau d’acc�
 section: "Membres et collaboration"
 order: 4
 entities:
-  MemberGroup: [name, description, isCollaborative, isAdminGroup, parentGroupId]
+  MemberGroup: [name, description, isCollaborative, isAdminGroup, systemKind, parentGroupId]
   MemberGroupMembership: [groupId, userId, access]
   Folder: [appRoot, fullPath]
 stories:
@@ -23,7 +23,7 @@ stories:
       - label: Il retire un membre ; jamais lui-même des Administrateurs
         call: memberGroup.removeMember
         section: Lecteur ou éditeur
-      - label: Il supprime un groupe dont l'espace est vide ; ses sous-groupes remontent d'un cran
+      - label: Il supprime un groupe dont l'espace est vide ; ses sous-groupes remontent d'un cran ; jamais Administrateurs ni un groupe système
         call: memberGroup.delete
         section: Supprimer un groupe
 ---
@@ -49,7 +49,7 @@ Un groupe (`MemberGroup`) sert d’abord de **liste de diffusion** : on lui adre
   filename="schema.prisma"
   snippetStart="model MemberGroup {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="11,16,22"
+  snippetHighlight="11,16,20,26"
   snippetTitle="MemberGroup"
   fullFileTitle="Voir le fichier complet"
 />
@@ -174,6 +174,25 @@ Cette position donne au groupe un pouvoir qui se transmet : quiconque serait pla
 Un droit qui se **transmet** (par héritage, par appartenance, par délégation) doit être protégé à sa source, pas seulement là où il s’exerce. Ici, la source est la place d’un groupe dans l’arbre : c’est elle que la procédure verrouille.
 </Callout>
 
+## Les groupes système : Instructeurs et Bureau
+
+Deux groupes ont un rôle dans le club, pas seulement dans le site : les **instructeurs**, qui donnent les cours, et le **bureau** de l’association. Ils deviennent des groupes **système** (`systemKind`, unique par sorte) : rangés sous Administrateurs, impossibles à supprimer, et leurs membres, comme ceux d’Administrateurs, sont **majeurs d’office**. Ils existent dès le démarrage :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/systemGroups.service.ts"
+  filename="systemGroups.service.ts"
+  snippetStart="export async function ensureSystemGroups("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="17,22,29,40,46"
+  snippetTitle="ensureSystemGroups : adopter, créer, peupler"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le club avait déjà un groupe « Bureau ». Plutôt que d’en créer un second, la fonction l’**adopte** : elle le marque `systemKind: BUREAU`, avec ses membres et son espace. « Instructeurs » n’existait pas : il est créé sous Administrateurs. Puis le groupe Instructeurs reçoit tous ceux qui sont déjà affectés à une discipline, un cours ou un stage : c’est lui, désormais, qui dit qui peut l’être (la liste des instructeurs proposés dans les formulaires de cours en vient). Enfin, les comptes sans majorité qui appartiennent à un groupe de majeurs passent majeurs. Tout est idempotent : relancée à chaque démarrage, la fonction ne change plus rien.
+
+Quitter Instructeurs suppose de n’être plus affecté nulle part (`assertCanLeaveInstructors`) : sinon un cours aurait un instructeur que le site ne compte plus comme tel.
+
 ## Supprimer un groupe
 
 Supprimer un groupe touche à trois choses : son espace, ses sous-groupes, ses appartenances.
@@ -185,12 +204,12 @@ Supprimer un groupe touche à trois choses : son espace, ses sous-groupes, ses a
   snippetStart="if (group.isAdminGroup) {"
   snippetEnd="]);"
   title="deleteGroupWithSpace — la suppression sûre"
-  stepsJson='[{"title": "Jamais la racine", "body": "Le groupe Administrateurs ne se supprime pas.", "scope": "1-6", "focus": "1-1"}, {"title": "Son espace, lu par position", "body": "Les dossiers enregistrés qui se terminent par l’identifiant du groupe ; on ne garde que l’espace lui-même : `<racine>/collaborative-group-spaces/<slug>-<id>`, trois segments, lus par position (partie « Contenu éditorial », chapitre 6). Un dossier homonyme rangé ailleurs n’en est pas un.", "scope": "9-19", "focus": "18-18"}, {"title": "Un espace vide", "body": "Le contrôle est PHYSIQUE, chez le stockage : ce que montre le finder. Un espace qui contient des fichiers est refusé, avec un message qui dit quoi faire.", "scope": "29-36", "focus": "30-30"}, {"title": "Trois écritures, une transaction", "body": "Les sous-groupes remontent d’un cran (vers le parent du groupe supprimé, au pire Administrateurs) AVANT la suppression, sans quoi la base mettrait leur parent à nul ; puis le registre de l’espace, puis le groupe, dont les appartenances et liens de documents partent en cascade. Ensemble, ou pas du tout.", "scope": "40-52", "focus": "42-51"}]'
+  stepsJson='[{"title": "Jamais la racine", "body": "Le groupe Administrateurs ne se supprime pas, ni les groupes système (Instructeurs, Bureau).", "scope": "1-12", "focus": "1-7"}, {"title": "Son espace, lu par position", "body": "Les dossiers enregistrés qui se terminent par l’identifiant du groupe ; on ne garde que l’espace lui-même : `<racine>/collaborative-group-spaces/<slug>-<id>`, trois segments, lus par position (partie « Contenu éditorial », chapitre 6). Un dossier homonyme rangé ailleurs n’en est pas un.", "scope": "15-25", "focus": "24-24"}, {"title": "Un espace vide", "body": "Le contrôle est PHYSIQUE, chez le stockage : ce que montre le finder. Un espace qui contient des fichiers est refusé, avec un message qui dit quoi faire.", "scope": "35-42", "focus": "36-36"}, {"title": "Trois écritures, une transaction", "body": "Les sous-groupes remontent d’un cran (vers le parent du groupe supprimé, au pire Administrateurs) AVANT la suppression, sans quoi la base mettrait leur parent à nul ; puis le registre de l’espace, puis le groupe, dont les appartenances et liens de documents partent en cascade. Ensemble, ou pas du tout.", "scope": "46-58", "focus": "48-57"}]'
 />
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qu’est-ce qu’un groupe ?", "Une liste de diffusion ; avec isCollaborative, un espace de fichiers ; avec isAdminGroup, le groupe qui fait les administrateurs."], ["Quels droits porte une appartenance ?", "VIEWER (consulter) ou EDITOR (déposer, valider, jeter), dans l’espace du groupe seulement."], ["Comment les droits se transmettent-ils ?", "Vers le bas : un membre d’un groupe a accès aux espaces des groupes placés sous lui, au même niveau."], ["Comment les calcule-t-on ?", "En remontant depuis un espace (gardes), en descendant depuis un membre (finder, cloche) ; les deux doivent concorder."], ["Qu’est-ce qui protège la racine ?", "Administrateurs n’a jamais de parent, et « sans parent » veut dire « sous Administrateurs »."], ["Comment l’arbre reste-t-il un arbre ?", "Pas son propre parent, pas un descendant comme parent ; les parcours se protègent quand même d’une boucle."], ["Que fait la suppression d’un groupe ?", "Refusée pour Administrateurs ou un espace non vide ; sinon sous-groupes re-parentés, registre et groupe supprimés, dans une transaction."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qu’est-ce qu’un groupe ?", "Une liste de diffusion ; avec isCollaborative, un espace de fichiers ; avec isAdminGroup, le groupe qui fait les administrateurs ; avec systemKind, Instructeurs ou Bureau."], ["Que sont les groupes système ?", "Instructeurs et Bureau : sous Administrateurs, insupprimables, membres majeurs d’office ; garantis au démarrage (un Bureau existant est adopté)."], ["Quels droits porte une appartenance ?", "VIEWER (consulter) ou EDITOR (déposer, valider, jeter), dans l’espace du groupe seulement."], ["Comment les droits se transmettent-ils ?", "Vers le bas : un membre d’un groupe a accès aux espaces des groupes placés sous lui, au même niveau."], ["Comment les calcule-t-on ?", "En remontant depuis un espace (gardes), en descendant depuis un membre (finder, cloche) ; les deux doivent concorder."], ["Qu’est-ce qui protège la racine ?", "Administrateurs n’a jamais de parent, et « sans parent » veut dire « sous Administrateurs »."], ["Comment l’arbre reste-t-il un arbre ?", "Pas son propre parent, pas un descendant comme parent ; les parcours se protègent quand même d’une boucle."], ["Que fait la suppression d’un groupe ?", "Refusée pour Administrateurs ou un espace non vide ; sinon sous-groupes re-parentés, registre et groupe supprimés, dans une transaction."]]' />
 
 ## À suivre
 

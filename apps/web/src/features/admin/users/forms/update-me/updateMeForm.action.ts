@@ -66,8 +66,8 @@ export async function updateMeFormAction(
 
   const data = parsed.data;
 
-  // Date de naissance : le membre la voit toujours. Mineur : il ne la modifie pas, son parent la
-  // confirme ou la corrige en validant le droit à l'image. Majeur : il la corrige, sans pouvoir
+  // Date de naissance : le membre la voit toujours. Mineur : il ne la modifie pas, il demande à son
+  // parent de la renseigner ou la corriger (lien personnel). Majeur : il la corrige, sans pouvoir
   // devenir mineur par erreur de saisie. Majorité non renseignée : modifiable, sauf date du club.
   const current = await prisma.user.findUnique({
     where: { id: userId },

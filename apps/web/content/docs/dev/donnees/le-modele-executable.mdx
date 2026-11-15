@@ -274,7 +274,7 @@ Le client généré fournit ainsi bien plus que des types de modèles :
     pseudo: data.pseudo ?? null,
     aboutMe: data.aboutMe ?? null,
     phone: data.phone ?? null,
-    ...(birthDateLocked ? {} : { birthDate: data.birthDate ? new Date(data.birthDate) : null }),
+    ...(birthDateLocked || !birthDateChanged ? {} : { birthDate: newBirthDate, birthDateVerified: false }),
     isFirstLogin: false,
   } satisfies Prisma.UserUpdateInput;
 ```
