@@ -87,6 +87,10 @@ Au build, il analyse chaque composant et chaque hook, puis les réécrit pour qu
 
 Au moment de l'activation, sur la même machine, la compilation de `next build` est passée de 61 à 83 secondes, et 33 des fichiers JavaScript envoyés au navigateur contenaient le code de mémorisation ajouté par le Compiler. Une vingtaine de secondes de build en plus, contre des rendus évités à chaque interaction.
 
+<Callout type="warning">
+**Le Compiler et react-hook-form ne s'entendent pas.** react-hook-form signale les changements d'un formulaire (modifié ? erreurs ? envoi en cours ?) par un objet espion, `formState`, que le Compiler ne sait pas suivre : le rendu mémorisé ne se relance plus quand on tape. Le formulaire du profil en a fait les frais : son bouton « Enregistrer », activé seulement quand un champ change, restait grisé. Les quatre composants du projet qui utilisent `useForm` commencent donc par la directive `"use no memo";`, qui les laisse hors du Compiler. Le test `profil-edition.spec.ts` vérifie que le bouton s'active à la frappe.
+</Callout>
+
 ## Les redirections
 
 ```ts

@@ -26,6 +26,8 @@ export const USERS = {
   partant: { id: "e2e-partant", email: "partant@e2e.test", firstName: "Kévin" },
   // Majorité non renseignée, passé en majeur par le tri de la liste des utilisateurs. À lui seul.
   majorite: { id: "e2e-majorite", email: "majorite@e2e.test", firstName: "Lucas" },
+  // Modifie son profil (pseudo). À lui seul.
+  profil: { id: "e2e-profil", email: "profil@e2e.test", firstName: "Maël" },
 };
 
 /** L'actualité publiée que commente le membre partant, et le fichier qu'il a envoyé. */

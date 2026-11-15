@@ -25,6 +25,9 @@ const formSchema = changePasswordSchema
 type FormValues = z.infer<typeof formSchema>;
 
 export default function ChangePasswordForm(): JSX.Element {
+  // Hors du React Compiler : react-hook-form signale ses changements par un proxy (`formState`)
+  // que le compilateur ne voit pas ; mémorisé, le rendu ne suivrait plus erreurs et état d'envoi.
+  "use no memo";
   const [okMsg, setOkMsg] = useState<string | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 

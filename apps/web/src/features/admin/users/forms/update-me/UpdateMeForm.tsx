@@ -25,7 +25,8 @@ function SubmitButton(props: { disabled?: boolean }): JSX.Element {
   return (
     <button
       type="submit"
-      className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+      // Couleurs du thème : en mode sombre, un bouton noir disparaissait sur le fond de la page.
+      className="rounded bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
       disabled={pending || props.disabled}
     >
       {pending ? "Enregistrement..." : "Enregistrer"}
@@ -42,6 +43,10 @@ function resolveBackHref(from: string | null): { href: string; label: string } {
 }
 
 export default function UpdateMeForm(): JSX.Element {
+  // Hors du React Compiler : react-hook-form signale ses changements par un proxy (`formState`)
+  // que le compilateur ne voit pas. Mémorisé, le rendu ne se relançait pas à la frappe : isDirty
+  // restait faux et le bouton « Enregistrer » ne s'activait jamais.
+  "use no memo";
   const router = useRouter();
   const searchParams = useSearchParams();
   const back = resolveBackHref(searchParams.get("from"));
@@ -280,17 +285,19 @@ export default function UpdateMeForm(): JSX.Element {
           </div>
         </div>
 
-        {/* Première connexion comme édition : l'autorisation de droit à l'image à imprimer. */}
-        <BlankConsentFormCard />
-
+        {/* Le bouton juste sous les champs : placé après la carte du formulaire de droit à l'image,
+            il passait inaperçu. */}
         <div className="flex items-center gap-3" data-tour="profil.form.submit">
           <SubmitButton disabled={!canSubmit} />
           {!isDirty && (
-            <span className="text-xs text-slate-500">
-              Aucun changement à enregistrer.
+            <span className="text-xs text-muted-foreground">
+              Modifiez un champ pour pouvoir enregistrer.
             </span>
           )}
         </div>
+
+        {/* Première connexion comme édition : l'autorisation de droit à l'image à imprimer. */}
+        <BlankConsentFormCard />
       </form>
     </section>
   );

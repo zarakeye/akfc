@@ -218,6 +218,9 @@ function iconForMime(mime: string): string {
 /* -------------------------------------------------------------------------- */
 
 export default function DragNDropForm(): JSX.Element {
+  // Hors du React Compiler : react-hook-form signale ses changements par un proxy (`formState`)
+  // que le compilateur ne voit pas ; mémorisé, le rendu ne suivrait plus erreurs et état d'envoi.
+  "use no memo";
   const user = useSessionStore((s) => s.session?.user);
 
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);

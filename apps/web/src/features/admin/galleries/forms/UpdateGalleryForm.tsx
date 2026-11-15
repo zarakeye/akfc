@@ -57,6 +57,9 @@ interface UpdateGalleryFormProps {
  * `id` transmis via input caché.
  */
 export function UpdateGalleryForm({ gallery }: UpdateGalleryFormProps): JSX.Element {
+  // Hors du React Compiler : react-hook-form signale ses changements par un proxy (`formState`)
+  // que le compilateur ne voit pas ; mémorisé, le rendu ne suivrait plus erreurs et état d'envoi.
+  "use no memo";
   const router = useRouter();
   const form = useForm<FormValues>({
     resolver: zodResolver(
