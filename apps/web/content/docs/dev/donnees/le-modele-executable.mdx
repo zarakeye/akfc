@@ -6,61 +6,23 @@ order: 5
 ---
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
-import DocsTable from "#features/docs/ui/DocsTable.tsx"
 import { CodeSnippet } from "#features/docs/ui/CodeSnippet.tsx"
-import { CodeWalkthrough } from "#features/docs/ui/CodeWalkthrough.tsx"
-import PrismaCoreErdDiagram from "#features/docs/diagrams/PrismaCoreErdDiagram.tsx"
-import PrismaCoreMemoryDiagram from "#features/docs/diagrams/PrismaCoreMemoryDiagram.tsx"
 
 > **Précédemment.** Les relations du modèle sont des décisions : ce que le système se permet, ce qu’il refuse, et ce qui arrive à la suppression. Mais le modèle reste une description.
 
 ## Mouvement 3 — Rendre le modèle vivant
 
-Jusqu’ici, tout ce que nous avons construit reste statique. Le schéma est précis, les relations sont pensées, la philosophie est en place — mais rien ne tourne encore. Ce mouvement est celui du basculement : le moment où le déclaratif devient du code, où le modèle cesse d’être une intention pour devenir un outil que le backend peut manipuler.
+Le schéma est précis, les relations sont pensées, la philosophie est en place, mais rien ne tourne encore. Ce mouvement, en une seule section, est celui du basculement : le moment où le déclaratif devient du code, où le modèle cesse d’être une intention pour devenir un outil que le backend manipule. Nous y voyons comment Prisma transforme le schéma en types générés et en client typé, pourquoi cette bascule fait disparaître la duplication entre les couches, et comment le typage devient structurel plutôt que décoratif.
 
-Voici l’étape unique mais décisive que nous allons traverser :
+À la fin de ce mouvement, le modèle ne vivra plus seulement dans un fichier, mais dans le code, garant de la cohérence jusqu’au bord du frontend. C’est ce qui permettra ensuite aux formulaires et à tRPC de s’appuyer sur lui sans jamais le redéfinir.
 
-- **Section 5** — Nous voyons comment Prisma transforme le schéma en types générés et en client typé, pourquoi cette bascule fait disparaître la duplication entre les couches, et comment le typage devient structurel plutôt que décoratif.
+## 5 — Prisma, moteur du système
 
-À la fin de ce mouvement, le modèle ne vivra plus seulement dans un fichier — il vivra dans le code, exploitable par le backend, garant de la cohérence jusqu’à la bordure du frontend. Et c’est ce qui permettra, dans la suite, aux formulaires et à tRPC de s’appuyer sur lui sans jamais avoir à le redéfinir.
-
----
-
-## 5 — Quand le modèle devient exécutable : Prisma comme moteur du système
-
-Jusqu’ici, nous avons construit quelque chose de solide.
-
-Nous avons défini des entités.  
-Nous avons structuré des relations.  
-Nous avons pris des décisions d’architecture.
-
-Mais à ce stade, tout cela reste… statique.
-
-Le modèle existe.  
-La base est prête.  
-Le schéma est lisible.
-
-👉 mais rien ne circule encore
-
-Et c’est exactement ici que Prisma change de nature.
-
-Jusqu’à maintenant, il nous aidait à **décrire le système**.  
-À partir de maintenant, il va nous permettre de **le faire vivre dans le code**.
-
----
+Jusqu’ici, Prisma nous aidait à **décrire le système** ; à partir de maintenant, il va nous permettre de **le faire vivre dans le code**.
 
 ### 5.1 — Le moment clé : transformer le schéma en code
 
-Un point est souvent mal compris.
-
-Modifier `schema.prisma` ne change rien immédiatement dans l’application.
-
-Le backend ne “voit” pas encore nos modèles.  
-TypeScript non plus.
-
-👉 le schéma n’est pas encore exploitable
-
-👉 il doit être transformé
+Un point est souvent mal compris : modifier `schema.prisma` ne change rien immédiatement dans l’application. Ni le backend ni TypeScript ne « voient » encore les modèles. Le schéma doit d’abord être transformé :
 
 <CodeSnippet
   language="bash"
@@ -70,173 +32,55 @@ TypeScript non plus.
   codeJson='"pnpm prisma generate"'
 />
 
-Cette commande marque un basculement.
-
-Prisma va :
-
-- lire notre schéma  
-- comprendre nos relations  
-- interpréter nos contraintes  
-- générer un client  
-- produire des types TypeScript  
-
-Et à partir de là :
-
-👉 notre modèle devient utilisable par le code
-
----
+Cette commande lit le schéma, ses relations et ses contraintes, et en produit un client et des types TypeScript. À partir de là, le modèle devient utilisable par le code.
 
 ### 5.2 — Ce que Prisma génère réellement (et pourquoi c’est décisif)
 
-Dire que Prisma génère “un client” est réducteur.
-
-En réalité, il fabrique un pont complet entre la base et TypeScript.
-
-Il génère :
-
-- des méthodes (`findUnique`, `findMany`, `create`, etc.)  
-- des types parfaitement alignés (`User`, `MemberGroup`, etc.)  
-- des types d’input (`UserCreateInput`, etc.)  
-- des structures relationnelles imbriquées  
-- des contraintes directement exploitables  
-
-👉 tout est dérivé du schéma
-
-Cela signifie une chose très importante :
-
-👉 il n’y a plus d’interprétation humaine entre la base et le code
-
----
+Dire que Prisma génère « un client » est réducteur : il fabrique un pont complet entre la base et TypeScript. Il produit des méthodes (`findUnique`, `findMany`, `create`…), des types alignés sur les modèles (`User`, `MemberGroup`…), des types d’entrée (`UserCreateInput`…), des structures relationnelles imbriquées et des contraintes directement exploitables. Tout est dérivé du schéma : il n’y a plus d’interprétation humaine entre la base et le code.
 
 ### 5.3 — La fin d’un problème invisible : la duplication des types
 
-Dans une architecture classique, la donnée est définie plusieurs fois :
+Dans une architecture classique, la donnée est définie plusieurs fois : dans la base, dans le backend, dans le frontend, parfois dans les formulaires. Au début, tout semble cohérent. Puis le projet évolue : un champ est renommé, un type change, une relation évolue, et les couches divergent. Cette divergence se voit rarement tout de suite ; elle devient un bug plus tard.
 
-- dans la base  
-- dans le backend  
-- dans le frontend  
-- parfois dans les formulaires  
-
-Au début, tout semble cohérent.
-
-Puis le projet évolue.
-
-Et très vite :
-
-- un champ est renommé  
-- un type change  
-- une relation évolue  
-
-👉 les couches divergent
-
-Et cette divergence est rarement visible immédiatement.
-
-👉 elle devient un bug plus tard
-
-Avec Prisma, ce problème disparaît presque entièrement.
-
-Parce que :
-
-👉 le type vient du schéma  
-👉 et le schéma est unique
-
----
+Avec Prisma, ce problème disparaît presque entièrement, parce que le type vient du schéma, et que le schéma est unique.
 
 ### 5.4 — Lire une requête Prisma comme une projection du système
 
-Regardons cette requête, celle que le serveur exécute à chaque requête d’un membre connecté pour retrouver sa session :
+Regardons la requête que le serveur exécute, à chaque requête d’un membre connecté, pour retrouver sa session :
 
-```ts
-// packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
-  const sessionDB = await prisma.session.findUnique({
-    where: { id: payload.sessionId },
-    select: sessionSelect,
-  });
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetStart="const sessionDB = await prisma.session.findUnique({"
+  snippetLines="4"
+  snippetHighlight="2,3"
+  snippetTitle="Retrouver la session d’un membre connecté"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-`sessionSelect`, déclarée en tête du fichier, demande la session **avec** son membre — certains de ses champs seulement — et son éventuelle adhésion au groupe Administrateurs :
+`sessionSelect`, déclarée en tête du fichier, demande la session **avec** son membre (certains de ses champs seulement) et son éventuelle adhésion au groupe Administrateurs :
 
-```ts
-// packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
-const sessionSelect = {
-  id: true,
-  expiresAt: true,
-  user: {
-    select: {
-      id: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      pseudo: true,
-      avatar: true,
-      isFirstLogin: true,
-      memberGroupMemberships: {
-        where: { group: { isAdminGroup: true } },
-        select: { id: true },
-        take: 1,
-      },
-    },
-  },
-} satisfies Prisma.SessionSelect;
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetStart="const sessionSelect = {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,13,20"
+  snippetTitle="La sélection : une session, son membre, son adhésion admin"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Avec le réglage `relationJoins` vu au chapitre 2, Prisma lit le tout en une seule requête SQL, par des jointures. (Une première version faisait une seconde requête, à chaque requête du site, pour savoir si le membre était administrateur ; l’adhésion demandée ici la remplace.)
 
-Ce code n’est pas qu’une requête.
-
-Il est une projection directe du modèle :
-
-- il reflète les relations  
-- il reflète la structure des données  
-- il définit la forme du résultat  
-
-Et surtout :
-
-👉 TypeScript connaît exactement ce que cette requête retourne
-
-Pas parce que nous l’avons défini.
-
-👉 parce que Prisma l’a généré
-
-Dans ce modèle, un type incorrect n’est pas ignoré.
-
-👉 il devient impossible à écrire
-
----
+Ce code n’est pas qu’une requête : c’est une projection directe du modèle, qui reflète ses relations et sa structure, et qui définit la forme du résultat. Surtout, TypeScript sait exactement ce que cette requête renvoie, non parce que nous l’avons écrit, mais parce que Prisma l’a généré. Un type incorrect n’est pas ignoré : il devient impossible à écrire.
 
 ### 5.5 — Le basculement : du typage décoratif au typage structurel
 
-Dans beaucoup de projets, les types sont ajoutés après coup.
+Dans beaucoup de projets, les types sont ajoutés après coup : ils documentent, aident l’autocomplétion, évitent certaines erreurs, mais ne sont pas la source de vérité. C’est un typage **décoratif**.
 
-Ils servent à :
-
-- documenter  
-- aider à l’auto-complétion  
-- éviter certaines erreurs  
-
-Mais ils ne sont pas la source de vérité.
-
-👉 on parle de typage décoratif
-
-Avec Prisma, nous changeons complètement de logique.
-
-Les types ne sont pas ajoutés.
-
-👉 ils sont produits par la structure du système
-
-Nous passons à un typage structurel.
-
-Et cela change tout.
-
-Parce que maintenant :
-
-- une incohérence casse immédiatement le code  
-- une modification du schéma impacte toutes les couches  
-- une erreur ne peut plus rester silencieuse  
-
-👉 le système devient auto-cohérent
-
----
+Avec Prisma, la logique s’inverse : les types ne sont pas ajoutés, ils sont produits par la structure du système. C’est un typage **structurel**. Une incohérence casse aussitôt la compilation, une modification du schéma se répercute dans toutes les couches, et une erreur ne peut plus rester silencieuse : le système devient cohérent par construction.
 
 #### 🔎 Dans le projet : un type décoratif, remplacé par un type généré
 
@@ -254,66 +98,50 @@ Ce type disait quelque chose de faux. Dans le schéma, `Session.user` est **obli
 
 Le type est maintenant **déduit de la requête elle-même** :
 
-```ts
-// packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
-/** Une session lue avec son membre : type GÉNÉRÉ par Prisma à partir de la sélection elle-même. */
-type SessionDB = Prisma.SessionGetPayload<{ select: typeof sessionSelect }>;
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetStart="/** Une session lue avec son membre"
+  snippetLines="2"
+  snippetHighlight="2"
+  snippetTitle="Le type de la session, généré à partir de la sélection"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-`Prisma.SessionGetPayload<…>` reçoit la sélection de la requête, et produit exactement le type de son résultat : une session, avec un `user` qui n’est pas `null` et qui n’a que les champs demandés. Les `!` ont disparu, et la vérification inutile aussi. Et comme la requête et le type partagent la même constante, `sessionSelect`, ils ne peuvent plus diverger : ajouter un champ à la sélection l’ajoute au type.
+`Prisma.SessionGetPayload<…>` reçoit la sélection de la requête, et produit exactement le type de son résultat : une session, avec un `user` qui n’est pas `null` et qui n’a que les champs demandés. Les `!` ont disparu, et la vérification inutile aussi. Comme la requête et le type partagent la même constante, `sessionSelect`, ils ne peuvent plus diverger : ajouter un champ à la sélection l’ajoute au type.
 
-Le client généré fournit ainsi bien plus que des types de modèles :
+Le client généré fournit ainsi bien plus que des types de modèles. Il fournit des **types d’entrée**, comme `Prisma.UserUpdateInput`, que l’action de profil utilise pour vérifier, sans rien changer à l’objet, que ce qu’elle s’apprête à écrire est bien acceptable par Prisma :
 
-- des types d’entrée, comme `Prisma.UserUpdateInput`, que l’action de profil utilise pour vérifier, sans rien changer à l’objet, que ce qu’elle s’apprête à écrire est bien acceptable par Prisma :
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts"
+  filename="updateMeForm.action.ts"
+  snippetStart="const updateData = {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="10"
+  snippetTitle="Une écriture vérifiée par le type d’entrée de Prisma"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-```ts
-// apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts (extrait)
-  const updateData = {
-    firstName: data.firstName,
-    lastName: data.lastName,
-    pseudo: data.pseudo ?? null,
-    aboutMe: data.aboutMe ?? null,
-    phone: data.phone ?? null,
-    ...(birthDateLocked || !birthDateChanged ? {} : { birthDate: newBirthDate, birthDateVerified: false }),
-    isFirstLogin: false,
-  } satisfies Prisma.UserUpdateInput;
-```
+Il fournit aussi des **noms dérivés des contraintes** : `@@unique([groupId, userId])`, vu au chapitre 3, devient dans le client une clé de recherche nommée `groupId_userId`, que la garde des espaces utilise pour trouver une adhésion précise :
 
-- des noms dérivés des contraintes : `@@unique([groupId, userId])`, vu au chapitre 3, devient dans le client une clé de recherche nommée `groupId_userId`, que la garde des espaces utilise pour trouver une adhésion précise :
-
-```ts
-// packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts (extrait)
-    const membership = await prisma.memberGroupMembership.findUnique({
-      where: { groupId_userId: { groupId: cursor, userId } },
-      select: { access: true },
-    });
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts"
+  filename="resolveGroupAccessForUser.service.ts"
+  snippetStart="const membership = await prisma.memberGroupMembership.findUnique({"
+  snippetLines="4"
+  snippetHighlight="2"
+  snippetTitle="Une clé de recherche née d’une contrainte"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Ce nom n’est écrit nulle part à la main. Il existe parce que la contrainte existe, et il disparaîtrait avec elle : le code qui l’utilise cesserait alors de compiler, au lieu de chercher une ligne qui ne peut plus être unique.
 
----
-
 ### 5.6 — Pourquoi cela simplifie tout le reste
 
-À ce stade, quelque chose devient évident.
-
-Nous n’avons plus besoin de :
-
-- redéfinir des types backend  
-- synchroniser des interfaces frontend  
-- maintenir des DTO manuellement (des *Data Transfer Objects* : des types recopiés à la main pour décrire ce qui voyage entre deux couches)  
-
-👉 le modèle fait tout le travail
-
-Et cela va avoir des conséquences directes :
-
-- sur les formulaires  
-- sur tRPC  
-- sur l’authentification  
-
-Parce que toutes ces couches vont s’appuyer sur cette base unique.
-
----
+Nous n’avons plus besoin de redéfinir des types côté backend, de synchroniser des interfaces côté frontend, ni de maintenir à la main des DTO (des *Data Transfer Objects* : des types recopiés pour décrire ce qui voyage entre deux couches). Le modèle fait ce travail, et les formulaires, tRPC et l’authentification s’appuieront tous sur cette base unique.
 
 #### 🔎 Là où le typage s’arrête : les contenus en JSON
 
@@ -327,59 +155,11 @@ Cette structure, des blocs versionnés, est donc garantie ailleurs : par un sch�
 Un contenu de page est une liste de **blocs** (un texte, une galerie, une liste de documents…), rangée dans une enveloppe qui porte un numéro de version. Le domaine du club, juste après, en donne la forme ; la partie « Contenu éditorial » la construit bloc par bloc.
 </Promesse>
 
-Ce choix permet d’ajouter un type de bloc sans migration, au prix d’une règle : on lit un contenu avec les fonctions de `packages/contracts/src/page` (`parseContent`, `extractMediaIds`…), qui connaissent ses versions, plutôt qu’en accédant directement aux propriétés du JSON.
+Ce choix permet d’ajouter un type de bloc sans migration, au prix d’une règle : on lit un contenu avec les fonctions de `packages/contracts/src/page` (`parseContent`, `extractMediaIds`…), qui connaissent ses versions, plutôt qu’en accédant directement aux propriétés du JSON. Là où le schéma Prisma ne décrit plus la forme, c’est un schéma Zod qui prend le relais.
 
-👉 là où le schéma Prisma ne décrit plus la forme, c’est un schéma Zod qui prend le relais
+### 5.7 — Ce que cette section prépare
 
----
-
-### 5.7 — Ce que nous avons réellement construit
-
-Si nous prenons du recul, nous voyons apparaître un système complet.
-
-- PostgreSQL stocke la donnée  
-- Prisma définit sa structure  
-- Prisma génère les types  
-- TypeScript les comprend  
-- le backend les utilise  
-
-👉 la donnée circule désormais sans rupture
-
-Et c’est exactement ce que nous cherchions depuis le début :
-
-👉 un système type-safe de bout en bout
-
----
-
-### 5.8 — Ce qu’il faut retenir de cette section
-
-<Callout type="info">
-
-Prisma ne se contente pas de modéliser la donnée.
-
-👉 il transforme le modèle en code exécutable
-
-Retenons :
-
-- `prisma generate` est le point de bascule  
-- le schéma devient la source unique de vérité  
-- Prisma génère des types et des requêtes cohérentes  
-- la duplication des types disparaît  
-- le typage devient structurel  
-- le système devient auto-cohérent  
-
-👉 Prisma est la fondation du type-safe end-to-end
-
-</Callout>
-
----
-
-### 5.9 — Ce que cette section prépare
-
-Maintenant que notre modèle vit dans le code, deux questions pratiques apparaissent.
-
-👉 comment écrire dans plusieurs tables sans laisser la base à moitié modifiée ?
-👉 comment faire évoluer le schéma quand la base de production contient déjà des données ?
+Le modèle vit maintenant dans le code, et deux questions pratiques apparaissent : comment écrire dans plusieurs tables sans laisser la base à moitié modifiée ? Comment faire évoluer le schéma quand la base de production contient déjà des données ?
 
 Ces deux questions attendront un peu. Le site public n’écrit rien : il lit des disciplines, des cours, des stages, et les montre. Nous allons d’abord le construire, et revenir à l’écriture quand l’interface aura des données à enregistrer.
 
@@ -387,27 +167,15 @@ Ces deux questions attendront un peu. Le site public n’écrit rien : il lit de
 Retenons pour l’instant qu’une écriture qui touche plusieurs tables passe par une **transaction**, et que le schéma n’évolue jamais sans une **migration**, relue avant d’être appliquée.
 </Promesse>
 
----
-
-👉 **Où nous en sommes :** la bascule a eu lieu. Le schéma ne vit plus seulement dans un fichier — il vit dans le code, sous forme de types générés et d’un client typé que le backend manipule sans jamais redéfinir la forme de ses entités. La duplication des types a disparu, le typage est devenu structurel, et la cohérence du système n’est plus un effort à maintenir manuellement : elle est garantie par la chaîne elle-même.
-
----
-
 ## Ce que nous venons de construire dans le Mouvement 3
 
-Nous avons franchi la frontière qui sépare le descriptif de l’exécutable. Trois idées en sont ressorties :
+Nous avons franchi la frontière qui sépare le descriptif de l’exécutable. PostgreSQL stocke la donnée, Prisma définit sa structure et en génère les types, TypeScript les comprend, le backend les utilise : la donnée circule sans rupture. Trois idées en sont ressorties :
 
-- **`prisma generate` n’est pas un détail d’outillage, c’est un basculement.** Cette commande prend un schéma déclaratif et en produit un client typé, parfaitement aligné avec les modèles et les relations. À partir de cet instant, le backend ne manipule plus « des objets qui ressemblent à des users » — il manipule des `User`, au sens strict du type.
-- **Le typage devient structurel, pas décoratif.** Les types ne sont plus des annotations ajoutées au-dessus du code pour rassurer l’IDE — ils sont générés à partir de la source de vérité, et chaque évolution du schéma les met à jour. Le code compile ou ne compile pas selon ce que la base permet réellement.
-- **La cohérence devient une propriété de la chaîne, pas un effort individuel.** Tant que tout le monde consomme les types générés par Prisma, il n’est plus nécessaire de vérifier à chaque couche que les structures correspondent. La fondation étant typée, les couches au-dessus peuvent se concentrer sur ce qu’elles font — capturer une intention, transporter une donnée, sécuriser un accès.
+- **`prisma generate` n’est pas un détail d’outillage, c’est un basculement.** Cette commande prend un schéma déclaratif et en produit un client typé, aligné sur les modèles et les relations. Dès lors, le backend ne manipule plus « des objets qui ressemblent à des membres » : il manipule des `User`, au sens strict du type.
+- **Le typage devient structurel, pas décoratif.** Les types ne sont plus des annotations posées au-dessus du code pour rassurer l’éditeur : ils sont générés à partir de la source de vérité, et chaque évolution du schéma les met à jour. Le code compile ou ne compile pas selon ce que la base permet réellement.
+- **La cohérence devient une propriété de la chaîne, pas un effort individuel.** Tant que chaque couche consomme les types générés, il n’est plus nécessaire de vérifier à chaque étage que les structures correspondent. Les couches du dessus peuvent se concentrer sur ce qu’elles font : capturer une intention, transporter une donnée, sécuriser un accès.
 
-La partie « Données (1) » s’arrête ici : nous savons lire le modèle, et le lire avec des types sûrs. C’est exactement ce dont le site public a besoin.
-
----
-
-## À suivre
-
-Le modèle vit dans le code, et le typage est garanti par la chaîne. Les quatre modèles du noyau disent comment le site connaît ses membres ; ils ne disent rien encore de ce qu’il montre. Un visiteur, lui, cherche un cours, un stage, un horaire.
+La partie « Données (1) » s’arrête ici : nous savons lire le modèle, et le lire avec des types sûrs. C’est exactement ce dont le site public a besoin. Les quatre modèles du noyau disent comment le site connaît ses membres ; ils ne disent rien encore de ce qu’il montre. Un visiteur, lui, cherche un cours, un stage, un horaire.
 
 <Callout type="tip">
 **Partie suivante : le domaine du club, et ce que le site en montre.** Ce que représentent vraiment une discipline, un cours, un stage et un événement, les conventions qui les relient, et les fiches publiques, l’agenda et les horaires qu’en voit le visiteur.
