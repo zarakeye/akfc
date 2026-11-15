@@ -12,7 +12,7 @@ import { OnlineConsentForm } from "#features/image-consent/OnlineConsentForm.tsx
 
 /**
  * Profil : droit à l'image du membre connecté — statut, formulaires signés déposés par le club
- * (aperçu au clic), et formulaire vierge à télécharger.
+ * (aperçu au clic, téléchargeables), et formulaire vierge en consultation seule.
  */
 export function MyImageConsent(): JSX.Element {
   const { data } = trpc.imageConsent.mine.useQuery();

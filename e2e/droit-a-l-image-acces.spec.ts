@@ -34,3 +34,13 @@ test("majeur : le formulaire en ligne s'ouvre depuis la page", async ({ page }) 
   await page.getByRole("button", { name: /Donner mon autorisation|Modifier mes choix/ }).click();
   await expect(page.getByRole("button", { name: "Je confirme mes choix" })).toBeVisible();
 });
+
+test("le formulaire vierge se lit, sans Télécharger ni Imprimer", async ({ page }) => {
+  await loginAs(page, USERS.membreA.email);
+  await page.goto("/profil/droit-a-l-image");
+  await page.getByRole("button", { name: "Lire le formulaire" }).click();
+  const apercu = page.getByRole("dialog", { name: "Autorisation de droit à l'image (consultation)" });
+  await expect(apercu).toBeVisible();
+  await expect(apercu.getByRole("link", { name: "Télécharger" })).toHaveCount(0);
+  await expect(apercu.getByRole("button", { name: "Imprimer" })).toHaveCount(0);
+});

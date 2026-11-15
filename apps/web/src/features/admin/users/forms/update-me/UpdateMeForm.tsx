@@ -303,8 +303,8 @@ export default function UpdateMeForm(): JSX.Element {
           )}
         </div>
 
-        {/* Première connexion comme édition : l'autorisation de droit à l'image à imprimer. */}
-        <BlankConsentFormCard />
+        {/* Première connexion comme édition : le droit à l'image, le texte à lire, la page où le donner. */}
+        <BlankConsentFormCard linkToPage />
       </form>
     </section>
   );

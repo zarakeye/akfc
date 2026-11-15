@@ -8,7 +8,8 @@ import { printFile } from "#features/image-consent/printFile.ts";
 
 /**
  * Aperçu d'un fichier (PDF ou image) en panneau latéral, avec Télécharger et Imprimer — même
- * présentation que les documents des membres.
+ * présentation que les documents des membres. `readOnly` : consultation seule, sans l'un ni l'autre
+ * (seuls les formulaires validés se téléchargent).
  */
 export function FilePreviewPanel({
   title,
@@ -16,6 +17,7 @@ export function FilePreviewPanel({
   kind,
   downloadHref,
   downloadName,
+  readOnly = false,
   onClose,
 }: {
   title: string;
@@ -24,6 +26,8 @@ export function FilePreviewPanel({
   /** Lien de téléchargement (par défaut : src, avec l'attribut download). */
   downloadHref?: string;
   downloadName?: string;
+  /** Consultation seule : ni Imprimer ni Télécharger. */
+  readOnly?: boolean;
   onClose: () => void;
 }): JSX.Element {
   const pill =
@@ -38,23 +42,27 @@ export function FilePreviewPanel({
       >
         <header className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
           <h2 className="min-w-0 flex-1 truncate text-base font-semibold text-gray-900">{title}</h2>
-          <button
-            type="button"
-            onClick={() => printFile(src, kind)}
-            className={`${pill} text-gray-700 hover:bg-gray-100`}
-            title="Imprimer"
-          >
-            <Printer className="h-4 w-4" />
-            <span className="hidden sm:inline">Imprimer</span>
-          </button>
-          <a
-            href={downloadHref ?? src}
-            download={downloadName ?? true}
-            className={`${pill} bg-emerald-600 text-white hover:bg-emerald-700`}
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Télécharger</span>
-          </a>
+          {!readOnly && (
+            <>
+              <button
+                type="button"
+                onClick={() => printFile(src, kind)}
+                className={`${pill} text-gray-700 hover:bg-gray-100`}
+                title="Imprimer"
+              >
+                <Printer className="h-4 w-4" />
+                <span className="hidden sm:inline">Imprimer</span>
+              </button>
+              <a
+                href={downloadHref ?? src}
+                download={downloadName ?? true}
+                className={`${pill} bg-emerald-600 text-white hover:bg-emerald-700`}
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Télécharger</span>
+              </a>
+            </>
+          )}
           <button
             type="button"
             onClick={onClose}
