@@ -33,7 +33,7 @@ export async function sendGuardianConsentLink(params: {
     "",
     `${params.memberName} a indiqué ses souhaits pour l'usage de son image par l'AKFC (Association Kung Fu Chambéry).`,
     "Comme son représentant légal, c'est vous qui donnez l'autorisation. Le formulaire est pré-rempli avec ses souhaits ;",
-    "vous pouvez les modifier, et vous confirmerez sa date de naissance, avant de valider.",
+    "vous pouvez les modifier, et confirmer sa date de naissance, avant de valider.",
     "",
     `Votre lien personnel (valable jusqu'au ${frDateTime(params.expiresAt)}, utilisable une seule fois) :`,
     url,

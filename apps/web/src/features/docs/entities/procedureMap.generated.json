@@ -5235,11 +5235,11 @@
        ],
        [
         "pendingGuardianRequest",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:288"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:290"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:289"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:291"
        ]
       ]
      ]
@@ -5386,15 +5386,15 @@
       [
        [
         "requestGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:118"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:119"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ]
      ]
@@ -5407,15 +5407,15 @@
       [
        [
         "requestGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:118"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:119"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:84"
        ]
       ]
      ]
@@ -5436,29 +5436,29 @@
       [
        [
         "requestGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:118"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:119"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ],
       [
        [
         "requestGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:118"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:119"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.update",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:110"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:111"
        ]
       ]
      ]
@@ -5471,15 +5471,15 @@
       [
        [
         "requestGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:118"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:119"
        ],
        [
         "loadMinor",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:68"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:70"
        ]
       ]
      ]
@@ -5503,11 +5503,11 @@
       [
        [
         "pendingGuardianRequest",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:288"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:290"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:289"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:291"
        ]
       ]
      ]
@@ -5537,15 +5537,15 @@
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ]
      ]
@@ -5558,25 +5558,25 @@
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:131"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:132"
        ]
       ],
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:84"
        ]
       ]
      ]
@@ -5597,29 +5597,29 @@
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ],
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.update",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:110"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:111"
        ]
       ]
      ]
@@ -5632,15 +5632,15 @@
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "loadMinor",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:68"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:70"
        ]
       ]
      ]
@@ -5664,15 +5664,15 @@
       [
        [
         "guardianRequestByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:158"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:159"
        ],
        [
         "findByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:139"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:140"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:141"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
        ]
       ]
      ]
@@ -5685,15 +5685,15 @@
       [
        [
         "guardianRequestByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:158"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:159"
        ],
        [
         "findByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:139"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:140"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:141"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
        ]
       ]
      ]
@@ -5731,11 +5731,11 @@
       [
        [
         "confirmGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:178"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:179"
        ],
        [
         "tx.imageConsentForm.create",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:229"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:232"
        ]
       ]
      ]
@@ -5748,7 +5748,7 @@
       [
        [
         "confirmGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:178"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:179"
        ],
        [
         "latestFormUsages",
@@ -5769,11 +5769,11 @@
       [
        [
         "confirmGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:178"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:179"
        ],
        [
         "tx.imageConsentRequest.deleteMany",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:227"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:230"
        ]
       ]
      ]
@@ -5786,15 +5786,15 @@
       [
        [
         "confirmGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:178"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:179"
        ],
        [
         "findByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:139"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:140"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:141"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
        ]
       ]
      ]
@@ -5807,15 +5807,15 @@
       [
        [
         "confirmGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:178"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:179"
        ],
        [
         "findByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:139"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:140"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:141"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
        ]
       ]
      ]
@@ -5833,11 +5833,11 @@
       [
        [
         "confirmGuardianConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:178"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:179"
        ],
        [
         "tx.user.update",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:249"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:252"
        ]
       ]
      ]
@@ -5852,7 +5852,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 110,
+   "line": 111,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -5862,7 +5862,7 @@
       [
        [
         "ctx.prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/router.ts:114"
+        "packages/backend/src/modules/imageConsent/router.ts:115"
        ]
       ]
      ]
@@ -5875,7 +5875,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/router.ts:113"
+        "packages/backend/src/modules/imageConsent/router.ts:114"
        ]
       ]
      ]
@@ -7109,15 +7109,15 @@
        ],
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ]
      ]
@@ -7144,11 +7144,11 @@
        ],
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:131"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:132"
        ]
       ],
       [
@@ -7158,15 +7158,15 @@
        ],
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:84"
        ]
       ]
      ]
@@ -7191,15 +7191,15 @@
        ],
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ],
       [
@@ -7209,15 +7209,15 @@
        ],
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.update",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:110"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:111"
        ]
       ]
      ]
@@ -7244,15 +7244,15 @@
        ],
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "loadMinor",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:68"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:70"
        ]
       ]
      ]
@@ -22226,7 +22226,7 @@
   },
   "requestGuardianConsent": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
-   "line": 118,
+   "line": 119,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -22244,11 +22244,11 @@
       [
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ]
      ]
@@ -22261,11 +22261,11 @@
       [
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:84"
        ]
       ]
      ]
@@ -22286,21 +22286,21 @@
       [
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ],
       [
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.update",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:110"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:111"
        ]
       ]
      ]
@@ -22313,11 +22313,11 @@
       [
        [
         "loadMinor",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:68"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:70"
        ]
       ]
      ]
@@ -22329,7 +22329,7 @@
   },
   "resendGuardianLink": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
-   "line": 129,
+   "line": 130,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -22347,11 +22347,11 @@
       [
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ]
      ]
@@ -22364,17 +22364,17 @@
       [
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:131"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:132"
        ]
       ],
       [
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:84"
        ]
       ]
      ]
@@ -22395,21 +22395,21 @@
       [
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ],
       [
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.update",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:110"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:111"
        ]
       ]
      ]
@@ -22422,11 +22422,11 @@
       [
        [
         "loadMinor",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:68"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:70"
        ]
       ]
      ]
@@ -22438,7 +22438,7 @@
   },
   "guardianRequestByToken": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
-   "line": 158,
+   "line": 159,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -22448,11 +22448,11 @@
       [
        [
         "findByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:139"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:140"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:141"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
        ]
       ]
      ]
@@ -22465,11 +22465,11 @@
       [
        [
         "findByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:139"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:140"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:141"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
        ]
       ]
      ]
@@ -22479,7 +22479,7 @@
   },
   "confirmGuardianConsent": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
-   "line": 178,
+   "line": 179,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -22505,7 +22505,7 @@
       [
        [
         "tx.imageConsentForm.create",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:229"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:232"
        ]
       ]
      ]
@@ -22535,7 +22535,7 @@
       [
        [
         "tx.imageConsentRequest.deleteMany",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:227"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:230"
        ]
       ]
      ]
@@ -22548,11 +22548,11 @@
       [
        [
         "findByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:139"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:140"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:141"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
        ]
       ]
      ]
@@ -22565,11 +22565,11 @@
       [
        [
         "findByToken",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:139"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:140"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:141"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
        ]
       ]
      ]
@@ -22587,7 +22587,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:249"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:252"
        ]
       ]
      ]
@@ -22600,7 +22600,7 @@
   },
   "pendingGuardianRequest": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
-   "line": 288,
+   "line": 290,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -22610,7 +22610,7 @@
       [
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:289"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:291"
        ]
       ]
      ]
@@ -22647,11 +22647,11 @@
       [
        [
         "pendingGuardianRequest",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:288"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:290"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:289"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:291"
        ]
       ]
      ]
@@ -24236,15 +24236,15 @@
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ]
      ]
@@ -24263,25 +24263,25 @@
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:131"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:132"
        ]
       ],
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:84"
        ]
       ]
      ]
@@ -24302,29 +24302,29 @@
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.upsert",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:99"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:100"
        ]
       ],
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "issueLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:82"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:83"
        ],
        [
         "prisma.imageConsentRequest.update",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:110"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:111"
        ]
       ]
      ]
@@ -24343,15 +24343,15 @@
       [
        [
         "resendGuardianLink",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:129"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:130"
        ],
        [
         "loadMinor",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:68"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:69"
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:70"
        ]
       ]
      ]

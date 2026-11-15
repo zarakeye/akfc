@@ -12,8 +12,8 @@ import { formatDate } from "#features/image-consent/consentFormat.ts";
 
 /**
  * Page du parent référent : le formulaire pré-rempli des souhaits du membre mineur, qu'il peut
- * changer ; il confirme (ou renseigne) sa date de naissance, se déclare représentant légal et
- * valide. Ses choix font foi ; les lignes qui s'écartent des souhaits sont marquées « modifié »,
+ * changer ; il peut confirmer ou donner sa date de naissance (facultative), se déclare représentant
+ * légal et valide. Ses choix font foi ; les lignes qui s'écartent des souhaits sont marquées « modifié »,
  * comme dans le PDF. La date qu'il donne devient celle de la fiche du membre.
  */
 export function GuardianConsentPage({ token }: { token: string }): JSX.Element {
@@ -82,7 +82,7 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
       className="mt-6 space-y-5"
       onSubmit={(e) => {
         e.preventDefault();
-        if (legal && birthDate) confirm.mutate({ token, usages, keepAfterLeave: keep, birthDate, isLegalRepresentative: true });
+        if (legal) confirm.mutate({ token, usages, keepAfterLeave: keep, birthDate: birthDate || null, isLegalRepresentative: true });
       }}
     >
       <p>
@@ -104,17 +104,16 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
       />
 
       <label className="flex max-w-xs flex-col gap-1">
-        <span className="font-medium">Date de naissance de {r.memberName}</span>
+        <span className="font-medium">Date de naissance de {r.memberName} (facultative)</span>
         <input
           type="date"
-          required
           value={birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
           className="rounded border border-gray-300 px-2 py-1.5"
         />
         <span className="text-xs text-gray-500">
-          {r.birthDate ? "Vérifiez-la, corrigez-la si besoin." : "Le club ne la connaît pas encore."} Elle reste
-          visible de {r.memberName} ; à ses 18 ans, il décidera lui-même.
+          {r.birthDate ? "Vérifiez-la, corrigez-la si besoin." : "Le club ne la connaît pas."} Avec elle, {r.memberName}{" "}
+          passe majeur de lui-même à ses 18 ans et décide alors seul ; sans elle, le club le fera.
         </span>
       </label>
 
@@ -129,11 +128,12 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
       {confirm.error && <p className="text-red-600">{confirm.error.message}</p>}
       <button
         type="submit"
-        disabled={!legal || !birthDate || confirm.isPending}
+        disabled={!legal || confirm.isPending}
         className="rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
       >
         {confirm.isPending ? "Enregistrement…" : "Je valide l'autorisation"}
       </button>
+      {!legal && <p className="text-xs text-gray-600">Pour valider, cochez la case « Je suis … représentant légal ».</p>}
       <p className="text-xs text-gray-500">
         Lien personnel, valable jusqu&apos;au {formatDate(r.expiresAt)} et utilisable une seule fois. Version du texte :{" "}
         {r.textVersion}.

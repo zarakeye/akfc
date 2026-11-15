@@ -35,16 +35,16 @@ test("souhaits du mineur, page du parent, changements visibles sur la fiche", as
   await parent.getByRole("radio", { name: "Réseaux sociaux du club : non" }).check();
   await expect(parent.getByText("modifié")).toHaveCount(1);
 
-  // Le club ne connaît pas sa date de naissance : c'est le parent qui la donne.
+  // Sans se déclarer représentant légal, pas de validation, et la page dit pourquoi.
   const submit = parent.getByRole("button", { name: "Je valide l'autorisation" });
-  await parent.getByRole("checkbox").check();
+  await expect(submit, "pas de validation sans se déclarer représentant légal").toBeDisabled();
+  await expect(parent.getByText("Pour valider, cochez la case")).toBeVisible();
+  // La date de naissance est facultative : le club ne la connaît pas, le parent peut la donner.
   const date = parent.getByLabel(`Date de naissance de ${name}`);
   await expect(date).toHaveValue("");
-  await expect(submit, "pas de validation sans la date de naissance").toBeDisabled();
-  await date.fill("2012-09-10");
-  await parent.getByRole("checkbox").uncheck();
-  await expect(submit, "pas de validation sans se déclarer représentant légal").toBeDisabled();
   await parent.getByRole("checkbox").check();
+  await expect(submit, "la date est facultative").toBeEnabled();
+  await date.fill("2012-09-10");
   await submit.click();
   await expect(parent.getByRole("status")).toContainText(`l'autorisation de ${name} est enregistrée`);
   await expect(parent.getByRole("status")).toContainText("Réseaux sociaux du club : souhaité Oui → Non");

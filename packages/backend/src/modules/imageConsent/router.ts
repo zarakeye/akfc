@@ -93,7 +93,8 @@ export const imageConsentRouter = router({
     .input(
       tokenInput.merge(choicesInput).extend({
         isLegalRepresentative: z.literal(true),
-        birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Indiquez sa date de naissance."),
+        /** Facultative : le parent la confirme, la corrige ou la donne s'il le souhaite. */
+        birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date de naissance invalide.").nullable().optional(),
       }),
     )
     .mutation(({ ctx, input }) =>
@@ -102,7 +103,7 @@ export const imageConsentRouter = router({
         token: input.token,
         usages: input.usages,
         keepAfterLeave: input.keepAfterLeave,
-        birthDate: input.birthDate,
+        birthDate: input.birthDate ?? null,
       }),
     ),
 

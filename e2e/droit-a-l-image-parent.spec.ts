@@ -66,7 +66,8 @@ test("le parent reçoit les souhaits du mineur, les modifie et valide ; ses choi
 
   // Le lien est grillé : une seconde validation, ou une simple lecture, échoue.
   const again = await trpcMutation(parent, "imageConsent.confirmGuardian", {
-    token, usages: [], keepAfterLeave: null, birthDate: "2012-05-04", isLegalRepresentative: true,
+    // Sans date (elle est facultative, le schéma l’accepte) : le refus vient bien du lien.
+    token, usages: [], keepAfterLeave: null, birthDate: null, isLegalRepresentative: true,
   });
   expect(again.error?.data.code).toBe("NOT_FOUND");
   expect((await trpcQuery(parent, "imageConsent.guardianRequest", { token })).error?.data.code).toBe("NOT_FOUND");

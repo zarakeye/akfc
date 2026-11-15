@@ -170,7 +170,7 @@ function MinorWishes({
       <p className="mt-1 text-gray-600">
         Vous êtes mineur : c&apos;est votre parent référent qui autorise l&apos;usage de votre image
         {s.guardianEmailMasked ? <> (adresse enregistrée par le club : {s.guardianEmailMasked})</> : null}. Vous indiquez vos
-        souhaits ; il les reçoit pré-cochés, peut les modifier, confirme votre date de naissance, puis valide.
+        souhaits ; il les reçoit pré-cochés, peut les modifier, confirmer votre date de naissance, puis valide.
       </p>
 
       {s.missing.length > 0 ? (

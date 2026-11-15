@@ -39,9 +39,10 @@ import {
  *    un lien personnel, à usage unique, valable 7 jours. Seule l'empreinte SHA-256 du jeton est
  *    gardée (ImageConsentRequest.tokenHash) : la base ne permet pas de reconstituer le lien.
  * 3. Le parent ouvre le formulaire pré-rempli des souhaits (`guardianRequestByToken`), peut tout
- *    changer, confirme (ou renseigne) la date de naissance, se déclare représentant légal et valide
- *    (`confirmGuardianConsent`). Ses choix font foi ; la date qu'il donne devient celle de la fiche
- *    (vérifiée) : c'est elle qui fera passer le membre majeur à ses 18 ans.
+ *    changer, peut confirmer ou donner la date de naissance (facultative), se déclare représentant
+ *    légal et valide (`confirmGuardianConsent`). Ses choix font foi ; la date qu'il donne devient
+ *    celle de la fiche (vérifiée) : c'est elle qui fera passer le membre majeur à ses 18 ans.
+ *    Sans date, ce passage n'est pas automatique (un administrateur le fait).
  * 4. À la validation : PDF figé (avec une page « souhaits du membre / choix du parent »), nouvelle
  *    version (source ONLINE_GUARDIAN, souhaits gardés dans memberWishes), statut mis à jour, lien
  *    grillé ; avis à la boîte du club et e-mail au membre, changements mis en évidence.
@@ -180,13 +181,15 @@ export async function confirmGuardianConsent(params: {
   token: string;
   usages: readonly ImageUsageValue[];
   keepAfterLeave: boolean | null;
-  /** Date de naissance confirmée par le parent (« AAAA-MM-JJ »). */
-  birthDate: string;
+  /** Date de naissance confirmée ou donnée par le parent (« AAAA-MM-JJ »), FACULTATIVE : null, la fiche ne change pas. */
+  birthDate: string | null;
 }): Promise<{ changes: string[] }> {
   const { prisma } = params;
   const req = await findByToken(prisma, params.token);
-  const birthDate = parseMinorBirthDate(params.birthDate);
-  if (typeof birthDate === "string") throw new TRPCError({ code: "BAD_REQUEST", message: birthDate });
+  const parsed = params.birthDate ? parseMinorBirthDate(params.birthDate) : null;
+  if (typeof parsed === "string") throw new TRPCError({ code: "BAD_REQUEST", message: parsed });
+  // Sans date du parent, celle de la fiche (s'il y en a une) reste telle quelle.
+  const birthDate = parsed ?? req.user.birthDate;
   const m = { ...req.user, birthDate };
   if (effectiveLegalAge(m) !== "MINOR") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Ce membre est devenu majeur : il confirme désormais lui-même son autorisation." });
@@ -251,9 +254,8 @@ export async function confirmGuardianConsent(params: {
         data: {
           imageConsent: consentFromUsages(final.usages),
           imageConsentAt: confirmedAt,
-          // La date du parent fait foi : c'est elle qui décidera du passage à la majorité.
-          birthDate,
-          birthDateVerified: true,
+          // La date du parent fait foi : c'est elle qui décidera du passage à la majorité à 18 ans.
+          ...(parsed ? { birthDate: parsed, birthDateVerified: true } : {}),
         },
         select: { id: true },
       });
