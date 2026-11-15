@@ -5,8 +5,11 @@ import { useState, type JSX } from "react";
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { CoursesPicker } from "#features/admin/users/courses/CoursesPicker.tsx";
 
-/** Fiche d'un membre : les créneaux qu'il suit comme élève, modifiables. */
-export function CoursesControl({ userId }: { userId: string }): JSX.Element {
+/**
+ * Fiche d'un membre : les créneaux qu'il DONNE (instructeur, en lecture seule : ils se règlent sur
+ * le cours) et ceux qu'il SUIT comme élève, modifiables.
+ */
+export function CoursesControl({ userId, taught = [] }: { userId: string; taught?: string[] }): JSX.Element {
   const utils = trpc.useUtils();
   const { data: saved } = trpc.user.coursesOf.useQuery({ userId });
   const [draft, setDraft] = useState<number[] | null>(null);
@@ -24,6 +27,17 @@ export function CoursesControl({ userId }: { userId: string }): JSX.Element {
   const changed = draft !== null && sorted(draft) !== sorted(saved ?? []);
 
   return (
+    <>
+    {taught.length > 0 && (
+      <section aria-label="Cours donnés" className="mt-6 space-y-1 text-sm">
+        <h3 className="font-semibold">Cours donnés</h3>
+        <ul className="list-inside list-disc text-muted-foreground">
+          {taught.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ul>
+      </section>
+    )}
     <section aria-label="Cours suivis" className="mt-6 space-y-2 text-sm">
       <h3 className="font-semibold">Cours suivis</h3>
       <CoursesPicker
@@ -50,5 +64,6 @@ export function CoursesControl({ userId }: { userId: string }): JSX.Element {
         )}
       </div>
     </section>
+    </>
   );
 }

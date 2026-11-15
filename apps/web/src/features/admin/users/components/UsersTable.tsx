@@ -9,7 +9,6 @@ import {
   IMAGE_CONSENT_LABEL,
   IMAGE_CONSENT_PROOF_LABEL,
   LEGAL_AGE_LABEL,
-  effectiveLegalAge,
 } from "@akfc/contracts/legal/imageConsent.ts";
 import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import { deleteColumn } from "#features/admin/common/delete/index.ts";
@@ -45,8 +44,8 @@ export default function UsersTable(): JSX.Element {
       email: u.email,
       name: [u.firstName, u.lastName].filter(Boolean).join(" ").trim(),
       groups: u.groups.map((g) => g.name).join(GROUP_SEP),
-      // Majorité effective : un mineur dont la date vérifiée atteint 18 ans apparaît majeur.
-      majority: LEGAL_AGE_LABEL[effectiveLegalAge(u)],
+      // Majorité effective, calculée par le serveur (qui garde la date de naissance pour lui).
+      majority: LEGAL_AGE_LABEL[u.effectiveLegalAge],
       photos: IMAGE_CONSENT_LABEL[u.imageConsent],
       proof: IMAGE_CONSENT_PROOF_LABEL[u.consentProof],
       kind: u.isDemo ? "Démo" : "Membre",

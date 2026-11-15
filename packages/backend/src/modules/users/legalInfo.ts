@@ -10,8 +10,11 @@ import { ageOn } from "@akfc/contracts/legal/imageConsent.ts";
  */
 export const legalInfoInput = z.object({
   legalAge: z.enum(["UNKNOWN", "ADULT", "MINOR"]),
-  /** AAAA-MM-JJ ; null : non renseignée. */
-  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide.").nullable(),
+  /**
+   * AAAA-MM-JJ ; null : non renseignée. Absente (fiche d'un compte) : la date enregistrée est
+   * gardée — la fiche ne l'affiche pas, elle ne peut donc pas la renvoyer.
+   */
+  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide.").nullable().optional(),
   guardianName: z.string().trim().max(120).nullable(),
   guardianEmail: z.string().trim().toLowerCase().email("Adresse e-mail du parent invalide.").max(254).nullable(),
   /** Qualité du parent (« mère »…). Absente (ancien formulaire) : la valeur enregistrée est gardée. */

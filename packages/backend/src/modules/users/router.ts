@@ -10,7 +10,7 @@ import { isDemoEmail } from "#lib/demoAccounts.ts";
 import { TRPCError } from "@trpc/server";
 
 import type { UserProfile } from "@akfc/contracts/users/user-profile.types.ts";
-import type { ImageConsentProofValue } from "@akfc/contracts/legal/imageConsent.ts";
+import { effectiveLegalAge, type ImageConsentProofValue } from "@akfc/contracts/legal/imageConsent.ts";
 import { legalInfoInput, legalInfoData } from "#modules/users/legalInfo.ts";
 import { emailSchema } from "@akfc/contracts/auth/auth.schema.ts";
 import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaReferences.service.ts";
@@ -71,7 +71,8 @@ export const userRouter = router({
   getAll: protectedProcedure
     .use(isAdmin)
     .query(async ({ ctx }) => {
-      // Jamais l'empreinte du mot de passe vers le navigateur.
+      // Jamais l'empreinte du mot de passe. La date de naissance sert ici à calculer la majorité,
+      // puis reste sur le serveur : une fois le compte créé, seul le membre la voit.
       const users = await ctx.prisma.user.findMany({
         orderBy: { id: "asc" },
         omit: { password: true },
@@ -86,8 +87,10 @@ export const userRouter = router({
         },
       });
       const now = new Date();
-      return users.map(({ memberGroupMemberships, imageConsentForms, imageConsentRequest, ...u }) => ({
+      return users.map(({ memberGroupMemberships, imageConsentForms, imageConsentRequest, birthDate, ...u }) => ({
         ...u,
+        // Majorité effective : un mineur dont la date vérifiée atteint 18 ans apparaît majeur.
+        effectiveLegalAge: effectiveLegalAge({ ...u, birthDate }, now),
         isDemo: isDemoEmail(u.email),
         consentProof: (imageConsentForms.sort(byEffectiveDesc)[0]?.source ??
           (imageConsentRequest?.expiresAt && imageConsentRequest.expiresAt > now
@@ -106,7 +109,7 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: input.id },
-        omit: { password: true },
+        omit: { password: true, birthDate: true },
       });
 
       if (!user) {
@@ -243,9 +246,18 @@ export const userRouter = router({
     .use(isAdmin)
     .input(z.object({ userId: z.string().min(1), legal: legalInfoInput }))
     .mutation(async ({ ctx, input }) => {
-      const u = await ctx.prisma.user.findUnique({ where: { id: input.userId }, select: { email: true } });
+      const u = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { email: true, birthDate: true },
+      });
       if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "Compte introuvable." });
-      if (input.legal.legalAge !== "ADULT") {
+      // Date absente de la saisie : on garde l'enregistrée, qui décide toujours de la majorité.
+      const legal =
+        input.legal.birthDate === undefined
+          ? { ...input.legal, birthDate: u.birthDate ? u.birthDate.toISOString().slice(0, 10) : null }
+          : input.legal;
+      const data = legalInfoData(legal, u.email, { requireComplete: false });
+      if (data.legalAge !== "ADULT") {
         const inAdultGroup = await ctx.prisma.memberGroupMembership.findFirst({
           where: { userId: input.userId, group: ADULT_GROUP_WHERE },
           include: { group: { select: { name: true } } },
@@ -259,7 +271,7 @@ export const userRouter = router({
       }
       await ctx.prisma.user.update({
         where: { id: input.userId },
-        data: legalInfoData(input.legal, u.email, { requireComplete: false }),
+        data,
         select: { id: true },
       });
       return { ok: true };

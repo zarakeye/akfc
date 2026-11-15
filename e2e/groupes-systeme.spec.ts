@@ -36,5 +36,5 @@ test("Bureau refuse un mineur, et rend majeur le membre qu'on y ajoute", async (
   await expect(ajouter(page, USERS.bureau.firstName)).toHaveCount(0);
 
   await page.goto(`/dashboard/users/${USERS.bureau.id}`);
-  await expect(page.getByRole("radio", { name: "Majeur" })).toBeChecked();
+  await expect(page.getByRole("region", { name: "Majorité" })).toContainText("Majeur d'office : membre du groupe Bureau");
 });

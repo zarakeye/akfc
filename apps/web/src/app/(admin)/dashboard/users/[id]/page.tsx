@@ -3,11 +3,11 @@ import type { JSX } from "react";
 
 import { prisma } from "@akfc/backend/prisma.ts";
 import { PresentationShell } from "#features/admin/common/components/PresentationShell.tsx";
-import { ImageConsentControl } from "#features/admin/users/components/ImageConsentControl.tsx";
-import { ImageConsentForms } from "#features/admin/users/components/ImageConsentForms.tsx";
-import { GuardianLinkPanel } from "#features/admin/users/components/GuardianLinkPanel.tsx";
-import { LegalInfoControl } from "#features/admin/users/legal/LegalInfoControl.tsx";
+import { ImageRightsSection } from "#features/admin/users/components/ImageRightsSection.tsx";
+import { LegalStatusControl } from "#features/admin/users/legal/LegalStatusControl.tsx";
 import { CoursesControl } from "#features/admin/users/courses/CoursesControl.tsx";
+import { ADULT_GROUP_WHERE } from "@akfc/backend/modules/memberGroups/systemGroups.service.ts";
+import { AUDIENCE_LABELS, DAY_LABELS, formatTime } from "#lib/format/index.ts";
 
 /** Présentation admin d'un utilisateur — `/(admin)/dashboard/users/[id]` (lecture seule). */
 export default async function UserPresentationPage({
@@ -19,8 +19,23 @@ export default async function UserPresentationPage({
 
   const user = await prisma.user.findUnique({
     where: { id },
+    include: {
+      memberGroupMemberships: {
+        where: { group: ADULT_GROUP_WHERE },
+        select: { group: { select: { name: true } } },
+        take: 1,
+      },
+      coursesAsInstructor: {
+        select: { day: true, beginTime: true, endTime: true, audience: true, discipline: { select: { name: true } } },
+        orderBy: [{ day: "asc" }, { beginTime: "asc" }],
+      },
+    },
   });
   if (!user) notFound();
+  const taught = user.coursesAsInstructor.map(
+    (c) =>
+      `${c.discipline.name} — ${DAY_LABELS[c.day] ?? c.day} ${formatTime(c.beginTime)}–${formatTime(c.endTime)} · ${AUDIENCE_LABELS[c.audience] ?? c.audience}`,
+  );
 
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
@@ -45,27 +60,25 @@ export default async function UserPresentationPage({
           </div>
         )}
       </dl>
-      <LegalInfoControl
+      {/* La date de naissance ne part jamais vers le navigateur : seulement si elle est renseignée. */}
+      <LegalStatusControl
         userId={user.id}
-        member={{ firstName: user.firstName, lastName: user.lastName }}
+        adultGroupName={user.memberGroupMemberships[0]?.group.name ?? null}
         initial={{
           legalAge: user.legalAge,
-          birthDate: user.birthDate ? user.birthDate.toISOString().slice(0, 10) : "",
+          hasBirthDate: user.birthDate !== null,
           guardianName: user.guardianName ?? "",
-          guardianEmail: user.guardianEmail ?? "",
           guardianRelation: user.guardianRelation ?? "",
+          guardianEmail: user.guardianEmail ?? "",
+          guardianPhone: user.guardianPhone ?? "",
         }}
       />
-      <CoursesControl userId={user.id} />
-      {/* Remonté quand un dépôt change le statut, pour repartir de la valeur enregistrée. */}
-      <ImageConsentControl
-        key={`${user.imageConsent}-${user.imageConsentAt?.getTime() ?? 0}`}
+      <CoursesControl userId={user.id} taught={taught} />
+      <ImageRightsSection
         userId={user.id}
-        initial={user.imageConsent}
+        consent={user.imageConsent}
         recordedAt={user.imageConsentAt ? user.imageConsentAt.toISOString() : null}
       />
-      <GuardianLinkPanel userId={user.id} />
-      <ImageConsentForms userId={user.id} />
     </PresentationShell>
   );
 }

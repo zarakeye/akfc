@@ -15,8 +15,12 @@ async function deposit(page: Page, signedAt: string | null) {
   await forms.getByRole("button", { name: "Déposer" }).click();
 }
 
+// La correction à la main est repliée sous « Corriger le statut à la main » : includeHidden la lit
+// sans la déplier.
 const status = (page: Page, label: string) =>
-  page.getByRole("radiogroup", { name: "Droit à l'image" }).getByRole("radio", { name: label });
+  page
+    .getByRole("radiogroup", { name: "Droit à l'image", includeHidden: true })
+    .getByRole("radio", { name: label, includeHidden: true });
 
 test.describe("Droit à l'image", () => {
   // Les deux dépôts se suivent sur le même membre : le second dépend du premier.

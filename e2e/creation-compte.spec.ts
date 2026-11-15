@@ -26,7 +26,7 @@ test("un instructeur est majeur d'office, sans saisie de majorité", async ({ pa
   await page.getByRole("button", { name: "Créer", exact: true }).click();
   await expect(page.getByText("Utilisateur créé.")).toBeVisible();
   await page.waitForURL(/\/dashboard\/users\/[^/]+$/);
-  await expect(page.getByRole("radio", { name: "Majeur" })).toBeChecked();
+  await expect(page.getByRole("region", { name: "Majorité" })).toContainText("Majeur d'office : membre du groupe Instructeurs");
 });
 
 test("une date de naissance de mineur décide, et appelle le parent référent", async ({ page }) => {
@@ -51,7 +51,11 @@ test("une date de naissance de mineur décide, et appelle le parent référent",
   await page.getByRole("button", { name: "Créer", exact: true }).click();
   await expect(page.getByText("Utilisateur créé.")).toBeVisible();
   await page.waitForURL(/\/dashboard\/users\/[^/]+$/);
-  await expect(page.getByRole("radio", { name: "Mineur" })).toBeChecked();
+  // La fiche ne montre jamais la date : seulement qu'elle est là, et ce qu'elle décide.
+  const majorite = page.getByRole("region", { name: "Majorité" });
+  await expect(majorite).toContainText("renseignée ✓");
+  await expect(majorite).toContainText("D'après sa date de naissance : Mineur");
+  await expect(majorite).not.toContainText(quinzeAns.toISOString().slice(0, 4));
 });
 
 test("un cours pour ados grise les autres cours, sauf « Tous publics »", async ({ page }) => {
