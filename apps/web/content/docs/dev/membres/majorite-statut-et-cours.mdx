@@ -1,0 +1,265 @@
+---
+title: "Majorité, statut et cours"
+description: "Savoir si un membre est majeur : une date de naissance qui décide quand elle est connue, des groupes qui rendent majeur d’office, un passage à 18 ans qui se fait seul, un tri pour les comptes d’avant et un passage sur pièce d’identité ; puis les cours, indice de minorité à la création, cours suivis et cours donnés."
+section: "Membres et collaboration"
+order: 5
+entities:
+  User: [legalAge, birthDate, birthDateVerified, guardianName, guardianEmail]
+  MemberGroup: [isAdminGroup, systemKind]
+  CourseEnrollment: [userId, courseId, createdAt]
+  Course: [audience, instructorId]
+stories:
+  - title: Le club ouvre un compte
+    actor: Administrateur
+    steps:
+      - label: Il choisit le statut (administrateur, instructeur, bureau ou simple membre) ; un statut rend majeur d’office
+        call: user.create
+        section: Des groupes qui rendent majeur
+      - label: Pour un simple membre, la date de naissance décide de la majorité ; sans elle, il choisit majeur ou mineur
+        call: user.create
+        section: Une date qui décide
+      - label: Il coche les cours ; un cours pour adolescents pré-coche « Mineur » et grise les cours d’adultes
+        call: user.create
+        section: Les cours, un indice de minorité
+  - title: Le club trie les comptes d’avant
+    actor: Administrateur
+    steps:
+      - label: Il coche les comptes sans majorité qui sont majeurs, et les passe majeurs d’un coup
+        call: user.markAdults
+        section: Les comptes d’avant
+      - label: Un mineur se renseigne fiche par fiche, avec son parent référent
+        call: user.setLegalInfo
+        section: Une date qui décide
+  - title: Un membre devient majeur
+    actor: Le serveur, ou un administrateur
+    steps:
+      - label: Sa date vérifiée atteint 18 ans ; la nuit venue, il passe majeur
+        call: purgeExpiredData
+        section: Devenir majeur
+      - label: Sans date, il montre sa pièce d’identité ; l’administrateur le passe majeur
+        call: user.markAdultWithProof
+        section: Devenir majeur
+  - title: Un instructeur et ses cours
+    actor: Administrateur
+    steps:
+      - label: Il coche les cours qu’il donne ; il en devient l’instructeur attitré
+        call: user.setTaughtCourses
+        section: Donner un cours, en suivre un autre
+      - label: Il coche les autres cours qu’il suit, sans être compté comme élève
+        call: user.setCourses
+        section: Donner un cours, en suivre un autre
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Les groupes forment un arbre dont Administrateurs est la racine ; Instructeurs et Bureau y sont des groupes système, garantis au démarrage.
+
+## Les parcours du chapitre
+
+Quatre parcours traversent ce chapitre : l’ouverture d’un compte, le tri des comptes ouverts avant que la question se pose, le passage d’un membre à la majorité, et les cours d’un instructeur.
+
+<Parcours />
+
+## Majeur ou mineur : une question que le site ne posait pas ⚖️
+
+Pendant longtemps, le site n’avait pas besoin de savoir l’âge d’un membre. Le droit à l’image a changé cela : un majeur donne lui-même son autorisation, un mineur ne le peut pas, c’est son parent qui décide (partie « Légal (2) »). Il faut donc, pour chaque compte, une réponse fiable à une question simple : **ce membre est-il majeur ?**
+
+La réponse tient dans un champ à trois valeurs, `legalAge` : `ADULT`, `MINOR`, et `UNKNOWN`, « non renseignée ». La troisième n’est pas un oubli de conception : c’est l’état honnête des comptes ouverts avant que la question existe. Le site ne devine pas ; tant que la majorité n’est pas renseignée, un membre ne peut pas signer en ligne, et sa page lui dit pourquoi.
+
+Trois sources peuvent renseigner cette réponse, et ce chapitre les met en ordre : la **date de naissance**, quand on la connaît ; l’appartenance à un **groupe de majeurs** ; et, à défaut, le **choix** de l’administrateur.
+
+## Une date qui décide
+
+Quand la date de naissance est connue, elle a le dernier mot. Le choix « majeur / mineur » de l’administrateur ne sert que sans elle :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/legalInfo.ts"
+  filename="legalInfo.ts"
+  snippetStart="export function legalInfoData("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4"
+  snippetTitle="legalInfoData : la date d’abord"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La même fonction sert à la création d’un compte et à la fiche d’un membre. Majeur, les coordonnées du parent sont effacées : elles n’ont plus d’usage, et une donnée sans usage ne se garde pas. Mineur, le nom et l’adresse du parent sont exigés à la création ; la date, elle, reste facultative, et le parent pourra la donner.
+
+Le formulaire de création fait le même calcul pendant la saisie, pour montrer tout de suite ce qui va se passer : une date de quinze ans fait apparaître les champs du parent, sans qu’on ait à cocher « Mineur ».
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/users/legal/CreationLegalFields.tsx"
+  filename="CreationLegalFields.tsx"
+  snippetStart="export function creationLegalAge(v: CreationLegalValue)"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,3"
+  snippetTitle="Côté formulaire : la date d’abord, le choix ensuite"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une fois le compte créé, l’administrateur ne **voit** plus cette date. La liste des utilisateurs lit la date pour calculer la majorité, puis la retire de ce qu’elle renvoie :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetStart="return users.map(({ memberGroupMemberships, imageConsentForms, imageConsentRequest, birthDate, ...u }) => ({"
+  snippetLines="4"
+  snippetHighlight="1,4"
+  snippetTitle="La majorité part au navigateur, la date reste sur le serveur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La fiche dit seulement « date renseignée ✓ », et permet de la remplacer. Seul le membre la voit, dans son profil.
+
+<Callout type="insight">
+Une donnée personnelle n’a pas besoin d’être montrée à tous ceux qui en tirent une conclusion. Le serveur calcule « majeur », l’écran affiche « majeur » : la date de naissance n’a rien à faire dans le navigateur de l’administrateur.
+</Callout>
+
+## Des groupes qui rendent majeur
+
+Le statut d’un compte se choisit à sa création : **administrateur**, **instructeur**, **membre du bureau**, ou, aucun coché, **simple membre**. Ces statuts sont des groupes : Administrateurs, et les deux groupes système vus au chapitre précédent. Tous trois imposent la majorité à leurs membres :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/groups/systemGroups.ts"
+  filename="systemGroups.ts"
+  snippetStart="export function isAdultGroup("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2"
+  snippetTitle="isAdultGroup"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+À la création, un statut coché rend le membre majeur sans rien saisir. Mais la date garde le dernier mot : une date de mineur interdit d’entrer dans un groupe de majeurs, plutôt que de laisser un enfant administrateur. La fiche applique la même règle dans l’autre sens : on ne rend pas mineur un membre du bureau.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetStart="setLegalInfo: protectedProcedure"
+  snippetEnd="    }),"
+  snippetHighlight="15,16,17,18,19,20"
+  snippetTitle="setLegalInfo : pas de mineur dans un groupe de majeurs"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La date absente de la saisie n’efface pas celle qui est enregistrée : la fiche ne la montre pas, elle ne peut donc pas la renvoyer, et un enregistrement qui ne parle pas de la date la laisse décider.
+
+## Devenir majeur
+
+Un mineur dont la date est connue n’a pas besoin qu’on pense à lui le jour de ses 18 ans. Deux mécanismes s’en chargent, l’un immédiat, l’autre la nuit suivante :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/imageConsent.ts"
+  filename="imageConsent.ts"
+  snippetStart="export function effectiveLegalAge("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="5"
+  snippetTitle="effectiveLegalAge : majeur dès l’anniversaire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Dès son anniversaire, `effectiveLegalAge` le traite en majeur, partout où la majorité compte : sa page de droit à l’image, son profil, la liste des utilisateurs. La nuit venue, la tâche de 3 h enregistre le passage et efface les coordonnées du parent, qui n’a plus de rôle (chapitre « Le consentement en ligne »). Seule une date **vérifiée** (saisie par le club, ou confirmée par le parent) a ce pouvoir : une date tapée par le membre lui-même ne le fait pas changer de statut.
+
+Reste le jeune qui a 18 ans sans que le site le sache : pas de date, ou une fausse. Il montre sa pièce d’identité à un administrateur, qui le passe majeur sur la fiche (**Passer majeur (justificatif vu)**, `user.markAdultWithProof`). Le site n’enregistre rien de la pièce : ni copie, ni numéro, ni même la date de naissance, effacée puisque c’est elle qui le disait mineur. Le club n’a besoin que du fait.
+
+## Les comptes d’avant
+
+Les comptes ouverts avant tout cela sont « non renseignés ». Les reprendre un par un serait long, alors que la plupart sont majeurs. La liste des utilisateurs propose un tri : on coche les comptes majeurs, et on les passe majeurs d’un coup.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetStart="markAdults: protectedProcedure"
+  snippetEnd="    }),"
+  snippetHighlight="6"
+  snippetTitle="markAdults : seulement les non renseignés"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La condition `legalAge: "UNKNOWN"` est une sécurité : un mineur coché par erreur dans la liste ne devient pas majeur. Les mineurs, eux, se renseignent fiche par fiche, avec leur parent référent.
+
+## Les cours, un indice de minorité
+
+Un compte peut être rattaché aux cours que le membre suit (`CourseEnrollment`) :
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetStart="model CourseEnrollment {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="6,9"
+  snippetTitle="CourseEnrollment"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ces inscriptions servent d’abord au club. Elles servent aussi d’**indice** : le Tchoy Lee Fut du jeudi est un cours pour les 12-16 ans, tous ses inscrits sont mineurs. À la création d’un compte, cocher un cours pour enfants ou adolescents pré-coche « Mineur » (l’administrateur garde le dernier mot), et grise les cours d’adultes, sauf ceux « Tous publics » : un adolescent ne suit pas le cours du mardi soir.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/users/courses/CoursesPicker.tsx"
+  filename="CoursesPicker.tsx"
+  snippetStart="const minorChosen ="
+  snippetLines="3"
+  snippetHighlight="3"
+  snippetTitle="Un cours pour mineurs grise les cours d’adultes"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cette exclusion ne vaut que pour un simple membre : un instructeur, majeur d’office, n’a pas d’indice à donner.
+
+## Donner un cours, en suivre un autre
+
+Un instructeur n’est pas l’élève de ses cours : il les **donne**. Sur sa fiche, la section devient « Cours donnés » ; cocher un cours fait de lui l’instructeur attitré de ce créneau (`Course.instructorId`), à la place de celui qui l’était.
+
+Un créneau peut aussi être donné sans instructeur attitré : il revient alors à l’instructeur de sa discipline. « Les cours que donne un membre » se lit donc à deux endroits :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetStart="function taughtByWhere(userId: string) {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="3"
+  snippetTitle="taughtByWhere : attitré, ou par sa discipline"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un cours donné par sa discipline est coché d’office sur la fiche, sans case à décocher : il se règle sur la discipline. Les autres se cochent et se décochent :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetStart="setTaughtCourses: protectedProcedure"
+  snippetEnd="    }),"
+  snippetHighlight="10,16,19,20"
+  snippetTitle="setTaughtCourses : attitré des cours cochés, et plus élève de ceux-là"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Seul un membre du groupe Instructeurs donne des cours : le groupe est la source de vérité des affectations. Les trois écritures vont ensemble : les cours décochés retrouvent l’instructeur de leur discipline, les cours cochés reçoivent le nouvel attitré, et s’il suivait l’un d’eux, il ne le suit plus.
+
+Car un instructeur peut aussi **suivre** d’autres cours : gratuitement, sans être compté comme élève. La fiche les propose sous « Autres cours suivis », sans ceux qu’il donne, et le serveur ignore un cours donné qu’on voudrait lui faire suivre.
+
+<Callout type="concept">
+Une même table, deux sens. Une ligne `CourseEnrollment` dit « suit ce cours » ; `Course.instructorId` dit « donne ce cours ». Les mélanger (un instructeur « inscrit » à son propre cours) aurait faussé toute liste d’élèves à venir.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment le site sait-il qu’un membre est majeur ?", "legalAge : majeur, mineur, ou non renseignée ; renseignée par la date de naissance, un groupe de majeurs, ou le choix de l’administrateur."], ["Qui a le dernier mot ?", "La date de naissance, quand elle est connue."], ["L’administrateur voit-il la date ?", "Non : le serveur la lit pour calculer la majorité ; seul le membre la voit."], ["Quels groupes rendent majeur ?", "Administrateurs, Instructeurs, Bureau ; un mineur ne peut pas y entrer."], ["Comment passe-t-on à 18 ans ?", "Dès l’anniversaire (effectiveLegalAge), enregistré la nuit ; sans date, sur pièce d’identité vue par un administrateur."], ["Et les comptes d’avant ?", "Un tri qui passe majeurs les non renseignés cochés, jamais un mineur."], ["À quoi servent les cours ?", "À rattacher le membre ; un cours pour mineurs pré-coche « Mineur » et grise les cours d’adultes."], ["Un instructeur suit-il ses cours ?", "Non, il les donne (instructeur attitré) ; il peut en suivre d’autres, sans être élève."]]' />
+
+## À suivre
+
+Le site sait désormais qui est majeur, qui donne quel cours, qui le suit. Les groupes, eux, n’ont encore montré que leur arbre et leurs droits. Reste ce qu’ils ouvrent : un espace de fichiers par groupe collaboratif.
+
+<Callout type="tip">
+**Chapitre suivant : les espaces collaboratifs.** Un dossier par groupe pour toute sa vie, des gardes qui déduisent tout du chemin, un dépôt qui devient document du groupe, et un finder réservé aux membres.
+</Callout>

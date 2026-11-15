@@ -373,7 +373,7 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { count } = await ctx.prisma.user.updateMany({
         where: { id: { in: input.userIds }, legalAge: "UNKNOWN" },
-        data: { legalAge: "ADULT", guardianName: null, guardianEmail: null, guardianRelation: null },
+        data: { legalAge: "ADULT", guardianName: null, guardianEmail: null, guardianRelation: null, guardianPhone: null },
       });
       return { count };
     }),

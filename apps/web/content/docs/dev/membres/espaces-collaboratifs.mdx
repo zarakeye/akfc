@@ -2,7 +2,7 @@
 title: "Les espaces collaboratifs"
 description: "Un espace de fichiers par groupe collaboratif, un seul dossier pour toute sa vie, des gardes qui déduisent tout du chemin lu par position, un dépôt qui devient document du groupe, et un finder réservé aux membres sur une racine virtuelle."
 section: "Membres et collaboration"
-order: 5
+order: 6
 entities:
   MemberGroup: [name, isCollaborative, parentGroupId]
   MemberGroupMembership: [groupId, userId, access]
@@ -31,7 +31,7 @@ stories:
 import { Callout } from "#features/docs/ui/Callout.tsx"
 import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
-> **Précédemment.** Les groupes forment un arbre dont Administrateurs est la racine immobile ; l’accès d’un membre à un espace se calcule en remontant l’arbre, ses espaces en le descendant.
+> **Précédemment.** Le site sait qui est majeur, qui donne quel cours et qui le suit. Les groupes forment un arbre dont Administrateurs est la racine immobile ; l’accès d’un membre à un espace se calcule en remontant l’arbre, ses espaces en le descendant.
 
 Les documents des membres descendent du club vers ses membres. Certains groupes ont aussi besoin de travailler ensemble : le bureau prépare l’assemblée générale, les instructeurs partagent leurs programmes. Il leur faut un espace où déposer leurs propres fichiers, les ranger et les consulter, sans voir ceux des autres groupes.
 
