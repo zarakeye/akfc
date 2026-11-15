@@ -6,6 +6,7 @@ import { router, protectedProcedure } from "#trpc/core.ts";
 import { isAdmin } from "#trpc/middleware.ts";
 import { ensureGroupSpaceFolder } from "#modules/memberGroups/ensureGroupSpaceFolder.service.ts";
 import { deleteGroupWithSpace } from "#modules/memberGroups/deleteGroupWithSpace.service.ts";
+import { applyAdultGroupRule, assertCanLeaveInstructors } from "#modules/memberGroups/systemGroups.service.ts";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 
@@ -34,6 +35,7 @@ export const memberGroupRouter = router({
         description: true,
         isCollaborative: true,
         isAdminGroup: true,
+        systemKind: true,
         parentGroupId: true,
         _count: { select: { memberships: true } },
       },
@@ -44,6 +46,7 @@ export const memberGroupRouter = router({
       description: g.description,
       isCollaborative: g.isCollaborative,
       isAdminGroup: g.isAdminGroup,
+      systemKind: g.systemKind,
       parentGroupId: g.parentGroupId,
       memberCount: g._count.memberships,
     }));
@@ -243,6 +246,8 @@ export const memberGroupRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Administrateurs, Instructeurs, Bureau : pas de mineur, et la majorité est fixée en entrant.
+      await applyAdultGroupRule(ctx.prisma, [input.groupId], input.userId);
       await ctx.prisma.memberGroupMembership.upsert({
         where: {
           groupId_userId: { groupId: input.groupId, userId: input.userId },
@@ -277,6 +282,11 @@ export const memberGroupRouter = router({
           });
         }
       }
+      const leaving = await ctx.prisma.memberGroup.findUnique({
+        where: { id: input.groupId },
+        select: { systemKind: true },
+      });
+      if (leaving?.systemKind === "INSTRUCTORS") await assertCanLeaveInstructors(ctx.prisma, input.userId);
       await ctx.prisma.memberGroupMembership.deleteMany({
         where: { groupId: input.groupId, userId: input.userId },
       });

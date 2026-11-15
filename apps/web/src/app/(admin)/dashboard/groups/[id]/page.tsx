@@ -243,6 +243,9 @@ export default function GroupDetailPage(): JSX.Element {
               ))}
             </ul>
           )}
+          {addMember.error && (
+            <p role="alert" className="mt-2 text-xs text-red-600">{addMember.error.message}</p>
+          )}
         </div>
       </div>
       <div className="mt-8 border-t border-red-200 pt-4">
@@ -250,6 +253,11 @@ export default function GroupDetailPage(): JSX.Element {
         {group.isAdminGroup ? (
           <p className="text-sm text-muted-foreground">
             Le groupe Administrateurs ne peut pas être supprimé.
+          </p>
+        ) : group.systemKind ? (
+          <p className="text-sm text-muted-foreground">
+            Groupe système : il ne peut pas être supprimé. Ses membres sont majeurs d&apos;office
+            {group.systemKind === "INSTRUCTORS" && " ; seuls eux peuvent être affectés à une discipline, un cours ou un stage"}.
           </p>
         ) : !confirmingDelete ? (
           <button

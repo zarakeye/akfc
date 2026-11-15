@@ -25,9 +25,16 @@ import { Callout } from "#features/docs/ui/Callout.tsx"
 
 Dans le groupe Administrateurs, votre propre ligne affiche **vous** à la place de **Retirer** : vous ne pouvez pas vous retirer vous-même, pour ne jamais laisser le club sans administrateur. Un autre administrateur peut le faire.
 
+## Les groupes système
+
+Trois groupes ont un rôle dans le site lui-même : **Administrateurs**, **Instructeurs** et **Bureau**. Ils sont créés d'office, sous Administrateurs.
+
+- Leurs membres sont **majeurs d'office** : ajouter un compte à l'un d'eux le passe en Majeur, et un compte mineur y est refusé.
+- **Instructeurs** décide qui peut être choisi comme instructeur d'une discipline, d'un cours ou d'un stage. Pour désigner un nouvel instructeur, ajoutez-le à ce groupe. Un membre encore affecté à un cours ne peut pas en être retiré : retirez-le d'abord de ses affectations.
+
 ## Supprimer le groupe
 
-**Zone dangereuse** → **Supprimer le groupe**, puis **Confirmer la suppression**. L'espace du groupe doit être vide ; ses sous-groupes passent sous son parent. Le groupe Administrateurs ne peut pas être supprimé.
+**Zone dangereuse** → **Supprimer le groupe**, puis **Confirmer la suppression**. L'espace du groupe doit être vide ; ses sous-groupes passent sous son parent. Les trois groupes système ne peuvent pas être supprimés.
 
 <Callout type="warning">
 Les documents adressés à un groupe suivent ses membres : un membre ajouté reçoit les documents déjà envoyés au groupe, un membre retiré ne les voit plus.

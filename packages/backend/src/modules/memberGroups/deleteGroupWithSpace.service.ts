@@ -30,6 +30,7 @@ export async function deleteGroupWithSpace(params: {
       id: true,
       name: true,
       isAdminGroup: true,
+      systemKind: true,
       isCollaborative: true,
       parentGroupId: true,
     },
@@ -41,6 +42,12 @@ export async function deleteGroupWithSpace(params: {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Le groupe Administrateurs ne peut pas être supprimé.",
+    });
+  }
+  if (group.systemKind) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Le groupe ${group.name} est un groupe système : il ne peut pas être supprimé.`,
     });
   }
 

@@ -81,6 +81,8 @@ model User {
   /// Mineur : qualité du parent référent vis-à-vis du membre (« mère », « père », « tuteur »…),
   /// saisie par un administrateur avec son nom et son adresse. Portée sur l'autorisation signée.
   guardianRelation      String?
+  /// Téléphone du parent référent (mineur), facultatif.
+  guardianPhone         String?
   /// Numéro de téléphone, saisi par le membre dans son profil. Facultatif.
   phone                 String?
   /// ⚠ Jamais écrit par le code : seulement lu en repli quand `avatar` est vide
@@ -1928,6 +1930,14 @@ enum MemberGroupAccess {
 /// Suppression (deleteGroupWithSpace) : refusée pour le groupe Administrateurs ;
 /// exige un espace vide ; les sous-groupes sont d'abord rattachés au parent du
 /// groupe supprimé. Adhésions et ciblages de documents disparaissent avec lui.
+/// Sortes de groupes système (en plus d'Administrateurs, repéré par isAdminGroup).
+enum SystemGroupKind {
+  /// « Instructeurs » : seuls ses membres peuvent être affectés à une discipline, un cours, un stage.
+  INSTRUCTORS
+  /// « Bureau » : le bureau de l'association.
+  BUREAU
+}
+
 model MemberGroup {
   /// Identifiant CUID. Sert aussi de suffixe au dossier de l'espace (stable
   /// quand le groupe est renommé).
@@ -1944,6 +1954,10 @@ model MemberGroup {
   /// non supprimable. Unique par convention : aucune contrainte en base
   /// n'empêche un second groupe marqué ; c'est ensureAdminGroup qui s'en charge.
   isAdminGroup Boolean @default(false)
+
+  /// Groupe SYSTÈME (unique par sorte) : Instructeurs ou Bureau. Comme Administrateurs, ses
+  /// membres sont majeurs d'office ; il ne peut pas être supprimé. Null pour un groupe ordinaire.
+  systemKind SystemGroupKind? @unique
   /// Création du groupe.
   createdAt   DateTime @default(now())
 

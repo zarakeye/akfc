@@ -16,6 +16,8 @@ import { emailSchema } from "@akfc/contracts/auth/auth.schema.ts";
 import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaReferences.service.ts";
 import { pageContentSchemaV1 } from "@akfc/contracts/page/index.ts";
 import { assertBioMediaAllowed, isInstructorUser } from "#modules/users/instructorBio.service.ts";
+import { ADULT_GROUP_WHERE, ASSIGNED_INSTRUCTOR_WHERE } from "#modules/memberGroups/systemGroups.service.ts";
+import { isAdultGroup } from "@akfc/contracts/groups/systemGroups.ts";
 import { removeAvatarFile } from "#modules/avatar/avatar.service.ts";
 import { resolvePersoBaseFolder } from "#modules/media/services/resolvePersoBaseFolder.service.ts";
 import { assertOwnAvatars } from "#modules/media/services/assertOwnAvatars.service.ts";
@@ -135,9 +137,20 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const groupIds = [...new Set(input.groupIds)];
       const courseIds = await existingCourseIds(ctx.prisma, input.courseIds);
-      const found = await ctx.prisma.memberGroup.count({ where: { id: { in: groupIds } } });
-      if (found !== groupIds.length) {
+      const chosenGroups = await ctx.prisma.memberGroup.findMany({
+        where: { id: { in: groupIds } },
+        select: { name: true, isAdminGroup: true, systemKind: true },
+      });
+      if (chosenGroups.length !== groupIds.length) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Groupe inconnu : rechargez la page." });
+      }
+      // Administrateurs, Instructeurs, Bureau : leurs membres sont majeurs d'office.
+      const adultGroup = chosenGroups.find(isAdultGroup);
+      if (adultGroup && input.legal.legalAge === "MINOR") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Un mineur ne peut pas faire partie du groupe ${adultGroup.name}.`,
+        });
       }
       // Mot de passe généré côté serveur (jamais saisi par l'admin), robuste par
       // construction, puis envoyé au SEUL membre (voir welcomeEmailWithPassword.ts).
@@ -145,10 +158,14 @@ export const userRouter = router({
       const password = generateStrongPassword();
       const hash = await hashPassword(password);
 
-      if (input.legal.legalAge === "UNKNOWN") {
+      if (input.legal.legalAge === "UNKNOWN" && !adultGroup) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Indiquez si le membre est majeur ou mineur." });
       }
-      const legal = legalInfoData(input.legal, input.email, { requireComplete: true });
+      const legal = legalInfoData(
+        adultGroup ? { ...input.legal, legalAge: "ADULT" } : input.legal,
+        input.email,
+        { requireComplete: true },
+      );
 
       // L'adresse est unique en base (@unique). Plutôt que de vérifier avant d'écrire (deux
       // créations simultanées passeraient toutes les deux la vérification), on écrit, et on
@@ -226,6 +243,18 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const u = await ctx.prisma.user.findUnique({ where: { id: input.userId }, select: { email: true } });
       if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "Compte introuvable." });
+      if (input.legal.legalAge !== "ADULT") {
+        const inAdultGroup = await ctx.prisma.memberGroupMembership.findFirst({
+          where: { userId: input.userId, group: ADULT_GROUP_WHERE },
+          include: { group: { select: { name: true } } },
+        });
+        if (inAdultGroup) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Membre du groupe ${inAdultGroup.group.name} : il est majeur d'office.`,
+          });
+        }
+      }
       await ctx.prisma.user.update({
         where: { id: input.userId },
         data: legalInfoData(input.legal, u.email, { requireComplete: false }),
@@ -460,20 +489,19 @@ export const userRouter = router({
     }),
 
   /**
-   * Vivier d'AFFECTATION du select instructeur (≠ « titulaires » réels).
-   * Résout l'œuf-et-la-poule : membres du groupe ADMIN (le staff) OU déjà
-   * rattachés (pour ne perdre aucun instructeur existant, même non-admin).
+   * Vivier d'AFFECTATION du select instructeur (≠ « titulaires » réels) : les membres du groupe
+   * système Instructeurs. Un nouvel instructeur se désigne en l'ajoutant à ce groupe.
    * `getInstructors` et la page publique des instructeurs restent la vérité publique.
    */
   getAssignableInstructors: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({
       where: {
         OR: [
-          { memberGroupMemberships: { some: { group: { isAdminGroup: true } } } },
-          { disciplinesAsInstructor: { some: {} } },
-          { coursesAsInstructor: { some: {} } },
-          { seminarsAsPrimaryAnimator: { some: {} } },
-          { seminarsAsAnimator: { some: {} } },
+          // Le groupe Instructeurs est la source de vérité des affectations. Les instructeurs déjà
+          // affectés y sont versés au démarrage (ensureSystemGroups) ; on les garde ici aussi pour
+          // qu'aucun formulaire n'affiche « — Choisir — » entre la mise à jour et le redémarrage.
+          { memberGroupMemberships: { some: { group: { systemKind: "INSTRUCTORS" } } } },
+          ...ASSIGNED_INSTRUCTOR_WHERE.OR,
           // Organisateur d'un évènement : sans cette ligne, un organisateur qui n'est ni admin ni
           // instructeur disparaît du sélecteur, et le formulaire d'édition affiche « — Choisir — ».
           { eventsAsOrganizer: { some: {} } },

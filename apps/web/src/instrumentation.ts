@@ -32,6 +32,9 @@ export async function register() {
   const { ensureAdminGroup } = await import(
     "@akfc/backend/modules/memberGroups/ensureAdminGroup.service.ts"
   );
+  const { ensureSystemGroups } = await import(
+    "@akfc/backend/modules/memberGroups/systemGroups.service.ts"
+  );
   const { ensureTicketCategories } = await import(
     "@akfc/backend/modules/tickets/ensureTicketCategories.service.ts"
   );
@@ -106,6 +109,18 @@ export async function register() {
   } catch (err) {
     console.error(
       "[instrumentation] ensureAdminGroup failed — app will still start",
+      err
+    );
+  }
+
+  try {
+    const r = await ensureSystemGroups(prisma, APP_ROOT);
+    console.log(
+      `[instrumentation] ensureSystemGroups: créés [${r.created.join(", ")}], adoptés [${r.adopted.join(", ")}], ${r.instructorsAdded} instructeur(s) ajouté(s), ${r.markedAdult} compte(s) passé(s) majeur(s)`
+    );
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureSystemGroups failed — app will still start",
       err
     );
   }

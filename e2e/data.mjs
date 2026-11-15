@@ -28,6 +28,8 @@ export const USERS = {
   majorite: { id: "e2e-majorite", email: "majorite@e2e.test", firstName: "Lucas" },
   // Modifie son profil (pseudo). À lui seul.
   profil: { id: "e2e-profil", email: "profil@e2e.test", firstName: "Maël" },
+  // Majorité non renseignée, ajouté au groupe système Bureau (devient majeur). À lui seul.
+  bureau: { id: "e2e-bureau", email: "bureau@e2e.test", firstName: "Ysé" },
 };
 
 /** L'actualité publiée que commente le membre partant, et le fichier qu'il a envoyé. */
