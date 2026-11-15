@@ -28,14 +28,14 @@ export const adminUsersCreate: Tour = {
     },
     {
       target: "users.form.groups",
-      title: "Ses groupes",
-      body: "Au moins un. Ils décident de ce qu'il voit : documents de groupe, espaces collaboratifs. Le groupe marqué « Admin » donne les droits d'administration.",
+      title: "Son statut, puis ses groupes",
+      body: "Administrateur, Instructeur ou Bureau le rendent majeur d'office ; rien de coché, c'est un simple membre. Les autres groupes décident de ce qu'il voit : documents de groupe, espaces collaboratifs.",
       advance: { kind: "next" },
     },
     {
       target: "users.form.legal",
       title: "Majeur ou mineur",
-      body: "Obligatoire. Pour un mineur, la date de naissance et un parent référent sont demandés : c'est lui qui signe le droit à l'image.",
+      body: "Pour un simple membre : sa date de naissance, si vous l'avez, décide ; sinon, cochez Majeur ou Mineur. Un mineur demande son parent référent, qui validera son droit à l'image.",
       advance: { kind: "next" },
     },
     {

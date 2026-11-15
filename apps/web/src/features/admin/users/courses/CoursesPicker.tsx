@@ -14,13 +14,18 @@ export function courseLabel(c: EnrollableCourse): string {
 /**
  * Les créneaux suivis par un membre, une case par créneau. Les créneaux pour enfants ou adolescents
  * portent une pastille « mineurs » : à la création d'un compte, en cocher un pré-coche « Mineur ».
+ *
+ * `exclusiveMinor` (un simple membre) : un créneau pour mineurs coché, les autres se grisent, sauf
+ * ceux « Tous publics ». Un adolescent ne suit pas un cours d'adultes.
  */
 export function CoursesPicker({
   value,
   onChange,
+  exclusiveMinor = false,
 }: {
   value: number[];
   onChange: (ids: number[], courses: EnrollableCourse[]) => void;
+  exclusiveMinor?: boolean;
 }): JSX.Element {
   const { data: courses, isLoading } = trpc.course.listForEnrollment.useQuery();
 
@@ -29,12 +34,20 @@ export function CoursesPicker({
     return <p className="text-xs text-muted-foreground">Aucun cours n&apos;est encore créé.</p>;
   }
 
+  const minorChosen =
+    exclusiveMinor && courses.some((c) => value.includes(c.id) && isMinorAudience(c.audience));
+  const locked = (c: EnrollableCourse) => minorChosen && !value.includes(c.id) && c.audience !== "ALL_AGES";
+
   return (
     <div className="flex max-h-64 flex-col gap-1 overflow-y-auto rounded border border-input bg-background p-2">
       {courses.map((c) => (
-        <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 hover:bg-muted">
+        <label
+          key={c.id}
+          className={`flex items-center gap-2 rounded px-1 py-0.5 ${locked(c) ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-muted"}`}
+        >
           <input
             type="checkbox"
+            disabled={locked(c)}
             checked={value.includes(c.id)}
             onChange={(e) => {
               const ids = e.target.checked ? [...value, c.id] : value.filter((id) => id !== c.id);

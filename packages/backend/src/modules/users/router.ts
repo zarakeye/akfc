@@ -127,7 +127,8 @@ export const userRouter = router({
         // pas son compte en tapant son adresse autrement).
         email: emailSchema,
         /** Un ou plusieurs groupes (au moins un). */
-        groupIds: z.array(z.string().min(1)).min(1, "Choisissez au moins un groupe."),
+        /** Groupes du membre ; aucun pour un simple membre. */
+        groupIds: z.array(z.string().min(1)),
         /** Majorité et, pour un mineur, date de naissance et parent référent (tous obligatoires). */
         legal: legalInfoInput,
         /** Créneaux suivis comme élève (facultatif). */
@@ -146,12 +147,6 @@ export const userRouter = router({
       }
       // Administrateurs, Instructeurs, Bureau : leurs membres sont majeurs d'office.
       const adultGroup = chosenGroups.find(isAdultGroup);
-      if (adultGroup && input.legal.legalAge === "MINOR") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Un mineur ne peut pas faire partie du groupe ${adultGroup.name}.`,
-        });
-      }
       // Mot de passe généré côté serveur (jamais saisi par l'admin), robuste par
       // construction, puis envoyé au SEUL membre (voir welcomeEmailWithPassword.ts).
       // isFirstLogin=true (défaut Prisma) : le site lui propose de compléter son profil.
@@ -162,10 +157,17 @@ export const userRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Indiquez si le membre est majeur ou mineur." });
       }
       const legal = legalInfoData(
-        adultGroup ? { ...input.legal, legalAge: "ADULT" } : input.legal,
+        adultGroup && !input.legal.birthDate ? { ...input.legal, legalAge: "ADULT" } : input.legal,
         input.email,
-        { requireComplete: true },
+        { requireComplete: !adultGroup },
       );
+      // La date de naissance a le dernier mot : un mineur n'entre pas dans un groupe de majeurs.
+      if (adultGroup && legal.legalAge === "MINOR") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Un mineur ne peut pas faire partie du groupe ${adultGroup.name}.`,
+        });
+      }
 
       // L'adresse est unique en base (@unique). Plutôt que de vérifier avant d'écrire (deux
       // créations simultanées passeraient toutes les deux la vérification), on écrit, et on

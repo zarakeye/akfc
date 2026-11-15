@@ -3381,7 +3381,7 @@
       [
        [
         "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:175"
+        "packages/backend/src/modules/users/router.ts:177"
        ]
       ]
      ]
@@ -3394,13 +3394,13 @@
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/users/router.ts:140"
+        "packages/backend/src/modules/users/router.ts:141"
        ]
       ],
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/users/router.ts:209"
+        "packages/backend/src/modules/users/router.ts:211"
        ]
       ]
      ]
@@ -3413,7 +3413,7 @@
       [
        [
         "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:175"
+        "packages/backend/src/modules/users/router.ts:177"
        ]
       ]
      ]
@@ -3466,7 +3466,7 @@
       [
        [
         "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:175"
+        "packages/backend/src/modules/users/router.ts:177"
        ]
       ]
      ]
@@ -3479,7 +3479,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:210"
+        "packages/backend/src/modules/users/router.ts:212"
        ]
       ]
      ]
@@ -3494,7 +3494,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 240,
+   "line": 242,
    "effects": [
     {
      "model": "MemberGroup",
@@ -3504,7 +3504,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/users/router.ts:247"
+        "packages/backend/src/modules/users/router.ts:249"
        ]
       ]
      ]
@@ -3517,7 +3517,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/users/router.ts:247"
+        "packages/backend/src/modules/users/router.ts:249"
        ]
       ]
      ]
@@ -3530,7 +3530,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:244"
+        "packages/backend/src/modules/users/router.ts:246"
        ]
       ]
      ]
@@ -3543,6 +3543,7 @@
       "birthDateVerified",
       "guardianEmail",
       "guardianName",
+      "guardianPhone",
       "guardianRelation",
       "legalAge"
      ],
@@ -3550,7 +3551,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:258"
+        "packages/backend/src/modules/users/router.ts:260"
        ]
       ]
      ]
@@ -3562,7 +3563,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 267,
+   "line": 269,
    "effects": [
     {
      "model": "CourseEnrollment",
@@ -3572,7 +3573,7 @@
       [
        [
         "ctx.prisma.courseEnrollment.findMany",
-        "packages/backend/src/modules/users/router.ts:271"
+        "packages/backend/src/modules/users/router.ts:273"
        ]
       ]
      ]
@@ -3584,7 +3585,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 282,
+   "line": 284,
    "effects": [
     {
      "model": "Course",
@@ -3611,7 +3612,7 @@
       [
        [
         "ctx.prisma.courseEnrollment.createMany",
-        "packages/backend/src/modules/users/router.ts:291"
+        "packages/backend/src/modules/users/router.ts:293"
        ]
       ]
      ]
@@ -3624,7 +3625,7 @@
       [
        [
         "ctx.prisma.courseEnrollment.deleteMany",
-        "packages/backend/src/modules/users/router.ts:290"
+        "packages/backend/src/modules/users/router.ts:292"
        ]
       ]
      ]
@@ -3637,7 +3638,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:286"
+        "packages/backend/src/modules/users/router.ts:288"
        ]
       ]
      ]
@@ -3649,7 +3650,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 305,
+   "line": 307,
    "effects": [
     {
      "model": "User",
@@ -3664,7 +3665,7 @@
       [
        [
         "ctx.prisma.user.updateMany",
-        "packages/backend/src/modules/users/router.ts:309"
+        "packages/backend/src/modules/users/router.ts:311"
        ]
       ]
      ]
@@ -3676,7 +3677,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 317,
+   "line": 319,
    "effects": [
     {
      "model": "User",
@@ -3689,7 +3690,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:321"
+        "packages/backend/src/modules/users/router.ts:323"
        ]
       ]
      ]
@@ -3701,7 +3702,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 329,
+   "line": 331,
    "effects": [
     {
      "model": "AuditLog",
@@ -3715,7 +3716,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
@@ -3725,7 +3726,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
@@ -3745,7 +3746,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (Comment → User)",
@@ -3763,7 +3764,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (CourseEnrollment → User)",
@@ -3798,7 +3799,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → User)",
@@ -3835,7 +3836,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (FileVersion → User)",
@@ -3856,13 +3857,13 @@
       [
        [
         "tx.imageConsentForm.updateMany",
-        "packages/backend/src/modules/users/router.ts:346"
+        "packages/backend/src/modules/users/router.ts:348"
        ]
       ],
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
@@ -3872,7 +3873,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
@@ -3890,7 +3891,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (ImageConsentRequest → User)",
@@ -3927,7 +3928,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (MediaAsset → User)",
@@ -3945,7 +3946,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (MediaPerson → User)",
@@ -3965,7 +3966,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (MediaPerson → User)",
@@ -3985,7 +3986,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (MemberDocument → User)",
@@ -4003,7 +4004,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → User)",
@@ -4021,7 +4022,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → User)",
@@ -4100,7 +4101,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (PasswordResetToken → User)",
@@ -4118,7 +4119,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (PollVote → User)",
@@ -4138,7 +4139,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (Post → User)",
@@ -4156,7 +4157,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (Preferences → User)",
@@ -4174,7 +4175,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (Reaction → User)",
@@ -4209,7 +4210,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: Cascade (Session → User)",
@@ -4230,7 +4231,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (Ticket → User)",
@@ -4240,7 +4241,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (Ticket → User)",
@@ -4261,7 +4262,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
@@ -4271,7 +4272,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
@@ -4291,7 +4292,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (TicketMessage → User)",
@@ -4311,7 +4312,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ],
        [
         "onDelete: SetNull (TrashEntry → User)",
@@ -4328,7 +4329,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:356"
+        "packages/backend/src/modules/users/router.ts:358"
        ]
       ]
      ]
@@ -4341,7 +4342,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:343"
+        "packages/backend/src/modules/users/router.ts:345"
        ]
       ]
      ]
@@ -4353,7 +4354,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 368,
+   "line": 370,
    "effects": [
     {
      "model": "User",
@@ -4363,7 +4364,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:371"
+        "packages/backend/src/modules/users/router.ts:373"
        ]
       ]
      ]
@@ -4375,7 +4376,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 386,
+   "line": 388,
    "effects": [
     {
      "model": "User",
@@ -4385,7 +4386,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:390"
+        "packages/backend/src/modules/users/router.ts:392"
        ]
       ]
      ]
@@ -4397,7 +4398,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 412,
+   "line": 414,
    "effects": [
     {
      "model": "Folder",
@@ -4441,7 +4442,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:415"
+        "packages/backend/src/modules/users/router.ts:417"
        ]
       ],
       [
@@ -4473,7 +4474,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 444,
+   "line": 446,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4709,7 +4710,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/users/router.ts:471"
+        "packages/backend/src/modules/users/router.ts:473"
        ]
       ]
      ]
@@ -4721,7 +4722,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 496,
+   "line": 498,
    "effects": [
     {
      "model": "Event",
@@ -4731,7 +4732,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:497"
+        "packages/backend/src/modules/users/router.ts:499"
        ]
       ]
      ]
@@ -4744,7 +4745,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:497"
+        "packages/backend/src/modules/users/router.ts:499"
        ]
       ]
      ]
@@ -4757,7 +4758,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:497"
+        "packages/backend/src/modules/users/router.ts:499"
        ]
       ]
      ]
@@ -4770,7 +4771,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:497"
+        "packages/backend/src/modules/users/router.ts:499"
        ]
       ]
      ]
@@ -4782,7 +4783,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 538,
+   "line": 540,
    "effects": [
     {
      "model": "Course",
@@ -4792,7 +4793,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:539"
+        "packages/backend/src/modules/users/router.ts:541"
        ]
       ]
      ]
@@ -4805,7 +4806,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:539"
+        "packages/backend/src/modules/users/router.ts:541"
        ]
       ]
      ]
@@ -4818,7 +4819,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:539"
+        "packages/backend/src/modules/users/router.ts:541"
        ]
       ]
      ]
@@ -4831,7 +4832,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:539"
+        "packages/backend/src/modules/users/router.ts:541"
        ]
       ]
      ]
@@ -4843,7 +4844,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 564,
+   "line": 566,
    "effects": [
     {
      "model": "SiteSettings",
@@ -4853,7 +4854,7 @@
       [
        [
         "ctx.prisma.siteSettings.findUnique",
-        "packages/backend/src/modules/users/router.ts:573"
+        "packages/backend/src/modules/users/router.ts:575"
        ]
       ]
      ]
@@ -4868,7 +4869,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:579"
+        "packages/backend/src/modules/users/router.ts:581"
        ]
       ]
      ]
@@ -4880,7 +4881,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 592,
+   "line": 594,
    "effects": [
     {
      "model": "User",
@@ -4890,7 +4891,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:594"
+        "packages/backend/src/modules/users/router.ts:596"
        ]
       ]
      ]

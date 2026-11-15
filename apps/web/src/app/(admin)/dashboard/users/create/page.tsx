@@ -9,7 +9,7 @@ import {
   CreateUserForm,
   type CreateUserFormInput,
 } from "#features/admin/users/forms/CreateUserForm.tsx";
-import { toLegalInput } from "#features/admin/users/legal/LegalInfoFields.tsx";
+import { toCreationLegalInput } from "#features/admin/users/legal/CreationLegalFields.tsx";
 import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 
 /** Création — `/(admin)/dashboard/users/create`. id User = string (cuid). */
@@ -23,7 +23,9 @@ export default function CreateUserPage(): JSX.Element {
       email: input.email,
       groupIds: input.groupIds,
       courseIds: input.courseIds,
-      legal: toLegalInput({ ...input.legal, legalAge: input.legal.legalAge ?? "UNKNOWN" }),
+      legal: input.adultByStatus
+        ? { ...toCreationLegalInput(input.legal), legalAge: "ADULT" }
+        : toCreationLegalInput(input.legal),
     });
     await utils.user.getAll.invalidate();
     setCreatedId(res.user.id);
