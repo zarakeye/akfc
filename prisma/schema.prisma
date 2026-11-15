@@ -17,9 +17,11 @@ datasource db {
 /// Membre de l'association, et compte de connexion au site.
 ///
 /// Création : par un administrateur (`user.create`), avec un mot de passe généré
-/// côté serveur et envoyé par e-mail ; le membre est inscrit d'office dans un
-/// groupe (accès EDITOR). Être administrateur ne dépend d'aucun champ de ce
-/// modèle : c'est l'appartenance à un groupe marqué `MemberGroup.isAdminGroup`.
+/// côté serveur et envoyé par e-mail. Un simple membre n'appartient à aucun
+/// groupe ; être instructeur ou membre du bureau, c'est appartenir au groupe
+/// système correspondant (`MemberGroup.systemKind`). Être administrateur ne dépend
+/// d'aucun champ de ce modèle : c'est l'appartenance à un groupe marqué
+/// `MemberGroup.isAdminGroup`.
 ///
 /// Suppression d'un membre (actions réelles en base) :
 /// - BLOQUÉE (RESTRICT) tant qu'il est instructeur principal d'une discipline,
