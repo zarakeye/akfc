@@ -12,6 +12,7 @@ import { trpc } from "#core/trpc/trpcClient.ts";
 import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import { AvatarUploader } from "#features/avatar/AvatarUploader.tsx";
 import { BlankConsentFormCard } from "#features/image-consent/BlankConsentFormCard.tsx";
+import { AskGuardianBirthDate } from "#features/image-consent/AskGuardianBirthDate.tsx";
 import { updateMeFormAction } from "./updateMeForm.action";
 import {
   initialUpdateMeFormState,
@@ -253,12 +254,6 @@ export default function UpdateMeForm(): JSX.Element {
               disabled={birthDateLocked}
               {...register("birthDate")}
             />
-            {birthDateLock === "GUARDIAN" && (
-              <span className="text-xs text-gray-500">
-                C&apos;est votre parent référent qui la confirme ou la corrige, quand il valide votre droit à
-                l&apos;image : indiquez vos souhaits, il recevra le lien.
-              </span>
-            )}
             {birthDateLock === "CLUB" && (
               <span className="text-xs text-gray-500">
                 Renseignée par le club : pour la corriger, adressez-vous à un instructeur.
@@ -270,6 +265,7 @@ export default function UpdateMeForm(): JSX.Element {
               </span>
             )}
           </label>
+          {birthDateLock === "GUARDIAN" && <AskGuardianBirthDate hasDate={Boolean(profileQuery.data?.birthDate)} />}
 
           <label className="grid gap-1">
             <span className="text-sm">À propos</span>

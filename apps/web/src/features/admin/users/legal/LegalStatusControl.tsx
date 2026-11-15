@@ -55,6 +55,15 @@ export function LegalStatusControl({
     },
   });
 
+  // Justificatif vu (au club ou à la MJC) : majeur sans date ; une date connue, qui le disait
+  // mineur, est effacée. Le jeune est prévenu par e-mail.
+  const proof = trpc.user.markAdultWithProof.useMutation({
+    onSuccess: async () => {
+      await utils.user.getAll.invalidate();
+      router.refresh();
+    },
+  });
+
   if (adultGroupName) {
     return (
       <section aria-label="Majorité" className="mt-6 rounded-lg border border-border p-4 text-sm" data-tour="users.legal">
@@ -175,7 +184,26 @@ export function LegalStatusControl({
         >
           {save.isPending ? "Enregistrement…" : "Enregistrer"}
         </button>
+        {initial.legalAge !== "ADULT" && (
+          <button
+            type="button"
+            disabled={proof.isPending}
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Passer ce compte en majeur sur justificatif ? Sa date de naissance enregistrée (s'il y en a une) et les coordonnées de son parent seront effacées ; il recevra un e-mail.",
+                )
+              ) {
+                proof.mutate({ userId });
+              }
+            }}
+            className="rounded-md border border-gray-300 px-3 py-1.5 font-medium hover:bg-gray-50 disabled:opacity-50"
+          >
+            {proof.isPending ? "Enregistrement…" : "Passer majeur (justificatif vu)"}
+          </button>
+        )}
       </div>
+      {proof.error && <p className="mt-2 text-red-600">{proof.error.message}</p>}
       {save.isSuccess && <p className="mt-2 text-emerald-700">Enregistré.</p>}
       {save.error && <p className="mt-2 text-red-600">{save.error.message}</p>}
     </section>

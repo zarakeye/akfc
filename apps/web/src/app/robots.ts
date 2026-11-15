@@ -26,6 +26,7 @@ export default function robots(): MetadataRoute.Robots {
         "/mes-espaces",
         "/deposer",
         "/autorisation-parent",
+        "/date-de-naissance-parent",
         "/api/",
       ],
     },
