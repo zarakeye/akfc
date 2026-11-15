@@ -46,7 +46,7 @@ Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune 
 
 <Installer paquets="pdf-lib" dans="backend" />
 
-Le formulaire papier reste la voie de tous. Mais remettre une feuille signée à un responsable, la faire scanner, la faire déposer, c’est trois personnes pour un oui. Un membre **majeur** peut donner son accord lui-même, depuis son profil. Le site doit alors produire ce que produisait la signature : un document, une date, la version du texte accepté, et la certitude que c’est bien lui.
+Remettre une feuille signée à un responsable, la faire scanner, la faire déposer, c’est trois personnes pour un oui : tout se fait donc en ligne. Un membre **majeur** donne son accord lui-même, depuis son profil. Le site doit alors produire ce que produisait la signature : un document, une date, la version du texte accepté, et la certitude que c’est bien lui.
 
 ## Les parcours du chapitre
 
@@ -170,6 +170,8 @@ Un délai de deux minutes sépare deux envois. Le lien vaut sept jours et ne ser
 ### La validation par le parent
 
 Le parent ouvre le formulaire pré-rempli des souhaits, peut tout changer, peut confirmer ou donner la date de naissance (facultative), coche « je suis le représentant légal » (refusé par le schéma tant qu’elle ne vaut pas `true`) et valide. Une date qu’il donne devient celle de la fiche, marquée vérifiée : c’est elle qui fera passer le membre majeur à ses 18 ans. Sans date, ce passage n’est pas automatique : un administrateur le fait.
+
+Le récapitulatif remplit aussi la case « Signature du membre mineur » du formulaire. Sa signature n’y est que conseillée : elle montre que son avis a été recueilli. Le site l’a recueilli, puisque le mineur a envoyé lui-même ses souhaits depuis son compte ; la case le dit, avec ce qu’en a fait le parent (gardés ou modifiés, détail en dernière page). Le pied de page du modèle, qui parle d’une feuille à remettre, est recouvert : « validée en ligne », et une numérotation qui compte la page des souhaits.
 
 <CodeWalkthrough
   language="ts"

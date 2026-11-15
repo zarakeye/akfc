@@ -80,6 +80,22 @@ function birthDay(d: Date): string {
   return d.toLocaleDateString("fr-FR", { timeZone: "UTC" });
 }
 
+/**
+ * Pied de page d'un récapitulatif validé en ligne : le modèle dit « à remettre signée… sur papier »,
+ * et compte 2 pages ; on le recouvre, page par page, avec la bonne mention et la bonne numérotation
+ * (la page des souhaits s'ajoute pour un mineur).
+ */
+function drawOnlineFooters(doc: PDFDocument, font: PDFFont): void {
+  const pages = doc.getPages();
+  const grey = rgb(0.35, 0.35, 0.35);
+  pages.forEach((page, i) => {
+    page.drawRectangle({ x: 44, y: 25, width: 508, height: 10, color: rgb(1, 1, 1) });
+    page.drawText("AKFC — Autorisation de droit à l'image · validée en ligne", { x: 45.4, y: 28.3, size: 7, font, color: grey });
+    const num = `${i + 1}/${pages.length}`;
+    page.drawText(num, { x: 549.9 - font.widthOfTextAtSize(num, 7), y: 28.3, size: 7, font, color: grey });
+  });
+}
+
 /** Dernière page : souhaits du membre mineur et choix validés par son parent, ligne par ligne. */
 function drawWishesPage(
   doc: PDFDocument,
@@ -191,10 +207,27 @@ export async function buildConsentPdf(
       y -= 11;
       page.drawText(line, { x: 53, y, size: 8, font, color: rgb(0.2, 0.2, 0.2), maxWidth: 240 });
     }
+    // Cadre du mineur (page 1, « Signature du membre mineur ») : validation par le parent, les
+    // souhaits que le mineur a lui-même envoyés depuis son compte (détail en dernière page).
+    if (confirmation.memberWishes) {
+      const changed = compareWishes(confirmation.memberWishes, confirmation).some((r) => r.changed);
+      const name = [member.firstName, member.lastName].filter(Boolean).join(" ").trim() || member.email;
+      const minorLines = [
+        "depuis son compte membre.",
+        changed ? "Modifiés par son parent : voir la dernière page." : "Gardés par son parent : voir la dernière page.",
+      ];
+      let my = 84;
+      page.drawText(`Souhaits exprimés en ligne par ${name}`, { x: 314, y: my, size: 8.5, font: bold, color: rgb(0.1, 0.1, 0.1), maxWidth: 232 });
+      for (const line of minorLines) {
+        my -= 11;
+        page.drawText(line, { x: 314, y: my, size: 8, font, color: rgb(0.2, 0.2, 0.2), maxWidth: 232 });
+      }
+    }
     form.updateFieldAppearances(font);
     form.flatten();
 
     if (confirmation.memberWishes) drawWishesPage(doc, font, bold, confirmation, confirmation.memberWishes);
+    drawOnlineFooters(doc, font);
   }
 
   return doc.save();
