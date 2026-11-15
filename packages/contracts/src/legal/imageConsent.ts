@@ -106,15 +106,19 @@ export function missingForMinor(m: {
 }
 
 /**
- * Date de naissance d'un mineur, confirmée par son parent : « AAAA-MM-JJ », passée, moins de
- * 18 ans. Renvoie la date (minuit UTC) ou le message d'erreur à afficher.
+ * Date de naissance donnée par le parent d'un mineur : « AAAA-MM-JJ », passée. Renvoie la date
+ * (minuit UTC) et si elle fait du membre un MAJEUR (le parent doit alors le confirmer : le membre
+ * passe majeur et décide seul), ou le message d'erreur à afficher.
  */
-export function parseMinorBirthDate(value: string, now: Date = new Date()): Date | string {
+export function parseGuardianBirthDate(value: string, now: Date = new Date()): { date: Date; adult: boolean } | string {
   const d = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00Z`) : null;
   if (!d || Number.isNaN(d.getTime()) || d > now || ageOn(d, now) > 120) return "Date de naissance invalide.";
-  if (ageOn(d, now) >= 18) return "À cette date, le membre serait majeur : c'est lui qui donne son autorisation. Contactez le club si sa fiche est erronée.";
-  return d;
+  return { date: d, adult: ageOn(d, now) >= 18 };
 }
+
+/** Le parent a saisi une date de majeur sans la confirmer. */
+export const ADULT_BIRTH_DATE_UNCONFIRMED =
+  "À cette date, le membre a 18 ans ou plus : il est majeur. Vérifiez la date, ou confirmez-la.";
 
 /** Statut déduit d'un formulaire : accordée dès qu'un usage est autorisé. */
 export function consentFromUsages(usages: readonly ImageUsageValue[]): Exclude<ImageConsentValue, "UNKNOWN"> {

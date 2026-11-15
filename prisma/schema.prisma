@@ -196,6 +196,8 @@ model User {
   imageConsentFormsUploaded ImageConsentForm[]        @relation("ImageConsentFormUploader")
   /// Demande d'autorisation en attente (1–0..1, ImageConsentRequest.user). Effacée avec lui.
   imageConsentRequest       ImageConsentRequest?
+  /// Demande au parent de renseigner la date de naissance (1–0..1, BirthDateRequest.user).
+  birthDateRequest          BirthDateRequest?
   /// Adhésions aux groupes de membres (1–N, MemberGroupMembership.user).
   /// Effacées avec lui.
   memberGroupMemberships    MemberGroupMembership[]   @relation("MemberGroupMembership")
@@ -2465,4 +2467,28 @@ model ImageConsentRequest {
   createdAt      DateTime @default(now())
   /// Dernière modification (souhaits, renvoi).
   updatedAt      DateTime @updatedAt
+}
+
+/// Demande, par un membre MINEUR, que son parent référent renseigne, corrige ou efface sa date de
+/// naissance (il ne peut pas la modifier lui-même). Lien personnel envoyé au parent, à usage
+/// unique ; la demande est supprimée à la validation. Une seule par membre.
+model BirthDateRequest {
+  /// Identifiant CUID.
+  id        String   @id @default(cuid())
+  /// Membre mineur concerné (unique : une demande en attente au plus).
+  userId    String   @unique
+  /// Membre (1–1, User.birthDateRequest). Supprimée avec son compte (CASCADE).
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Empreinte SHA-256 du jeton du lien (le jeton lui-même n'est jamais stocké).
+  tokenHash String   @unique
+  /// Adresse à laquelle le lien a été envoyé (celle du parent référent à l'envoi).
+  sentTo    String
+  /// Envoi du dernier lien (délai minimal entre deux envois).
+  sentAt    DateTime
+  /// Fin de validité du lien (7 jours après l'envoi).
+  expiresAt DateTime
+  /// Création.
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
 }

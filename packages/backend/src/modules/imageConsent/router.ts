@@ -16,6 +16,12 @@ import {
   resendGuardianLink,
 } from "#modules/imageConsent/imageConsentGuardian.service.ts";
 import { byEffectiveDesc } from "#modules/imageConsent/formOrder.ts";
+import {
+  birthDateRequestByToken,
+  confirmBirthDateByGuardian,
+  pendingBirthDateRequest,
+  requestBirthDateFromGuardian,
+} from "#modules/users/birthDateRequest.service.ts";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 
@@ -26,6 +32,8 @@ const choicesInput = z.object({
 });
 /** Jeton du lien envoyé au parent (forme vérifiée par le service). */
 const tokenInput = z.object({ token: z.string().min(1).max(100) });
+/** Date saisie par le parent (« AAAA-MM-JJ »). */
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date de naissance invalide.");
 
 /**
  * Droit à l'image : tout se fait en ligne (le membre majeur confirme, le parent d'un mineur valide).
@@ -94,7 +102,9 @@ export const imageConsentRouter = router({
       tokenInput.merge(choicesInput).extend({
         isLegalRepresentative: z.literal(true),
         /** Facultative : le parent la confirme, la corrige ou la donne s'il le souhaite. */
-        birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date de naissance invalide.").nullable().optional(),
+        birthDate: isoDate.nullable().optional(),
+        /** Une date de majeur : le parent la confirme (le membre passe majeur, ses choix ne sont pas gardés). */
+        confirmAdult: z.boolean().optional(),
       }),
     )
     .mutation(({ ctx, input }) =>
@@ -104,6 +114,34 @@ export const imageConsentRouter = router({
         usages: input.usages,
         keepAfterLeave: input.keepAfterLeave,
         birthDate: input.birthDate ?? null,
+        confirmAdult: input.confirmAdult,
+      }),
+    ),
+
+  /** Membre mineur : demande à son parent de renseigner, corriger ou effacer sa date de naissance. */
+  requestBirthDate: protectedProcedure.mutation(({ ctx }) => requestBirthDateFromGuardian(ctx.prisma, ctx.sessionClient.user.id)),
+
+  /** Membre mineur : sa demande de date en cours (adresse masquée), ou null. */
+  birthDateRequestMine: protectedProcedure.query(({ ctx }) => pendingBirthDateRequest(ctx.prisma, ctx.sessionClient.user.id)),
+
+  /** Page du parent (sans compte) : la date enregistrée, à confirmer, corriger ou effacer. */
+  birthDateRequest: publicProcedure.input(tokenInput).query(({ ctx, input }) => birthDateRequestByToken(ctx.prisma, input.token)),
+
+  /** Le parent valide la date (null : l'efface) ; il se déclare représentant légal. */
+  confirmBirthDate: publicProcedure
+    .input(
+      tokenInput.extend({
+        isLegalRepresentative: z.literal(true),
+        birthDate: isoDate.nullable(),
+        confirmAdult: z.boolean().optional(),
+      }),
+    )
+    .mutation(({ ctx, input }) =>
+      confirmBirthDateByGuardian({
+        prisma: ctx.prisma,
+        token: input.token,
+        birthDate: input.birthDate,
+        confirmAdult: input.confirmAdult,
       }),
     ),
 

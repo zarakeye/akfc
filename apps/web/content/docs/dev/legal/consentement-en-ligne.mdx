@@ -197,16 +197,16 @@ Le verrou de la date est décidé par le serveur (`onlineConsentState` le dit au
 
 ### À 18 ans
 
-Chaque nuit, avec les purges, `promoteNewAdults` passe majeurs les mineurs dont la date vérifiée atteint 18 ans : les coordonnées du parent sont effacées, une demande encore ouverte est supprimée, et le jeune reçoit un e-mail. Ses droits ne changent pas d’un coup : ceux que son parent a signés restent valables jusqu’à ce qu’il confirme ou modifie les siens, depuis « Mon droit à l’image ». Entre l’anniversaire et la nuit, `effectiveLegalAge` le traite déjà en majeur.
+Chaque nuit, avec les purges, `promoteNewAdults` passe majeurs les mineurs dont la date vérifiée atteint 18 ans. Le passage lui-même, `makeAdult`, sert aussi quand un parent confirme une date de majeur, ou quand un administrateur passe un compte majeur sur justificatif : les coordonnées du parent sont effacées, les demandes encore ouvertes supprimées, et le jeune reçoit un e-mail. Ses droits ne changent pas d’un coup : ceux que son parent a signés restent valables jusqu’à ce qu’il confirme ou modifie les siens, depuis « Mon droit à l’image ». Entre l’anniversaire et la nuit, `effectiveLegalAge` le traite déjà en majeur.
 
 <CodeExample
   language="ts"
   filepath="packages/backend/src/modules/users/comingOfAge.service.ts"
   filename="comingOfAge.service.ts"
-  snippetStart="export async function promoteNewAdults"
+  snippetStart="export async function makeAdult("
   snippetEnd="^}"
-  snippetHighlight="6,11"
-  snippetTitle="promoteNewAdults : le parent n’a plus de rôle"
+  snippetHighlight="15,16,25,26"
+  snippetTitle="makeAdult : le parent n’a plus de rôle"
   fullFileTitle="Voir le fichier complet"
 />
 

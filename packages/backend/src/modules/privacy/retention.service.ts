@@ -50,6 +50,10 @@ export async function purgeExpiredData(db: PrismaClient, now = new Date()) {
   const guardianRequests = await db.imageConsentRequest.deleteMany({
     where: { expiresAt: { lt: new Date(now.getTime() - GUARDIAN_REQUEST_KEEP_MS) } },
   });
+  // Demandes de date de naissance au parent, expirées sans réponse (même délai).
+  await db.birthDateRequest.deleteMany({
+    where: { expiresAt: { lt: new Date(now.getTime() - GUARDIAN_REQUEST_KEEP_MS) } },
+  });
   // Vignettes et affiches dont la photo ou la vidéo d'origine a disparu (sans R2 configuré : 0).
   const derivatives = await sweepOrphanDerivatives().catch((err) => {
     console.error("[rgpd/purge] déclinaisons :", err instanceof Error ? err.message : err);

@@ -15,6 +15,7 @@ import { legalInfoInput, legalInfoData } from "#modules/users/legalInfo.ts";
 import { emailSchema } from "@akfc/contracts/auth/auth.schema.ts";
 import { syncPageMediaReferences } from "#modules/media/services/syncPageMediaReferences.service.ts";
 import { pageContentSchemaV1 } from "@akfc/contracts/page/index.ts";
+import { makeAdult } from "#modules/users/comingOfAge.service.ts";
 import { assertBioMediaAllowed, isInstructorUser } from "#modules/users/instructorBio.service.ts";
 import { ADULT_GROUP_WHERE, ASSIGNED_INSTRUCTOR_WHERE } from "#modules/memberGroups/systemGroups.service.ts";
 import { isAdultGroup } from "@akfc/contracts/groups/systemGroups.ts";
@@ -376,6 +377,23 @@ export const userRouter = router({
         data: { legalAge: "ADULT", guardianName: null, guardianEmail: null, guardianRelation: null },
       });
       return { count };
+    }),
+
+  /**
+   * « Passer majeur (justificatif vu) » (admins) : le membre a montré, au club ou à la MJC, qu'il a
+   * 18 ans. Il passe majeur SANS date de naissance (une date connue est effacée : c'est elle qui le
+   * disait mineur) ; son parent n'a plus de rôle (coordonnées effacées, demandes supprimées), il
+   * reçoit l'e-mail des majeurs. Un compte déjà majeur ne change pas.
+   */
+  markAdultWithProof: protectedProcedure
+    .use(isAdmin)
+    .input(z.object({ userId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const u = await ctx.prisma.user.findUnique({ where: { id: input.userId }, select: { legalAge: true } });
+      if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "Compte introuvable." });
+      if (u.legalAge === "ADULT") return { changed: false };
+      await makeAdult(ctx.prisma, input.userId, { clearBirthDate: true });
+      return { changed: true };
     }),
 
   /** Droit à l'image (admins) : autorisation recueillie par le club pour ce membre. */

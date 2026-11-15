@@ -8,6 +8,7 @@ import {
   sendGuardianConsentResultToMember,
 } from "#email/templates/imageConsentGuardian.ts";
 import { buildConsentPdf } from "#modules/imageConsent/consentPdf.service.ts";
+import { makeAdult } from "#modules/users/comingOfAge.service.ts";
 import { latestFormUsages } from "#modules/imageConsent/formOrder.ts";
 import {
   fullName,
@@ -26,7 +27,8 @@ import {
   describeWishChanges,
   effectiveLegalAge,
   missingForMinor,
-  parseMinorBirthDate,
+  ADULT_BIRTH_DATE_UNCONFIRMED,
+  parseGuardianBirthDate,
   type ConsentChoices,
   type ImageUsageValue,
 } from "@akfc/contracts/legal/imageConsent.ts";
@@ -51,13 +53,13 @@ import {
  * club. Un code envoyé à la même adresse n'ajouterait rien.
  */
 
-const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+export const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
-function hashToken(token: string): string {
+export function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-function linkInvalid(): never {
+export function linkInvalid(): never {
   throw new TRPCError({
     code: "NOT_FOUND",
     message: "Ce lien n'est plus valable (déjà utilisé, remplacé par un plus récent, ou expiré). Demandez-en un nouveau au club.",
@@ -183,11 +185,22 @@ export async function confirmGuardianConsent(params: {
   keepAfterLeave: boolean | null;
   /** Date de naissance confirmée ou donnée par le parent (« AAAA-MM-JJ »), FACULTATIVE : null, la fiche ne change pas. */
   birthDate: string | null;
-}): Promise<{ changes: string[] }> {
+  /** Le parent confirme une date qui fait du membre un majeur. */
+  confirmAdult?: boolean;
+}): Promise<{ changes: string[]; becameAdult: boolean }> {
   const { prisma } = params;
   const req = await findByToken(prisma, params.token);
-  const parsed = params.birthDate ? parseMinorBirthDate(params.birthDate) : null;
-  if (typeof parsed === "string") throw new TRPCError({ code: "BAD_REQUEST", message: parsed });
+  const given = params.birthDate ? parseGuardianBirthDate(params.birthDate) : null;
+  if (typeof given === "string") throw new TRPCError({ code: "BAD_REQUEST", message: given });
+  if (given?.adult) {
+    // Une date de majeur : le parent doit la confirmer (une faute de frappe ferait sortir l'enfant
+    // de son autorité). Confirmée, le membre passe majeur et décide seul : le parent ne signe pas
+    // pour un majeur, ses choix ne sont pas enregistrés.
+    if (!params.confirmAdult) throw new TRPCError({ code: "BAD_REQUEST", message: ADULT_BIRTH_DATE_UNCONFIRMED });
+    await makeAdult(prisma, req.userId, { birthDate: given.date });
+    return { changes: [], becameAdult: true };
+  }
+  const parsed = given?.date ?? null;
   // Sans date du parent, celle de la fiche (s'il y en a une) reste telle quelle.
   const birthDate = parsed ?? req.user.birthDate;
   const m = { ...req.user, birthDate };
@@ -283,7 +296,7 @@ export async function confirmGuardianConsent(params: {
     changes,
   }).catch(logFail("e-mail au membre"));
 
-  return { changes };
+  return { changes, becameAdult: false };
 }
 
 /** Pour le profil du mineur : la demande en cours (adresse masquée), ou null. */

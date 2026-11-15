@@ -49,7 +49,7 @@ test("le parent reçoit les souhaits du mineur, les modifie et valide ; ses choi
   const adultDate = await trpcMutation(parent, "imageConsent.confirmGuardian", {
     token, usages: ["MEMBER_SPACE"], keepAfterLeave: false, birthDate: "2000-01-01", isLegalRepresentative: true,
   });
-  expect(adultDate.error?.message).toContain("serait majeur");
+  expect(adultDate.error?.message).toContain("il est majeur");
 
   // 3. Le parent change : site public oui, réseaux non, retrait après le départ.
   const done = await trpcMutation(parent, "imageConsent.confirmGuardian", {
