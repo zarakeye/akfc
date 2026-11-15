@@ -44,6 +44,7 @@ const BOXES: Record<"user" | "session" | "membership" | "group", Box> = {
       { text: "name: String" },
       { text: "isCollaborative: Boolean" },
       { text: "isAdminGroup: Boolean" },
+      { text: "systemKind: INSTRUCTORS | BUREAU ? (unique)" },
       { text: "FK  parentGroupId → MemberGroup (SetNull)", kind: "fk" },
     ],
   },

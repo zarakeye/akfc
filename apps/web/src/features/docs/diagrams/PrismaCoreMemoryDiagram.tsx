@@ -54,10 +54,11 @@ export default function PrismaCoreMemoryDiagram(): JSX.Element {
           <Node cx={780} cy={230} title="Groupe" sub="MemberGroup" stroke="#a78bfa" />
           <Node cx={200} cy={466} title="Session" sub="Session" stroke="#34d399" />
 
-          <rect x="560" y="390" width="440" height="110" rx="16" fill="#111827" stroke="#f59e0b" strokeWidth="2" />
-          <text x="780" y="430" fill="#fde68a" fontSize="17" fontWeight="700" textAnchor="middle">Être administrateur</text>
-          <text x="780" y="460" fill="#cbd5e1" fontSize="15" textAnchor="middle">= appartenir au groupe marqué isAdminGroup</text>
-          <text x="780" y="484" fill="#94a3b8" fontSize="14" textAnchor="middle">aucun champ de User ne le dit</text>
+          <rect x="560" y="385" width="440" height="135" rx="16" fill="#111827" stroke="#f59e0b" strokeWidth="2" />
+          <text x="780" y="422" fill="#fde68a" fontSize="17" fontWeight="700" textAnchor="middle">Un statut = un groupe</text>
+          <text x="780" y="451" fill="#cbd5e1" fontSize="15" textAnchor="middle">administrateur : le groupe marqué isAdminGroup</text>
+          <text x="780" y="475" fill="#cbd5e1" fontSize="15" textAnchor="middle">instructeur, bureau : un groupe système (systemKind)</text>
+          <text x="780" y="502" fill="#94a3b8" fontSize="14" textAnchor="middle">aucun champ de User ne le dit</text>
         </svg>
       </div>
     </figure>
