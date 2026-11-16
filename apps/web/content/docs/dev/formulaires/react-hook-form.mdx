@@ -27,7 +27,8 @@ Son objectif : redonner de la structure aux formulaires côté client. Les champ
   title="React vs React Hook Form"
   filename="LoginForm.tsx"
   kind="educational"
-  codeJson='"// ❌ sans RHF\nconst [email, setEmail] = useState(\"\")\nconst [error, setError] = useState(\"\")\n\n<input\n  value={email}\n  onChange={(e) => setEmail(e.target.value)}\n/>
+  codeJson='"// ❌ sans RHF\nconst [email, setEmail] = useState(\"\")\nconst [error, setError] = useState(\"\")\n\n<input\n  value={email}\n  onChange={(e) => setEmail(e.target.value)}\n/>\n\n// ✅ avec RHF\nconst { register, handleSubmit } = useForm()\n\n<form onSubmit={handleSubmit((data) => console.log(data))}>\n  <input {...register(\"email\")} />\n</form>"'
+/>
 
 Moins de code répétitif, moins de bugs liés aux états, de meilleures performances, une structure plus claire : pour le développeur, le gain est énorme.
 
