@@ -115,7 +115,14 @@ Le navigateur capture, met à plat et transmet ; le serveur reçoit, valide et t
 
 Dans beaucoup d’applications de cette époque, le serveur était à la fois serveur web (il produisait le HTML) et serveur de données (il exécutait la logique métier et accédait à la base). Rendu et logique vivaient ensemble, et le flux ne laissait aucune ambiguïté : une requête entrait, elle était traitée, une page complète sortait. Le navigateur n’avait rien à orchestrer.
 
-Ce modèle était **structurellement cohérent** : une seule source de vérité, aucune logique dupliquée, aucune validation concurrente, un flux simple et prévisible. Il forçait naturellement le respect du modèle côté serveur.
+Ce modèle était **structurellement cohérent**, grâce à quatre propriétés :
+
+- une seule source de vérité, le serveur ;
+- aucune logique dupliquée ;
+- aucune validation concurrente ;
+- un flux simple et prévisible.
+
+Il forçait naturellement le respect du modèle côté serveur.
 
 <Callout type="info">
 Dans le modèle HTML natif, le navigateur collecte et envoie les données, le serveur porte toute la logique métier, et le protocole HTTP sert de contrat entre les deux. Pas d’état client complexe, pas de validation en double, très peu de surface d’erreur.

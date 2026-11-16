@@ -190,15 +190,41 @@ Une transaction regroupe plusieurs écritures en une seule : enregistrer le cont
 Une règle de suppression est une règle métier. `Cascade` sur la mauvaise relation efface des données sans prévenir ; `Restrict` partout rend la suppression impossible. Elle se choisit en écrivant la relation, pas le jour où un administrateur clique sur « Supprimer ».
 </Callout>
 
+### 4.7 — Lire les relations, c’est lire le futur du projet
+
+Nous pouvons désormais faire quelque chose de très utile : regarder un schéma, et anticiper le comportement du système. Dans notre projet, les relations montrent déjà :
+
+- que l’authentification est persistée ;
+- que les droits passent par les groupes ;
+- que les accès se composent, et s’héritent dans la hiérarchie ;
+- que le membre n’est pas une entité isolée ;
+- ce qui disparaît, ce qui survit et ce qui bloque, à chaque suppression.
+
+Une grande partie de l’architecture est donc écrite avant même la première ligne de code métier.
+
+### 4.8 — Ce que cette section change pour la suite
+
+Quand nous manipulerons des données, dans un formulaire, une procédure tRPC ou une garde d’accès, nous ne manipulerons jamais une entité seule, mais :
+
+- un membre avec ses adhésions ;
+- un groupe avec son parent et ses sous-groupes ;
+- une session liée à un membre.
+
+Et tout cela est déjà défini ici.
+
+<Callout type="info">
+Les relations ne sont pas une couche technique de plus : elles sont le cœur du système. Tout ce qui suit (formulaires, tRPC, authentification) s’appuie directement sur elles.
+</Callout>
+
 ## Ce que nous venons de construire dans le Mouvement 2
 
-Nous avons regardé le modèle pour ce qu’il est vraiment : une architecture. Avant même une ligne de code métier, les relations disent déjà que l’authentification est persistée, que les droits passent par les groupes, que les accès se composent et s’héritent dans la hiérarchie, et ce qui disparaît, survit ou bloque à chaque suppression. Trois idées en sont ressorties :
+Nous avons regardé le modèle pour ce qu’il est vraiment : une architecture. Trois idées en sont ressorties :
 
 - **Les entités cœur disent déjà la philosophie du système.** En séparant le membre, ses groupes et ses niveaux d’accès, le schéma affirme un choix structurant : les capacités ne sont pas attachées aux personnes, mais aux appartenances, et c’est ce qui rend l’autorisation évolutive plutôt que figée dans les procédures.
 - **Une relation n’est jamais « juste technique ».** *One-to-many*, *many-to-many*, nullable ou obligatoire, cascade ou restriction : chaque choix porte une règle métier silencieuse. Lire une relation, c’est lire ce que le projet promet, et ce qu’il interdit.
 - **Le modèle dessine le futur autant que le présent.** Ce qui est facile à ajouter, ce qui est douloureux à supprimer, ce qui pourra évoluer sans migration : tout cela est inscrit dans la forme des relations. Le passage des rôles aux groupes l’a montré : le `schema.prisma` n’est pas une photographie, c’est une trajectoire.
 
-Dans un formulaire, une procédure tRPC ou une garde d’accès, nous ne manipulerons donc jamais une entité seule, mais un membre avec ses adhésions, un groupe avec son parent et ses sous-groupes, une session liée à un membre. Tout cela reste pourtant déclaratif : rien ne tourne encore. Le Mouvement 3 franchit la frontière qui rend ce modèle exécutable, là où Prisma cesse de décrire pour commencer à faire.
+Tout cela reste pourtant déclaratif : rien ne tourne encore. Le Mouvement 3 franchit la frontière qui rend ce modèle exécutable, là où Prisma cesse de décrire pour commencer à faire.
 
 <Callout type="tip">
 **Chapitre suivant : quand le modèle devient exécutable.** `prisma generate`, les types et les requêtes générés, la fin de la duplication des types, un type écrit à la main remplacé par un type généré, et là où le typage s’arrête.

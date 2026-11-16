@@ -177,10 +177,18 @@ Retenons pour l’instant qu’une écriture qui touche plusieurs tables passe p
 
 ## Ce que nous venons de construire dans le Mouvement 3
 
-Nous avons franchi la frontière qui sépare le descriptif de l’exécutable. PostgreSQL stocke la donnée, Prisma définit sa structure et en génère les types, TypeScript les comprend, le backend les utilise : la donnée circule sans rupture. Trois idées en sont ressorties :
+Nous avons franchi la frontière qui sépare le descriptif de l’exécutable. Avec du recul, un système complet apparaît :
+
+1. PostgreSQL stocke la donnée ;
+2. Prisma définit sa structure et en génère les types ;
+3. TypeScript comprend ces types ;
+4. le backend les utilise.
+
+La donnée circule sans rupture. Quatre idées en sont ressorties :
 
 - **`prisma generate` n’est pas un détail d’outillage, c’est un basculement.** Cette commande prend un schéma déclaratif et en produit un client typé, aligné sur les modèles et les relations. Dès lors, le backend ne manipule plus « des objets qui ressemblent à des membres » : il manipule des `User`, au sens strict du type.
 - **Le typage devient structurel, pas décoratif.** Les types ne sont plus des annotations posées au-dessus du code pour rassurer l’éditeur : ils sont générés à partir de la source de vérité, et chaque évolution du schéma les met à jour. Le code compile ou ne compile pas selon ce que la base permet réellement.
+- **Le projet devient typé de bout en bout.** C’est ce qu’on appelle, en anglais, un système *type-safe end-to-end* : de la base au navigateur, chaque couche manipule des types qui viennent du même schéma, et Prisma en est la fondation.
 - **La cohérence devient une propriété de la chaîne, pas un effort individuel.** Tant que chaque couche consomme les types générés, il n’est plus nécessaire de vérifier à chaque étage que les structures correspondent. Les couches du dessus peuvent se concentrer sur ce qu’elles font : capturer une intention, transporter une donnée, sécuriser un accès.
 
 La partie « Données (1) » s’arrête ici : nous savons lire le modèle, et le lire avec des types sûrs. C’est exactement ce dont le site public a besoin. Les quatre modèles du noyau disent comment le site connaît ses membres ; ils ne disent rien encore de ce qu’il montre. Un visiteur, lui, cherche un cours, un stage, un horaire.

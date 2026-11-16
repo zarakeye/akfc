@@ -20,7 +20,7 @@ Face à cette complexité, une évidence s’est imposée : gérer un formulaire
 
 ### Le rôle réel de React Hook Form
 
-Son objectif : redonner de la structure aux formulaires côté client. Les champs sont enregistrés automatiquement, leurs valeurs suivies sans nouveaux calculs d’affichage inutiles, la validation peut être centralisée (souvent avec Zod), et les erreurs arrivent sous une forme structurée. Nous ne manipulons plus chaque champ : nous en déléguons la gestion à un système pensé pour cela. React Hook Form ne simplifie pas seulement le code, il structure le **comportement du formulaire côté client**.
+Son objectif : redonner de la structure aux formulaires côté client. Les champs sont enregistrés automatiquement, leurs valeurs suivies sans re-render excessif (React ne recalcule pas tout le formulaire à chaque frappe), la validation peut être centralisée (souvent avec Zod), et les erreurs arrivent sous une forme structurée. Nous ne manipulons plus chaque champ : nous en déléguons la gestion à un système pensé pour cela. React Hook Form ne simplifie pas seulement le code, il structure le **comportement du formulaire côté client**.
 
 <CodeSnippet
   language="tsx"
