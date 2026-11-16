@@ -6,161 +6,54 @@ order: 5
 ---
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
-import DocsTable from "#features/docs/ui/DocsTable.tsx"
 import { CodeSnippet } from "#features/docs/ui/CodeSnippet.tsx"
 import { CodeSnippetWalkthrough } from "#features/docs/ui/CodeSnippetWalkthrough.tsx"
 
-> **Précédemment.** Avec l’App Router, le formulaire appelle directement une fonction serveur. Une action du projet vérifie ses droits, valide avec le schéma partagé, écrit avec Prisma et renvoie un état. Le modèle tient — dans le contexte qui l’a vu naître.
+> **Précédemment.** Avec l’App Router, le formulaire appelle directement une fonction serveur. Une action du projet vérifie ses droits, valide avec le schéma partagé, écrit avec Prisma et renvoie un état. Le modèle tient, dans le contexte qui l’a vu naître.
 
 ## 6 — RHF, useActionState et server actions : renouer avec le modèle d’origine du web
 
-Jusqu’ici, nous avons construit quelque chose de solide.
+Nous avons construit quelque chose de solide. Mais, pour être honnêtes, il reste une zone floue : nous avons présenté un modèle sans l’avoir confronté au réel. Nous pourrions dire « voilà le bon modèle » ; ce serait mentir un peu, car ce modèle **n’est pas universel**.
 
-Mais si nous sommes honnêtes — vraiment honnêtes — il reste une zone floue.
+### 6.1 — Le cas réel : quand notre architecture nous contraint
 
-👉 Nous avons présenté un modèle… mais nous ne l’avons pas encore confronté au réel.
+Jusqu’ici, nous avons travaillé dans un contexte particulier :
 
-Et c’est exactement là que tout se joue.
+- un monorepo ;
+- un backend accessible ;
+- des server actions possibles.
 
----
+Nous pouvions donc mettre la logique métier côté serveur, accéder directement à Prisma, et n’écrire aucun `fetch`. Mais si nous n’avions **pas** ce luxe ?
 
-## 🧠 Le moment où nous devenons rigoureux
-
-Nous pourrions nous arrêter ici et dire :
-
-👉 “voilà le bon modèle”
-
-Mais si nous faisons ça :
-
-👉 nous mentons un peu
-
-Parce que ce modèle :
-
-👉 **n’est pas universel**
-
-Et ça, c’est une bascule importante.
-
----
-
-### ⚠️ 6.1 — Le cas réel : quand notre architecture nous contraint
-
-Reprenons ensemble.
-
-Jusqu’ici, nous avons travaillé dans un contexte très particulier :
-
-- monorepo
-- backend accessible
-- Server Actions possibles
-
-👉 donc nous pouvions faire :
-
-- logique métier côté serveur
-- accès direct à Prisma
-- zéro fetch manuel
-
----
-
-Mais maintenant, posons-nous une vraie question.
-
-👉 **Et si nous n’avions PAS ce luxe ?**
-
----
-
-### 🧠 Situation réelle (que nous avons tous rencontrée)
-
-Nous sommes dans un projet où :
-
-- le backend est externe
-- l’API est publique
-- le frontend est découplé
-
-Exemple :
-
-- une API REST fournie par un service tiers
-- ou un backend maintenu par une autre équipe
-
----
-
-Et là, nous nous rendons compte de quelque chose de très concret :
-
-👉 nous ne pouvons PAS appeler une Server Action interne  
-👉 nous DEVONS passer par HTTP  
-
----
-
-### 🔥 Donc soyons clairs
-
-👉 `fetch` redevient normal  
-👉 `fetch` redevient nécessaire  
-
----
+Dans beaucoup de projets, le backend est externe, l’API est publique, et le frontend est découplé : une API REST fournie par un service tiers, ou un backend maintenu par une autre équipe. Nous ne pouvons alors **pas** appeler une server action interne : nous **devons** passer par HTTP. `fetch` redevient normal, et nécessaire.
 
 <Callout type="info">
-Le problème n’a jamais été `fetch`.
-
-👉 Le problème commence quand le client devient une autorité métier.
+Le problème n’a jamais été `fetch`. Le problème commence quand le client devient une autorité métier.
 </Callout>
 
----
+### Mauvais modèle ou modèle contraint
 
-## ⚔️ Mauvais modèle vs modèle contraint
+Il faut être précis ici : tout n’est pas « mauvais » ou « bon ».
 
-Ici, il faut être très précis.
+Le **mauvais modèle**, celui que nous avons tous écrit au début, est un client qui :
 
-Parce que tout n’est pas “mauvais” ou “bon”.
+- valide des règles métier ;
+- décide de ce qui est correct ou non ;
+- reconstruit la vérité ;
+- interprète lui-même les erreurs du serveur.
 
----
+Autrement dit, un backend déguisé en frontend.
 
-### ❌ Mauvais modèle (ce que nous avons tous fait au début)
+Le **modèle contraint**, propre, accepte la contrainte d’une API publique et répartit les rôles :
 
-Nous nous retrouvons avec un client qui :
+- le client envoie les données (`fetch`) et affiche le résultat ;
+- le serveur valide, décide et enregistre.
 
-- valide des règles métier
-- décide de ce qui est correct ou non
-- reconstruit la vérité
-- interprète les erreurs serveur
-
-👉 autrement dit :
-
-👉 nous transformons le frontend en backend déguisé
-
----
-
-### ⚠️ Modèle contraint (réalité propre)
-
-Dans un contexte API publique :
-
-👉 nous acceptons la contrainte
-
-Le client :
-
-- envoie les données (`fetch`)
-- affiche le résultat
-
-Le serveur :
-
-- valide
-- décide
-- persiste
-
-👉 le client reste un **consommateur**
-
----
-
-Et là, tout devient plus clair.
-
-👉 le problème n’est pas l’outil  
-👉 c’est la répartition des responsabilités
-
----
+Le client reste un **consommateur**. Le problème n’est pas l’outil, c’est la répartition des responsabilités.
 
 ### 6.2 — Réduire la casse (ce que nous ferions dans la vraie vie)
 
-Quand nous ne pouvons pas utiliser Server Actions, nous ne cherchons pas la perfection.
-
-👉 nous cherchons à **limiter la divergence**
-
----
+Quand les server actions sont impossibles, nous ne cherchons pas la perfection, mais à **limiter la divergence** entre le client et le serveur. Trois moyens existent.
 
 #### 1 — Partager un contrat
 
@@ -171,65 +64,33 @@ Quand nous ne pouvons pas utiliser Server Actions, nous ne cherchons pas la perf
   codeJson='"import { z } from \"zod\"\n\nexport const LoginSchema = z.object({\n  email: z.string().email(),\n  password: z.string().min(8),\n})\n\nexport type LoginInput = z.infer<typeof LoginSchema>"'
 />
 
-👉 frontend et backend parlent la même langue
+Frontend et backend parlent alors la même langue. Mais soyons lucides : ce contrat n’exécute rien, et ne valide rien côté serveur. C’est une **projection** de la règle, pas la règle appliquée.
 
----
+#### Dans le projet : `packages/contracts/src/forms`
 
-Mais soyons lucides.
+Ce contrat partagé, le projet l’a, même s’il utilise des server actions : il vit dans le paquet `packages/contracts`, que le navigateur et le serveur importent tous les deux. Voici le schéma de la catégorie (la catégorie choisie dans la liste fixe, et son libellé) :
 
-👉 ce contrat :
-
-- n’exécute rien
-- ne valide rien côté serveur
-
-👉 c’est une **projection**
-
----
-
-#### 🔎 Dans le projet : `packages/contracts/src/forms`
-
-Ce contrat partagé, le projet l'a, même s'il utilise des server actions : il vit dans le paquet `packages/contracts`, que le navigateur et le serveur importent tous les deux. Le schéma de la catégorie, par exemple — la catégorie choisie dans la liste fixe, et son libellé :
-
-```ts
-// packages/contracts/src/forms/saveCategoryForm.schema.ts (fichier complet)
-import { z } from "zod";
-import { CATEGORY_KEYS } from "@akfc/contracts/categories/categoryKey.ts";
-
-/**
- * Schéma unifié création + édition.
- *   - `id` ABSENT  → création
- *   - `id` PRÉSENT → édition
- *
- * `id` est `z.coerce.number()` car il provient d'un input caché (string dans
- * le FormData) et il est EXCLU du resolver client via `.pick({ key: true, type: true })`.
- * Les champs saisis (`key`, `type`) sont les seuls validés côté client ; l'action valide
- * le schéma complet.
- *
- * `key` est choisie dans la liste fixe : c'est elle que lit le code. `type` n'est que
- * le libellé affiché.
- */
-export const saveCategoryFormSchema = z.object({
-  id: z.coerce.number().int().positive().optional(),
-  key: z.enum(CATEGORY_KEYS, { error: "Choisissez une catégorie de la liste." }),
-  type: z.string().trim().min(1, "Le libellé est obligatoire."),
-});
-
-export type SaveCategoryFormValues = z.infer<typeof saveCategoryFormSchema>;
-```
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/forms/saveCategoryForm.schema.ts"
+  filename="saveCategoryForm.schema.ts"
+  snippetStart='import { z } from "zod";'
+  snippetEnd="export type SaveCategoryFormValues"
+  snippetHighlight="18,19,20"
+  snippetTitle="Le schéma d’une catégorie, partagé par le formulaire et l’action"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Il est utilisé deux fois, de deux façons différentes :
 
-- côté client, par le résolveur de React Hook Form, mais en partie seulement : `.pick({ key: true, type: true })` ne garde que les deux champs saisis, car `id` vient d'un champ caché que l'utilisateur ne saisit pas ;
-- côté serveur, par l'action, en entier, `id` compris.
+- côté client, par le résolveur de React Hook Form, mais en partie seulement : `.pick({ key: true, type: true })` ne garde que les deux champs saisis, car `id` vient d’un champ caché que l’utilisateur ne saisit pas ;
+- côté serveur, par l’action, en entier, `id` compris.
 
-Les messages d'erreur sont écrits dans le schéma, en français, pour l'utilisateur final : ce sont eux qui s'affichent sous les champs, qu'ils viennent du navigateur ou du serveur.
+Les messages d’erreur sont écrits dans le schéma, en français, pour l’utilisateur final : ce sont eux qui s’affichent sous les champs, qu’ils viennent du navigateur ou du serveur.
 
-Et la remarque précédente vaut ici aussi : ce fichier n'exécute rien. Il n'empêche rien tant que l'action ne l'appelle pas. Sa seule garantie est que, **quand** les deux côtés l'utilisent, ils appliquent la même règle.
+La remarque précédente vaut ici aussi : ce fichier n’exécute rien, et n’empêche rien tant que l’action ne l’appelle pas. Sa seule garantie est que, **quand** les deux côtés l’utilisent, ils appliquent la même règle.
 
----
-
-
-#### 2 — Génération via OpenAPI
+#### 2 — Générer les types avec OpenAPI
 
 **OpenAPI** est un format standard qui décrit une API REST (ses adresses, ce qu’elles reçoivent, ce qu’elles renvoient) dans un fichier. Des outils en tirent automatiquement des types et un client pour le navigateur :
 
@@ -240,65 +101,35 @@ Et la remarque précédente vaut ici aussi : ce fichier n'exécute rien. Il n'em
   codeJson='"paths:\n  /login:\n    post:\n      requestBody:\n        content:\n          application/json:\n            schema:\n              $ref: \"#/components/schemas/LoginInput\""'
 />
 
-👉 nous automatisons  
-👉 nous sécurisons le transport  
+Le transport est automatisé et sécurisé ; mais, encore une fois, cela ne remplace pas la logique du serveur.
 
----
+#### 3 — Utiliser un SDK du backend
 
-Mais encore une fois :
-
-👉 ça ne remplace PAS la logique serveur
-
----
-
-#### 3 — SDK backend
-
-Un **SDK** (*Software Development Kit*) est ici un petit paquet, publié par l’équipe du backend, qui offre des fonctions toutes prêtes pour appeler son API, au lieu d’écrire chaque `fetch` à la main. La **DX** (*developer experience*) désigne le confort du développeur qui l’utilise.
-
-- client npm
-- fonctions typées
-- fetch encapsulé
-
-👉 meilleure DX  
-👉 même contrainte fondamentale  
-
----
+Un **SDK** (*Software Development Kit*) est ici un petit paquet, publié par l’équipe du backend, qui offre des fonctions toutes prêtes pour appeler son API (un client npm, des fonctions typées, le `fetch` caché à l’intérieur), au lieu d’écrire chaque `fetch` à la main. La **DX** (*developer experience*), le confort du développeur qui l’utilise, s’en trouve meilleure ; la contrainte fondamentale reste la même.
 
 ### 6.3 — Hiérarchie de vérité (le vrai déclic)
 
-C’est ici que nous devons être très clairs entre nous.
+Selon le contexte, la vérité ne vit pas au même endroit.
 
----
+Avec des **server actions** (le cas idéal) :
 
-#### 🧱 Cas Server Actions (idéal)
+- Prisma est la vérité ;
+- la server action est le point d’entrée ;
+- le client est l’interface.
 
-- Prisma = vérité
-- Server Action = point d’entrée
-- client = interface
+Avec une **API publique** (le cas contraint) :
 
----
-
-#### 🌐 Cas API publique (contraint)
-
-- backend = vérité
-- contrat = projection
-- client = consommateur
-
----
-
-👉 phrase que nous devons retenir ensemble :
+- le backend est la vérité ;
+- le contrat partagé en est une projection ;
+- le client est un consommateur.
 
 <Callout type="info">
-Le client ne doit jamais être la source de vérité métier.
-
-👉 il doit consommer une vérité définie ailleurs
+Le client ne doit jamais être la source de vérité métier : il consomme une vérité définie ailleurs.
 </Callout>
-
----
 
 ### 6.4 — Contre-exemple réel : quand nous dérapons
 
-Regardons un cas que nous avons tous écrit à un moment.
+Regardons un cas que nous avons tous écrit à un moment :
 
 <CodeSnippetWalkthrough
   language="tsx"
@@ -309,13 +140,11 @@ Regardons un cas que nous avons tous écrit à un moment.
   stepsJson='[{"title": "Validation métier côté client", "body": "Nous décidons ici de ce qui est valide. C’est déjà une fuite de responsabilité.", "scope": "2-5", "focus": "2"}, {"title": "Logique dispersée", "body": "Les règles sont noyées dans le composant, à côté de l’appel réseau.", "scope": "7-10", "focus": "7"}, {"title": "Mapping HTTP → métier", "body": "Le client interprète des statuts HTTP comme des règles métier.", "scope": "12-14", "focus": "12"}]'
 />
 
-👉 ce code fonctionne  
-👉 mais il est instable structurellement  
+Ce code fonctionne, mais il est fragile par construction.
 
+#### Le même dérapage, dans le projet, et sa correction
 
-#### 🔎 Le même dérapage, dans le projet — et sa correction
-
-Ce contre-exemple n'est pas inventé pour l'occasion. Le formulaire de connexion du site en a longtemps été une version réelle : un état contrôlé, et une validation écrite à la main dans le composant, avec ses propres messages, en anglais.
+Ce contre-exemple n’est pas inventé pour l’occasion. Le formulaire de connexion du site en a longtemps été une version réelle : un état contrôlé, et une validation écrite à la main dans le composant, avec ses propres messages, en anglais.
 
 <CodeSnippet
   language="tsx"
@@ -325,7 +154,7 @@ Ce contre-exemple n'est pas inventé pour l'occasion. Le formulaire de connexion
   codeJson='"const validationMessage = useMemo(() => {\n  // …\n  if (!isValidEmail(emailTrimmed)) {\n    return \u0027Please enter a valid email address.\u0027;\n  }\n  // …\n  if (password.length < 12) {\n    return \u0027Password must be at least 12 characters long.\u0027;\n  }\n  return null;\n}, [emailTrimmed, password]);"'
 />
 
-La règle « au moins 12 caractères » existait pourtant déjà ailleurs. Dans la procédure de connexion, avec un autre message, en français :
+La règle « au moins 12 caractères » existait pourtant déjà ailleurs : dans la procédure de connexion, avec un autre message, en français.
 
 <CodeSnippet
   language="ts"
@@ -335,145 +164,67 @@ La règle « au moins 12 caractères » existait pourtant déjà ailleurs. Dans 
   codeJson='"login: publicProcedure\n  .input(\n    z.object({\n      email: z.string().email(),\n      password: z.string().min(12, \"Le mot de passe doit avoir au moins 12 caractères\"),\n    })\n  )"'
 />
 
-Et une troisième fois dans `packages/contracts`, dans un schéma `authSchema` prévu pour être partagé… que personne n'importait. La procédure de réinitialisation, la page « Mot de passe oublié » et la page du nouveau mot de passe avaient chacune leur copie, de la règle des 12 caractères ou de celle de l'adresse e-mail.
+Et une troisième fois dans `packages/contracts`, dans un schéma `authSchema` prévu pour être partagé… que personne n’importait. La procédure de réinitialisation, la page « Mot de passe oublié » et la page du nouveau mot de passe avaient chacune leur copie, de la règle des 12 caractères ou de celle de l’adresse e-mail.
 
-Le schéma partagé existait, il était juste, et il ne servait à rien : c'est la remarque de la section 6.2 (« ce contrat n'exécute rien ») prise sur le fait. Le jour où la longueur minimale serait passée à 14 caractères, il aurait fallu penser à six fichiers. Un seul oubli, et deux scénarios étaient possibles :
+Le schéma partagé existait, il était juste, et il ne servait à rien : c’est la remarque de la section 6.2 (« ce contrat n’exécute rien ») prise sur le fait. Le jour où la longueur minimale serait passée à 14 caractères, il aurait fallu penser à six fichiers. Un seul oubli, et deux scénarios étaient possibles :
 
-- le formulaire exige 12, la procédure 14 : l'utilisateur voit un formulaire « valide » refusé par le serveur, avec un message qu'il n'a jamais vu ;
-- le formulaire exige 14, la procédure 12 : rien ne casse, mais la règle affichée n'est plus celle du système.
+- le formulaire exige 12, la procédure 14 : l’utilisateur voit un formulaire « valide » refusé par le serveur, avec un message qu’il n’a jamais vu ;
+- le formulaire exige 14, la procédure 12 : rien ne casse, mais la règle affichée n’est plus celle du système.
 
-Chaque copie avait été écrite de bonne foi, à un moment différent. C'est ainsi qu'une duplication s'installe : jamais d'un coup.
+Chaque copie avait été écrite de bonne foi, à un moment différent. C’est ainsi qu’une duplication s’installe : jamais d’un coup.
 
-La correction suit la hiérarchie de vérité de la section 6.3. Les règles ne vivent plus qu'à un endroit :
+La correction suit la hiérarchie de vérité de la section 6.3. Les règles ne vivent plus qu’à un endroit :
 
-```ts
-// packages/contracts/src/auth/auth.schema.ts (extrait)
-/** Longueur minimale d'un mot de passe. Les textes d'aide l'affichent à partir de cette valeur. */
-export const PASSWORD_MIN_LENGTH = 12;
-
-/**
- * Une adresse e-mail (connexion, mot de passe oublié, création d'un compte). Toujours en minuscules :
- * les adresses sont enregistrées ainsi, et une adresse tapée avec une majuscule retrouve son compte.
- */
-export const emailSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .min(1, "Saisissez votre adresse e-mail.")
-  .email("Adresse e-mail invalide.");
-
-/** Un mot de passe choisi par le membre (réinitialisation, changement). */
-export const passwordSchema = z
-  .string()
-  .min(PASSWORD_MIN_LENGTH, `Le mot de passe doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`);
-
-/**
- * Connexion. Un champ vide reçoit son propre message, avant les règles de forme : Zod renvoie les
- * problèmes dans l'ordre des vérifications, et le formulaire affiche le premier.
- */
-export const loginSchema = z.object({
-  email: emailSchema,
-  password: z.string().min(1, "Saisissez votre mot de passe.").pipe(passwordSchema),
-});
-```
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/auth/auth.schema.ts"
+  filename="auth.schema.ts"
+  snippetStart="/** Longueur minimale d'un mot de passe."
+  snippetEnd="});"
+  snippetHighlight="2,8,16,24,26"
+  snippetTitle="Les règles d’authentification, écrites une seule fois"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 La procédure applique le schéma tel quel :
 
-```ts
-// packages/backend/src/modules/auth/router.ts (extrait)
-  login: publicProcedure
-    // Même schéma que le formulaire de connexion (packages/contracts) : une seule règle, un seul message.
-    .input(loginSchema)
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetStart="login: publicProcedure"
+  snippetLines="3"
+  snippetHighlight="3"
+  snippetTitle="La procédure de connexion applique le schéma"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Et le formulaire l'applique aussi, sans rien réécrire :
+Et le formulaire l’applique aussi, sans rien réécrire :
 
-```tsx
-// apps/web/src/features/auth/components/LoginForm.tsx (extrait)
-  // Les règles viennent du schéma partagé avec la procédure auth.login : le formulaire affiche la
-  // même règle, avec le même message, que celle que le serveur appliquera.
-  const parsed = loginSchema.safeParse({ email, password });
-  const issues = parsed.success ? [] : parsed.error.issues;
-  const validationMessage = issues[0]?.message ?? null;
-  const emailInvalid = issues.some((i) => i.path[0] === "email");
-  const passwordInvalid = issues.some((i) => i.path[0] === "password");
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/auth/components/LoginForm.tsx"
+  filename="LoginForm.tsx"
+  snippetStart="// Les règles viennent du schéma partagé avec la procédure auth.login"
+  snippetLines="9"
+  snippetHighlight="3,4,5"
+  snippetTitle="Le formulaire de connexion applique le même schéma"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-  const isFormValid = validationMessage === null;
-```
+`safeParse` ne lève pas d’erreur : il renvoie la liste des problèmes, dans l’ordre où le schéma les vérifie. Le formulaire affiche le premier, et marque comme invalide chaque champ concerné. Les messages sont désormais ceux du schéma, en français, identiques des deux côtés. La longueur minimale est une constante, `PASSWORD_MIN_LENGTH`, que les textes d’aide de la page du nouveau mot de passe affichent au lieu d’écrire « 12 » en dur.
 
-`safeParse` ne lève pas d'erreur : il renvoie la liste des problèmes, dans l'ordre où le schéma les vérifie. Le formulaire affiche le premier, et marque comme invalide chaque champ concerné. Les messages sont désormais ceux du schéma, en français, identiques des deux côtés. La longueur minimale est une constante, `PASSWORD_MIN_LENGTH`, que les textes d'aide de la page du nouveau mot de passe affichent au lieu d'écrire « 12 » en dur.
+Le formulaire garde son état contrôlé plutôt que de passer à React Hook Form : le bouton reste désactivé tant que la saisie n’est pas valide, et son info-bulle donne la raison. Ce qui comptait n’était pas l’outil, mais la source de la règle.
 
-Le formulaire garde son état contrôlé plutôt que de passer à React Hook Form : le bouton reste désactivé tant que la saisie n'est pas valide, et son info-bulle donne la raison. Ce qui comptait n'était pas l'outil, mais la source de la règle.
+## Ce que nous gardons
 
----
+Ce n’est ni React, ni `fetch` qui posent problème : le vrai problème, c’est **où vit la vérité**.
 
----
-
-## 🧠 Conclusion — version adulte (celle que nous gardons)
-
-Nous pourrions résumer ça simplement.
-
-Mais ce serait dommage.
-
----
-
-👉 Ce n’est pas React qui est le problème  
-👉 Ce n’est pas `fetch` qui est le problème  
-
----
-
-👉 Le vrai problème, c’est :
-
-👉 **où vit la vérité**
-
----
-
-### Ce que nous gardons ensemble
-
-👉 Quand nous pouvons :
-
-- Server Actions  
-- logique serveur  
-- modèle centralisé  
-
-👉 nous le faisons
-
----
-
-👉 Quand nous ne pouvons pas :
-
-- API publique  
-- backend séparé  
-
-👉 nous structurons :
-
-- contrats  
-- validation serveur  
-- client passif  
-
----
+Quand nous le pouvons (server actions, logique côté serveur, modèle centralisé), nous le faisons. Quand nous ne le pouvons pas (API publique, backend séparé), nous structurons : un contrat partagé, une validation côté serveur, un client passif.
 
 <Callout type="info">
-Un bon système ne dépend pas des outils.
-
-👉 il dépend de la bonne répartition des responsabilités
+Un bon système ne dépend pas des outils, mais de la bonne répartition des responsabilités. La question n’est pas « comment envoyer un formulaire », mais **qui a le droit de décider**.
 </Callout>
-
----
-
-Et si nous devions garder une seule idée de toute cette section :
-
-👉 ce n’est pas une question de “comment envoyer un formulaire”
-
-👉 c’est une question de :
-
-👉 **qui a le droit de décider**
-
----
-
-👉 **Où nous en sommes :** le modèle hybride tient. Nous avons vu chaque pièce à sa place — RHF pour l’expérience, `useActionState` pour le pont, Server Actions pour la vérité — et nous avons confronté ce modèle aux contraintes du réel sans qu’il s’effondre. Mais un modèle qui fonctionne toujours n’apprend rien sur ses propres limites. Reste à changer de posture, et à regarder ce même modèle pour y trouver ce qui casse — parce que ce qui semble trop solide cache souvent ses pièges les plus dangereux.
-
----
 
 ## Ce que nous venons de construire dans le Mouvement 2
 
@@ -487,8 +238,9 @@ Le Mouvement 3 va maintenant regarder ce modèle sous un autre angle : celui de 
 
 ## À suivre
 
-Le modèle hybride a résisté à la confrontation. C’est justement le moment de changer de posture : un modèle qui donne confiance cache ses pièges les plus dangereux là où il semble le plus solide.
+Le modèle hybride a résisté : chaque pièce est à sa place, et il a supporté la confrontation aux contraintes du réel. Mais un modèle qui fonctionne toujours n’apprend rien sur ses propres limites. C’est justement le moment de changer de posture : un modèle qui donne confiance cache ses pièges les plus dangereux là où il semble le plus solide.
 
 <Callout type="tip">
 **Chapitre suivant : les pièges du modèle hybride.** La fausse sécurité du client, `useActionState` détourné, le `FormData` qui ment, l’interface qui affiche une vérité périmée, et la duplication qu’il faut garder.
 </Callout>
+
