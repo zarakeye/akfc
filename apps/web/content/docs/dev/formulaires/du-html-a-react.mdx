@@ -98,7 +98,15 @@ Le web n’a pas attendu les frameworks : dès HTML, un mécanisme complet faisa
   highlightLines="1-5"
   codeJson='"<form action=\"/login\" method=\"POST\">\n  <input name=\"email\" />
 
-Quand l’utilisateur clique sur **Login**, le navigateur prend entièrement le relais, sans rien demander à JavaScript. Il lit l’attribut `action` (`/login`, la route du serveur), collecte tous les champs qui ont un attribut `name`, les sérialise (`application/x-www-form-urlencoded`, ou `multipart/form-data` pour des fichiers), envoie la requête `POST`, puis laisse le serveur répondre. Aucune logique côté client, aucune orchestration, aucun état complexe.
+Quand l’utilisateur clique sur **Login**, le navigateur prend entièrement le relais, sans rien demander à JavaScript. Voici le cycle complet :
+
+1. il lit l’attribut `action` : `/login`, la route du serveur ;
+2. il collecte tous les champs qui ont un attribut `name` ;
+3. il les sérialise (`application/x-www-form-urlencoded`, ou `multipart/form-data` quand il y a des fichiers) ;
+4. il envoie la requête HTTP (`POST` ici) au serveur ;
+5. il laisse le serveur répondre, par une nouvelle page.
+
+Aucune logique côté client, aucune orchestration, aucun état complexe.
 
 ### Une séparation des responsabilités parfaite
 
@@ -130,7 +138,16 @@ Avec React, le formulaire n’est plus un mécanisme natif que l’on déclenche
 
 ### Le contrat est cassé
 
-Le navigateur ne fait plus rien pour nous : c’est JavaScript qui doit récupérer les valeurs, garder leur état, valider, envoyer une requête à la main (`fetch`), gérer les erreurs et synchroniser l’interface. Nous gagnons en contrôle, mais nous perdons le **lien direct avec le serveur**, donc avec le modèle Prisma. Le frontend commence à définir ses propres structures, la validation se fait deux fois, les règles peuvent diverger : le système n’est plus cohérent par construction.
+Le navigateur ne fait plus rien pour nous. C’est désormais JavaScript qui doit tout orchestrer :
+
+- récupérer les valeurs des champs ;
+- garder leur état ;
+- valider les données ;
+- envoyer une requête HTTP à la main (`fetch`) ;
+- gérer les erreurs ;
+- synchroniser l’interface.
+
+Nous gagnons en contrôle, mais nous perdons le **lien direct avec le serveur**, donc avec le modèle Prisma. Le frontend commence à définir ses propres structures, la validation se fait deux fois, les règles peuvent diverger : le système n’est plus cohérent par construction.
 
 Le changement n’est pas seulement technique, il est architectural. Le formulaire ne transporte plus une intention vers le modèle : il reconstruit une version locale de ce modèle. De là viennent les dérives (types dupliqués, validations incohérentes, logique dispersée, bugs difficiles à voir), et une illusion dangereuse : croire que le client peut garantir la validité des données, alors que seule la validation du serveur compte.
 
@@ -140,9 +157,26 @@ Avec React classique, le contrat natif est cassé : plus de soumission par le na
 
 ### Avant, après : ce qui change vraiment
 
-Avec React classique, centré sur le client, le formulaire enchaîne `onSubmit`, `preventDefault()`, la lecture des valeurs, la construction d’un `fetch`, la réponse HTTP, l’analyse des erreurs et la mise à jour de l’état : le client orchestre tout, y compris ce qui ne lui appartient pas.
+Avec React classique, centré sur le client, un envoi enchaîne :
 
-Avec l’App Router et les server actions, le formulaire porte `<form action={formAction}>` : React orchestre l’envoi, la server action s’exécute sur le serveur, et une réponse structurée revient vers l’interface. Le client déclenche, le serveur décide, et **le modèle reste la source de vérité**.
+1. `onSubmit` ;
+2. `preventDefault()` ;
+3. la lecture des valeurs ;
+4. la construction d’un `fetch` ;
+5. la réponse HTTP ;
+6. l’analyse des erreurs ;
+7. la mise à jour de l’état.
+
+Le client orchestre tout, y compris ce qui ne lui appartient pas.
+
+Avec l’App Router et les server actions (le modèle hybride que construit cette série), il ne reste que :
+
+1. `<form action={formAction}>` ;
+2. React orchestre l’envoi ;
+3. la server action s’exécute sur le serveur ;
+4. une réponse structurée revient vers l’interface.
+
+Le client déclenche, le serveur décide, et **le modèle reste la source de vérité**.
 
 <Callout type="info">
 Dans React classique, nous simulons le web ; avec l’App Router, nous recommençons à nous appuyer sur lui, et nous reconnectons le formulaire au modèle du serveur.

@@ -11,7 +11,14 @@ import { Callout } from "#features/docs/ui/Callout.tsx"
 
 ## 5 — Le changement de paradigme : du Pages Router à l’App Router
 
-C’est ici que l’App Router change la donne. Dans un modèle React classique, et dans Next.js avec le **Pages Router** (l’organisation d’origine de Next.js, où chaque fichier du dossier `pages/` était une page, et où le serveur s’atteignait par des routes d’API écrites à part, `pages/api/…`), le client reste responsable de l’orchestration : il déclenche l’évènement, construit la requête, appelle une API (`fetch`) et interprète la réponse. Le serveur est toujours « derrière une URL ».
+C’est ici que l’App Router change la donne. Dans un modèle React classique, et dans Next.js avec le **Pages Router** (l’organisation d’origine de Next.js, où chaque fichier du dossier `pages/` était une page, et où le serveur s’atteignait par des routes d’API écrites à part, `pages/api/…`), le client reste responsable de l’orchestration :
+
+- il déclenche l’évènement ;
+- il construit la requête ;
+- il appelle une API (`fetch`) ;
+- il interprète la réponse.
+
+Le serveur est toujours « derrière une URL ».
 
 ### Le problème réel
 
@@ -21,9 +28,22 @@ Même dans un monorepo, où frontend et backend sont proches et partagent du cod
 
 Avec l’App Router, le formulaire n’appelle plus une URL : il appelle une **fonction serveur**. La chaîne devient `<form>` → `formAction` → server action → Prisma, sans `fetch` écrit à la main, sans route intermédiaire obligatoire, sans duplication entre client et serveur.
 
-Avant, le `<form>` déclenchait `onSubmit`, JavaScript faisait un `fetch` vers une route d’API, et la route exécutait la logique métier. Maintenant, `<form action={formAction}>` suffit : React appelle la server action, qui exécute la logique métier. Le pont est intégré au framework.
+Concrètement, avant :
 
-`useActionState` change de statut au passage. Avec le Pages Router, il organisait mieux le code, mais reposait toujours sur `fetch`. Avec l’App Router, il devient un vrai pont : le DOM déclenche, React orchestre, le serveur exécute, l’interface lit l’état de retour. La répartition des rôles est claire :
+1. le `<form>` déclenche `onSubmit` ;
+2. JavaScript fait un `fetch` ;
+3. le `fetch` atteint une route d’API ;
+4. la route exécute la logique métier.
+
+Maintenant :
+
+1. le formulaire porte `<form action={formAction}>` ;
+2. React appelle la server action ;
+3. la server action exécute la logique métier.
+
+Le pont est intégré au framework.
+
+`useActionState` change de statut au passage. Avec le Pages Router, il organisait mieux le code, mais reposait toujours sur `fetch`. Avec l’App Router, il devient un vrai pont, où chacun a son étape : le DOM déclenche, React orchestre, le serveur exécute, et l’interface lit l’état de retour. La répartition des rôles est claire :
 
 - React Hook Form : l’expérience (les champs, la validation locale) ;
 - la server action : la logique métier et la validation réelle ;

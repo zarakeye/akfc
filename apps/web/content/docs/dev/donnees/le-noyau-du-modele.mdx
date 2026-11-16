@@ -92,7 +92,13 @@ Vu de loin, un groupe ressemble à une simple liste de noms. Dans notre modèle,
   fullFileTitle="Voir le fichier complet"
 />
 
-`@unique` sur `systemKind` garantit, cette fois en base, qu’il n’existe qu’un groupe de chaque sorte (une colonne `@unique` accepte autant de `NULL` que l’on veut : les groupes ordinaires n’en sont pas gênés). Ces groupes sont créés au démarrage s’ils manquent, ne peuvent pas être supprimés, et leurs membres sont majeurs d’office. Le statut d’instructeur, qui conditionne l’affectation à une discipline ou à un cours, se lit donc comme celui d’administrateur : une appartenance.
+`@unique` sur `systemKind` garantit, cette fois en base, qu’il n’existe qu’un groupe de chaque sorte (une colonne `@unique` accepte autant de `NULL` que l’on veut : les groupes ordinaires n’en sont pas gênés). Ces groupes ont trois propriétés :
+
+- ils sont créés au démarrage s’ils manquent ;
+- ils ne peuvent pas être supprimés ;
+- leurs membres sont majeurs d’office.
+
+Le statut d’instructeur, qui conditionne l’affectation à une discipline ou à un cours, se lit donc comme celui d’administrateur : une appartenance.
 
 Un groupe a aussi deux usages, que le même modèle réunit : une **liste de diffusion** (un document publié peut viser le groupe, et ses membres le reçoivent) et, si `isCollaborative` est vrai, un **espace** dans le finder, un dossier réservé à ses membres. Un groupe peut être l’un, l’autre ou les deux.
 

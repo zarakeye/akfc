@@ -14,7 +14,14 @@ Nous reprenons donc le modèle là où nous l’avions laissé. Il vit dans le c
 
 ## Écrire de façon cohérente : les transactions
 
-Une opération métier touche souvent plusieurs tables. Créer une discipline, c’est fixer le nom de son dossier de fichiers, écrire la discipline, recalculer les médias qu’elle utilise (la table `PageMediaReference` du chapitre « Les relations », qui empêche de supprimer une image affichée), puis donner son libellé au dossier dans le finder. Si une étape échoue, les précédentes ne doivent pas rester à moitié faites : une discipline enregistrée dont les images ne sont pas protégées est un piège pour plus tard.
+Une opération métier touche souvent plusieurs tables. Créer une discipline, c’est quatre écritures :
+
+1. fixer le nom de son dossier de fichiers ;
+2. écrire la discipline ;
+3. recalculer les médias qu’elle utilise (la table `PageMediaReference` du chapitre « Les relations », qui empêche de supprimer une image affichée) ;
+4. donner son libellé au dossier dans le finder.
+
+Si une étape échoue, les précédentes ne doivent pas rester à moitié faites : une discipline enregistrée dont les images ne sont pas protégées est un piège pour plus tard.
 
 <CodeExample
   language="ts"

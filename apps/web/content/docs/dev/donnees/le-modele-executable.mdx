@@ -36,7 +36,15 @@ Cette commande lit le schéma, ses relations et ses contraintes, et en produit u
 
 ### 5.2 — Ce que Prisma génère réellement (et pourquoi c’est décisif)
 
-Dire que Prisma génère « un client » est réducteur : il fabrique un pont complet entre la base et TypeScript. Il produit des méthodes (`findUnique`, `findMany`, `create`…), des types alignés sur les modèles (`User`, `MemberGroup`…), des types d’entrée (`UserCreateInput`…), des structures relationnelles imbriquées et des contraintes directement exploitables. Tout est dérivé du schéma : il n’y a plus d’interprétation humaine entre la base et le code.
+Dire que Prisma génère « un client » est réducteur : il fabrique un pont complet entre la base et TypeScript. Il produit :
+
+- des méthodes (`findUnique`, `findMany`, `create`…) ;
+- des types alignés sur les modèles (`User`, `MemberGroup`…) ;
+- des types d’entrée (`UserCreateInput`…), qui décrivent ce qu’on a le droit d’écrire ;
+- des structures relationnelles imbriquées (un membre **avec** ses adhésions) ;
+- des contraintes directement exploitables (les clés uniques deviennent des clés de recherche).
+
+Tout est dérivé du schéma : il n’y a plus d’interprétation humaine entre la base et le code.
 
 ### 5.3 — La fin d’un problème invisible : la duplication des types
 
