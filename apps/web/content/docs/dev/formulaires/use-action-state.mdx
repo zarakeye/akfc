@@ -6,7 +6,6 @@ order: 3
 ---
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
-import DocsTable from "#features/docs/ui/DocsTable.tsx"
 import { CodeSnippet } from "#features/docs/ui/CodeSnippet.tsx"
 import { CodeSnippetWalkthrough } from "#features/docs/ui/CodeSnippetWalkthrough.tsx"
 
@@ -24,57 +23,15 @@ Voici les trois étapes que nous allons traverser :
 
 À la fin de ce mouvement, nous aurons un formulaire qui sait à nouveau parler au serveur sans trahir l’expérience utilisateur — et qui repose sur le modèle du web, augmenté, plutôt que contourné.
 
----
-
 ## 4 — Un nouveau pont : `useActionState`
 
-À ce stade, une nouvelle brique apparaît : `useActionState`.
+Pour comprendre `useActionState`, il faut éviter une confusion fréquente : la fonction métier que **nous écrivons** n’est pas la fonction que le `<form>` **appelle réellement**. `submitLogin` n’est pas appelée directement par le DOM ; `formAction` est la fonction branchée sur le `<form>` ; `useActionState` fabrique le pont entre les deux. C’est ici que React commence à réconcilier son modèle avec le web.
 
-Mais pour bien le comprendre, il faut éviter une confusion très fréquente :
-
-👉 la fonction métier que **nous écrivons** n’est pas la même chose que la fonction que le `<form>` **appelle réellement**
-
----
-
-Autrement dit :
-
-- `submitLogin` ❌ n’est pas appelée directement par le DOM  
-- `formAction` ✅ est la fonction réellement branchée au `<form>`  
-- `useActionState` 👉 fabrique ce pont entre les deux  
-
----
-
-👉 c’est ici que React commence à réconcilier son modèle avec le web
-
----
-
-## 🧠 Le vrai modèle mental
-
-Un formulaire moderne n’est pas une simple fonction.
-
-C’est une chaîne :
-
-```txt
-<form> → formAction → useActionState → submitLogin → serveur
-```
-
----
-
-👉 le DOM ne parle pas à notre fonction métier  
-👉 il parle à une fonction orchestrée par React
-
----
-
-Et cette distinction change tout.
-
----
+Un formulaire moderne n’est donc pas une simple fonction, mais une chaîne : `<form>` → `formAction` → `useActionState` → `submitLogin` → serveur. Le DOM ne parle pas à notre fonction métier : il parle à une fonction orchestrée par React, et cette distinction change tout.
 
 ### 4.1 — La fonction métier : `submitLogin`
 
-Nous commençons par la fonction métier.
-
-👉 son rôle n’est PAS de gérer le formulaire  
-👉 son rôle est de traiter des données
+Commençons par la fonction métier. Son rôle n’est pas de gérer le formulaire, mais de traiter des données :
 
 <CodeSnippetWalkthrough
   language="ts"
@@ -110,67 +67,15 @@ Nous commençons par la fonction métier.
   ]'
 />
 
-Cette fonction :
-
-- reçoit des données (`FormData`)  
-- appelle un backend (ici via `fetch`)  
-- transforme la réponse  
-- retourne un état exploitable  
-
----
-
-👉 elle ne connaît pas le DOM  
-👉 elle ne connaît pas React  
-👉 elle ne connaît pas le `<form>`
-
----
-
-👉 elle est indépendante
-
----
+Cette fonction reçoit des données (`FormData`), appelle un backend (ici par `fetch`), transforme la réponse et rend un état exploitable. Elle ne connaît ni le DOM, ni React, ni le `<form>` : elle est indépendante.
 
 <Callout type="info">
-À ce stade, nous sommes encore dans un modèle hybride :
-
-- le client appelle encore `fetch`
-- la logique métier est côté client
-
-👉 ce n’est PAS encore le modèle final
+Ce modèle est encore hybride, et transitoire : le client appelle toujours `fetch`, transforme le JSON et associe lui-même erreur et succès, et la logique métier vit côté client. C’est normal, nous préparons le terrain : dans le modèle final, cette fonction deviendra une **server action**, le `fetch` disparaîtra, et le `<form>` appellera directement le serveur.
 </Callout>
-
----
-
-## ⚠️ Important : ce modèle est transitoire
-
-Ce que nous voyons ici ressemble encore à du React classique :
-
-- appel réseau manuel  
-- transformation JSON  
-- mapping erreur / succès  
-
----
-
-👉 c’est normal
-
-👉 nous préparons le terrain
-
----
-
-Parce que dans le modèle final :
-
-👉 cette fonction deviendra une **Server Action**
-
-👉 et le `fetch` disparaîtra complètement
-
----
-
-👉 le serveur sera appelé directement par le `<form>`
-
----
 
 ### 4.2 — Le composant client : là où la magie devient explicable
 
-C’est ici que tout se joue.
+C’est ici que tout se joue :
 
 <CodeSnippetWalkthrough
   language="tsx"
@@ -212,7 +117,7 @@ C’est ici que tout se joue.
   ]'
 />
 
-La ligne clé :
+La ligne clé est celle-ci :
 
 <CodeSnippet
   language="ts"
@@ -222,24 +127,11 @@ La ligne clé :
   codeJson='"const [state, formAction, isPending] = useActionState(...)"'
 />
 
----
+React prend notre fonction métier et fabrique une fonction spéciale, `formAction`, compatible avec le `<form>` HTML : elle respecte le contrat du navigateur, puis appelle notre fonction métier.
 
-👉 React prend notre fonction métier  
-👉 et fabrique une fonction spéciale : `formAction`
+### Le retour du modèle natif, augmenté
 
----
-
-👉 cette fonction :
-
-- est compatible avec le `<form>` HTML  
-- respecte le contrat du navigateur  
-- appelle ensuite notre fonction métier  
-
----
-
-## 🔗 Le retour du modèle natif… augmenté
-
-Regardons cette ligne :
+Regardons comment le formulaire est branché :
 
 <CodeSnippet
   language="tsx"
@@ -249,13 +141,7 @@ Regardons cette ligne :
   codeJson='"<form action={formAction}>"'
 />
 
----
-
-👉 ce n’est pas un hasard
-
----
-
-Nous revenons à :
+Ce n’est pas un hasard : nous revenons au contrat natif du web.
 
 <CodeSnippet
   language="html"
@@ -265,198 +151,72 @@ Nous revenons à :
   codeJson='"<form action=\"/login\">"'
 />
 
----
-
-Mais avec une différence énorme :
-
-👉 `formAction` n’est pas une URL  
-👉 c’est une fonction orchestrée par React
-
----
-
-👉 nous retrouvons le web natif  
-👉 mais enrichi par React
-
----
+Avec une différence de taille : `formAction` n’est pas une URL, mais une fonction orchestrée par React. Nous retrouvons le web natif, enrichi par React.
 
 <Callout type="info">
-Avec `useActionState`, React ne remplace plus le `<form>`.
-
-👉 il le prolonge
-
-- le navigateur gère toujours la soumission  
-- React orchestre ce qui se passe ensuite  
-- le serveur reste la destination finale  
-
-👉 nous ne simulons plus le web  
-👉 nous nous appuyons dessus
+Avec `useActionState`, React ne remplace plus le `<form>` : il le prolonge. Le navigateur gère toujours la soumission, React orchestre la suite, le serveur reste la destination finale. Nous ne simulons plus le web, nous nous appuyons sur lui.
 </Callout>
 
----
+Les responsabilités se découpent enfin proprement : `submitLogin` porte la logique métier, `useActionState` l’orchestration, `formAction` l’interface avec le DOM, et le `<form>` reste le déclencheur natif. React Hook Form, lui, est toujours là pour la validation locale, l’expérience et les champs, mais il ne gère pas la soumission réelle et ne parle pas au serveur : il complète `useActionState`, il ne le remplace pas.
 
-## 🧩 Les responsabilités sont enfin claires
+## Ce que React Hook Form ne bloque pas
 
-À ce stade, nous pouvons découper proprement :
+Relisons le `LoginForm` pédagogique avec un œil plus sévère. React Hook Form y affiche bien ses erreurs (`Email requis`) quand l’utilisateur quitte un champ vide. Mais rien, dans ce composant, n’empêche l’envoi : le `<form>` est branché sur `formAction`, et React l’appelle dès que le bouton est cliqué. Les règles de `register` sont vérifiées quand un champ perd le focus (quand le curseur du clavier le quitte), pour afficher l’erreur ; seul `handleSubmit` les vérifie avant d’envoyer, et `handleSubmit` n’est appelé nulle part. Le formulaire affiche l’erreur… et part quand même.
 
-- `submitLogin` → logique métier  
-- `useActionState` → orchestration  
-- `formAction` → interface avec le DOM  
-- `<form>` → déclencheur natif  
+Le projet a rencontré ce piège, et l’a réglé dans chaque formulaire qui valide côté client avant une server action : catégorie, origine, famille, création et modification de galerie. (Le formulaire de profil, lui, ne valide qu’au serveur : il n’a rien à bloquer, nous le verrons au chapitre 6.) Voici le même montage dans le formulaire d’une catégorie du tableau de bord :
 
----
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/categories/forms/CategoryForm.tsx"
+  filename="CategoryForm.tsx"
+  snippetStart="const [state, formAction, isPending] = useActionState<"
+  snippetLines="4"
+  snippetHighlight="1,4"
+  snippetTitle="La ligne charnière, dans un vrai formulaire"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-👉 chaque couche a un rôle précis
-
----
-
-## ⚖️ Et React Hook Form dans tout ça ?
-
-RHF est toujours là :
-
-- validation locale  
-- UX  
-- gestion des inputs  
-
----
-
-Mais :
-
-👉 il ne gère pas la soumission réelle  
-👉 il ne parle pas au serveur  
-
----
-
-👉 il complète `useActionState`, il ne le remplace pas
-
----
-
-
-## 🧱 Ce que React Hook Form ne bloque pas
-
-Relisons le `LoginForm` pédagogique avec un œil plus sévère. React Hook Form y affiche bien ses erreurs (`Email requis`) quand l'utilisateur quitte un champ vide. Mais rien, dans ce composant, n'empêche l'envoi : le `<form>` est branché sur `formAction`, et React l'appelle dès que le bouton est cliqué. Les règles de `register` sont vérifiées quand un champ perd le focus (quand le curseur du clavier le quitte), pour afficher l'erreur ; seul `handleSubmit` les vérifie avant d'envoyer, et `handleSubmit` n'est appelé nulle part.
-
-👉 le formulaire affiche l'erreur… et part quand même
-
----
-
-Le projet a rencontré ce piège, et l'a réglé dans chaque formulaire qui valide côté client avant une server action : catégorie, origine, famille, création et modification de galerie. (Le formulaire de profil, lui, ne valide qu'au serveur : il n'a rien à bloquer, nous le verrons au chapitre 6.) Voici le même montage dans le formulaire d'une catégorie du tableau de bord :
-
-```tsx
-// apps/web/src/features/admin/categories/forms/CategoryForm.tsx (extrait)
-  const [state, formAction, isPending] = useActionState<
-    SaveCategoryFormState,
-    FormData
-  >(saveCategoryFormAction, {} as SaveCategoryFormState);
-```
-
-C'est la ligne charnière de la section 4.2, dans un vrai formulaire : `saveCategoryFormAction` est la fonction métier, `formAction` la fonction que React fabrique pour le `<form>`, `isPending` l'état d'envoi. L'état initial (`{}`) est vide : tant que rien n'est envoyé, il n'y a ni succès ni erreur à afficher.
+C’est la ligne charnière de la section 4.2, dans un vrai formulaire : `saveCategoryFormAction` est la fonction métier, `formAction` la fonction que React fabrique pour le `<form>`, `isPending` l’état d’envoi. L’état initial (`{}`) est vide : tant que rien n’est envoyé, il n’y a ni succès ni erreur à afficher.
 
 Le `<form>`, lui, ne se contente plus de `action={formAction}` :
 
-```tsx
-// apps/web/src/features/admin/categories/forms/CategoryForm.tsx (extrait)
-      <form
-        action={formAction}
-        onSubmit={(e) => {
-          // La validation du client est asynchrone : on suspend TOUJOURS l'envoi (un
-          // preventDefault après un await arriverait trop tard, l'action serait déjà partie),
-          // puis on le relance si le formulaire est valide.
-          e.preventDefault();
-          const formData = new FormData(e.currentTarget);
-          void form.trigger().then((valid) => {
-            if (valid) startTransition(() => formAction(formData));
-          });
-        }}
-        className="max-w-md space-y-4"
-      >
-        {/* Présent uniquement en édition → fait basculer l'action sur update. */}
-        {initial && <input type="hidden" name="id" value={initial.id} />}
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/categories/forms/CategoryForm.tsx"
+  filename="CategoryForm.tsx"
+  snippetStart="<form"
+  snippetLines="16"
+  snippetHighlight="2,7,8,9,10"
+  snippetTitle="Suspendre l’envoi, valider, relancer"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-La validation de React Hook Form est **asynchrone** : `form.trigger()` renvoie une promesse (un résultat qui arrivera plus tard, qu’on attend avec `await`). Or le navigateur envoie le formulaire dès que le gestionnaire `onSubmit` se termine, s'il n'a pas appelé `preventDefault()`. Un `preventDefault()` placé après un `await` arriverait trop tard : l'action serait déjà partie.
+La validation de React Hook Form est **asynchrone** : `form.trigger()` renvoie une promesse (un résultat qui arrivera plus tard, qu’on attend avec `await`). Or le navigateur envoie le formulaire dès que le gestionnaire `onSubmit` se termine, s’il n’a pas appelé `preventDefault()`. Un `preventDefault()` placé après un `await` arriverait trop tard : l’action serait déjà partie.
 
-Le composant suspend donc **toujours** l'envoi, valide, puis relance l'action lui-même :
+Le composant suspend donc **toujours** l’envoi, valide, puis relance l’action lui-même :
 
-- `e.preventDefault()` arrête l'envoi natif, immédiatement, avant toute attente ;
-- `new FormData(e.currentTarget)` lit les champs tout de suite, tant que l'événement est disponible ;
+- `e.preventDefault()` arrête l’envoi natif, immédiatement, avant toute attente ;
+- `new FormData(e.currentTarget)` lit les champs tout de suite, tant que l’évènement est disponible ;
 - `form.trigger()` lance la validation de React Hook Form ;
-- si elle passe, `formAction(formData)` relance l'action, dans une `startTransition` : c'est ce qui garde `isPending` exact, comme si le formulaire était parti tout seul.
+- si elle passe, `formAction(formData)` relance l’action, dans une `startTransition` : c’est ce qui garde `isPending` exact, comme si le formulaire était parti tout seul.
 
-L'attribut `action={formAction}` reste en place. Sans JavaScript (une page encore en chargement, un navigateur qui l'a désactivé), le `<form>` s'envoie quand même, à la manière du web d'origine, et c'est le serveur qui valide.
+L’attribut `action={formAction}` reste en place. Sans JavaScript (une page encore en chargement, un navigateur qui l’a désactivé), le `<form>` s’envoie quand même, à la manière du web d’origine, et c’est le serveur qui valide.
 
-Les deux dernières lignes montrent un autre avantage du modèle : **un même formulaire pour créer et modifier**. En édition seulement, un champ caché `id` est ajouté. L'action le voit arriver, et bascule de la création à la mise à jour.
+Les deux dernières lignes montrent un autre avantage du modèle : **un même formulaire pour créer et modifier**. En édition seulement, un champ caché `id` est ajouté. L’action le voit arriver, et bascule de la création à la mise à jour.
 
 <Callout type="warning">
-Dans un gestionnaire d'événement, tout ce qui doit empêcher le comportement par défaut se fait **avant le premier `await`**. Après, l'événement est déjà traité, et le navigateur a déjà fait ce qu'il avait à faire.
+Dans un gestionnaire d’évènement, tout ce qui doit empêcher le comportement par défaut se fait **avant le premier `await`**. Après, l’évènement est déjà traité, et le navigateur a déjà fait ce qu’il avait à faire.
 </Callout>
 
----
+## Le point clé, et le plus souvent mal compris
 
-## 🧠 Le point clé (et le plus souvent mal compris)
+Le `<form>` n’appelle pas notre fonction : il appelle une fonction générée par React, qui garantit le bon passage entre le DOM, React et le serveur. C’est la vraie valeur de `useActionState`.
 
-Le `<form>` n’appelle pas notre fonction.
-
-👉 il appelle une fonction générée par React
-
----
-
-Et cette fonction :
-
-👉 garantit le bon passage entre :
-
-- DOM  
-- React  
-- serveur  
-
----
-
-👉 c’est ça, la vraie valeur de `useActionState`
-
----
-
-## 🔥 Et maintenant, le vrai saut arrive
-
-À ce stade, nous avons :
-
-- un formulaire structuré  
-- une orchestration propre  
-- une séparation claire  
-
----
-
-Mais il reste encore une incohérence :
-
-👉 le client fait encore un `fetch`
-
----
-
-Dans la prochaine étape :
-
-👉 nous supprimons complètement ce `fetch`
-
-👉 et le serveur devient directement la cible du `<form>`
-
----
-
-👉 c’est là que les Server Actions entrent en jeu
-
----
+Nous avons maintenant un formulaire structuré, une orchestration propre, une séparation claire. Une incohérence demeure : le client fait encore un `fetch`. L’étape suivante le supprime, et fait du serveur la cible directe du `<form>` : ce sont les server actions.
 
 <Callout type="info">
-`useActionState` n’est pas la destination finale.
-
-👉 c’est un pont
-
-- entre React et le web natif  
-- entre le client et le serveur  
-- entre une fonction métier et un `<form>`  
-
-👉 il prépare le terrain pour les Server Actions
+`useActionState` n’est pas la destination finale, mais un pont : entre React et le web natif, entre le client et le serveur, entre une fonction métier et un `<form>`. Il prépare le terrain pour les server actions.
 </Callout>
-
----
-
-👉 **Où nous en sommes :** `useActionState` n’est pas un outil de plus — c’est un pont. Il prend une fonction métier et la rebranche sur un `<form>` réel, sans que nous ayons à jouer nous-mêmes le rôle du navigateur. Mais ce pont ne prend toute sa valeur que dans un monde où le serveur peut vraiment être au bout — pas derrière une URL à construire, mais directement là. Reste à voir ce que change App Router pour que cette promesse tienne.
 
 ## À suivre
 
