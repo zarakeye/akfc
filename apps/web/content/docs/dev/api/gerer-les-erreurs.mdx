@@ -112,16 +112,15 @@ La frontière tient en une question : **le code qui appelle sait-il quoi faire d
 
 Dans ce projet, les erreurs sont des signaux explicites.
 
-Voyons comment elles vivent dans un routeur réel, celui qui crée les membres :
+Voyons comment elles vivent dans du code réel, celui qui crée les membres. C’est un service, `createMemberAccount`, qu’appellent la procédure `user.create` et la server action du formulaire « Créer un utilisateur » :
 
 <CodeExample
   language="ts"
-  filepath="packages/backend/src/modules/users/router.ts"
-  filename="router.ts"
-  snippetStart="create: protectedProcedure"
-  snippetLead="1"
-  snippetEnd="success: true,"
-  snippetHighlight="29-53"
+  filepath="packages/backend/src/modules/users/createMemberAccount.service.ts"
+  filename="createMemberAccount.service.ts"
+  snippetStart="export async function createMemberAccount("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="14-21,28-42,67-72"
   snippetTitle="TRPCError : une erreur métier claire"
   fullFileTitle="Voir le fichier complet"
 />
@@ -132,13 +131,12 @@ Voyons comment elles vivent dans un routeur réel, celui qui crée les membres :
 
 <CodeWalkthrough
   language="ts"
-  filepath="packages/backend/src/modules/users/router.ts"
-  filename="router.ts"
-  snippetStart="create: protectedProcedure"
-  snippetLead="1"
-  snippetEnd="success: true,"
+  filepath="packages/backend/src/modules/users/createMemberAccount.service.ts"
+  filename="createMemberAccount.service.ts"
+  snippetStart="export async function createMemberAccount("
+  snippetEnd="(fin du bloc)"
   title="De l’écriture à l’erreur propagée"
-  stepsJson='[{"title": "Une référence vérifiée avant d’écrire", "body": "Les groupes demandés doivent tous exister. Un groupe inconnu (supprimé entre-temps dans un autre onglet) produit BAD_REQUEST avec un message qui dit quoi faire. Ce contrôle n’est pas une validation de forme : il faut consulter la base pour le savoir.", "scope": "1-91", "focus": "13-17"}, {"title": "Une règle que le schéma n’exprime pas", "body": "legalInfoInput accepte une majorité « inconnue », parce que la fiche d’un membre existant peut l’être encore. À la création, elle ne l’est pas : la procédure le refuse explicitement, avec un message qui dit quoi faire. Le schéma décrit la forme ; la procédure, la règle propre à cette intention.", "scope": "1-91", "focus": "24-27"}, {"title": "L’unicité, elle, n’est pas vérifiée avant", "body": "La première version cherchait d’abord un membre avec la même adresse, puis créait. Entre les deux, une autre requête pouvait créer ce membre : les deux passaient la vérification, et la seconde écriture échouait sur la contrainte @unique, avec une erreur 500. Désormais, la procédure écrit directement.", "scope": "1-91", "focus": "29-32"}, {"title": "P2002 devient CONFLICT", "body": "Si la base refuse l’écriture parce que l’adresse existe déjà (code Prisma P2002), la procédure lève CONFLICT, le code HTTP 409 : la requête est valide, l’administrateur a le droit d’agir, mais l’état actuel rend l’opération impossible.", "scope": "1-91", "focus": "48-51"}, {"title": "Toute autre erreur repart telle quelle", "body": "throw err : la procédure ne traduit que ce qu’elle comprend. Le reste devient une erreur interne, journalisée par la route (section 6).", "scope": "1-91", "focus": "52-53"}, {"title": "Après l’écriture, le flux continue sans if/else défensif", "body": "Une fois le membre créé, la procédure envoie l’e-mail de bienvenue et l’avis au club. Un échec d’envoi est journalisé sans annuler la création : c’est une conséquence secondaire, pas une condition.", "scope": "1-91", "focus": "55-90"}]'
+  stepsJson='[{"title": "Une référence vérifiée avant d’écrire", "body": "Les groupes demandés doivent tous exister. Un groupe inconnu (supprimé entre-temps dans un autre onglet) produit BAD_REQUEST avec un message qui dit quoi faire. Ce contrôle n’est pas une validation de forme : il faut consulter la base pour le savoir.", "scope": "1-107", "focus": "10-16"}, {"title": "Une règle que le schéma n’exprime pas", "body": "legalInfoInput accepte une majorité « inconnue », parce que la fiche d’un membre existant peut l’être encore. À la création, elle ne l’est pas : le service le refuse explicitement, avec un message qui dit quoi faire. Le schéma décrit la forme ; le service, la règle propre à cette intention.", "scope": "1-107", "focus": "28-30"}, {"title": "L’unicité, elle, n’est pas vérifiée avant", "body": "La première version cherchait d’abord un membre avec la même adresse, puis créait. Entre les deux, une autre requête pouvait créer ce membre : les deux passaient la vérification, et la seconde écriture échouait sur la contrainte @unique, avec une erreur 500. Désormais, le code écrit directement.", "scope": "1-107", "focus": "44-48"}, {"title": "P2002 devient CONFLICT", "body": "Si la base refuse l’écriture parce que l’adresse existe déjà (code Prisma P2002), le service lève CONFLICT, le code HTTP 409 : la requête est valide, l’administrateur a le droit d’agir, mais l’état actuel rend l’opération impossible.", "scope": "1-107", "focus": "67-70"}, {"title": "Toute autre erreur repart telle quelle", "body": "throw err : le service ne traduit que ce qu’il comprend. Le reste devient une erreur interne, journalisée par la route (section 6).", "scope": "1-107", "focus": "71-71"}, {"title": "Après l’écriture, le flux continue sans if/else défensif", "body": "Une fois le membre créé, le service envoie l’e-mail de bienvenue et l’avis au club. Un échec d’envoi est journalisé sans annuler la création : c’est une conséquence secondaire, pas une condition.", "scope": "1-107", "focus": "74-104"}]'
 />
 
 ---

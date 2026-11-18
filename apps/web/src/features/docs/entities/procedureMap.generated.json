@@ -3338,7 +3338,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 79,
+   "line": 62,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -3348,7 +3348,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:84"
+        "packages/backend/src/modules/users/router.ts:67"
        ]
       ]
      ]
@@ -3361,7 +3361,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:84"
+        "packages/backend/src/modules/users/router.ts:67"
        ]
       ]
      ]
@@ -3374,7 +3374,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:84"
+        "packages/backend/src/modules/users/router.ts:67"
        ]
       ]
      ]
@@ -3387,7 +3387,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:84"
+        "packages/backend/src/modules/users/router.ts:67"
        ]
       ]
      ]
@@ -3400,7 +3400,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:84"
+        "packages/backend/src/modules/users/router.ts:67"
        ]
       ]
      ]
@@ -3412,7 +3412,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 114,
+   "line": 97,
    "effects": [
     {
      "model": "User",
@@ -3422,7 +3422,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:118"
+        "packages/backend/src/modules/users/router.ts:101"
        ]
       ]
      ]
@@ -3434,7 +3434,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 133,
+   "line": 116,
    "effects": [
     {
      "model": "Course",
@@ -3443,12 +3443,16 @@
      "trails": [
       [
        [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
         "existingCourseIds",
-        "packages/backend/src/modules/users/router.ts:65"
+        "packages/backend/src/modules/users/existingCourseIds.ts:4"
        ],
        [
         "prisma.course.count",
-        "packages/backend/src/modules/users/router.ts:71"
+        "packages/backend/src/modules/users/existingCourseIds.ts:10"
        ]
       ]
      ]
@@ -3462,8 +3466,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.course.updateMany",
-        "packages/backend/src/modules/users/router.ts:210"
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.course.updateMany",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:103"
        ]
       ]
      ]
@@ -3475,8 +3483,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:194"
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.user.create",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:87"
        ]
       ]
      ]
@@ -3488,14 +3500,22 @@
      "trails": [
       [
        [
-        "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/users/router.ts:155"
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.memberGroup.findMany",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:48"
        ]
       ],
       [
        [
-        "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/users/router.ts:231"
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.memberGroup.findMany",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:124"
        ]
       ]
      ]
@@ -3507,8 +3527,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:194"
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.user.create",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:87"
        ]
       ]
      ]
@@ -3519,6 +3543,10 @@
      "fields": [],
      "trails": [
       [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
        [
         "sendWelcomeEmail",
         "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:43"
@@ -3533,6 +3561,10 @@
        ]
       ],
       [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
        [
         "sendWelcomeEmail",
         "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:43"
@@ -3560,8 +3592,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:194"
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.user.create",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:87"
        ]
       ]
      ]
@@ -3573,8 +3609,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:232"
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:125"
        ]
       ]
      ]
@@ -3589,7 +3629,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 262,
+   "line": 133,
    "effects": [
     {
      "model": "MemberGroup",
@@ -3599,7 +3639,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/users/router.ts:278"
+        "packages/backend/src/modules/users/router.ts:149"
        ]
       ]
      ]
@@ -3612,7 +3652,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/users/router.ts:278"
+        "packages/backend/src/modules/users/router.ts:149"
        ]
       ]
      ]
@@ -3625,7 +3665,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:266"
+        "packages/backend/src/modules/users/router.ts:137"
        ]
       ]
      ]
@@ -3638,7 +3678,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:289"
+        "packages/backend/src/modules/users/router.ts:160"
        ]
       ]
      ]
@@ -3650,7 +3690,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 298,
+   "line": 169,
    "effects": [
     {
      "model": "CourseEnrollment",
@@ -3660,7 +3700,7 @@
       [
        [
         "ctx.prisma.courseEnrollment.findMany",
-        "packages/backend/src/modules/users/router.ts:302"
+        "packages/backend/src/modules/users/router.ts:173"
        ]
       ]
      ]
@@ -3672,7 +3712,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 314,
+   "line": 185,
    "effects": [
     {
      "model": "Course",
@@ -3682,17 +3722,17 @@
       [
        [
         "ctx.prisma.course.findMany",
-        "packages/backend/src/modules/users/router.ts:320"
+        "packages/backend/src/modules/users/router.ts:191"
        ]
       ],
       [
        [
         "existingCourseIds",
-        "packages/backend/src/modules/users/router.ts:65"
+        "packages/backend/src/modules/users/existingCourseIds.ts:4"
        ],
        [
         "prisma.course.count",
-        "packages/backend/src/modules/users/router.ts:71"
+        "packages/backend/src/modules/users/existingCourseIds.ts:10"
        ]
       ]
      ]
@@ -3705,7 +3745,7 @@
       [
        [
         "ctx.prisma.courseEnrollment.createMany",
-        "packages/backend/src/modules/users/router.ts:326"
+        "packages/backend/src/modules/users/router.ts:197"
        ]
       ]
      ]
@@ -3718,7 +3758,7 @@
       [
        [
         "ctx.prisma.courseEnrollment.deleteMany",
-        "packages/backend/src/modules/users/router.ts:325"
+        "packages/backend/src/modules/users/router.ts:196"
        ]
       ]
      ]
@@ -3731,7 +3771,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:318"
+        "packages/backend/src/modules/users/router.ts:189"
        ]
       ]
      ]
@@ -3743,7 +3783,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 340,
+   "line": 211,
    "effects": [
     {
      "model": "Course",
@@ -3753,11 +3793,11 @@
       [
        [
         "existingCourseIds",
-        "packages/backend/src/modules/users/router.ts:65"
+        "packages/backend/src/modules/users/existingCourseIds.ts:4"
        ],
        [
         "prisma.course.count",
-        "packages/backend/src/modules/users/router.ts:71"
+        "packages/backend/src/modules/users/existingCourseIds.ts:10"
        ]
       ]
      ]
@@ -3772,13 +3812,13 @@
       [
        [
         "ctx.prisma.course.updateMany",
-        "packages/backend/src/modules/users/router.ts:354"
+        "packages/backend/src/modules/users/router.ts:225"
        ]
       ],
       [
        [
         "ctx.prisma.course.updateMany",
-        "packages/backend/src/modules/users/router.ts:358"
+        "packages/backend/src/modules/users/router.ts:229"
        ]
       ]
      ]
@@ -3791,7 +3831,7 @@
       [
        [
         "ctx.prisma.courseEnrollment.deleteMany",
-        "packages/backend/src/modules/users/router.ts:359"
+        "packages/backend/src/modules/users/router.ts:230"
        ]
       ]
      ]
@@ -3804,7 +3844,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:344"
+        "packages/backend/src/modules/users/router.ts:215"
        ]
       ]
      ]
@@ -3817,7 +3857,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:344"
+        "packages/backend/src/modules/users/router.ts:215"
        ]
       ]
      ]
@@ -3829,7 +3869,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 370,
+   "line": 241,
    "effects": [
     {
      "model": "User",
@@ -3845,7 +3885,7 @@
       [
        [
         "ctx.prisma.user.updateMany",
-        "packages/backend/src/modules/users/router.ts:374"
+        "packages/backend/src/modules/users/router.ts:245"
        ]
       ]
      ]
@@ -3857,7 +3897,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 387,
+   "line": 258,
    "effects": [
     {
      "model": "BirthDateRequest",
@@ -3901,7 +3941,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:391"
+        "packages/backend/src/modules/users/router.ts:262"
        ]
       ],
       [
@@ -3950,7 +3990,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 399,
+   "line": 270,
    "effects": [
     {
      "model": "User",
@@ -3963,7 +4003,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:403"
+        "packages/backend/src/modules/users/router.ts:274"
        ]
       ]
      ]
@@ -3975,7 +4015,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 411,
+   "line": 282,
    "effects": [
     {
      "model": "AuditLog",
@@ -3989,7 +4029,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
@@ -3999,7 +4039,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
@@ -4017,7 +4057,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (BirthDateRequest → User)",
@@ -4037,7 +4077,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (Comment → User)",
@@ -4055,7 +4095,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (CourseEnrollment → User)",
@@ -4090,7 +4130,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → User)",
@@ -4127,7 +4167,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (FileVersion → User)",
@@ -4148,13 +4188,13 @@
       [
        [
         "tx.imageConsentForm.updateMany",
-        "packages/backend/src/modules/users/router.ts:428"
+        "packages/backend/src/modules/users/router.ts:299"
        ]
       ],
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
@@ -4164,7 +4204,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
@@ -4182,7 +4222,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (ImageConsentRequest → User)",
@@ -4219,7 +4259,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (MediaAsset → User)",
@@ -4237,7 +4277,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (MediaPerson → User)",
@@ -4257,7 +4297,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (MediaPerson → User)",
@@ -4277,7 +4317,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (MemberDocument → User)",
@@ -4295,7 +4335,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → User)",
@@ -4313,7 +4353,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → User)",
@@ -4392,7 +4432,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (PasswordResetToken → User)",
@@ -4410,7 +4450,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (PollVote → User)",
@@ -4430,7 +4470,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (Post → User)",
@@ -4448,7 +4488,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (Preferences → User)",
@@ -4466,7 +4506,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (Reaction → User)",
@@ -4501,7 +4541,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: Cascade (Session → User)",
@@ -4522,7 +4562,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (Ticket → User)",
@@ -4532,7 +4572,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (Ticket → User)",
@@ -4553,7 +4593,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
@@ -4563,7 +4603,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
@@ -4583,7 +4623,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (TicketMessage → User)",
@@ -4603,7 +4643,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ],
        [
         "onDelete: SetNull (TrashEntry → User)",
@@ -4620,7 +4660,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:438"
+        "packages/backend/src/modules/users/router.ts:309"
        ]
       ]
      ]
@@ -4633,7 +4673,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:425"
+        "packages/backend/src/modules/users/router.ts:296"
        ]
       ]
      ]
@@ -4645,7 +4685,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 450,
+   "line": 321,
    "effects": [
     {
      "model": "User",
@@ -4655,7 +4695,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:453"
+        "packages/backend/src/modules/users/router.ts:324"
        ]
       ]
      ]
@@ -4667,7 +4707,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 468,
+   "line": 339,
    "effects": [
     {
      "model": "User",
@@ -4677,7 +4717,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:472"
+        "packages/backend/src/modules/users/router.ts:343"
        ]
       ]
      ]
@@ -4689,7 +4729,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 494,
+   "line": 365,
    "effects": [
     {
      "model": "Folder",
@@ -4733,7 +4773,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:497"
+        "packages/backend/src/modules/users/router.ts:368"
        ]
       ],
       [
@@ -4765,7 +4805,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 526,
+   "line": 397,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -5001,7 +5041,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/users/router.ts:553"
+        "packages/backend/src/modules/users/router.ts:424"
        ]
       ]
      ]
@@ -5013,7 +5053,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 578,
+   "line": 449,
    "effects": [
     {
      "model": "Event",
@@ -5023,7 +5063,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:579"
+        "packages/backend/src/modules/users/router.ts:450"
        ]
       ]
      ]
@@ -5036,7 +5076,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:579"
+        "packages/backend/src/modules/users/router.ts:450"
        ]
       ]
      ]
@@ -5049,7 +5089,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:579"
+        "packages/backend/src/modules/users/router.ts:450"
        ]
       ]
      ]
@@ -5062,7 +5102,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:579"
+        "packages/backend/src/modules/users/router.ts:450"
        ]
       ]
      ]
@@ -5074,7 +5114,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 620,
+   "line": 491,
    "effects": [
     {
      "model": "Course",
@@ -5084,7 +5124,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:621"
+        "packages/backend/src/modules/users/router.ts:492"
        ]
       ]
      ]
@@ -5097,7 +5137,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:621"
+        "packages/backend/src/modules/users/router.ts:492"
        ]
       ]
      ]
@@ -5110,7 +5150,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:621"
+        "packages/backend/src/modules/users/router.ts:492"
        ]
       ]
      ]
@@ -5123,7 +5163,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:621"
+        "packages/backend/src/modules/users/router.ts:492"
        ]
       ]
      ]
@@ -5135,7 +5175,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 646,
+   "line": 517,
    "effects": [
     {
      "model": "SiteSettings",
@@ -5145,7 +5185,7 @@
       [
        [
         "ctx.prisma.siteSettings.findUnique",
-        "packages/backend/src/modules/users/router.ts:655"
+        "packages/backend/src/modules/users/router.ts:526"
        ]
       ]
      ]
@@ -5160,7 +5200,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:661"
+        "packages/backend/src/modules/users/router.ts:532"
        ]
       ]
      ]
@@ -5172,7 +5212,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 674,
+   "line": 545,
    "effects": [
     {
      "model": "User",
@@ -5182,7 +5222,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:676"
+        "packages/backend/src/modules/users/router.ts:547"
        ]
       ]
      ]
@@ -36585,6 +36625,179 @@
    "emails": [
     "sendComingOfAgeNotice"
    ]
+  },
+  "createMemberAccount": {
+   "file": "packages/backend/src/modules/users/createMemberAccount.service.ts",
+   "line": 39,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "existingCourseIds",
+        "packages/backend/src/modules/users/existingCourseIds.ts:4"
+       ],
+       [
+        "prisma.course.count",
+        "packages/backend/src/modules/users/existingCourseIds.ts:10"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Course",
+     "op": "update",
+     "fields": [
+      "instructorId"
+     ],
+     "trails": [
+      [
+       [
+        "db.course.updateMany",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:103"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "CourseEnrollment",
+     "op": "create",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.create",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:87"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.memberGroup.findMany",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:48"
+       ]
+      ],
+      [
+       [
+        "db.memberGroup.findMany",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:124"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "create",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.create",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:87"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendWelcomeEmail",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:43"
+       ],
+       [
+        "siteNames",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:31"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:32"
+       ]
+      ],
+      [
+       [
+        "sendWelcomeEmail",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:43"
+       ],
+       [
+        "clubContactAddress",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:24"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:25"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "create",
+     "fields": [
+      "courseEnrollments",
+      "email",
+      "memberGroupMemberships",
+      "password"
+     ],
+     "trails": [
+      [
+       [
+        "db.user.create",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:87"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:125"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendWelcomeEmail",
+    "sendWelcomeNotice"
+   ]
+  },
+  "existingCourseIds": {
+   "file": "packages/backend/src/modules/users/existingCourseIds.ts",
+   "line": 4,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.course.count",
+        "packages/backend/src/modules/users/existingCourseIds.ts:10"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
   },
   "isInstructorUser": {
    "file": "packages/backend/src/modules/users/instructorBio.service.ts",

@@ -441,7 +441,9 @@ Et les deux procédures l’appellent, chacune avec ce qu’elle reçoit :
   fullFileTitle="Voir le fichier complet"
 />
 
-L’exemple inverse existe aussi. La création d’un membre (`user.create`) envoie elle-même l’e-mail de bienvenue, puis prévient la boîte du club. Tant qu’elle est le seul chemin par lequel un membre est créé, c’est acceptable. Le jour où un script devra créer des membres en masse, cette logique devra descendre dans un service ; sinon, les membres créés par le script ne recevraient rien, sans que personne s’en aperçoive.
+L’exemple inverse a existé aussi. La création d’un membre (`user.create`) envoyait elle-même l’e-mail de bienvenue, puis prévenait la boîte du club. Tant qu’elle était le seul chemin par lequel un membre était créé, c’était acceptable. Nous avions écrit ici : le jour où un script devra créer des membres en masse, cette logique devra descendre dans un service ; sinon, les membres créés par le script ne recevraient rien, sans que personne s’en aperçoive.
+
+Ce jour est arrivé, sous une autre forme que prévu : pas un script, mais la server action du formulaire « Créer un utilisateur ». Toute la logique, e-mails compris, est descendue dans un service, `createMemberAccount`. La procédure n’est plus qu’un appel, comme `discipline.create`, et la server action appelle le même service.
 
 ---
 

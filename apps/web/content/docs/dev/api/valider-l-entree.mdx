@@ -107,17 +107,16 @@ Dans ce projet, les schémas Zod vivent à deux endroits différents — et ce n
 
 ### Le schéma inline : décrit à la procédure
 
-Certaines validations appartiennent directement à la procédure qui les utilise.
+Certaines validations appartiennent directement à la procédure qui les utilise. La création d’un commentaire en est une : seul l’éditeur de commentaires l’appelle, par tRPC.
 
 <CodeExample
   language="ts"
-  filepath="packages/backend/src/modules/users/router.ts"
+  filepath="packages/backend/src/modules/comments/router.ts"
   filename="router.ts"
   snippetStart="create: protectedProcedure"
-  snippetLead="1"
-  snippetEnd="        legal: legalInfoInput,"
-  snippetHighlight="3-10"
-  snippetTitle="Validation inline dans la procédure user.create"
+  snippetLines="8"
+  snippetHighlight="3-7"
+  snippetTitle="Validation inline dans la procédure comment.create"
   fullFileTitle="Voir le fichier complet"
 />
 
@@ -129,6 +128,10 @@ Pas plus.
 Pas moins.
 
 👉 Il est à sa place parce qu’il ne sert qu’ici.
+
+Un détail : le contenu du commentaire, lui, n’est pas décrit ici. `proseMirrorContentSchema` vient de `contracts` : un document de l’éditeur a la même forme partout où l’on en écrit un. Un schéma inline peut donc assembler des pièces partagées ; ce qui reste inline, c’est l’assemblage, propre à cette procédure.
+
+La création d’un compte avait, elle aussi, un schéma inline, et c’était l’exemple de cette section. Il a changé de place le jour où un second appelant est apparu : la server action du formulaire « Créer un utilisateur ». Le schéma est descendu avec la logique dans le service `createMemberAccount`, où ses deux entrées le trouvent. Toutes deux sont côté serveur : il n’avait pas à aller dans `contracts`, que le navigateur importe aussi.
 
 C’est un principe général : tant qu’un artefact n’est utilisé qu’à un seul endroit, le garder à côté de son utilisateur est la décision la plus simple. La question du partage ne se pose que lorsque l’artefact doit être utilisé à plusieurs endroits.
 
