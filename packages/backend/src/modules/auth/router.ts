@@ -1,7 +1,11 @@
 import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
 import { deleteSessionFromCookie } from "#lib/session/session.server.ts";
 import { loginService } from "#modules/auth/services/auth.service.ts";
-import { hashResetToken, requestPasswordReset } from "#modules/auth/services/passwordReset.service.ts";
+import {
+  requestPasswordReset,
+  resetPassword,
+  ResetLinkError,
+} from "#modules/auth/services/passwordReset.service.ts";
 
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword } from "#lib/auth/password.ts";
@@ -135,57 +139,16 @@ export const authRouter = router({
 
   resetPassword: publicProcedure
     .input(resetPasswordSchema)
-    .mutation(async ({ ctx, input }) => {
-      const token = input.token.trim();
-      const tokenHash = hashResetToken(token);
-
-      const entry = await ctx.prisma.passwordResetToken.findUnique({
-        where: { tokenHash },
-        select: {
-          id: true,
-          userId: true,
-          expiresAt: true,
-          usedAt: true,
-        },
-      });
-
-      if (!entry) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Ce lien n'est pas valide. Demandez-en un nouveau avec « Mot de passe oublié »." });
-      }
-
-      if (entry.usedAt) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Ce lien a déjà servi. Connectez-vous, ou demandez-en un nouveau avec « Mot de passe oublié »." });
-      }
-
-      if (entry.expiresAt.getTime() < Date.now()) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Ce lien a expiré. Demandez-en un nouveau avec « Mot de passe oublié »." });
-      }
-
-      const hashedPassword = await hashPassword(input.newPassword);
-
-      await ctx.prisma.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: entry.userId },
-          // `isFirstLogin` n'est pas touché : choisir un mot de passe ne complète pas le profil.
-          // Un nouveau membre qui passe par « Mot de passe oublié » y reste invité.
-          data: { password: hashedPassword },
-        });
-
-        // Consommation atomique : la ligne n'est marquée que si elle ne l'était pas encore. Deux
-        // envois simultanés du même lien passent tous deux les vérifications ci-dessus ; un seul
-        // obtient ici count === 1, l'autre annule sa transaction.
-        const consumed = await tx.passwordResetToken.updateMany({
-          where: { id: entry.id, usedAt: null },
-          data: { usedAt: new Date() },
-        });
-        if (consumed.count !== 1) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Ce lien a déjà servi. Connectez-vous, ou demandez-en un nouveau avec « Mot de passe oublié »." });
+    .mutation(async ({ input }) => {
+      try {
+        await resetPassword({ token: input.token, newPassword: input.newPassword });
+      } catch (err) {
+        // Un lien inconnu, déjà utilisé ou expiré : un refus attendu, avec un message qui dit quoi faire.
+        if (err instanceof ResetLinkError) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err.message });
         }
-
-        await tx.session.deleteMany({
-          where: { userId: entry.userId },
-        });
-      });
+        throw err;
+      }
 
       return { ok: true as const };
     }),

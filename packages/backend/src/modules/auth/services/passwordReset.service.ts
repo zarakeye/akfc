@@ -2,6 +2,7 @@ import crypto from "crypto";
 
 import { prisma } from "#prisma.ts";
 import { sendPasswordResetEmail } from "#email/services/sendPasswordResetEmail.ts";
+import { hashPassword } from "#lib/auth/password.ts";
 
 /**
  * passwordReset.service.ts
@@ -80,5 +81,85 @@ export async function requestPasswordReset(input: {
       "[auth] e-mail de réinitialisation non envoyé :",
       err instanceof Error ? err.message : err,
     );
+  });
+}
+
+/** Les trois refus d'un lien de réinitialisation : chaque message dit quoi faire ensuite. */
+export const RESET_LINK_MESSAGES = {
+  invalid: "Ce lien n'est pas valide. Demandez-en un nouveau avec « Mot de passe oublié ».",
+  used: "Ce lien a déjà servi. Connectez-vous, ou demandez-en un nouveau avec « Mot de passe oublié ».",
+  expired: "Ce lien a expiré. Demandez-en un nouveau avec « Mot de passe oublié ».",
+} as const;
+
+/**
+ * Refus attendu d'un lien (inconnu, déjà utilisé, expiré). Une classe à part, pour que chaque
+ * entrée le traduise à sa façon : erreur BAD_REQUEST pour la procédure tRPC, état d'erreur
+ * affiché sous le formulaire pour la server action. Toute autre erreur est une vraie panne.
+ */
+export class ResetLinkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ResetLinkError";
+  }
+}
+
+/**
+ * Réinitialisation : le membre a suivi le lien et choisi un nouveau mot de passe. Le lien est
+ * retrouvé par son empreinte, vérifié, puis consommé en même temps que le mot de passe change et
+ * que toutes les sessions du membre sont fermées, en une seule transaction.
+ *
+ * Appelée par la server action du formulaire et par la procédure tRPC auth.resetPassword.
+ * Lève ResetLinkError pour un lien refusé.
+ */
+export async function resetPassword(input: { token: string; newPassword: string }): Promise<void> {
+  const token = input.token.trim();
+  const tokenHash = hashResetToken(token);
+
+  const entry = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash },
+    select: {
+      id: true,
+      userId: true,
+      expiresAt: true,
+      usedAt: true,
+    },
+  });
+
+  if (!entry) {
+    throw new ResetLinkError(RESET_LINK_MESSAGES.invalid);
+  }
+
+  if (entry.usedAt) {
+    throw new ResetLinkError(RESET_LINK_MESSAGES.used);
+  }
+
+  if (entry.expiresAt.getTime() < Date.now()) {
+    throw new ResetLinkError(RESET_LINK_MESSAGES.expired);
+  }
+
+  const hashedPassword = await hashPassword(input.newPassword);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: entry.userId },
+      // `isFirstLogin` n'est pas touché : choisir un mot de passe ne complète pas le profil.
+      // Un nouveau membre qui passe par « Mot de passe oublié » y reste invité.
+      data: { password: hashedPassword },
+    });
+
+    // Consommation atomique : la ligne n'est marquée que si elle ne l'était pas encore. Deux
+    // envois simultanés du même lien passent tous deux les vérifications ci-dessus ; un seul
+    // obtient ici count === 1, l'autre annule sa transaction.
+    const consumed = await tx.passwordResetToken.updateMany({
+      where: { id: entry.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count !== 1) {
+      throw new ResetLinkError(RESET_LINK_MESSAGES.used);
+    }
+
+    await tx.session.deleteMany({
+      where: { userId: entry.userId },
+    });
   });
 }

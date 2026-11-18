@@ -2962,7 +2962,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 22,
+   "line": 26,
    "effects": [
     {
      "model": "Session",
@@ -3036,7 +3036,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 55,
+   "line": 59,
    "effects": [
     {
      "model": "Session",
@@ -3062,7 +3062,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 69,
+   "line": 73,
    "effects": [
     {
      "model": "Session",
@@ -3072,7 +3072,7 @@
       [
        [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:109"
+        "packages/backend/src/modules/auth/router.ts:113"
        ]
       ]
      ]
@@ -3085,7 +3085,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/auth/router.ts:74"
+        "packages/backend/src/modules/auth/router.ts:78"
        ]
       ]
      ]
@@ -3100,7 +3100,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:105"
+        "packages/backend/src/modules/auth/router.ts:109"
        ]
       ]
      ]
@@ -3112,7 +3112,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 120,
+   "line": 124,
    "effects": [],
    "emails": []
   },
@@ -3120,7 +3120,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 124,
+   "line": 128,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3136,11 +3136,11 @@
       [
        [
         "requestPasswordReset",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:35"
        ],
        [
         "prisma.passwordResetToken.create",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:65"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:66"
        ]
       ]
      ]
@@ -3153,11 +3153,11 @@
       [
        [
         "requestPasswordReset",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:35"
        ],
        [
         "prisma.passwordResetToken.findFirst",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:49"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:50"
        ]
       ]
      ]
@@ -3170,7 +3170,7 @@
       [
        [
         "requestPasswordReset",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:35"
        ],
        [
         "sendPasswordResetEmail",
@@ -3191,11 +3191,11 @@
       [
        [
         "requestPasswordReset",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:35"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:40"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:41"
        ]
       ]
      ]
@@ -3209,7 +3209,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 136,
+   "line": 140,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3218,8 +3218,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.passwordResetToken.findUnique",
-        "packages/backend/src/modules/auth/router.ts:142"
+        "resetPassword",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:114"
+       ],
+       [
+        "prisma.passwordResetToken.findUnique",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:118"
        ]
       ]
      ]
@@ -3233,8 +3237,12 @@
      "trails": [
       [
        [
+        "resetPassword",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:114"
+       ],
+       [
         "tx.passwordResetToken.updateMany",
-        "packages/backend/src/modules/auth/router.ts:177"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:153"
        ]
       ]
      ]
@@ -3246,8 +3254,12 @@
      "trails": [
       [
        [
+        "resetPassword",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:114"
+       ],
+       [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:185"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:161"
        ]
       ]
      ]
@@ -3261,8 +3273,12 @@
      "trails": [
       [
        [
+        "resetPassword",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:114"
+       ],
+       [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:167"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:143"
        ]
       ]
      ]
@@ -21728,7 +21744,7 @@
   },
   "requestPasswordReset": {
    "file": "packages/backend/src/modules/auth/services/passwordReset.service.ts",
-   "line": 34,
+   "line": 35,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -21744,7 +21760,7 @@
       [
        [
         "prisma.passwordResetToken.create",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:65"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:66"
        ]
       ]
      ]
@@ -21757,7 +21773,7 @@
       [
        [
         "prisma.passwordResetToken.findFirst",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:49"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:50"
        ]
       ]
      ]
@@ -21787,7 +21803,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:40"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:41"
        ]
       ]
      ]
@@ -21796,6 +21812,69 @@
    "emails": [
     "sendPasswordResetEmail"
    ]
+  },
+  "resetPassword": {
+   "file": "packages/backend/src/modules/auth/services/passwordReset.service.ts",
+   "line": 114,
+   "effects": [
+    {
+     "model": "PasswordResetToken",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.passwordResetToken.findUnique",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:118"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PasswordResetToken",
+     "op": "update",
+     "fields": [
+      "usedAt"
+     ],
+     "trails": [
+      [
+       [
+        "tx.passwordResetToken.updateMany",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:153"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "tx.session.deleteMany",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:161"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "password"
+     ],
+     "trails": [
+      [
+       [
+        "tx.user.update",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:143"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
   },
   "deleteAvatar": {
    "file": "packages/backend/src/modules/avatar/avatar.service.ts",
@@ -36317,11 +36396,11 @@
       [
        [
         "requestPasswordReset",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:35"
        ],
        [
         "prisma.passwordResetToken.create",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:65"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:66"
        ]
       ]
      ]
@@ -36334,11 +36413,11 @@
       [
        [
         "requestPasswordReset",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:35"
        ],
        [
         "prisma.passwordResetToken.findFirst",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:49"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:50"
        ]
       ]
      ]
@@ -36351,7 +36430,7 @@
       [
        [
         "requestPasswordReset",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:35"
        ],
        [
         "sendPasswordResetEmail",
@@ -36372,11 +36451,11 @@
       [
        [
         "requestPasswordReset",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:35"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/auth/services/passwordReset.service.ts:40"
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:41"
        ]
       ]
      ]
