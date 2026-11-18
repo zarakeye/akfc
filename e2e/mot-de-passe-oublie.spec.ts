@@ -34,3 +34,11 @@ test("mot de passe oublié : le lien reçu par e-mail permet d'en choisir un nou
   await page.getByRole("button", { name: "Réinitialiser" }).click();
   await expect(page.getByText("Mot de passe mis à jour")).toHaveCount(0);
 });
+
+test("mot de passe oublié : une adresse mal formée est signalée sous le champ, sans rien envoyer", async ({ page }) => {
+  await page.goto("/auth/forgot-password");
+  await page.getByPlaceholder("toi@exemple.com").fill("pas-une-adresse");
+  await page.getByRole("button", { name: "Envoyer le lien" }).click();
+  await expect(page.getByText("Adresse e-mail invalide.")).toBeVisible();
+  await expect(page.getByText("Si un compte existe pour cet email")).toHaveCount(0);
+});

@@ -36298,6 +36298,94 @@
    ],
    "emails": []
   },
+  "requestPasswordResetFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/auth/forgot-password/requestPasswordResetForm.action.ts",
+   "line": 20,
+   "effects": [
+    {
+     "model": "PasswordResetToken",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "requestIp",
+      "tokenHash",
+      "userAgent",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "requestPasswordReset",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+       ],
+       [
+        "prisma.passwordResetToken.create",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:65"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PasswordResetToken",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "requestPasswordReset",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+       ],
+       [
+        "prisma.passwordResetToken.findFirst",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:49"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "requestPasswordReset",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+       ],
+       [
+        "sendPasswordResetEmail",
+        "packages/backend/src/email/services/sendPasswordResetEmail.ts:12"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/services/sendPasswordResetEmail.ts:24"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "requestPasswordReset",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:40"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendPasswordResetEmail"
+   ]
+  },
   "loadFullCode": {
    "kind": "server action",
    "file": "apps/web/src/features/docs/lib/fullCode.action.ts",

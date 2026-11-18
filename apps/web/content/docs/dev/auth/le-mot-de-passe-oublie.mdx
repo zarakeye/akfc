@@ -24,7 +24,7 @@ Depuis sa version 10, nodemailer livre ses propres types TypeScript : le paquet 
 
 La réinitialisation est un mécanisme à part. Elle mérite une attention particulière parce qu’elle est **la seule façon de reprendre la main sur un compte sans connaître son mot de passe**. C’est donc une cible privilégiée.
 
-Le projet l’implémente en deux temps : la **demande** (le membre demande un lien par e-mail) et la **réinitialisation** (il suit le lien et choisit un nouveau mot de passe). La demande vit dans une fonction du service, `requestPasswordReset`, qu’appelle la procédure tRPC `auth.requestPasswordReset` ; la réinitialisation, dans la procédure `auth.resetPassword`.
+Le projet l’implémente en deux temps : la **demande** (le membre demande un lien par e-mail) et la **réinitialisation** (il suit le lien et choisit un nouveau mot de passe). La demande vit dans une fonction du service, `requestPasswordReset`, que le site appelle depuis une server action, et la procédure tRPC `auth.requestPasswordReset` depuis tout autre client ; la réinitialisation, dans la procédure `auth.resetPassword`.
 
 Voyons d’abord le service qui les soutient.
 
@@ -112,6 +112,42 @@ La demande tient dans une fonction du service, à la suite des deux précédente
 ---
 
 Cette demande a eu le même défaut que la connexion (chapitre 3), en plus visible. Elle attendait la fin de l’envoi de l’e-mail avant de répondre : plusieurs secondes, le temps de joindre le serveur de messagerie. Pour une adresse sans compte, elle répondait aussitôt. Le texte affiché était identique — « Si un compte existe pour cet email, un lien a été envoyé. » —, mais un simple chronomètre disait qui était membre du club. L’envoi part désormais sans être attendu.
+
+---
+
+## Deux entrées, une seule logique
+
+La demande a deux portes d’entrée, et aucune ne contient la logique.
+
+Sur le site, le formulaire « Mot de passe oublié » suit le modèle hybride de la partie « Formulaires » : React Hook Form signale une adresse mal formée sous le champ, `useActionState` suit l’envoi, et une server action reçoit le formulaire. Elle revalide l’adresse avec le schéma partagé, puis appelle le service :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/auth/forgot-password/requestPasswordResetForm.action.ts"
+  filename="requestPasswordResetForm.action.ts"
+  snippetStart="const parsed = requestPasswordResetSchema.safeParse({"
+  snippetLines="21"
+  snippetHighlight="1,7,12,14,15"
+  snippetTitle="La server action du formulaire : valider, puis déléguer au service"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Seule une adresse mal formée produit une erreur visible, sous le champ. Pour toute adresse valide, l’action répond la même chose, que le compte existe ou non : la règle d’anti-énumération est tenue par le service, l’action ne peut pas la contourner par mégarde.
+
+La procédure tRPC `auth.requestPasswordReset`, elle, reste disponible pour les autres clients (les tests, et la future application mobile, qui ne peut pas appeler une server action). Elle ne fait plus qu’appeler le même service :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetStart="requestPasswordReset: publicProcedure"
+  snippetEnd="}),"
+  snippetHighlight="4-8"
+  snippetTitle="auth.requestPasswordReset : la même demande, par tRPC"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’adresse IP et le navigateur enregistrés avec le lien viennent des mêmes en-têtes dans les deux cas, lus par la même fonction, `getRequestIp` (`packages/backend/src/lib/security/requestIp.ts`). Une règle de sécurité ne doit pas exister en deux exemplaires : le jour où elle change, il faudrait penser à les changer tous les deux.
 
 ---
 
