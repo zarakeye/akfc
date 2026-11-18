@@ -36629,6 +36629,94 @@
    ],
    "emails": []
   },
+  "changePasswordFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/auth/change-password/changePasswordForm.action.ts",
+   "line": 25,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ],
+      [
+       [
+        "changePassword",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:22"
+       ],
+       [
+        "tx.session.deleteMany",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:61"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "changePassword",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:22"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "password"
+     ],
+     "trails": [
+      [
+       [
+        "changePassword",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:22"
+       ],
+       [
+        "tx.user.update",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:57"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "requestPasswordResetFormAction": {
    "kind": "server action",
    "file": "apps/web/src/features/auth/forgot-password/requestPasswordResetForm.action.ts",

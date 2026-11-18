@@ -227,16 +227,16 @@ Le formulaire de changement de mot de passe montre une validation client **plus 
 
 <CodeExample
   language="tsx"
-  filepath="apps/web/src/features/auth/ChangePasswordForm.tsx"
-  filename="ChangePasswordForm.tsx"
-  snippetStart="const formSchema = changePasswordSchema"
+  filepath="packages/contracts/src/auth/auth.schema.ts"
+  filename="auth.schema.ts"
+  snippetStart="export const changePasswordFormSchema = changePasswordSchema"
   snippetEnd="});"
   snippetHighlight="2,3"
   snippetTitle="Le schéma partagé, étendu d’une confirmation"
   fullFileTitle="Voir le fichier complet"
 />
 
-Le schéma partagé `changePasswordSchema` (mot de passe actuel, nouveau mot de passe d’au moins 12 caractères) est celui que la procédure applique. Le formulaire l’**étend** avec une confirmation, et vérifie que les deux saisies sont identiques (`refine`). La confirmation n’intéresse que l’utilisateur, qui pourrait faire une faute de frappe dans un champ masqué : elle n’est jamais envoyée. Le serveur, lui, garde ses propres vérifications, que le navigateur ne peut pas faire : l’ancien mot de passe correspond-il au compte ?
+Le schéma partagé `changePasswordSchema` (mot de passe actuel, nouveau mot de passe d’au moins 12 caractères) est celui que la procédure applique. Le schéma du formulaire l’**étend** avec une confirmation, et vérifie que les deux saisies sont identiques (`refine`). La confirmation n’intéresse que l’utilisateur, qui pourrait faire une faute de frappe dans un champ masqué : le formulaire et sa server action la vérifient, mais le service qui change le mot de passe ne la reçoit jamais. Le serveur, lui, garde ses propres vérifications, que le navigateur ne peut pas faire : l’ancien mot de passe correspond-il au compte ?
 
 Le formulaire de profil fait le choix inverse : **aucun** résolveur côté client. Toute la validation est faite par l’action, qui renvoie une erreur par champ :
 

@@ -36,6 +36,8 @@ export const USERS = {
   // Adresses en « zz- » : la liste des utilisateurs, triée par adresse, garde les autres en page 1.
   mineurDate: { id: "e2e-mineur-date", email: "zz-lou@e2e.test", firstName: "Lou" },
   mineurMajeur: { id: "e2e-mineur-majeur", email: "zz-tom@e2e.test", firstName: "Tom" },
+  // Change son mot de passe (ses autres sessions sont fermées). À lui seul.
+  motDePasse: { id: "e2e-mot-de-passe", email: "zz-mot-de-passe@e2e.test", firstName: "Oscar" },
 };
 
 /** Les deux mineurs de la date de naissance : un nom, un parent (Lou a une date, Tom aucune). */
