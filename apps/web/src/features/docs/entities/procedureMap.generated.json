@@ -37003,6 +37003,102 @@
    ],
    "emails": []
   },
+  "saveBreakingNewsFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/admin/breaking-news/actions/saveBreakingNewsForm.action.ts",
+   "line": 24,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "create",
+     "fields": [
+      "body",
+      "expiresAt",
+      "href",
+      "publicationDate",
+      "title"
+     ],
+     "trails": [
+      [
+       [
+        "saveBreakingNews",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:11"
+       ],
+       [
+        "db.breakingNews.create",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:19"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "BreakingNews",
+     "op": "update",
+     "fields": [
+      "body",
+      "expiresAt",
+      "href",
+      "publicationDate",
+      "title"
+     ],
+     "trails": [
+      [
+       [
+        "saveBreakingNews",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:11"
+       ],
+       [
+        "db.breakingNews.update",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:21"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "callerIsAdmin",
+        "apps/web/src/features/admin/common/actions/callerIsAdmin.ts:13"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "callerIsAdmin",
+        "apps/web/src/features/admin/common/actions/callerIsAdmin.ts:13"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "createGroupFormAction": {
    "kind": "server action",
    "file": "apps/web/src/features/admin/groups/actions/createGroupForm.action.ts",
