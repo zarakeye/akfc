@@ -3,12 +3,11 @@ import { z } from "zod";
 
 import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
 import { submitTicketSchema } from "@akfc/contracts/tickets/ticket.schema.ts";
-import { sendTicketAcknowledgement, sendTicketNotification, sendTicketReply } from "#email/services/sendTicketEmails.ts";
+import { sendTicketReply } from "#email/services/sendTicketEmails.ts";
 import {
   canHandleCategory,
   cleanText,
   closeTicket,
-  createTicket,
   MAX_BODY,
   reopenTicket,
   replySignature,
@@ -17,11 +16,13 @@ import {
   transferTicket,
 } from "#modules/tickets/tickets.service.ts";
 import { getTicketDetail, listHandlers, listInbox, ticketAccess } from "#modules/tickets/ticketQueries.service.ts";
-import { submitThrottle } from "#modules/tickets/submitThrottle.ts";
+import { submitTicket } from "#modules/tickets/submitTicket.service.ts";
 
 /**
  * Demandes adressées au club (formulaire de contact).
- * Public : un visiteur peut écrire ; un membre connecté écrit sous l'identité de son compte.
+ * Réservé aux membres connectés, qui écrivent sous l'identité de leur compte ; le public écrit à
+ * l'adresse du club. La procédure `submit` est publique pour que le piège à robots réponde
+ * normalement à un visiteur : c'est le service qui refuse un visiteur humain.
  */
 export const ticketRouter = router({
   /** Destinataires proposés par le formulaire (catégories actives, dans l'ordre). */
@@ -38,73 +39,16 @@ export const ticketRouter = router({
    * n'annule pas la demande (elle est enregistrée) : il est journalisé et signalé par
    * `acknowledged: false`.
    */
-  submit: publicProcedure.input(submitTicketSchema).mutation(async ({ ctx, input }) => {
-    // Robot qui remplit tout : réponse d'apparence normale, rien n'est créé.
-    if (input.website && input.website.trim() !== "") {
-      return { ref: null, dueAt: null, acknowledged: true };
-    }
-
-    const sessionUser = ctx.sessionClient?.user ?? null;
-    let requester: { userId: string | null; email: string; name: string | null };
-    if (sessionUser) {
-      const u = await ctx.prisma.user.findUnique({
-        where: { id: sessionUser.id },
-        select: { id: true, email: true, firstName: true, lastName: true },
-      });
-      if (!u) throw new TRPCError({ code: "UNAUTHORIZED" });
-      const full = [u.firstName, u.lastName].filter(Boolean).join(" ").trim();
-      requester = { userId: u.id, email: u.email, name: full || null };
-    } else {
-      // Formulaire réservé aux membres connectés : le public écrit à l'adresse du club
-      // (coordonnées de « Nous contacter »).
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "Ce formulaire est réservé aux membres : connectez-vous, ou écrivez-nous à l'adresse indiquée sur la page « Nous contacter ».",
-      });
-    }
-
-    if (submitThrottle.hit([ctx.requestIp ? `ip:${ctx.requestIp}` : null, `mail:${requester.email.toLowerCase()}`])) {
-      throw new TRPCError({
-        code: "TOO_MANY_REQUESTS",
-        message: "Vous avez envoyé plusieurs messages en peu de temps. Réessayez dans une heure.",
-      });
-    }
-
-    const created = await createTicket(ctx.prisma, {
+  submit: publicProcedure.input(submitTicketSchema).mutation(({ ctx, input }) =>
+    submitTicket(ctx.prisma, {
+      userId: ctx.sessionClient?.user?.id ?? null,
       categoryKey: input.categoryKey,
       subject: input.subject,
       body: input.body,
-      requester,
-    });
-
-    const [category, settings] = await Promise.all([
-      ctx.prisma.ticketCategory.findUniqueOrThrow({
-        where: { key: input.categoryKey },
-        select: { label: true, replyTo: true },
-      }),
-      ctx.prisma.siteSettings.findUnique({ where: { id: "site" }, select: { ticketResponseDays: true } }),
-    ]);
-    const mail = {
-      id: created.id,
-      number: created.number,
-      subject: input.subject.trim(),
-      body: input.body.replace(/\r\n/g, "\n").trim(),
-      dueAt: created.dueAt,
-      responseDays: settings?.ticketResponseDays ?? 7,
-      category,
-      requester: { email: requester.email.toLowerCase(), name: requester.name, isMember: Boolean(sessionUser) },
-    };
-
-    const [ack, notice] = await Promise.allSettled([sendTicketAcknowledgement(mail), sendTicketNotification(mail)]);
-    if (ack.status === "rejected") {
-      console.error(`[tickets] accusé de réception ${created.ref} non envoyé :`, ack.reason instanceof Error ? ack.reason.message : ack.reason);
-    }
-    if (notice.status === "rejected") {
-      console.error(`[tickets] avis au club ${created.ref} non envoyé :`, notice.reason instanceof Error ? notice.reason.message : notice.reason);
-    }
-
-    return { ref: created.ref, dueAt: created.dueAt, acknowledged: ack.status === "fulfilled" };
-  }),
+      website: input.website,
+      requestIp: ctx.requestIp ?? null,
+    }),
+  ),
 
   /* ── Espace de traitement (membres d'un groupe responsable, administrateurs) ── */
 

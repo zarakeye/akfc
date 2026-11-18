@@ -470,7 +470,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 28,
+   "line": 29,
    "effects": [
     {
      "model": "TicketCategory",
@@ -480,7 +480,7 @@
       [
        [
         "ctx.prisma.ticketCategory.findMany",
-        "packages/backend/src/modules/tickets/router.ts:29"
+        "packages/backend/src/modules/tickets/router.ts:30"
        ]
       ]
      ]
@@ -492,7 +492,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 41,
+   "line": 42,
    "effects": [
     {
      "model": "SiteSettings",
@@ -500,6 +500,10 @@
      "fields": [],
      "trails": [
       [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
        [
         "createTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:100"
@@ -511,11 +515,19 @@
       ],
       [
        [
-        "ctx.prisma.siteSettings.findUnique",
-        "packages/backend/src/modules/tickets/router.ts:85"
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "db.siteSettings.findUnique",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:75"
        ]
       ],
       [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
        [
         "sendTicketAcknowledgement",
         "packages/backend/src/email/services/sendTicketEmails.ts:63"
@@ -548,6 +560,10 @@
      "trails": [
       [
        [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
         "createTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:100"
        ],
@@ -565,6 +581,10 @@
      "trails": [
       [
        [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
         "createTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:100"
        ],
@@ -575,8 +595,12 @@
       ],
       [
        [
-        "ctx.prisma.ticketCategory.findUniqueOrThrow",
-        "packages/backend/src/modules/tickets/router.ts:81"
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "db.ticketCategory.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:71"
        ]
       ]
      ]
@@ -591,6 +615,10 @@
      ],
      "trails": [
       [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
        [
         "createTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:100"
@@ -617,6 +645,10 @@
      "trails": [
       [
        [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
         "createTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:100"
        ],
@@ -634,8 +666,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/tickets/router.ts:50"
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:40"
        ]
       ]
      ]
@@ -650,7 +686,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 112,
+   "line": 56,
    "effects": [
     {
      "model": "MemberGroup",
@@ -795,7 +831,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 114,
+   "line": 58,
    "effects": [
     {
      "model": "MemberGroup",
@@ -947,7 +983,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 118,
+   "line": 62,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1133,7 +1169,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 122,
+   "line": 66,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1305,7 +1341,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 126,
+   "line": 70,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1495,7 +1531,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 130,
+   "line": 74,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1687,7 +1723,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 140,
+   "line": 84,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1800,7 +1836,7 @@
       [
        [
         "ctx.prisma.ticket.findUnique",
-        "packages/backend/src/modules/tickets/router.ts:144"
+        "packages/backend/src/modules/tickets/router.ts:88"
        ]
       ],
       [
@@ -1848,7 +1884,7 @@
       [
        [
         "ctx.prisma.ticket.findUnique",
-        "packages/backend/src/modules/tickets/router.ts:144"
+        "packages/backend/src/modules/tickets/router.ts:88"
        ]
       ],
       [
@@ -1938,7 +1974,7 @@
       [
        [
         "ctx.prisma.ticket.findUnique",
-        "packages/backend/src/modules/tickets/router.ts:144"
+        "packages/backend/src/modules/tickets/router.ts:88"
        ]
       ]
      ]
@@ -1969,7 +2005,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 185,
+   "line": 129,
    "effects": [
     {
      "model": "MemberGroup",
@@ -2160,7 +2196,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 189,
+   "line": 133,
    "effects": [
     {
      "model": "MemberGroup",
@@ -31677,6 +31713,162 @@
     }
    ],
    "emails": []
+  },
+  "submitTicket": {
+   "file": "packages/backend/src/modules/tickets/submitTicket.service.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "db.siteSettings.findUnique",
+        "packages/backend/src/modules/tickets/tickets.service.ts:113"
+       ]
+      ],
+      [
+       [
+        "db.siteSettings.findUnique",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:75"
+       ]
+      ],
+      [
+       [
+        "sendTicketAcknowledgement",
+        "packages/backend/src/email/services/sendTicketEmails.ts:63"
+       ],
+       [
+        "siteName",
+        "packages/backend/src/email/services/sendTicketEmails.ts:27"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/services/sendTicketEmails.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "create",
+     "fields": [
+      "categoryId",
+      "createdAt",
+      "dueAt",
+      "events",
+      "messages",
+      "requesterEmail",
+      "requesterId",
+      "requesterName",
+      "subject"
+     ],
+     "trails": [
+      [
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "tx.ticket.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:120"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "db.ticketCategory.findUnique",
+        "packages/backend/src/modules/tickets/tickets.service.ts:107"
+       ]
+      ],
+      [
+       [
+        "db.ticketCategory.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "type"
+     ],
+     "trails": [
+      [
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "tx.ticket.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:120"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail"
+     ],
+     "trails": [
+      [
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "tx.ticket.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:120"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:40"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendTicketAcknowledgement",
+    "sendTicketNotification"
+   ]
   },
   "handledCategoryIds": {
    "file": "packages/backend/src/modules/tickets/ticketQueries.service.ts",
