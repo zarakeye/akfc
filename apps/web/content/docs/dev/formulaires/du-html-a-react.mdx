@@ -6,13 +6,35 @@ order: 1
 ---
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
 import { CodeSnippet } from "#features/docs/ui/CodeSnippet.tsx"
+import { CodeSnippetWalkthrough } from "#features/docs/ui/CodeSnippetWalkthrough.tsx"
 
 > **Précédemment.** La partie « Données (2) » a montré comment le serveur écrit dans son modèle strict sans le casser, et comment il le fait évoluer. Cette série en sept chapitres raconte comment un utilisateur y fait entrer des données sans le corrompre, en commençant par un détour historique.
 
 ## Pourquoi les formulaires deviennent un problème… dès que le système devient sérieux
 
-Un monde structuré existe déjà côté serveur : un modèle, des entités, des relations, un système cohérent porté par Prisma. Il est correct, typé, cohérent, mais encore fermé : aucun utilisateur ne peut agir sur lui. C’est là que les formulaires entrent en jeu.
+Dans la partie précédente, nous avons construit quelque chose de fondamental.
+
+Nous avons défini :
+- un modèle  
+- des entités  
+- des relations  
+
+Un système cohérent porté par Prisma.
+
+autrement dit :
+
+👉 un monde structuré existe déjà côté serveur
+
+Mais à ce stade, ce système est encore fermé.
+Il est correct, typé, cohérent.
+
+👉 mais aucun utilisateur ne peut encore interagir avec lui
+
+Et c’est précisément ici que les formulaires entrent en jeu.
+
+---
 
 ## Avant de commencer : les mots de cette partie
 
@@ -42,29 +64,282 @@ Les formulaires sont le point où le navigateur, React et le serveur se rencontr
 Une autre façon d’atteindre le serveur, tRPC, apparaît dans les deux derniers chapitres, là où une server action ne suffit plus. Il suffit pour l’instant de savoir qu’elle existe : la partie suivante la construit entièrement.
 </Promesse>
 
-## Une frontière, pas une couche d’interface
+---
 
-Un formulaire n’est pas une couche d’interface : c’est un **point de passage**, l’endroit où une intention humaine (écrire une adresse, modifier un profil, créer une ressource) tente d’entrer dans un système structuré. Ce passage n’est pas neutre. Ce que l’utilisateur envoie n’est ni fiable, ni typé, ni validé, alors que le système construit avec Prisma est strict, contraint et typé. Le formulaire est une zone de friction entre deux mondes qui ne parlent pas la même langue : le navigateur (interaction, expérience, évènements) et le serveur (logique métier, validation, persistance). Surtout, c’est la frontière entre **l’intention de l’utilisateur** et **le modèle Prisma**.
+## 🧠 Une idée fondamentale
 
-### Le problème réel des formulaires modernes
+Un formulaire n’est pas une couche UI.
 
-Avec React, nous avons gagné du contrôle : intercepter les évènements, gérer des états, envoyer les requêtes nous-mêmes. En échange, la complexité s’est déplacée. Chaque formulaire est devenu une gestion de champs, une validation côté client, une logique réseau, une gestion d’erreurs et une synchronisation de l’interface, et surtout une **duplication implicite du modèle serveur** : le frontend définit ses propres types, le backend valide de son côté, les règles divergent. Le problème est invisible au début ; il grandit avec le temps.
+👉 c’est un point de passage
 
-Le vrai enjeu n’est donc pas de « collecter des données », mais de transformer une intention en une structure conforme au modèle du système, et ce modèle existe déjà : il vient de Prisma.
+C’est l’endroit où une intention humaine (écrire un email... modifier un profil... créer une ressource...) tente d’entrer dans un système structuré
 
-### Ce que change l’App Router
+Et ce passage n’est pas neutre.
 
-Avec les server actions, nous ne simulons plus un envoi au serveur avec un `fetch` : nous reconnectons le formulaire au serveur. Cela ne supprime pas le problème, cela le rend visible, et une question devient centrale : **qui est responsable de quoi ?** Le client gère-t-il la validation ? Le serveur doit-il tout vérifier ? Où vivent les erreurs, où s’applique le typage ?
+Parce que *ce que l’utilisateur envoie n’est ni fiable, ni typé, ni validé, ni sécurisé* alors que *le système que nous avons construit avec Prisma, lui, est strict, contraint, typé, cohérent*.
 
-Cette série organise les réponses autour de quatre outils : React Hook Form pour l’expérience de saisie, Zod pour valider les données côté serveur, les server actions pour porter la logique métier, `useActionState` pour relier le serveur à l’interface. Mais l’objectif est surtout de comprendre pourquoi ils existent, et pourquoi ils vont ensemble. Le but n’est pas un formulaire qui fonctionne : c’est un formulaire qui respecte le système, un point d’entrée fiable dans un modèle déjà structuré.
+Nous avons donc :
+- 🌐 le navigateur → interaction, UX, événements  
+- 🧠 le serveur → logique métier, validation, persistance  
+
+Entre ces deux mondes,  
+👉 un point de friction, une frontière entre deux mondes qui ne parlent pas la même langue : le `<form>`.
+
+Il impose :
+- des règles
+- des contraintes
+- des contrats implicites
+
+Un formulaire ne fait pas que collecter des données.  
+Il transforme, valide, transporte et transmet des informations entre deux systèmes incompatibles : c’est précisément pour cela que sa conception est si importante.
+
+Mais surtout :
+
+👉 une frontière entre **l’intention utilisateur** d'un côté,  
+👉 et de l'autre **le modèle Prisma**
+
+Et c’est ici que beaucoup de projets échouent.
+
+---
+
+## ⚠️ Le problème réel des formulaires modernes
+
+Quand React est arrivé, nous avons gagné du contrôle.
+
+Nous avons commencé à :
+
+- intercepter les événements  
+- gérer les états  
+- envoyer des requêtes manuellement  
+
+Mais, en échange, nous avons déplacé la complexité.
+
+Chaque formulaire est devenu :
+
+- une gestion d’inputs  
+- une validation côté client  
+- une logique réseau  
+- une gestion d’erreurs  
+- une synchronisation UI  
+
+et surtout :
+
+👉 une duplication implicite du modèle serveur
+
+Parce que très souvent :
+
+- le frontend définit ses propres types,  
+
+ce qui entraîne que :
+
+- le backend valide de son côté  
+- les règles divergent  
+- les incohérences apparaissent  
+
+Et ce problème est invisible au début.
+
+👉 mais il explose avec le temps
+
+---
+
+## 🧨 Le vrai enjeu
+
+Le rôle du formulaire ne doit pas être vu comme juste de “collecter des données” mais, au-delà de ça, de :
+
+👉 transformer une intention utilisateur  
+👉 en une structure conforme au modèle du système
+
+Et ce modèle… nous l’avons déjà :
+
+👉 il vient de Prisma
+
+---
+
+## 🔄 Ce que change Next.js App Router
+
+Avec les Server Actions, quelque chose change profondément.
+
+Nous ne simulons plus un envoi serveur avec un `fetch` : habitude prise en React jusqu'ici.
+
+👉 *Nous reconnectons directement le formulaire au serveur*.  
+👉 Mais cela ne supprime pas le problème, *cela le rend visible*
+
+Parce que maintenant, une question devient centrale :
+
+👉 qui est responsable de quoi ?
+
+- le client gère-t-il la validation ?
+- le serveur doit-il tout vérifier ?
+- où vivent les erreurs ?
+- où s’applique le typage ?
+
+C’est exactement ce que nous allons structurer.
+
+On revient à une idée plus simple, mais enrichie :  
+👉 laisser le serveur reprendre son rôle central  
+👉 tout en conservant une expérience utilisateur moderne côté client
+
+---
+
+## 🧱 Ce que nous allons construire
+
+Dans cette série, nous n’allons pas simplement “faire un formulaire”.
+
+Nous allons construire un système cohérent, aligné avec ce que nous avons posé avec Prisma.
+
+Nous allons voir comment organiser les responsabilités :
+
+- React Hook Form → gérer l’expérience utilisateur  
+- Zod → valider les données côté serveur  
+- Server Actions → porter la logique métier  
+- useActionState → relier serveur et interface  
+
+Mais, surtout,
+
+👉 comprendre :
+- pourquoi ces outils existent  
+- pourquoi ils doivent être utilisés ensemble
+
+---
+
+## 🎯 L’objectif réel
+
+L’objectif n’est pas d’avoir un formulaire qui fonctionne.
+
+👉 l’objectif est d’avoir un formulaire qui respecte le système
+
+Autrement dit :
+
+👉 un point d’entrée fiable  
+👉 dans un modèle déjà structuré
+
+Pour y arriver, nous allons comprendre **le circuit complet d’un formulaire moderne**, depuis la saisie utilisateur jusqu’au traitement serveur.
 
 <Callout type="info">
-Un formulaire moderne n’est pas un composant : c’est une interface entre une intention humaine et un modèle typé, défini par Prisma. Tout l’enjeu est que ce passage ne casse pas la cohérence du système.
+Un formulaire moderne n’est pas un composant,
+
+👉 c’est une *interface entre une intention humaine et un modèle typé*
+
+Et ce modèle… est défini par Prisma.
+
+Tout l’enjeu est de faire en sorte que cette transition ne casse pas la cohérence du système.
 </Callout>
 
-## Ce que nous allons traverser
+## 🔍 Revenons en arrière pour comprendre ce que nous avons cassé avec l'arrivée de React
 
-Beaucoup de problèmes actuels viennent de ce que nous ne savons plus comment le web fonctionnait à l’origine. Plutôt que d’apprendre simplement à écrire un formulaire, nous allons reconstruire son histoire dans React, et voir pourquoi le modèle que nous construirons est une réconciliation avec quelque chose de plus ancien. Trois mouvements, répartis sur sept chapitres, puis une ouverture :
+Avant d’aller plus loin, il est utile de faire un détour.
+
+Non par nostalgie.  
+Mais parce que beaucoup de problèmes actuels viennent du fait que nous ne comprenons plus comment le web fonctionnait à l’origine.
+
+### Le modèle HTML natif : simple, mais structurant
+
+À l’époque du HTML pur, un formulaire était un mécanisme simple et puissant.
+
+L’utilisateur remplissait des champs, puis le navigateur envoyait directement les données au serveur via une requête HTTP à l'adresse entrée dans l'attribut `action` du formulaire.  
+Le serveur traitait la demande et renvoyait une nouvelle page.
+
+Tout était clair :
+
+- le navigateur gérait la soumission  
+- le serveur gérait la logique  
+- le cycle était entièrement contrôlé par le web lui-même  
+
+Ce modèle avait quelque chose de très important.
+
+👉 la responsabilité était bien placée
+
+Le navigateur ne faisait que :
+
+- capturer l’intention  
+- envoyer les données  
+
+Le serveur, lui :
+
+- validait  
+- traitait  
+- persistait  
+
+👉 il n’y avait pas d’ambiguïté.
+
+### La rupture introduite par React
+
+Avec React, ce modèle a changé.
+
+Nous ne soumettions plus, en réalité, un formulaire ;
+
+👉 nous interceptions un événement : *submit* !
+
+Nous récupérions les données, puis :
+
+- nous faisions un `fetch`  
+- nous gérions des états  
+- nous gérions les erreurs  
+- nous synchronisions l’UI  
+
+Peu à peu, chaque formulaire est devenu une petite machine à états.  
+Et souvent, une grande partie de cette logique était répétée à chaque implémentation.
+
+Ce modèle a apporté beaucoup de contrôle.
+
+Mais il a aussi introduit quelque chose de dangereux :
+
+👉 *un déplacement des responsabilités*
+
+Peu à peu, le client a commencé à :
+
+- valider  
+- structurer  
+- orchestrer la logique  
+
+👉 alors que ces responsabilités appartiennent au serveur
+
+### Ce que cela a cassé
+
+Ce changement n’est pas anodin.
+
+Il a introduit :
+
+- de la duplication (validation client + serveur)  
+- des incohérences  
+- une illusion de sécurité côté client  
+- une complexité croissante dans chaque formulaire  
+
+Et surtout :
+
+👉 *une perte de clarté sur le rôle de chaque couche*
+
+---
+
+## 🧠 Pourquoi ce retour est essentiel
+
+Ce détour nous permet de comprendre quelque chose de fondamental.
+
+Le problème des formulaires modernes ne vient pas des outils,
+
+👉 *il vient du fait que les responsabilités ont été déplacées*,
+
+et c’est exactement ce que nous allons corriger dans cette série
+
+👉 en reconnectant le formulaire au serveur  
+👉 sans perdre la qualité d’expérience côté client
+
+<Callout type="info">
+Un formulaire moderne n’est pas qu’un composant React.
+
+C’est un système qui orchestre un passage entre deux mondes :
+
+- le client, qui capte et prépare les données
+- le serveur, qui les valide et les traite
+
+Bien concevoir un formulaire, c’est comprendre où placer chaque responsabilité, et éviter de faire porter au client ce qui relève du serveur.
+</Callout>
+
+---
+
+## 🗺️ Ce que nous allons traverser
+
+Nous n’allons pas simplement apprendre à écrire un formulaire. Nous allons reconstruire l’histoire du formulaire dans React, et comprendre pourquoi le modèle que nous allons construire est une réconciliation avec quelque chose de plus ancien. Trois mouvements, répartis sur sept chapitres, puis une ouverture vers la suite.
 
 - **Mouvement 1 — La rupture** (ce chapitre et le suivant). Nous revenons au point de départ — le contrat natif entre le formulaire et le serveur —, puis nous regardons ce que React a cassé en le réinterprétant, et comment les bibliothèques ont tenté de soigner le symptôme sans toucher la cause.
 - **Mouvement 2 — La réconciliation** (chapitres 3 à 5). Nous découvrons le pont que `useActionState` construit, puis comment App Router en fait une vraie route retour au serveur via les server actions, et enfin comment ces pièces se combinent avec React Hook Form dans un modèle hybride qui tient.
@@ -72,23 +347,32 @@ Beaucoup de problèmes actuels viennent de ce que nous ne savons plus comment le
 
 La **section 9**, à la fin du dernier chapitre, ouvrira ensuite la porte vers la suite du parcours — tRPC — en montrant pourquoi, malgré tout ce que nous venons de construire, un problème reste entier.
 
-À chaque étape, le code du projet confronte le récit au réel : les formulaires du tableau de bord, du profil et de la connexion, tels qu’ils sont écrits aujourd’hui.
+À chaque étape, le code du projet viendra confronter le récit au réel : les formulaires du tableau de bord, du profil et de la connexion, tels qu’ils sont écrits aujourd’hui.
+
+---
 
 ## Mouvement 1 — La rupture
 
-Ce mouvement est un détour historique : la seule façon de voir ce qui a été perdu en route, et donc ce que nous cherchons à retrouver. Il compte trois sections :
+Avant de comprendre ce que nous allons construire, nous devons comprendre pourquoi il faut reconstruire. Ce mouvement est un détour historique — pas par nostalgie, mais parce que c’est la seule façon de voir ce qui a été perdu en route, et donc ce que nous essayons de retrouver.
 
-- **Section 1** : l’origine, `<form action="...">`, et la façon dont le web avait déjà résolu le problème avant les frameworks ;
-- **Section 2** : ce que React a fait de ce contrat : en interceptant l’envoi, il a gagné en souplesse mais déplacé des responsabilités qui n’auraient pas dû bouger ;
-- **Section 3** (chapitre suivant) : la tentative de sauvetage par les bibliothèques de formulaires, React Hook Form en tête, qui soignent le confort côté client sans toucher à la fracture côté serveur.
+Voici les trois étapes que nous allons traverser :
 
-À la fin de ce mouvement, le formulaire ne sera plus un problème d’interface à résoudre, mais un contrat ancien qu’il faut réapprendre à honorer.
+- **Section 1** — Nous revenons à l’origine : `<form action="...">`, et nous voyons comment le web avait déjà résolu le problème du formulaire avec élégance, avant même l’arrivée des frameworks.
+- **Section 2** — Nous regardons ce que React a fait à ce contrat : en interceptant le submit, il a gagné en flexibilité mais déplacé silencieusement des responsabilités qui n’auraient pas dû bouger.
+- **Section 3** — Nous observons la tentative de sauvetage par les form libraries — React Hook Form en particulier — et nous voyons pourquoi elles soignent le confort côté client sans toucher à la fracture architecturale côté serveur.
+
+À la fin de ce mouvement, nous ne verrons plus le formulaire comme un problème UI à résoudre, mais comme un contrat ancien qu’il faut réapprendre à honorer.
+
+---
 
 ## 1 — À l’origine : `<form action>`
 
 ### Le web avait déjà résolu le problème
 
-Le web n’a pas attendu les frameworks : dès HTML, un mécanisme complet faisait transiter des données du navigateur vers le serveur.
+À l’origine, tout était déjà pensé.
+
+Le web n’a pas attendu les frameworks pour résoudre le problème des formulaires.  
+Dès HTML, un mécanisme complet existait déjà pour faire transiter des données du navigateur vers le serveur.
 
 <CodeSnippet
   language="html"
@@ -99,40 +383,134 @@ Le web n’a pas attendu les frameworks : dès HTML, un mécanisme complet faisa
   codeJson='"<form action=\"/login\" method=\"POST\">\n  <input name=\"email\" />\n  <input name=\"password\" />\n  <button type=\"submit\">Login</button>\n</form>"'
  />
 
-Quand l’utilisateur clique sur **Login**, le navigateur prend entièrement le relais, sans rien demander à JavaScript. Voici le cycle complet :
+Quand l’utilisateur clique sur **Login**, le navigateur prend entièrement le relais.
 
-1. il lit l’attribut `action` : `/login`, la route du serveur ;
-2. il collecte tous les champs qui ont un attribut `name` ;
-3. il les sérialise (`application/x-www-form-urlencoded`, ou `multipart/form-data` quand il y a des fichiers) ;
-4. il envoie la requête HTTP (`POST` ici) au serveur ;
-5. il laisse le serveur répondre, par une nouvelle page.
+Il ne demande pas à JavaScript quoi faire.  
+Il applique un comportement natif, défini par le standard du web.
 
-Aucune logique côté client, aucune orchestration, aucun état complexe.
+### 🔄 Ce qui se passe réellement
 
-### Une séparation des responsabilités parfaite
+Concrètement, voici le cycle complet :
 
-Le navigateur capture, met à plat et transmet ; le serveur reçoit, valide et traite. Surtout, **le serveur reste la source de vérité**. Ce qu’il reçoit n’est pas « juste des données » : ce sont des données destinées à entrer dans un système structuré. Prisma n’existait pas, mais le principe était déjà là : le formulaire n’était qu’un point d’entrée vers un modèle côté serveur.
+- le navigateur lit l’attribut `action` → `/login`, qui désigne la route serveur  
+- il collecte tous les champs ayant un attribut `name`  
+- il sérialise ces données (`application/x-www-form-urlencoded` ou `multipart/form-data`)  
+- il envoie une requête HTTP (`POST` ici) vers le serveur  
+- puis il laisse le serveur répondre  
 
-Dans beaucoup d’applications de cette époque, le serveur était à la fois serveur web (il produisait le HTML) et serveur de données (il exécutait la logique métier et accédait à la base). Rendu et logique vivaient ensemble, et le flux ne laissait aucune ambiguïté : une requête entrait, elle était traitée, une page complète sortait. Le navigateur n’avait rien à orchestrer.
+👉 aucune logique côté client  
+👉 aucune orchestration  
+👉 aucun état complexe  
 
-Ce modèle était **structurellement cohérent**, grâce à quatre propriétés :
+### 🧠 Une séparation des responsabilités parfaite
 
-- une seule source de vérité, le serveur ;
-- aucune logique dupliquée ;
-- aucune validation concurrente ;
-- un flux simple et prévisible.
+Le rôle du navigateur est clair :  
+👉 capturer, transformer, transmettre  
 
-Il forçait naturellement le respect du modèle côté serveur.
+Le rôle du serveur est tout aussi clair :  
+👉 recevoir, valider, traiter  
+
+Et surtout :
+
+👉 **le serveur reste la source de vérité**
+
+Ce point est fondamental.
+
+Parce que ce que le serveur reçoit n’est pas “juste des données”.
+
+👉 ce sont des données destinées à entrer dans un système structuré
+
+Aujourd’hui, dans notre projet :
+
+👉 ce système est défini par Prisma
+
+Même si à l’époque Prisma n’existait pas :
+
+👉 le principe était déjà là
+
+👉 le formulaire n’était qu’un point d’entrée  
+👉 vers un modèle côté serveur
+
+### 🏗️ Un système unifié
+
+Dans beaucoup d’applications de cette époque, le serveur ne se contentait pas de recevoir des données.
+
+Il était à la fois :
+
+- serveur web (il générait le HTML)  
+- serveur de données (il exécutait la logique métier et accédait à la base)  
+
+👉 rendu et logique vivaient ensemble  
+
+Cela avait une conséquence très importante :
+
+👉 il n’y avait **aucune ambiguïté sur le flux**
+
+- une requête entrait  
+- elle était traitée  
+- une réponse complète sortait  
+
+Le navigateur n’avait rien à orchestrer.
+
+👉 il envoyait un formulaire  
+👉 le serveur renvoyait un état complet  
+
+### ⚠️ Pourquoi ce modèle était si puissant
+
+Ce modèle avait plusieurs propriétés essentielles :
+
+- une seule source de vérité (le serveur)  
+- aucune duplication de logique  
+- aucune validation concurrente  
+- un flux simple et prévisible  
+
+👉 il était **structurellement cohérent**
+
+Et surtout :
+
+👉 il forçait naturellement le respect du modèle côté serveur
 
 <Callout type="info">
-Dans le modèle HTML natif, le navigateur collecte et envoie les données, le serveur porte toute la logique métier, et le protocole HTTP sert de contrat entre les deux. Pas d’état client complexe, pas de validation en double, très peu de surface d’erreur.
+Dans le modèle HTML natif :
+
+- le navigateur gère la collecte et l’envoi des données  
+- le serveur gère toute la logique métier  
+- le protocole HTTP sert de contrat entre les deux  
+
+👉 le formulaire est déjà un point d’entrée vers un système structuré
+
+Il n’y a pas d’état client complexe, pas de duplication de validation, et très peu de surface d’erreur.
 </Callout>
 
-Sa limite : très peu de contrôle sur l’interface. C’est ce que React va chercher à résoudre, en déplaçant au passage une partie des responsabilités.
+### 🔥 Ce que nous allons casser ensuite
+
+Ce modèle était simple.
+
+Mais il avait une limite :
+
+👉 très peu de contrôle côté interface
+
+C’est précisément ce que React va chercher à résoudre.
+
+Mais en le faisant :
+
+👉 il va déplacer une partie des responsabilités  
+👉 et introduire une nouvelle complexité
+
+👉 c’est ce basculement que nous allons analyser maintenant
+
+👉 **Où nous en sommes :** le web avait déjà tout pensé — un formulaire, une action, une méthode, et le navigateur qui fait le travail de transmission en respectant le serveur comme source de vérité. Ce modèle n’était pas primitif, il était juste : chaque couche tenait son rôle, sans qu’une autre ait à le deviner. Reste à voir ce que React en a fait, et pourquoi ce qui ressemblait à une amélioration a en réalité déplacé le problème ailleurs.
+
+---
 
 ## 2 — React intercepte le formulaire
 
-Avec React, le formulaire n’est plus un mécanisme natif que l’on déclenche, mais un évènement que l’on intercepte. Au lieu de laisser le navigateur soumettre le formulaire, on empêche son comportement par défaut :
+Puis React a changé les règles.
+
+Le formulaire n’est plus un mécanisme natif que nous déclenchons.  
+C’est devenu un événement que nous interceptons.
+
+Au lieu de laisser le navigateur soumettre le formulaire, nous empêchons son comportement par défaut :
 
 <CodeSnippet
   language="ts"
@@ -142,57 +520,137 @@ Avec React, le formulaire n’est plus un mécanisme natif que l’on déclenche
   codeJson='"onSubmit={(e) => {\n  e.preventDefault()\n  // logique custom\n}}"'
 />
 
-À partir de là, tout bascule.
+À partir de ce moment-là, tout bascule.
 
-### Le contrat est cassé
+---
 
-Le navigateur ne fait plus rien pour nous. C’est désormais JavaScript qui doit tout orchestrer :
+### 🔄 Le contrat est cassé
 
-- récupérer les valeurs des champs ;
-- garder leur état ;
-- valider les données ;
-- envoyer une requête HTTP à la main (`fetch`) ;
-- gérer les erreurs ;
-- synchroniser l’interface.
+Le navigateur ne fait plus rien pour nous.  
+C’est désormais JavaScript qui doit tout orchestrer :
 
-Nous gagnons en contrôle, mais nous perdons le **lien direct avec le serveur**, donc avec le modèle Prisma. Le frontend commence à définir ses propres structures, la validation se fait deux fois, les règles peuvent diverger : le système n’est plus cohérent par construction.
+- récupérer les valeurs des champs  
+- gérer leur état  
+- valider les données  
+- envoyer une requête HTTP manuelle (`fetch`)  
+- gérer les erreurs  
+- synchroniser l’interface utilisateur  
 
-Le changement n’est pas seulement technique, il est architectural. Le formulaire ne transporte plus une intention vers le modèle : il reconstruit une version locale de ce modèle. De là viennent les dérives (types dupliqués, validations incohérentes, logique dispersée, bugs difficiles à voir), et une illusion dangereuse : croire que le client peut garantir la validité des données, alors que seule la validation du serveur compte.
+Nous gagnons en contrôle.
+
+👉 mais nous perdons une chose essentielle :
+
+👉 **le lien direct avec le serveur**
+
+Et donc :
+
+👉 le lien direct avec le modèle
+
+Dans notre projet :
+
+👉 ce modèle est défini par Prisma
+
+Mais avec cette approche :
+
+- le frontend commence à définir ses propres structures  
+- la validation se fait deux fois (client + serveur)  
+- les règles peuvent diverger  
+- les incohérences deviennent possibles  
+
+👉 le système n’est plus naturellement cohérent
+
+Peu à peu, le modèle natif disparaît.
+
+Le formulaire ne transporte plus naturellement les données vers le serveur.  
+Il devient une coquille vide, dont toute la logique doit être reconstruite côté client.
+
+Et avec cette reconstruction viennent de nouveaux problèmes.
+
+---
+
+### 🧨 Le vrai problème introduit par React
+
+Ce changement n’est pas juste technique.
+
+👉 il est architectural
+
+Le formulaire ne transporte plus une intention vers le modèle.
+
+👉 il reconstruit une version locale de ce modèle
+
+Et c’est là que commencent les dérives :
+
+- duplication des types  
+- validation incohérente  
+- logique dispersée  
+- bugs difficiles à détecter  
+
+Et surtout :
+
+👉 une illusion dangereuse
+
+👉 croire que le client peut garantir la validité des données
+
+Alors que :
+
+👉 seule la validation serveur compte réellement
 
 <Callout type="warning">
-Avec React classique, le contrat natif est cassé : plus de soumission par le navigateur, un réseau géré à la main (`fetch`), une validation en double, et une divergence possible avec le modèle du serveur. Le formulaire devient une implémentation locale, potentiellement incohérente avec la réalité.
+Avec React classique, le contrat natif est cassé :
+
+- ❌ plus de soumission automatique du navigateur  
+- ❌ gestion manuelle du réseau (`fetch`)  
+- ❌ duplication de la validation (client + serveur)  
+- ❌ divergence possible avec le modèle serveur  
+
+👉 le formulaire ne respecte plus naturellement le système
+
+Il devient une implémentation locale…  
+potentiellement incohérente avec la réalité.
 </Callout>
 
-### Avant, après : ce qui change vraiment
+---
 
-Avec React classique, centré sur le client, un envoi enchaîne :
+### ⚔️ Avant / Après — Ce qui change vraiment
 
-1. `onSubmit` ;
-2. `preventDefault()` ;
-3. la lecture des valeurs ;
-4. la construction d’un `fetch` ;
-5. la réponse HTTP ;
-6. l’analyse des erreurs ;
-7. la mise à jour de l’état.
+#### ❌ React classique (client centré)
 
-Le client orchestre tout, y compris ce qui ne lui appartient pas.
+- `onSubmit`  
+- `preventDefault()`  
+- récupérer les valeurs  
+- construire un `fetch`  
+- gérer la réponse HTTP  
+- parser les erreurs  
+- mettre à jour le state  
 
-Avec l’App Router et les server actions (le modèle hybride que construit cette série), il ne reste que :
+👉 le client orchestre tout  
+👉 y compris ce qui ne devrait pas lui appartenir  
 
-1. `<form action={formAction}>` ;
-2. React orchestre l’envoi ;
-3. la server action s’exécute sur le serveur ;
-4. une réponse structurée revient vers l’interface.
+#### ✅ App Router + Server Actions (modèle hybride)
 
-Le client déclenche, le serveur décide, et **le modèle reste la source de vérité**.
+- `<form action={formAction}>`  
+- React orchestre automatiquement  
+- la Server Action s’exécute côté serveur  
+- retour structuré vers l’UI  
+
+👉 le client déclenche  
+👉 le serveur décide  
+👉 **le modèle reste la source de vérité**
 
 <Callout type="info">
-Dans React classique, nous simulons le web ; avec l’App Router, nous recommençons à nous appuyer sur lui, et nous reconnectons le formulaire au modèle du serveur.
+Différence clé :
+
+- dans React classique, nous simulons le web  
+- dans App Router, nous recommençons à nous appuyer sur lui  
+
+👉 et surtout : nous reconnectons le formulaire au modèle serveur
 </Callout>
+
+👉 **Où nous en sommes :** React a gagné quelque chose de réel — le contrôle fin de l’expérience utilisateur — mais il l’a payé en cassant un contrat silencieux. Le `<form>` ne sait plus soumettre tout seul, le navigateur ne fait plus le travail de transport, et c’est à JavaScript de tout orchestrer, y compris ce qu’il n’aurait jamais dû avoir à gérer. Reste à voir comment l’écosystème a tenté de réparer cette fracture — d’abord par des bibliothèques qui promettaient de remettre de l’ordre.
 
 ## À suivre
 
-React a gagné quelque chose de réel, le contrôle fin de l’interface, mais il l’a payé en cassant un contrat silencieux : le `<form>` ne sait plus soumettre seul, et JavaScript doit tout orchestrer, y compris ce qu’il n’aurait jamais dû gérer. L’écosystème a répondu par des bibliothèques qui promettaient de remettre de l’ordre dans les formulaires. Ont-elles réparé la fracture, ou seulement rendu le symptôme plus supportable ?
+React a gagné le contrôle de l’interface, et perdu le lien naturel avec le serveur. L’écosystème a répondu par des bibliothèques qui promettaient de remettre de l’ordre dans les formulaires. Ont-elles réparé la fracture, ou seulement rendu le symptôme plus supportable ?
 
 <Callout type="tip">
 **Chapitre suivant : React Hook Form, le confort côté client.** Ce que la bibliothèque règle vraiment, comment le projet l’utilise avec un schéma Zod, et pourquoi elle laisse entière la question de la vérité.
