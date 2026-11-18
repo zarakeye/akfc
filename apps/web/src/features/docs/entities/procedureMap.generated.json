@@ -3107,8 +3107,12 @@
      "trails": [
       [
        [
+        "changePassword",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:22"
+       ],
+       [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:113"
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:61"
        ]
       ]
      ]
@@ -3120,8 +3124,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/auth/router.ts:78"
+        "changePassword",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:22"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:31"
        ]
       ]
      ]
@@ -3135,8 +3143,12 @@
      "trails": [
       [
        [
+        "changePassword",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:22"
+       ],
+       [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:109"
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:57"
        ]
       ]
      ]
@@ -3148,7 +3160,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 124,
+   "line": 86,
    "effects": [],
    "emails": []
   },
@@ -3156,7 +3168,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 128,
+   "line": 90,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3245,7 +3257,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 140,
+   "line": 102,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -21771,6 +21783,54 @@
        [
         "prisma.$executeRaw (SQL)",
         "packages/backend/src/lib/session/session.server.ts:26"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "changePassword": {
+   "file": "packages/backend/src/modules/auth/services/passwordChange.service.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "tx.session.deleteMany",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:61"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "password"
+     ],
+     "trails": [
+      [
+       [
+        "tx.user.update",
+        "packages/backend/src/modules/auth/services/passwordChange.service.ts:57"
        ]
       ]
      ]

@@ -4,8 +4,9 @@ import { z } from "zod";
  * Règles des mots de passe et des formulaires d'authentification : SOURCE UNIQUE.
  *
  * Chaque règle est écrite ici une fois, puis importée des deux côtés : par les procédures tRPC
- * (`auth.login`, `auth.requestPasswordReset`, `auth.resetPassword`, `auth.changePassword`), qui
- * font foi, et par les formulaires, qui affichent la même règle avec le même message avant l'envoi.
+ * (`auth.login`, `auth.requestPasswordReset`, `auth.resetPassword`, `auth.changePassword`) et
+ * les server actions des formulaires, qui font foi, et par les formulaires eux-mêmes, qui affichent
+ * la même règle avec le même message avant l'envoi.
  */
 
 /** Longueur minimale d'un mot de passe. Les textes d'aide l'affichent à partir de cette valeur. */
@@ -65,11 +66,23 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
  * Changement de mot de passe pour un utilisateur CONNECTÉ.
  * `currentPassword` : vérifié côté serveur (doit correspondre au hash actuel).
  * `newPassword` : même règle que partout ailleurs.
- * (La confirmation est validée côté formulaire, pas nécessaire au serveur.)
+ * (La confirmation est ajoutée par changePasswordFormSchema, juste en dessous.)
  */
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Mot de passe actuel requis"),
   newPassword: passwordSchema,
 });
+
+/**
+ * Le formulaire de la page profil : le schéma de la procédure, plus une confirmation. Elle
+ * n'intéresse que le membre, qui pourrait faire une faute de frappe dans un champ masqué : le
+ * formulaire et sa server action la vérifient, le service ne la reçoit jamais.
+ */
+export const changePasswordFormSchema = changePasswordSchema
+  .extend({ confirmPassword: z.string().min(1, "Confirmation requise") })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Les mots de passe ne correspondent pas",
+  });
 
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

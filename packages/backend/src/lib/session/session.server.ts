@@ -87,3 +87,11 @@ export function verifyJwt(token: string | null): SessionJwtPayload | null {
     return null;
   }
 }
+
+/**
+ * L'identifiant de la session en cours, lu dans le jeton du cookie (null sans jeton valide).
+ * Changer de mot de passe ferme toutes les sessions d'un membre SAUF celle-ci.
+ */
+export async function getCurrentSessionId(): Promise<string | null> {
+  return verifyJwt(await getToken())?.sessionId ?? null;
+}

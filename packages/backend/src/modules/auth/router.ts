@@ -7,16 +7,16 @@ import {
   ResetLinkError,
 } from "#modules/auth/services/passwordReset.service.ts";
 
+import { changePassword } from "#modules/auth/services/passwordChange.service.ts";
+
 import { TRPCError } from "@trpc/server";
-import { hashPassword, verifyPassword } from "#lib/auth/password.ts";
-import { getToken, verifyJwt } from "#lib/session/session.server.ts";
+import { getCurrentSessionId } from "#lib/session/session.server.ts";
 import {
   changePasswordSchema,
   loginSchema,
   requestPasswordResetSchema,
   resetPasswordSchema,
 } from "@akfc/contracts/auth/auth.schema.ts";
-import { assertPasswordOfConnectedUser } from "#lib/security/passwordCheck.ts";
 
 /**
  * Connexion, déconnexion, session courante, mot de passe (changement, oubli, réinitialisation).
@@ -73,51 +73,13 @@ export const authRouter = router({
   changePassword: protectedProcedure
     .input(changePasswordSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.sessionClient.user.id;
-
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: userId },
-        select: { password: true },
+      // La logique est dans le service, partagé avec la server action du formulaire (page profil).
+      await changePassword({
+        userId: ctx.sessionClient.user.id,
+        currentPassword: input.currentPassword,
+        newPassword: input.newPassword,
+        currentSessionId: await getCurrentSessionId(),
       });
-      if (!user) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable." });
-      }
-
-      // BAD_REQUEST, pas UNAUTHORIZED : le membre EST connecté ; c'est la saisie qui est fausse.
-      // UNAUTHORIZED signifie « aucune session », et un client pourrait le traiter comme une déconnexion.
-      // Essais limités : une session volée ne permet pas d'essayer des mots de passe sans fin.
-      await assertPasswordOfConnectedUser({
-        userId,
-        password: input.currentPassword,
-        hash: user.password,
-        wrongMessage: "Mot de passe actuel incorrect.",
-      });
-
-      const same = await verifyPassword(input.newPassword, user.password);
-      if (same) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Le nouveau mot de passe doit être différent de l'actuel.",
-        });
-      }
-
-      const hashed = await hashPassword(input.newPassword);
-      const payload = verifyJwt(await getToken());
-      const currentSessionId = payload?.sessionId ?? null;
-
-      await ctx.prisma.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: userId },
-          data: { password: hashed },
-        });
-        await tx.session.deleteMany({
-          where: {
-            userId,
-            ...(currentSessionId ? { NOT: { id: currentSessionId } } : {}),
-          },
-        });
-      });
-
       return { success: true };
     }),
 
