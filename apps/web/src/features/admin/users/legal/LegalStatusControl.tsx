@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { LEGAL_AGE_LABEL, type LegalAgeValue } from "@akfc/contracts/legal/imageConsent.ts";
-import { GUARDIAN_RELATIONS } from "#features/admin/users/legal/CreationLegalFields.tsx";
+import { GUARDIAN_RELATIONS } from "@akfc/contracts/legal/creationLegal.ts";
 
 /**
  * Fiche d'un membre (admin) : sa majorité.

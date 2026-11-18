@@ -1,37 +1,11 @@
-"use client";
-
-import { JSX, useState } from "react";
+import { JSX } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { trpc } from "#core/trpc/trpcClient.ts";
-import {
-  CreateUserForm,
-  type CreateUserFormInput,
-} from "#features/admin/users/forms/CreateUserForm.tsx";
-import { toCreationLegalInput } from "#features/admin/users/legal/CreationLegalFields.tsx";
-import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
+import { CreateUserForm } from "#features/admin/users/forms/create-user/CreateUserForm.tsx";
 
 /** Création — `/(admin)/dashboard/users/create`. id User = string (cuid). */
 export default function CreateUserPage(): JSX.Element {
-  const utils = trpc.useUtils();
-  const createMutation = trpc.user.create.useMutation();
-  const [createdId, setCreatedId] = useState<string | null>(null);
-
-  const handleSubmit = async (input: CreateUserFormInput): Promise<void> => {
-    const res = await createMutation.mutateAsync({
-      email: input.email,
-      groupIds: input.groupIds,
-      courseIds: input.courseIds,
-      taughtCourseIds: input.taughtCourseIds,
-      legal: input.adultByStatus
-        ? { ...toCreationLegalInput(input.legal), legalAge: "ADULT" }
-        : toCreationLegalInput(input.legal),
-    });
-    await utils.user.getAll.invalidate();
-    setCreatedId(res.user.id);
-  };
-
   return (
     <div>
       <Link
@@ -42,15 +16,7 @@ export default function CreateUserPage(): JSX.Element {
         Retour à la liste
       </Link>
       <h2 className="mb-4 text-2xl font-bold">Créer un utilisateur</h2>
-
-      {createdId != null ? (
-        <SuccessRedirect
-          target={`/dashboard/users/${createdId}`}
-          message="Utilisateur créé."
-        />
-      ) : (
-        <CreateUserForm onSubmit={handleSubmit} submitLabel="Créer" />
-      )}
+      <CreateUserForm />
     </div>
   );
 }

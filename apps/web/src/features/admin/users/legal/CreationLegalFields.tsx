@@ -2,86 +2,20 @@
 
 import type { JSX } from "react";
 
-import { ageOn, type LegalAgeValue } from "@akfc/contracts/legal/imageConsent.ts";
-
-/**
- * Création d'un compte : la majorité d'un simple membre. La date de naissance, facultative, décide
- * si elle est donnée ; sinon, on choisit Majeur ou Mineur. Un mineur appelle les coordonnées de son
- * parent référent, qui validera ses choix de droit à l'image.
- */
-export type CreationLegalValue = {
-  birthDate: string;
-  /** Choix sans date de naissance. */
-  choice: "ADULT" | "MINOR" | null;
-  guardianFirstName: string;
-  guardianLastName: string;
-  guardianRelation: string;
-  guardianEmail: string;
-  guardianPhone: string;
-};
-
-export const EMPTY_CREATION_LEGAL: CreationLegalValue = {
-  birthDate: "",
-  choice: null,
-  guardianFirstName: "",
-  guardianLastName: "",
-  guardianRelation: "",
-  guardianEmail: "",
-  guardianPhone: "",
-};
-
-export const GUARDIAN_RELATIONS = ["mère", "père", "tutrice", "tuteur"] as const;
-
-/** Âge à la date du jour, ou null si la date est absente ou invalide. */
-export function ageFromInput(birthDate: string, now: Date = new Date()): number | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null;
-  const d = new Date(`${birthDate}T00:00:00Z`);
-  if (Number.isNaN(d.getTime()) || d > now) return null;
-  return ageOn(d, now);
-}
-
-/** Majorité qui résulte de la saisie : la date d'abord, le choix ensuite. */
-export function creationLegalAge(v: CreationLegalValue): "ADULT" | "MINOR" | null {
-  const age = ageFromInput(v.birthDate);
-  if (age !== null) return age >= 18 ? "ADULT" : "MINOR";
-  return v.choice;
-}
-
-/** Ce qui manque avant de créer le compte, ou null. */
-export function creationLegalError(v: CreationLegalValue): string | null {
-  if (v.birthDate && ageFromInput(v.birthDate) === null) return "Date de naissance invalide.";
-  const age = creationLegalAge(v);
-  if (!age) return "Renseignez la date de naissance, ou indiquez si le membre est majeur ou mineur.";
-  if (age === "MINOR") {
-    if (!v.guardianFirstName.trim() || !v.guardianLastName.trim()) return "Indiquez le prénom et le nom du parent.";
-    if (!v.guardianRelation.trim()) return "Indiquez la qualité du parent (mère, père…).";
-    if (!v.guardianEmail.trim()) return "Indiquez l'adresse e-mail du parent.";
-  }
-  return null;
-}
-
-/** Charge utile `legal` de user.create. */
-export function toCreationLegalInput(v: CreationLegalValue): {
-  legalAge: LegalAgeValue;
-  birthDate: string | null;
-  guardianName: string | null;
-  guardianEmail: string | null;
-  guardianRelation: string | null;
-  guardianPhone: string | null;
-} {
-  const minor = creationLegalAge(v) === "MINOR";
-  const name = `${v.guardianFirstName.trim()} ${v.guardianLastName.trim()}`.trim();
-  return {
-    legalAge: creationLegalAge(v) ?? "UNKNOWN",
-    birthDate: v.birthDate || null,
-    guardianName: minor ? name || null : null,
-    guardianEmail: minor ? v.guardianEmail.trim() || null : null,
-    guardianRelation: minor ? v.guardianRelation.trim() || null : null,
-    guardianPhone: minor ? v.guardianPhone.trim() || null : null,
-  };
-}
+import {
+  GUARDIAN_RELATIONS,
+  ageFromInput,
+  creationLegalAge,
+  type CreationLegalValue,
+} from "@akfc/contracts/legal/creationLegal.ts";
 
 const input = "rounded border border-input bg-background px-2 py-1";
+
+/**
+ * Création d'un compte : la majorité d'un simple membre (date de naissance, ou Majeur / Mineur, et
+ * pour un mineur son parent référent). Les règles sont dans contracts (legal/creationLegal.ts),
+ * partagées avec la server action. Chaque champ porte un `name` : le formulaire est envoyé tel quel.
+ */
 
 export function CreationLegalFields({
   value,
@@ -100,6 +34,7 @@ export function CreationLegalFields({
         <span className="font-medium">Date de naissance (facultative)</span>
         <input
           type="date"
+          name="birthDate"
           value={value.birthDate}
           onChange={(e) => set({ birthDate: e.target.value })}
           className={`${input} max-w-[12rem]`}
@@ -118,7 +53,7 @@ export function CreationLegalFields({
         <div className="flex flex-wrap gap-4" role="radiogroup" aria-label="Majorité">
           {(["ADULT", "MINOR"] as const).map((a) => (
             <label key={a} className="flex cursor-pointer items-center gap-1.5">
-              <input type="radio" name="legalAge" checked={value.choice === a} onChange={() => set({ choice: a })} />
+              <input type="radio" name="legalChoice" value={a} checked={value.choice === a} onChange={() => set({ choice: a })} />
               {a === "ADULT" ? "Majeur" : "Mineur"}
             </label>
           ))}
@@ -135,16 +70,17 @@ export function CreationLegalFields({
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="flex flex-col gap-1">
               <span>Prénom</span>
-              <input value={value.guardianFirstName} onChange={(e) => set({ guardianFirstName: e.target.value })} className={input} />
+              <input name="guardianFirstName" value={value.guardianFirstName} onChange={(e) => set({ guardianFirstName: e.target.value })} className={input} />
             </label>
             <label className="flex flex-col gap-1">
               <span>Nom</span>
-              <input value={value.guardianLastName} onChange={(e) => set({ guardianLastName: e.target.value })} className={input} />
+              <input name="guardianLastName" value={value.guardianLastName} onChange={(e) => set({ guardianLastName: e.target.value })} className={input} />
             </label>
           </div>
           <label className="flex flex-col gap-1">
             <span>Qualité</span>
             <select
+              name="guardianRelation"
               value={value.guardianRelation}
               onChange={(e) => set({ guardianRelation: e.target.value })}
               className={`${input} max-w-[12rem]`}
@@ -159,11 +95,11 @@ export function CreationLegalFields({
           </label>
           <label className="flex flex-col gap-1">
             <span>Adresse e-mail</span>
-            <input type="email" value={value.guardianEmail} onChange={(e) => set({ guardianEmail: e.target.value })} className={input} />
+            <input type="email" name="guardianEmail" value={value.guardianEmail} onChange={(e) => set({ guardianEmail: e.target.value })} className={input} />
           </label>
           <label className="flex flex-col gap-1">
             <span>Téléphone (facultatif)</span>
-            <input type="tel" value={value.guardianPhone} onChange={(e) => set({ guardianPhone: e.target.value })} className={`${input} max-w-[14rem]`} />
+            <input type="tel" name="guardianPhone" value={value.guardianPhone} onChange={(e) => set({ guardianPhone: e.target.value })} className={`${input} max-w-[14rem]`} />
           </label>
         </fieldset>
       )}

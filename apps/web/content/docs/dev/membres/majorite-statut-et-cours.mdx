@@ -86,16 +86,16 @@ Quand la date de naissance est connue, elle a le dernier mot. Le choix « majeur
 
 La même fonction sert à la création d’un compte et à la fiche d’un membre. Majeur, les coordonnées du parent sont effacées : elles n’ont plus d’usage, et une donnée sans usage ne se garde pas. Mineur, le nom et l’adresse du parent sont exigés à la création ; la date, elle, reste facultative, et le parent pourra la donner.
 
-Le formulaire de création fait le même calcul pendant la saisie, pour montrer tout de suite ce qui va se passer : une date de quinze ans fait apparaître les champs du parent, sans qu’on ait à cocher « Mineur ».
+Le formulaire de création fait le même calcul pendant la saisie, pour montrer tout de suite ce qui va se passer : une date de quinze ans fait apparaître les champs du parent, sans qu’on ait à cocher « Mineur ». Ce calcul est dans `contracts`, partagé par le formulaire et sa server action, qui convertit la saisie avec la même règle (`toCreationLegalInput`) avant d’appeler le service :
 
 <CodeExample
-  language="tsx"
-  filepath="apps/web/src/features/admin/users/legal/CreationLegalFields.tsx"
-  filename="CreationLegalFields.tsx"
+  language="ts"
+  filepath="packages/contracts/src/legal/creationLegal.ts"
+  filename="creationLegal.ts"
   snippetStart="export function creationLegalAge(v: CreationLegalValue)"
   snippetEnd="(fin du bloc)"
   snippetHighlight="2,3"
-  snippetTitle="Côté formulaire : la date d’abord, le choix ensuite"
+  snippetTitle="Avant le serveur : la date d’abord, le choix ensuite"
   fullFileTitle="Voir le fichier complet"
 />
 

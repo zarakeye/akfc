@@ -73,3 +73,16 @@ test("un cours pour ados grise les autres cours, sauf « Tous publics »", async
       .getByRole("checkbox", { name: new RegExp(`${nom} — Mardi 20h00–21h30 · Adultes`) }),
   ).toBeEnabled();
 });
+
+test("l'adresse : obligatoire, puis refusée si un membre l'utilise déjà", async ({ page }) => {
+  await ouvrir(page);
+  const creer = page.getByRole("button", { name: "Créer", exact: true });
+  await creer.click();
+  await expect(page.getByText("L'adresse e-mail est obligatoire.")).toBeVisible();
+
+  // Déjà prise : seule la base le sait ; le refus du serveur revient sous le champ.
+  await page.getByLabel("Email").fill(USERS.membreA.email);
+  await page.getByRole("radiogroup", { name: "Majorité" }).getByRole("radio", { name: "Majeur" }).check();
+  await creer.click();
+  await expect(page.getByText("Un membre utilise déjà cette adresse e-mail.")).toBeVisible();
+});

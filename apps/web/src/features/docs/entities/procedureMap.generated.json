@@ -37086,6 +37086,234 @@
    ],
    "emails": []
   },
+  "createUserFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/admin/users/forms/create-user/createUserForm.action.ts",
+   "line": 31,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "existingCourseIds",
+        "packages/backend/src/modules/users/existingCourseIds.ts:4"
+       ],
+       [
+        "prisma.course.count",
+        "packages/backend/src/modules/users/existingCourseIds.ts:10"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Course",
+     "op": "update",
+     "fields": [
+      "instructorId"
+     ],
+     "trails": [
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.course.updateMany",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:103"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "CourseEnrollment",
+     "op": "create",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.user.create",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:87"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.memberGroup.findMany",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:48"
+       ]
+      ],
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.memberGroup.findMany",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:124"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "create",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.user.create",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:87"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "sendWelcomeEmail",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:43"
+       ],
+       [
+        "siteNames",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:31"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:32"
+       ]
+      ],
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "sendWelcomeEmail",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:43"
+       ],
+       [
+        "clubContactAddress",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:24"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/templates/welcomeEmailWithPassword.ts:25"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "create",
+     "fields": [
+      "courseEnrollments",
+      "email",
+      "memberGroupMemberships",
+      "password"
+     ],
+     "trails": [
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.user.create",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:87"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createMemberAccount",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:39"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/users/createMemberAccount.service.ts:125"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendWelcomeEmail",
+    "sendWelcomeNotice"
+   ]
+  },
   "updateMeFormAction": {
    "kind": "server action",
    "file": "apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts",
