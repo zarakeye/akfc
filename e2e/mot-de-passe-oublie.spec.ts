@@ -33,6 +33,20 @@ test("mot de passe oublié : le lien reçu par e-mail permet d'en choisir un nou
   await page.getByLabel("Confirmer").fill("encore-un-autre-mot-de-passe");
   await page.getByRole("button", { name: "Réinitialiser" }).click();
   await expect(page.getByText("Mot de passe mis à jour")).toHaveCount(0);
+  await expect(page.getByText("Ce lien a déjà servi.")).toBeVisible();
+});
+
+test("nouveau mot de passe : la confirmation est vérifiée, et un lien inconnu est refusé", async ({ page }) => {
+  await page.goto("/auth/reset-password?token=jeton-qui-n-existe-pas-en-base");
+  await page.getByLabel("Nouveau mot de passe").fill("un-mot-de-passe-assez-long");
+  await page.getByLabel("Confirmer").fill("un-autre-mot-de-passe-long");
+  await page.getByRole("button", { name: "Réinitialiser" }).click();
+  await expect(page.getByText("La confirmation ne correspond pas.")).toBeVisible();
+
+  await page.getByLabel("Confirmer").fill("un-mot-de-passe-assez-long");
+  await page.getByRole("button", { name: "Réinitialiser" }).click();
+  await expect(page.getByText("Ce lien n'est pas valide.")).toBeVisible();
+  await expect(page.getByText("Mot de passe mis à jour")).toHaveCount(0);
 });
 
 test("mot de passe oublié : une adresse mal formée est signalée sous le champ, sans rien envoyer", async ({ page }) => {

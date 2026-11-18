@@ -47,6 +47,18 @@ export const resetPasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+/**
+ * Le formulaire de réinitialisation : le même contrat, plus une confirmation. Partagé par le
+ * formulaire (erreur sous le champ) et sa server action (qui la revérifie, utile sans JavaScript).
+ * La confirmation n'intéresse que la saisie : elle n'est jamais transmise au service.
+ */
+export const resetPasswordFormSchema = resetPasswordSchema
+  .extend({ confirmPassword: z.string().min(1, "Confirme le mot de passe.") })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "La confirmation ne correspond pas.",
+  });
+
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 /**

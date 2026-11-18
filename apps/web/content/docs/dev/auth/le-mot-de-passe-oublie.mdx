@@ -24,7 +24,7 @@ Depuis sa version 10, nodemailer livre ses propres types TypeScript : le paquet 
 
 La réinitialisation est un mécanisme à part. Elle mérite une attention particulière parce qu’elle est **la seule façon de reprendre la main sur un compte sans connaître son mot de passe**. C’est donc une cible privilégiée.
 
-Le projet l’implémente en deux temps : la **demande** (le membre demande un lien par e-mail) et la **réinitialisation** (il suit le lien et choisit un nouveau mot de passe). Chacun vit dans une fonction du service, `requestPasswordReset` et `resetPassword`, qu’appellent les procédures tRPC `auth.requestPasswordReset` et `auth.resetPassword` ; la demande est aussi appelée par la server action du formulaire « Mot de passe oublié ».
+Le projet l’implémente en deux temps : la **demande** (le membre demande un lien par e-mail) et la **réinitialisation** (il suit le lien et choisit un nouveau mot de passe). Chacun vit dans une fonction du service, `requestPasswordReset` et `resetPassword`. Le site les appelle depuis des server actions ; les procédures tRPC `auth.requestPasswordReset` et `auth.resetPassword`, depuis tout autre client.
 
 Voyons d’abord le service qui les soutient.
 
@@ -117,7 +117,7 @@ Cette demande a eu le même défaut que la connexion (chapitre 3), en plus visib
 
 ## Deux entrées, une seule logique
 
-La demande a deux portes d’entrée, et aucune ne contient la logique.
+La demande et la réinitialisation ont chacune deux portes d’entrée, et aucune ne contient la logique. Prenons la demande.
 
 Sur le site, le formulaire « Mot de passe oublié » suit le modèle hybride de la partie « Formulaires » : React Hook Form signale une adresse mal formée sous le champ, `useActionState` suit l’envoi, et une server action reçoit le formulaire. Elle revalide l’adresse avec le schéma partagé, puis appelle le service :
 
@@ -148,6 +148,21 @@ La procédure tRPC `auth.requestPasswordReset`, elle, reste disponible pour les 
 />
 
 L’adresse IP et le navigateur enregistrés avec le lien viennent des mêmes en-têtes dans les deux cas, lus par la même fonction, `getRequestIp` (`packages/backend/src/lib/security/requestIp.ts`). Une règle de sécurité ne doit pas exister en deux exemplaires : le jour où elle change, il faudrait penser à les changer tous les deux.
+
+La réinitialisation suit le même schéma, avec une difficulté de plus : ses refus. Un lien inconnu, déjà utilisé ou expiré n’est pas une panne, c’est un résultat attendu, et chaque entrée doit l’exprimer à sa façon. Le service lève donc une erreur à lui, `ResetLinkError`, porteuse du message ; la procédure la traduit en erreur tRPC `BAD_REQUEST`, la server action en état d’erreur affiché sous le formulaire :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/auth/reset-password/resetPasswordForm.action.ts"
+  filename="resetPasswordForm.action.ts"
+  snippetStart="try {"
+  snippetEnd='return { status: "success" };'
+  snippetHighlight="2,5,6"
+  snippetTitle="La server action traduit le refus du service en état d’erreur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le formulaire, lui, ajoute une confirmation du mot de passe, partagée avec l’action dans un schéma de `packages/contracts`, `resetPasswordFormSchema`. L’action la revérifie : sans JavaScript, le formulaire part sans passer par la validation du navigateur, et une faute de frappe dans un champ masqué ne doit pas devenir le nouveau mot de passe. La confirmation ne va pas plus loin que l’action : le service ne reçoit que le jeton et le mot de passe.
 
 ---
 

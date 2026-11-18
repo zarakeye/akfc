@@ -20,6 +20,9 @@ import {
  * Sans JavaScript, le <form> s'envoie quand même à l'action : le serveur valide seul.
  */
 export function ForgotPasswordForm(): JSX.Element {
+  // Hors du React Compiler : react-hook-form signale ses changements par un proxy (`formState`)
+  // que le compilateur ne voit pas ; mémorisé, le rendu ne suivrait plus les erreurs.
+  "use no memo";
   const [state, formAction, isPending] = useActionState<RequestPasswordResetFormState, FormData>(
     requestPasswordResetFormAction,
     initialRequestPasswordResetFormState,
@@ -28,7 +31,11 @@ export function ForgotPasswordForm(): JSX.Element {
   const form = useForm<RequestPasswordResetFormValues>({
     resolver: zodResolver(requestPasswordResetSchema),
     defaultValues: { email: "" },
-    mode: "onBlur",
+    // Erreurs au premier envoi, puis corrigées à la frappe. Pas en quittant le champ (onBlur) : le
+    // message, placé au-dessus du bouton, disparaîtrait au moment même du clic, déplacerait le
+    // bouton sous le pointeur, et le clic tomberait à côté.
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
   const { register, setError, formState } = form;
 

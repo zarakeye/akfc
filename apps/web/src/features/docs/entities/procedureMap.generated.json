@@ -36465,6 +36465,86 @@
     "sendPasswordResetEmail"
    ]
   },
+  "resetPasswordFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/auth/reset-password/resetPasswordForm.action.ts",
+   "line": 23,
+   "effects": [
+    {
+     "model": "PasswordResetToken",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "resetPassword",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:114"
+       ],
+       [
+        "prisma.passwordResetToken.findUnique",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:118"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PasswordResetToken",
+     "op": "update",
+     "fields": [
+      "usedAt"
+     ],
+     "trails": [
+      [
+       [
+        "resetPassword",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:114"
+       ],
+       [
+        "tx.passwordResetToken.updateMany",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:153"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "resetPassword",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:114"
+       ],
+       [
+        "tx.session.deleteMany",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:161"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "password"
+     ],
+     "trails": [
+      [
+       [
+        "resetPassword",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:114"
+       ],
+       [
+        "tx.user.update",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:143"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "loadFullCode": {
    "kind": "server action",
    "file": "apps/web/src/features/docs/lib/fullCode.action.ts",
