@@ -109,15 +109,20 @@ Le délai est une promesse faite au demandeur, pas un compteur interne : se pass
 
 ## Déposer une demande
 
-Le formulaire est réservé aux **membres connectés**. Un visiteur trouve sur la page « Nous contacter » l'adresse du club. La procédure `ticket.submit` prend l'identité du demandeur dans la session, avec deux protections contre les abus :
+Le formulaire est réservé aux **membres connectés**. Un visiteur trouve sur la page « Nous contacter » l'adresse du club.
 
-```ts
-// packages/backend/src/modules/tickets/router.ts (extrait)
-// Robot qui remplit tout : réponse d'apparence normale, rien n'est créé.
-if (input.website && input.website.trim() !== "") {
-  return { ref: null, dueAt: null, acknowledged: true };
-}
-```
+Le formulaire suit le modèle hybride de la partie « Formulaires » : React Hook Form signale les champs manquants avec le schéma partagé `submitTicketSchema`, `useActionState` suit l'envoi, et une server action reçoit le formulaire. Elle ne contient pas la logique : elle valide, prend l'identité du demandeur dans la session, jamais dans le formulaire, puis appelle le service `submitTicket`, le même que la procédure tRPC `ticket.submit` (gardée pour les tests et la future application mobile). Le service porte deux protections contre les abus :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/tickets/submitTicket.service.ts"
+  filename="submitTicket.service.ts"
+  snippetStart="// Robot qui remplit tout : réponse d'apparence normale, rien n'est créé."
+  snippetLines="4"
+  snippetHighlight="2,3"
+  snippetTitle="Le champ piège, au début du service"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 - Un **champ piège** (`website`), invisible pour un humain : un robot qui remplit tous les champs le remplit aussi. Il reçoit une réponse normale, et rien n'est créé, ce qui ne lui apprend pas qu'il a été repéré.
 - Une **limite de fréquence** : cinq demandes par heure au plus, par adresse IP et par adresse e-mail.

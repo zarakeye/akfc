@@ -36737,6 +36737,233 @@
    ],
    "emails": []
   },
+  "submitTicketFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/contact/submitTicketForm.action.ts",
+   "line": 24,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "db.siteSettings.findUnique",
+        "packages/backend/src/modules/tickets/tickets.service.ts:113"
+       ]
+      ],
+      [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "db.siteSettings.findUnique",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:75"
+       ]
+      ],
+      [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "sendTicketAcknowledgement",
+        "packages/backend/src/email/services/sendTicketEmails.ts:63"
+       ],
+       [
+        "siteName",
+        "packages/backend/src/email/services/sendTicketEmails.ts:27"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/services/sendTicketEmails.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "create",
+     "fields": [
+      "categoryId",
+      "createdAt",
+      "dueAt",
+      "events",
+      "messages",
+      "requesterEmail",
+      "requesterId",
+      "requesterName",
+      "subject"
+     ],
+     "trails": [
+      [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "tx.ticket.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:120"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "db.ticketCategory.findUnique",
+        "packages/backend/src/modules/tickets/tickets.service.ts:107"
+       ]
+      ],
+      [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "db.ticketCategory.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "type"
+     ],
+     "trails": [
+      [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "tx.ticket.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:120"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail"
+     ],
+     "trails": [
+      [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "createTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:100"
+       ],
+       [
+        "tx.ticket.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:120"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "submitTicket",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:22"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/tickets/submitTicket.service.ts:40"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendTicketAcknowledgement",
+    "sendTicketNotification"
+   ]
+  },
   "loadFullCode": {
    "kind": "server action",
    "file": "apps/web/src/features/docs/lib/fullCode.action.ts",
