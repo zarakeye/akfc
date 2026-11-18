@@ -1,59 +1,97 @@
 "use client";
 
-import { JSX, useState } from "react";
+import { JSX, startTransition, useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 import { Input } from "#components/ui/Input.tsx";
 import { Button } from "#components/ui/Button.tsx";
 import { trpc } from "#core/trpc/trpcClient.ts";
+import { createGroupSchema } from "@akfc/contracts/groups/createGroup.schema.ts";
+import { createGroupFormAction } from "#features/admin/groups/actions/createGroupForm.action.ts";
+import {
+  initialCreateGroupFormState,
+  type CreateGroupFormState,
+  type CreateGroupFormValues,
+} from "#features/admin/groups/actions/createGroupForm.types.ts";
 
 /**
- * Création d'un groupe : nom + case « collaboratif » + SELECT du groupe parent.
- * Sans parent choisi, le backend rattache au groupe « Administrateurs »
- * (Administrateurs = ancêtre de tout groupe). Câblé sur la mutation tRPC.
+ * Le schéma partagé donne la règle du nom ; le parent (une liste) et la case à cocher n'ont pas de
+ * saisie à vérifier : leurs valeurs, telles que le formulaire les tient, sont décrites ici.
+ */
+const clientSchema = createGroupSchema
+  .pick({ name: true })
+  .extend({ parentGroupId: z.string(), isCollaborative: z.boolean() });
+
+/**
+ * Création d'un groupe : nom + SELECT du groupe parent + case « collaboratif », sur le modèle
+ * hybride (React Hook Form + useActionState + server action createGroupFormAction).
+ * Sans parent choisi, le service rattache au groupe « Administrateurs »
+ * (Administrateurs = ancêtre de tout groupe). Réussite → retour à la liste des groupes.
  */
 export function GroupForm(): JSX.Element {
+  // Hors du React Compiler : react-hook-form signale ses changements par un proxy (`formState`)
+  // que le compilateur ne voit pas ; mémorisé, le rendu ne suivrait plus les erreurs.
+  "use no memo";
   const router = useRouter();
   const utils = trpc.useUtils();
   const groupsQuery = trpc.memberGroup.list.useQuery();
+  const groups = groupsQuery.data ?? [];
 
-  const [name, setName] = useState("");
-  const [collaborative, setCollaborative] = useState(false);
-  const [parentGroupId, setParentGroupId] = useState("");
+  const [state, formAction, isPending] = useActionState<CreateGroupFormState, FormData>(
+    createGroupFormAction,
+    initialCreateGroupFormState,
+  );
 
-  const create = trpc.memberGroup.create.useMutation({
-    onSuccess: () => {
+  const form = useForm<CreateGroupFormValues>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: { name: "", parentGroupId: "", isCollaborative: false },
+    // Erreurs au premier envoi, puis corrigées à la frappe (voir le chapitre sur React Hook Form).
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
+  const { register, setError, formState } = form;
+
+  useEffect(() => {
+    if (state.status === "success") {
       void utils.memberGroup.list.invalidate();
       router.push("/dashboard/groups");
-    },
-  });
+      return;
+    }
+    // Les erreurs de champ renvoyées par le serveur se rangent sous les champs, comme les locales.
+    if (state.status !== "error" || !state.fieldErrors) return;
+    for (const [field, message] of Object.entries(state.fieldErrors)) {
+      if (message) setError(field as keyof CreateGroupFormValues, { type: "server", message });
+    }
+  }, [state, utils, router, setError]);
 
-  const groups = groupsQuery.data ?? [];
+  const errMsg = state.status === "error" && !state.fieldErrors ? state.error : null;
 
   return (
     <form
-      className="max-w-xl space-y-4"
+      action={formAction}
       onSubmit={(e) => {
+        // La validation de React Hook Form est asynchrone : on suspend TOUJOURS l'envoi (un
+        // preventDefault après un await arriverait trop tard), puis on le relance s'il est valide.
         e.preventDefault();
-        if (!name.trim()) return;
-        create.mutate({
-          name: name.trim(),
-          isCollaborative: collaborative,
-          parentGroupId: parentGroupId || undefined,
+        const formData = new FormData(e.currentTarget);
+        void form.trigger().then((valid) => {
+          if (valid) startTransition(() => formAction(formData));
         });
       }}
+      noValidate
+      className="max-w-xl space-y-4"
     >
       <div className="space-y-1" data-tour="groups.form.name">
         <label htmlFor="name" className="text-sm font-medium">
           Nom
         </label>
-        <Input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Bureau, Compétition…"
-        />
+        <Input id="name" type="text" placeholder="Bureau, Compétition…" {...register("name")} />
+        {formState.errors.name && (
+          <p className="text-sm text-red-600">{formState.errors.name.message}</p>
+        )}
       </div>
 
       <div className="space-y-1" data-tour="groups.form.parent">
@@ -62,9 +100,8 @@ export function GroupForm(): JSX.Element {
         </label>
         <select
           id="parent"
-          value={parentGroupId}
-          onChange={(e) => setParentGroupId(e.target.value)}
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          {...register("parentGroupId")}
         >
           <option value="">Administrateurs (par défaut)</option>
           {groups.map((g) => (
@@ -79,19 +116,15 @@ export function GroupForm(): JSX.Element {
       </div>
 
       <label className="flex items-center gap-2 text-sm text-muted-foreground" data-tour="groups.form.collaborative">
-        <input
-          type="checkbox"
-          checked={collaborative}
-          onChange={(e) => setCollaborative(e.target.checked)}
-        />
+        <input type="checkbox" {...register("isCollaborative")} />
         Espace collaboratif (dossier dédié + droits éditeur/lecteur)
       </label>
 
-      {create.error && <p className="text-red-500">{create.error.message}</p>}
+      {errMsg && <p className="text-red-500">{errMsg}</p>}
 
       <div className="flex justify-end" data-tour="groups.form.submit">
-        <Button type="submit" disabled={!name.trim() || create.isPending}>
-          {create.isPending ? "Création…" : "Créer"}
+        <Button type="submit" disabled={isPending || state.status === "success"}>
+          {isPending ? "Création…" : "Créer"}
         </Button>
       </div>
     </form>

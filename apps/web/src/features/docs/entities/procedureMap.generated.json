@@ -36691,6 +36691,188 @@
    ],
    "emails": []
   },
+  "createGroupFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/admin/groups/actions/createGroupForm.action.ts",
+   "line": 19,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ],
+     "trails": [
+      [
+       [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
+       [
+        "ensureGroupSpaceFolder",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
+       ],
+       [
+        "prisma.folder.upsert",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
+       [
+        "ensureGroupSpaceFolder",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
+       ],
+       [
+        "resolveGroupBaseFolder",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
+       ],
+       [
+        "prisma.folder.findMany",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ],
+     "trails": [
+      [
+       [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
+       [
+        "ensureGroupSpaceFolder",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
+       ],
+       [
+        "prisma.folder.upsert",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "create",
+     "fields": [
+      "description",
+      "isCollaborative",
+      "name",
+      "parentGroupId"
+     ],
+     "trails": [
+      [
+       [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
+       [
+        "db.memberGroup.create",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:27"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
+       [
+        "db.memberGroup.findFirst",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:20"
+       ]
+      ],
+      [
+       [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
+       [
+        "ensureGroupSpaceFolder",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
+       ],
+       [
+        "resolveGroupBaseFolder",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "callerIsAdmin",
+        "apps/web/src/features/admin/common/actions/callerIsAdmin.ts:13"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "callerIsAdmin",
+        "apps/web/src/features/admin/common/actions/callerIsAdmin.ts:13"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "updateMeFormAction": {
    "kind": "server action",
    "file": "apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts",
