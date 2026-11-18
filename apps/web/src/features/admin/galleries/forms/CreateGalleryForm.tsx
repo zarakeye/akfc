@@ -64,7 +64,10 @@ export function CreateGalleryForm(): JSX.Element {
       eventId: "",
       originId: "",
     },
-    mode: "onBlur",
+    // Erreurs au premier envoi, puis corrigées à la frappe ; pas en quittant le champ (onBlur) :
+    // le message disparaîtrait au moment du clic, le bouton bougerait et le clic tomberait à côté.
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const [slugTouched, setSlugTouched] = useState(false);

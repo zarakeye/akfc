@@ -33,9 +33,8 @@ export function ResetPasswordForm({ token, isWelcome }: { token: string; isWelco
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordFormSchema),
     defaultValues: { token, newPassword: "", confirmPassword: "" },
-    // Erreurs au premier envoi, puis corrigées à la frappe. Pas en quittant le champ (onBlur) : le
-    // message, placé au-dessus du bouton, disparaîtrait au moment même du clic, déplacerait le
-    // bouton sous le pointeur, et le clic tomberait à côté.
+    // Erreurs au premier envoi, puis corrigées à la frappe ; pas en quittant le champ (onBlur) :
+    // le message disparaîtrait au moment du clic, le bouton bougerait et le clic tomberait à côté.
     mode: "onSubmit",
     reValidateMode: "onChange",
   });

@@ -49,7 +49,10 @@ export function CategoryForm({ initial }: { initial?: Category }): JSX.Element {
   const form = useForm<FormValues>({
     resolver: zodResolver(saveCategoryFormSchema.pick({ key: true, type: true })),
     defaultValues: { key: initial?.key ?? undefined, type: initial?.type ?? "" },
-    mode: "onBlur",
+    // Erreurs au premier envoi, puis corrigées à la frappe ; pas en quittant le champ (onBlur) :
+    // le message disparaîtrait au moment du clic, le bouton bougerait et le clic tomberait à côté.
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   const utils = trpc.useUtils();

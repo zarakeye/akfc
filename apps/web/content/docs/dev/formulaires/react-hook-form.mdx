@@ -88,8 +88,8 @@ Le tableau de bord du club s'appuie sur React Hook Form dans la plupart de ses f
   filepath="apps/web/src/features/admin/categories/forms/CategoryForm.tsx"
   filename="CategoryForm.tsx"
   snippetStart="// Resolver client : on ne valide QUE `key` et `type`"
-  snippetLines="6"
-  snippetHighlight="3,5"
+  snippetLines="9"
+  snippetHighlight="3,7,8"
   snippetTitle="Le formulaire d’une catégorie : React Hook Form et un schéma Zod"
   fullFileTitle="Voir le fichier complet"
 />
@@ -98,7 +98,9 @@ Trois réglages, trois décisions :
 
 - `resolver: zodResolver(...)` branche un **schéma Zod** sur React Hook Form. Les règles ne sont plus écrites champ par champ (`register("email", { required: "Email requis" })`), mais dans un schéma, une seule fois ;
 - ce schéma, `saveCategoryFormSchema`, n'est pas défini dans le composant : il est importé de `packages/contracts`, le paquet que partagent le navigateur et le serveur. Nous y reviendrons au chapitre 5 ;
-- `mode: "onBlur"` vérifie un champ quand l'utilisateur le quitte, plutôt qu'à chaque frappe : l'erreur apparaît au bon moment, sans clignoter pendant la saisie.
+- `mode: "onSubmit"` et `reValidateMode: "onChange"` : les erreurs apparaissent au premier envoi, puis s'effacent au fil de la frappe, dès que la saisie est corrigée.
+
+Ce dernier réglage a une histoire. Le formulaire vérifiait d'abord un champ quand l'utilisateur le quittait (`mode: "onBlur"`) : l'erreur semblait arriver au bon moment, sans clignoter pendant la saisie. Jusqu'à ce qu'un test le prenne en défaut, sur le formulaire du nouveau mot de passe. Corriger un champ signalé, puis cliquer aussitôt sur le bouton d'envoi : le clic fait d'abord quitter le champ, le message disparaît, le bouton remonte sous le pointeur… et le clic tombe à côté. Rien ne part. Selon la hauteur du message et la place du bouton, le clic tombe parfois encore dessus, parfois non : c'est le pire des défauts, celui qu'on ne reproduit pas à chaque fois. Tous les formulaires du projet ont donc changé de réglage. Le confort d'un réglage se juge aussi à l'usage réel, souris en main.
 
 C'est React Hook Form utilisé à son meilleur. Et pourtant, tout ce que la suite de cette section décrit s'applique ici aussi : ce résolveur ne protège rien. Il filtre ce que l'utilisateur honnête tape dans un navigateur ordinaire. Il ne voit pas le reste.
 
