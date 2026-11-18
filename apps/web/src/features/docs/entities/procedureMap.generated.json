@@ -19625,7 +19625,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/breakingNews/router.ts",
-   "line": 83,
+   "line": 47,
    "effects": [
     {
      "model": "BreakingNews",
@@ -19635,7 +19635,7 @@
       [
        [
         "ctx.prisma.breakingNews.findMany",
-        "packages/backend/src/modules/breakingNews/router.ts:85"
+        "packages/backend/src/modules/breakingNews/router.ts:49"
        ]
       ]
      ]
@@ -19647,7 +19647,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/breakingNews/router.ts",
-   "line": 96,
+   "line": 60,
    "effects": [
     {
      "model": "BreakingNews",
@@ -19657,7 +19657,7 @@
       [
        [
         "ctx.prisma.breakingNews.findMany",
-        "packages/backend/src/modules/breakingNews/router.ts:99"
+        "packages/backend/src/modules/breakingNews/router.ts:63"
        ]
       ]
      ]
@@ -19669,7 +19669,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/breakingNews/router.ts",
-   "line": 107,
+   "line": 71,
    "effects": [
     {
      "model": "BreakingNews",
@@ -19679,7 +19679,7 @@
       [
        [
         "ctx.prisma.breakingNews.findUnique",
-        "packages/backend/src/modules/breakingNews/router.ts:111"
+        "packages/backend/src/modules/breakingNews/router.ts:75"
        ]
       ]
      ]
@@ -19691,7 +19691,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/breakingNews/router.ts",
-   "line": 123,
+   "line": 89,
    "effects": [
     {
      "model": "BreakingNews",
@@ -19706,21 +19706,16 @@
      "trails": [
       [
        [
-        "ctx.prisma.breakingNews.create",
-        "packages/backend/src/modules/breakingNews/router.ts:127"
+        "saveBreakingNews",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:11"
+       ],
+       [
+        "db.breakingNews.create",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:19"
        ]
       ]
      ]
-    }
-   ],
-   "emails": []
-  },
-  "breakingNews.update": {
-   "kind": "mutation",
-   "access": "admin",
-   "file": "packages/backend/src/modules/breakingNews/router.ts",
-   "line": 138,
-   "effects": [
+    },
     {
      "model": "BreakingNews",
      "op": "update",
@@ -19734,8 +19729,67 @@
      "trails": [
       [
        [
-        "ctx.prisma.breakingNews.update",
-        "packages/backend/src/modules/breakingNews/router.ts:144"
+        "saveBreakingNews",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:11"
+       ],
+       [
+        "db.breakingNews.update",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:21"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "breakingNews.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/breakingNews/router.ts",
+   "line": 94,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "create",
+     "fields": [
+      "body",
+      "expiresAt",
+      "href",
+      "publicationDate",
+      "title"
+     ],
+     "trails": [
+      [
+       [
+        "saveBreakingNews",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:11"
+       ],
+       [
+        "db.breakingNews.create",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:19"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "BreakingNews",
+     "op": "update",
+     "fields": [
+      "body",
+      "expiresAt",
+      "href",
+      "publicationDate",
+      "title"
+     ],
+     "trails": [
+      [
+       [
+        "saveBreakingNews",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:11"
+       ],
+       [
+        "db.breakingNews.update",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:21"
        ]
       ]
      ]
@@ -19747,7 +19801,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/breakingNews/router.ts",
-   "line": 162,
+   "line": 99,
    "effects": [
     {
      "model": "BreakingNews",
@@ -19757,7 +19811,7 @@
       [
        [
         "ctx.prisma.breakingNews.delete",
-        "packages/backend/src/modules/breakingNews/router.ts:167"
+        "packages/backend/src/modules/breakingNews/router.ts:104"
        ]
       ]
      ]
@@ -22099,6 +22153,51 @@
        [
         "prisma.user.update",
         "packages/backend/src/modules/avatar/avatar.service.ts:97"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "saveBreakingNews": {
+   "file": "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts",
+   "line": 11,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "create",
+     "fields": [
+      "body",
+      "expiresAt",
+      "href",
+      "publicationDate",
+      "title"
+     ],
+     "trails": [
+      [
+       [
+        "db.breakingNews.create",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:19"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "BreakingNews",
+     "op": "update",
+     "fields": [
+      "body",
+      "expiresAt",
+      "href",
+      "publicationDate",
+      "title"
+     ],
+     "trails": [
+      [
+       [
+        "db.breakingNews.update",
+        "packages/backend/src/modules/breakingNews/saveBreakingNews.service.ts:21"
        ]
       ]
      ]

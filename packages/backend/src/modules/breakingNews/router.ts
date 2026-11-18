@@ -7,6 +7,11 @@ import {
   publicProcedure,
 } from "#trpc/core.ts";
 import { isAdmin } from "#trpc/middleware.ts";
+import { saveBreakingNews } from "#modules/breakingNews/saveBreakingNews.service.ts";
+import {
+  createBreakingNewsSchema,
+  updateBreakingNewsSchema,
+} from "@akfc/contracts/breakingNews/breakingNews.schema.ts";
 
 /**
  * Router des BreakingNews — les actualités courtes du club.
@@ -27,47 +32,6 @@ import { isAdmin } from "#trpc/middleware.ts";
  *     publiquement.
  *   - Tout le reste : `isAdmin`.
  */
-
-/* -------------------------------------------------------------------------- */
-/*                                  SCHEMAS                                   */
-/* -------------------------------------------------------------------------- */
-
-const fields = {
-  title: z.string().trim().min(1).max(150),
-  /** Texte brut court — le ruban défile mal du texte riche. */
-  body: z.string().trim().min(1).max(600),
-  /**
-   * Lien optionnel : interne (« /#post-12 » — un vote sur le mur) ou
-   * externe. Pas de `.url()` : il doit accepter les chemins relatifs.
-   */
-  href: z.string().trim().min(1).max(500).nullable().optional(),
-  publicationDate: z.coerce.date().nullable().optional(),
-  expiresAt: z.coerce.date().nullable().optional(),
-};
-
-/** L'expiration, si présente avec une publication, doit lui être postérieure. */
-const assertCoherentDates = (
-  data: { publicationDate?: Date | null; expiresAt?: Date | null },
-  ctx: z.RefinementCtx,
-) => {
-  if (
-    data.publicationDate &&
-    data.expiresAt &&
-    data.expiresAt <= data.publicationDate
-  ) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["expiresAt"],
-      message: "L'expiration doit être postérieure à la publication.",
-    });
-  }
-};
-
-const createInput = z.object(fields).superRefine(assertCoherentDates);
-
-const updateInput = z
-  .object({ id: z.number().int().positive(), ...fields })
-  .superRefine(assertCoherentDates);
 
 /* -------------------------------------------------------------------------- */
 /*                                   ROUTER                                   */
@@ -120,44 +84,17 @@ export const breakingNewsRouter = router({
       return news;
     }),
 
+  // Création et mise à jour : le service, partagé avec la server action du formulaire.
+  // Le schéma vient de contracts, comme celui du formulaire.
   create: protectedProcedure
     .use(isAdmin)
-    .input(createInput)
-    .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.breakingNews.create({
-        data: {
-          title: input.title,
-          body: input.body,
-          href: input.href ?? null,
-          publicationDate: input.publicationDate ?? null,
-          expiresAt: input.expiresAt ?? null,
-        },
-      });
-    }),
+    .input(createBreakingNewsSchema)
+    .mutation(({ ctx, input }) => saveBreakingNews(ctx.prisma, input)),
 
   update: protectedProcedure
     .use(isAdmin)
-    .input(updateInput)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      try {
-        return await ctx.prisma.breakingNews.update({
-          where: { id },
-          data: {
-            title: data.title,
-            body: data.body,
-            href: data.href ?? null,
-            publicationDate: data.publicationDate ?? null,
-            expiresAt: data.expiresAt ?? null,
-          },
-        });
-      } catch {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Brève introuvable.",
-        });
-      }
-    }),
+    .input(updateBreakingNewsSchema)
+    .mutation(({ ctx, input }) => saveBreakingNews(ctx.prisma, input)),
 
   delete: protectedProcedure
     .use(isAdmin)
