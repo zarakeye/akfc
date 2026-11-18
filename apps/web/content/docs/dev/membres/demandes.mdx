@@ -151,10 +151,10 @@ Toutes les opérations passent par cette vérification : prendre en charge, tran
 
 ## Répondre : l'e-mail d'abord
 
-La réponse est écrite dans le tableau de bord et part par e-mail au demandeur, depuis l'adresse d'envoi du site. L'ordre des opérations est délibéré :
+La réponse est écrite dans le tableau de bord et part par e-mail au demandeur, depuis l'adresse d'envoi du site. Le formulaire de réponse suit le modèle hybride ; sa server action et la procédure `ticket.reply` appellent le même service, `answerTicket`. Le transfert fait de même avec `transferTicket`. L'ordre des opérations est délibéré :
 
 ```ts
-// packages/backend/src/modules/tickets/router.ts (extrait)
+// packages/backend/src/modules/tickets/answerTicket.service.ts (extrait)
 let messageId: string | null;
 try {
   messageId = await sendTicketReply({
@@ -173,7 +173,7 @@ try {
     message: "L'e-mail n'a pas pu partir : votre réponse n'a pas été enregistrée. Réessayez dans un instant.",
   });
 }
-const res = await replyToTicket(ctx.prisma, t.id, userId, text, messageId);
+const res = await replyToTicket(db, t.id, userId, text, messageId);
 ```
 
 L'e-mail part **avant** l'enregistrement. S'il échoue, rien n'est enregistré, et celui qui répond le sait aussitôt. L'ordre inverse produirait une demande marquée « répondue » alors que le demandeur n'a rien reçu. Le `Message-ID` de l'e-mail envoyé est gardé avec le message : la réponse du demandeur le citera.

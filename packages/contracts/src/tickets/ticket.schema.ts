@@ -35,3 +35,27 @@ export const submitTicketSchema = z.object({
 });
 
 export type SubmitTicketInput = z.infer<typeof submitTicketSchema>;
+
+/** Longueur maximale d'une note de transfert (même valeur que tickets.service). */
+export const TICKET_NOTE_MAX = 2_000;
+
+/** Réponse du club au demandeur (procédure ticket.reply, server action du formulaire de réponse). */
+export const replyTicketSchema = z.object({
+  id: z.string().min(1),
+  body: z
+    .string()
+    .trim()
+    .min(1, "La réponse est vide.")
+    .max(TICKET_BODY_MAX, `La réponse ne doit pas dépasser ${TICKET_BODY_MAX} caractères.`),
+});
+
+/** Passage de relais, avec une note (procédure ticket.transfer, server action du transfert). */
+export const transferTicketSchema = z.object({
+  id: z.string().min(1),
+  toUserId: z.string().min(1, "Choisissez une personne."),
+  note: z
+    .string()
+    .trim()
+    .min(1, "La note est obligatoire.")
+    .max(TICKET_NOTE_MAX, `La note ne doit pas dépasser ${TICKET_NOTE_MAX} caractères.`),
+});

@@ -1,20 +1,9 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
-import { submitTicketSchema } from "@akfc/contracts/tickets/ticket.schema.ts";
-import { sendTicketReply } from "#email/services/sendTicketEmails.ts";
-import {
-  canHandleCategory,
-  cleanText,
-  closeTicket,
-  MAX_BODY,
-  reopenTicket,
-  replySignature,
-  replyToTicket,
-  takeTicket,
-  transferTicket,
-} from "#modules/tickets/tickets.service.ts";
+import { replyTicketSchema, submitTicketSchema, transferTicketSchema } from "@akfc/contracts/tickets/ticket.schema.ts";
+import { closeTicket, reopenTicket, takeTicket, transferTicket } from "#modules/tickets/tickets.service.ts";
+import { answerTicket } from "#modules/tickets/answerTicket.service.ts";
 import { getTicketDetail, listHandlers, listInbox, ticketAccess } from "#modules/tickets/ticketQueries.service.ts";
 import { submitTicket } from "#modules/tickets/submitTicket.service.ts";
 
@@ -72,59 +61,21 @@ export const ticketRouter = router({
     .mutation(({ ctx, input }) => takeTicket(ctx.prisma, input.id, ctx.sessionClient.user.id)),
 
   transfer: protectedProcedure
-    .input(z.object({ id: z.string().min(1), toUserId: z.string().min(1), note: z.string() }))
+    .input(transferTicketSchema)
     .mutation(({ ctx, input }) =>
       transferTicket(ctx.prisma, input.id, ctx.sessionClient.user.id, input.toUserId, input.note),
     ),
 
   /**
    * Réponse au demandeur : l'e-mail part D'ABORD ; s'il échoue, rien n'est enregistré et le
-   * membre peut réessayer. Signée du nom du membre connecté, au nom de la catégorie.
+   * membre peut réessayer. La logique est dans le service, partagé avec la server action du
+   * formulaire de réponse.
    */
   reply: protectedProcedure
-    .input(z.object({ id: z.string().min(1), body: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.sessionClient.user.id;
-      const t = await ctx.prisma.ticket.findUnique({
-        where: { id: input.id },
-        select: {
-          id: true, number: true, subject: true, status: true, categoryId: true,
-          requesterEmail: true, requesterName: true,
-          category: { select: { label: true, replyTo: true } },
-          messages: { where: { direction: "IN" }, orderBy: { createdAt: "desc" }, take: 1, select: { body: true, createdAt: true } },
-        },
-      });
-      if (!t) throw new TRPCError({ code: "NOT_FOUND", message: "Demande introuvable." });
-      if (!(await canHandleCategory(ctx.prisma, userId, t.categoryId))) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Vous ne pouvez pas traiter cette demande." });
-      }
-      if (t.status === "CLOSED") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cette demande est close : rouvrez-la avant de répondre." });
-      }
-      const text = cleanText(input.body, MAX_BODY, "La réponse");
-      const authorName = await replySignature(ctx.prisma, userId, t.categoryId);
-
-      let messageId: string | null;
-      try {
-        messageId = await sendTicketReply({
-          number: t.number,
-          subject: t.subject,
-          body: text,
-          authorName,
-          category: t.category,
-          to: { email: t.requesterEmail, name: t.requesterName },
-          quoted: t.messages[0] ?? null,
-        });
-      } catch (err) {
-        console.error(`[tickets] réponse à la demande ${t.number} non envoyée :`, err instanceof Error ? err.message : err);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "L'e-mail n'a pas pu partir : votre réponse n'a pas été enregistrée. Réessayez dans un instant.",
-        });
-      }
-      const res = await replyToTicket(ctx.prisma, t.id, userId, text, messageId);
-      return { ...res, emailed: messageId !== null };
-    }),
+    .input(replyTicketSchema)
+    .mutation(({ ctx, input }) =>
+      answerTicket(ctx.prisma, { ticketId: input.id, userId: ctx.sessionClient.user.id, body: input.body }),
+    ),
 
   close: protectedProcedure
     .input(z.object({ id: z.string().min(1) }))

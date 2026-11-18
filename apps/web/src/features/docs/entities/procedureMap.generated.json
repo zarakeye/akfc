@@ -470,7 +470,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 29,
+   "line": 18,
    "effects": [
     {
      "model": "TicketCategory",
@@ -480,7 +480,7 @@
       [
        [
         "ctx.prisma.ticketCategory.findMany",
-        "packages/backend/src/modules/tickets/router.ts:30"
+        "packages/backend/src/modules/tickets/router.ts:19"
        ]
       ]
      ]
@@ -492,7 +492,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 42,
+   "line": 31,
    "effects": [
     {
      "model": "SiteSettings",
@@ -686,7 +686,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 56,
+   "line": 45,
    "effects": [
     {
      "model": "MemberGroup",
@@ -831,7 +831,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 58,
+   "line": 47,
    "effects": [
     {
      "model": "MemberGroup",
@@ -983,7 +983,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 62,
+   "line": 51,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1169,7 +1169,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 66,
+   "line": 55,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1341,7 +1341,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 70,
+   "line": 59,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1531,7 +1531,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 74,
+   "line": 63,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1723,7 +1723,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 84,
+   "line": 74,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1731,6 +1731,10 @@
      "fields": [],
      "trails": [
       [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
        [
         "canHandleCategory",
         "packages/backend/src/modules/tickets/tickets.service.ts:69"
@@ -1746,6 +1750,10 @@
       ],
       [
        [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
         "canHandleCategory",
         "packages/backend/src/modules/tickets/tickets.service.ts:69"
        ],
@@ -1755,6 +1763,10 @@
        ]
       ],
       [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
        [
         "replySignature",
         "packages/backend/src/modules/tickets/tickets.service.ts:49"
@@ -1773,6 +1785,10 @@
      "trails": [
       [
        [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
         "canHandleCategory",
         "packages/backend/src/modules/tickets/tickets.service.ts:69"
        ],
@@ -1787,6 +1803,10 @@
       ],
       [
        [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
         "canHandleCategory",
         "packages/backend/src/modules/tickets/tickets.service.ts:69"
        ],
@@ -1796,6 +1816,10 @@
        ]
       ],
       [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
        [
         "replySignature",
         "packages/backend/src/modules/tickets/tickets.service.ts:49"
@@ -1813,6 +1837,10 @@
      "fields": [],
      "trails": [
       [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
        [
         "sendTicketReply",
         "packages/backend/src/email/services/sendTicketEmails.ts:171"
@@ -1835,11 +1863,19 @@
      "trails": [
       [
        [
-        "ctx.prisma.ticket.findUnique",
-        "packages/backend/src/modules/tickets/router.ts:88"
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:26"
        ]
       ],
       [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
        [
         "replyToTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:189"
@@ -1866,6 +1902,10 @@
      "trails": [
       [
        [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
         "replyToTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:189"
        ],
@@ -1883,11 +1923,19 @@
      "trails": [
       [
        [
-        "ctx.prisma.ticket.findUnique",
-        "packages/backend/src/modules/tickets/router.ts:88"
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:26"
        ]
       ],
       [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
        [
         "canHandleCategory",
         "packages/backend/src/modules/tickets/tickets.service.ts:69"
@@ -1898,6 +1946,10 @@
        ]
       ],
       [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
        [
         "replySignature",
         "packages/backend/src/modules/tickets/tickets.service.ts:49"
@@ -1921,6 +1973,10 @@
      "trails": [
       [
        [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
         "replyToTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:189"
        ],
@@ -1930,6 +1986,10 @@
        ]
       ],
       [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
        [
         "replyToTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:189"
@@ -1956,6 +2016,10 @@
      "trails": [
       [
        [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
         "replyToTicket",
         "packages/backend/src/modules/tickets/tickets.service.ts:189"
        ],
@@ -1973,8 +2037,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.ticket.findUnique",
-        "packages/backend/src/modules/tickets/router.ts:88"
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:26"
        ]
       ]
      ]
@@ -1985,6 +2053,10 @@
      "fields": [],
      "trails": [
       [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
        [
         "replySignature",
         "packages/backend/src/modules/tickets/tickets.service.ts:49"
@@ -2005,7 +2077,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 129,
+   "line": 80,
    "effects": [
     {
      "model": "MemberGroup",
@@ -2196,7 +2268,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 133,
+   "line": 84,
    "effects": [
     {
      "model": "MemberGroup",
@@ -31093,6 +31165,286 @@
     }
    ],
    "emails": []
+  },
+  "answerTicket": {
+   "file": "packages/backend/src/modules/tickets/answerTicket.service.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendTicketReply",
+        "packages/backend/src/email/services/sendTicketEmails.ts:171"
+       ],
+       [
+        "siteName",
+        "packages/backend/src/email/services/sendTicketEmails.ts:27"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/services/sendTicketEmails.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:26"
+       ]
+      ],
+      [
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/tickets.service.ts:79"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "firstResponseAt",
+      "status"
+     ],
+     "trails": [
+      [
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "tx.ticket.update",
+        "packages/backend/src/modules/tickets/tickets.service.ts:211"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:26"
+       ]
+      ],
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ],
+     "trails": [
+      [
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "tx.ticketEvent.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:205"
+       ]
+      ],
+      [
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "tx.ticketEvent.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:219"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "ticketId"
+     ],
+     "trails": [
+      [
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "tx.ticketMessage.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:207"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:26"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/tickets/tickets.service.ts:50"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendTicketReply"
+   ]
   },
   "ensureTicketCategories": {
    "file": "packages/backend/src/modules/tickets/ensureTicketCategories.service.ts",
