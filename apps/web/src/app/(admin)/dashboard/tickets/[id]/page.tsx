@@ -7,6 +7,8 @@ import { ArrowLeft } from "lucide-react";
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import { EVENT_LABEL, STATUS_CLASS, STATUS_LABEL, dateTime, dueLabel } from "#features/tickets/ticketUi.ts";
+import { ReplyTicketForm } from "#features/tickets/reply/ReplyTicketForm.tsx";
+import { TransferTicketButton } from "#features/tickets/transfer/TransferTicketForm.tsx";
 
 /**
  * Une demande — `/dashboard/tickets/[id]` : fil des messages, réponse signée, prise en charge,
@@ -82,7 +84,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
               Prendre en charge
             </button>
           )}
-          {!closed && <TransferButton ticketId={id} onDone={refresh} />}
+          {!closed && <TransferTicketButton ticketId={id} onDone={refresh} />}
           {closed ? (
             <button
               onClick={() => reopen.mutate({ id })}
@@ -128,7 +130,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
           Demande close. Si le demandeur écrit de nouveau, elle se rouvrira ; vous pouvez aussi la rouvrir pour lui répondre.
         </p>
       ) : (
-        <ReplyBox ticketId={id} requesterName={t.requester.name} replyTo={t.category.replyTo} onDone={refresh} />
+        <ReplyTicketForm ticketId={id} requesterName={t.requester.name} replyTo={t.category.replyTo} onDone={refresh} />
       )}
 
       <details className="rounded-lg border border-border p-4 text-sm" data-tour="tickets.history">
@@ -147,132 +149,6 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
           ))}
         </ul>
       </details>
-    </div>
-  );
-}
-
-function ReplyBox({
-  ticketId,
-  requesterName,
-  replyTo,
-  onDone,
-}: {
-  ticketId: string;
-  requesterName: string | null;
-  replyTo: string;
-  onDone: () => Promise<void>;
-}): JSX.Element {
-  const greeting = requesterName ? `Bonjour ${requesterName},\n\n` : "Bonjour,\n\n";
-  const [body, setBody] = useState(greeting);
-  const [notice, setNotice] = useState<string | null>(null);
-  const mailIntake = trpc.ticket.access.useQuery().data?.mailIntake === true;
-  const reply = trpc.ticket.reply.useMutation({
-    onSuccess: async (res) => {
-      setBody(greeting);
-      setNotice(res.emailed ? "Réponse envoyée." : "Réponse enregistrée (aucun e-mail : compte de démonstration ou envoi désactivé).");
-      await onDone();
-    },
-  });
-  const empty = body.trim() === "" || body.trim() === greeting.trim();
-
-  return (
-    <form
-      className="mb-6 rounded-lg border border-border p-4"
-      data-tour="tickets.reply"
-      onSubmit={(e) => {
-        e.preventDefault();
-        setNotice(null);
-        if (!empty) reply.mutate({ id: ticketId, body });
-      }}
-    >
-      <label className="mb-2 block text-sm font-medium" htmlFor="ticket-reply">
-        Répondre
-      </label>
-      <textarea
-        id="ticket-reply"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        className="min-h-44 w-full resize-y rounded-md border border-border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
-      />
-      <p className="mt-1 text-xs text-muted-foreground">
-        Envoyé par e-mail depuis l&apos;adresse du site, signé de votre nom.{" "}
-        {mailIntake
-          ? "S'il répond à cet e-mail, sa réponse s'ajoutera ici."
-          : `S'il répond, sa réponse arrivera à ${replyTo}.`}
-      </p>
-      {reply.error && <p className="mt-2 text-sm text-red-600">{reply.error.message}</p>}
-      {notice && <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">{notice}</p>}
-      <button
-        type="submit"
-        disabled={empty || reply.isPending}
-        className="mt-3 rounded-md bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {reply.isPending ? "Envoi…" : "Envoyer la réponse"}
-      </button>
-    </form>
-  );
-}
-
-function TransferButton({ ticketId, onDone }: { ticketId: string; onDone: () => Promise<void> }): JSX.Element {
-  const [open, setOpen] = useState(false);
-  const [toUserId, setToUserId] = useState("");
-  const [note, setNote] = useState("");
-  const handlers = trpc.ticket.handlers.useQuery({ id: ticketId }, { enabled: open });
-  const transfer = trpc.ticket.transfer.useMutation({
-    onSuccess: async () => {
-      setOpen(false);
-      setToUserId("");
-      setNote("");
-      await onDone();
-    },
-  });
-
-  if (!open) {
-    return (
-      <button onClick={() => setOpen(true)} className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted">
-        Transférer…
-      </button>
-    );
-  }
-  return (
-    <div className="w-full rounded-md border border-border p-3">
-      <p className="mb-2 text-sm font-medium">Passer le relais</p>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <select
-          value={toUserId}
-          onChange={(e) => setToUserId(e.target.value)}
-          className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
-        >
-          <option value="">Choisir une personne…</option>
-          {(handlers.data ?? [])
-            .filter((h) => !h.isSelf)
-            .map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
-              </option>
-            ))}
-        </select>
-        <input
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Note pour la personne (obligatoire)"
-          className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm"
-        />
-      </div>
-      <p className="mt-1 text-xs text-muted-foreground">Le délai de réponse promis au demandeur ne change pas.</p>
-      {transfer.error && <p className="mt-1 text-sm text-red-600">{transfer.error.message}</p>}
-      <div className="mt-2 flex gap-2">
-        <button
-          onClick={() => transfer.mutate({ id: ticketId, toUserId, note })}
-          disabled={!toUserId || note.trim() === "" || transfer.isPending}
-          className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
-        >
-          Transférer
-        </button>
-        <button onClick={() => setOpen(false)} className="rounded-md px-3 py-1.5 text-sm hover:bg-muted">
-          Annuler
-        </button>
-      </div>
     </div>
   );
 }

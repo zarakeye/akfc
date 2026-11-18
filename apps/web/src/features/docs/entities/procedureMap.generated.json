@@ -38479,6 +38479,618 @@
    ],
    "emails": []
   },
+  "replyTicketFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/tickets/reply/replyTicketForm.action.ts",
+   "line": 17,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "sendTicketReply",
+        "packages/backend/src/email/services/sendTicketEmails.ts:171"
+       ],
+       [
+        "siteName",
+        "packages/backend/src/email/services/sendTicketEmails.ts:27"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/services/sendTicketEmails.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:26"
+       ]
+      ],
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/tickets.service.ts:79"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "firstResponseAt",
+      "status"
+     ],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "tx.ticket.update",
+        "packages/backend/src/modules/tickets/tickets.service.ts:211"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:26"
+       ]
+      ],
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "tx.ticketEvent.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:205"
+       ]
+      ],
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "tx.ticketEvent.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:219"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "ticketId"
+     ],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "replyToTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:189"
+       ],
+       [
+        "tx.ticketMessage.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:207"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:26"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "answerTicket",
+        "packages/backend/src/modules/tickets/answerTicket.service.ts:22"
+       ],
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/tickets/tickets.service.ts:50"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendTicketReply"
+   ]
+  },
+  "transferTicketFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/tickets/transfer/transferTicketForm.action.ts",
+   "line": 20,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/tickets.service.ts:79"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "status"
+     ],
+     "trails": [
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "db.ticket.update",
+        "packages/backend/src/modules/tickets/tickets.service.ts:174"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "note",
+      "ticketId",
+      "toUserId",
+      "type"
+     ],
+     "trails": [
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "db.ticketEvent.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:179"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "page /dashboard/categories/[id]/edit": {
    "kind": "page",
    "file": "apps/web/src/app/(admin)/dashboard/categories/[id]/edit/page.tsx",
