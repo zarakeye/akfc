@@ -20739,7 +20739,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 29,
+   "line": 31,
    "effects": [
     {
      "model": "MemberGroup",
@@ -20749,7 +20749,7 @@
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/memberGroups/router.ts:30"
+        "packages/backend/src/modules/memberGroups/router.ts:32"
        ]
       ]
      ]
@@ -20761,7 +20761,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 56,
+   "line": 58,
    "effects": [
     {
      "model": "Folder",
@@ -20773,6 +20773,10 @@
      ],
      "trails": [
       [
+       [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
        [
         "ensureGroupSpaceFolder",
         "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
@@ -20790,6 +20794,10 @@
      "fields": [],
      "trails": [
       [
+       [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
        [
         "ensureGroupSpaceFolder",
         "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
@@ -20816,6 +20824,10 @@
      "trails": [
       [
        [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
+       [
         "ensureGroupSpaceFolder",
         "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
        ],
@@ -20838,8 +20850,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.memberGroup.create",
-        "packages/backend/src/modules/memberGroups/router.ts:78"
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
+       [
+        "db.memberGroup.create",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:27"
        ]
       ]
      ]
@@ -20851,11 +20867,19 @@
      "trails": [
       [
        [
-        "ctx.prisma.memberGroup.findFirst",
-        "packages/backend/src/modules/memberGroups/router.ts:71"
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
+       [
+        "db.memberGroup.findFirst",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:20"
        ]
       ],
       [
+       [
+        "createMemberGroup",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:11"
+       ],
        [
         "ensureGroupSpaceFolder",
         "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
@@ -20878,7 +20902,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 98,
+   "line": 64,
    "effects": [
     {
      "model": "Folder",
@@ -20976,7 +21000,7 @@
       [
        [
         "ctx.prisma.memberGroup.update",
-        "packages/backend/src/modules/memberGroups/router.ts:108"
+        "packages/backend/src/modules/memberGroups/router.ts:74"
        ]
       ]
      ]
@@ -20988,7 +21012,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 127,
+   "line": 93,
    "effects": [
     {
      "model": "Folder",
@@ -21184,7 +21208,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 144,
+   "line": 110,
    "effects": [
     {
      "model": "MemberGroup",
@@ -21194,19 +21218,19 @@
       [
        [
         "ctx.prisma.memberGroup.findFirst",
-        "packages/backend/src/modules/memberGroups/router.ts:153"
+        "packages/backend/src/modules/memberGroups/router.ts:119"
        ]
       ],
       [
        [
         "ctx.prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/memberGroups/router.ts:177"
+        "packages/backend/src/modules/memberGroups/router.ts:143"
        ]
       ],
       [
        [
         "ctx.prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/memberGroups/router.ts:200"
+        "packages/backend/src/modules/memberGroups/router.ts:166"
        ]
       ]
      ]
@@ -21221,7 +21245,7 @@
       [
        [
         "ctx.prisma.memberGroup.update",
-        "packages/backend/src/modules/memberGroups/router.ts:208"
+        "packages/backend/src/modules/memberGroups/router.ts:174"
        ]
       ]
      ]
@@ -21233,7 +21257,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 216,
+   "line": 182,
    "effects": [
     {
      "model": "MemberGroupMembership",
@@ -21243,7 +21267,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.findMany",
-        "packages/backend/src/modules/memberGroups/router.ts:219"
+        "packages/backend/src/modules/memberGroups/router.ts:185"
        ]
       ]
      ]
@@ -21256,7 +21280,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.findMany",
-        "packages/backend/src/modules/memberGroups/router.ts:219"
+        "packages/backend/src/modules/memberGroups/router.ts:185"
        ]
       ]
      ]
@@ -21268,7 +21292,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 240,
+   "line": 206,
    "effects": [
     {
      "model": "MemberGroup",
@@ -21299,7 +21323,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.upsert",
-        "packages/backend/src/modules/memberGroups/router.ts:251"
+        "packages/backend/src/modules/memberGroups/router.ts:217"
        ]
       ]
      ]
@@ -21316,7 +21340,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.upsert",
-        "packages/backend/src/modules/memberGroups/router.ts:251"
+        "packages/backend/src/modules/memberGroups/router.ts:217"
        ]
       ]
      ]
@@ -21368,7 +21392,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 270,
+   "line": 236,
    "effects": [
     {
      "model": "MemberGroup",
@@ -21378,13 +21402,13 @@
       [
        [
         "ctx.prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/memberGroups/router.ts:274"
+        "packages/backend/src/modules/memberGroups/router.ts:240"
        ]
       ],
       [
        [
         "ctx.prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/memberGroups/router.ts:285"
+        "packages/backend/src/modules/memberGroups/router.ts:251"
        ]
       ]
      ]
@@ -21397,7 +21421,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.deleteMany",
-        "packages/backend/src/modules/memberGroups/router.ts:290"
+        "packages/backend/src/modules/memberGroups/router.ts:256"
        ]
       ]
      ]
@@ -21426,7 +21450,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 297,
+   "line": 263,
    "effects": [
     {
      "model": "MemberGroupMembership",
@@ -21438,7 +21462,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.update",
-        "packages/backend/src/modules/memberGroups/router.ts:306"
+        "packages/backend/src/modules/memberGroups/router.ts:272"
        ]
       ]
      ]
@@ -26593,6 +26617,121 @@
        [
         "prisma.memberGroupMembership.findMany",
         "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "createMemberGroup": {
+   "file": "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts",
+   "line": 11,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ],
+     "trails": [
+      [
+       [
+        "ensureGroupSpaceFolder",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
+       ],
+       [
+        "prisma.folder.upsert",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ensureGroupSpaceFolder",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
+       ],
+       [
+        "resolveGroupBaseFolder",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
+       ],
+       [
+        "prisma.folder.findMany",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ],
+     "trails": [
+      [
+       [
+        "ensureGroupSpaceFolder",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
+       ],
+       [
+        "prisma.folder.upsert",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "create",
+     "fields": [
+      "description",
+      "isCollaborative",
+      "name",
+      "parentGroupId"
+     ],
+     "trails": [
+      [
+       [
+        "db.memberGroup.create",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:27"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.memberGroup.findFirst",
+        "packages/backend/src/modules/memberGroups/createMemberGroup.service.ts:20"
+       ]
+      ],
+      [
+       [
+        "ensureGroupSpaceFolder",
+        "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts:18"
+       ],
+       [
+        "resolveGroupBaseFolder",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]

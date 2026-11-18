@@ -6,6 +6,8 @@ import { router, protectedProcedure } from "#trpc/core.ts";
 import { isAdmin } from "#trpc/middleware.ts";
 import { ensureGroupSpaceFolder } from "#modules/memberGroups/ensureGroupSpaceFolder.service.ts";
 import { deleteGroupWithSpace } from "#modules/memberGroups/deleteGroupWithSpace.service.ts";
+import { createMemberGroup } from "#modules/memberGroups/createMemberGroup.service.ts";
+import { createGroupSchema } from "@akfc/contracts/groups/createGroup.schema.ts";
 import { applyAdultGroupRule, assertCanLeaveInstructors } from "#modules/memberGroups/systemGroups.service.ts";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
@@ -54,45 +56,9 @@ export const memberGroupRouter = router({
 
   /** Crée un groupe. */
   create: adminProcedure
-    .input(
-      z.object({
-        name: z.string().trim().min(1).max(120),
-        description: z.string().trim().max(500).optional(),
-        isCollaborative: z.boolean().optional(),
-        parentGroupId: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Règle « Administrateurs ancêtre de tout » : sans parent explicite,
-      // le nouveau groupe est rattaché au groupe Administrateurs.
-      const parentGroupId =
-        input.parentGroupId ??
-        (
-          await ctx.prisma.memberGroup.findFirst({
-            where: { isAdminGroup: true },
-            select: { id: true },
-          })
-        )?.id ??
-        null;
-
-      const group = await ctx.prisma.memberGroup.create({
-        data: {
-          name: input.name,
-          description: input.description,
-          isCollaborative: input.isCollaborative ?? false,
-          parentGroupId,
-        },
-        select: { id: true },
-      });
-      if (input.isCollaborative) {
-        await ensureGroupSpaceFolder({
-          prisma: ctx.prisma,
-          appRoot: ctx.appRoot,
-          groupId: group.id,
-        });
-      }
-      return { id: group.id };
-    }),
+    .input(createGroupSchema)
+    // La logique est dans le service, partagé avec la server action du formulaire.
+    .mutation(({ ctx, input }) => createMemberGroup(ctx.prisma, { ...input, appRoot: ctx.appRoot })),
 
   /** Renomme / met à jour un groupe. */
   update: adminProcedure

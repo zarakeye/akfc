@@ -140,12 +140,12 @@ Le groupe « Administrateurs » est la **racine** de l’arbre. Il est garanti a
   fullFileTitle="Voir le fichier complet"
 />
 
-Un groupe créé sans parent lui est rattaché :
+Un groupe créé sans parent lui est rattaché. La création est un service, `createMemberGroup`, qu’appellent la procédure `memberGroup.create` et la server action du formulaire du panneau de contrôle :
 
 <CodeExample
   language="ts"
-  filepath="packages/backend/src/modules/memberGroups/router.ts"
-  filename="router.ts"
+  filepath="packages/backend/src/modules/memberGroups/createMemberGroup.service.ts"
+  filename="createMemberGroup.service.ts"
   snippetStart="input.parentGroupId ??"
   snippetLead="1"
   snippetEnd="null;"
