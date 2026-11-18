@@ -24,7 +24,7 @@ Depuis sa version 10, nodemailer livre ses propres types TypeScript : le paquet 
 
 La réinitialisation est un mécanisme à part. Elle mérite une attention particulière parce qu’elle est **la seule façon de reprendre la main sur un compte sans connaître son mot de passe**. C’est donc une cible privilégiée.
 
-Le projet l’implémente en deux procédures : `requestPasswordReset` (le membre demande un lien par e-mail) et `resetPassword` (il suit le lien et choisit un nouveau mot de passe).
+Le projet l’implémente en deux temps : la **demande** (le membre demande un lien par e-mail) et la **réinitialisation** (il suit le lien et choisit un nouveau mot de passe). La demande vit dans une fonction du service, `requestPasswordReset`, qu’appelle la procédure tRPC `auth.requestPasswordReset` ; la réinitialisation, dans la procédure `auth.resetPassword`.
 
 Voyons d’abord le service qui les soutient.
 
@@ -33,8 +33,8 @@ Voyons d’abord le service qui les soutient.
   filepath="packages/backend/src/modules/auth/services/passwordReset.service.ts"
   filename="passwordReset.service.ts"
   snippetStart="import crypto from"
-  snippetLines="22"
-  snippetHighlight="11-22"
+  snippetLines="25"
+  snippetHighlight="14-25"
   snippetTitle="Le service de réinitialisation : un jeton et son empreinte"
   fullFileTitle="Voir le fichier complet"
 />
@@ -48,9 +48,9 @@ Voyons d’abord le service qui les soutient.
   filepath="packages/backend/src/modules/auth/services/passwordReset.service.ts"
   filename="passwordReset.service.ts"
   snippetStart="import crypto from"
-  snippetLines="22"
+  snippetLines="25"
   title="Deux constantes, deux fonctions"
-  stepsJson='[{"title": "Une durée courte — 30 minutes", "body": "Trente minutes laissent largement le temps de suivre le lien de l’e-mail, et réduisent la fenêtre d’attaque si l’e-mail est intercepté.", "scope": "1-22", "focus": "11-11"}, {"title": "Un délai entre deux demandes — 2 minutes", "body": "Entre deux demandes pour le même compte, il faut attendre deux minutes. Personne ne peut remplir la boîte d’un membre de liens de réinitialisation.", "scope": "1-22", "focus": "12-12"}, {"title": "createPasswordResetToken : 256 bits de hasard", "body": "crypto.randomBytes(32) produit 32 octets aléatoires, écrits en hexadécimal : 64 caractères imprévisibles. Les deviner par essais successifs est hors de portée.", "scope": "1-22", "focus": "14-18"}, {"title": "hashResetToken : SHA-256", "body": "Le jeton est réduit à son empreinte avant d’être stocké. Pourquoi pas bcrypt ? bcrypt est fait pour des secrets faibles, choisis par des humains. Ce jeton a déjà 256 bits d’entropie : SHA-256, rapide, suffit.", "scope": "1-22", "focus": "20-22"}]'
+  stepsJson='[{"title": "Une durée courte — 30 minutes", "body": "Trente minutes laissent largement le temps de suivre le lien de l’e-mail, et réduisent la fenêtre d’attaque si l’e-mail est intercepté.", "scope": "1-25", "focus": "14-14"}, {"title": "Un délai entre deux demandes — 2 minutes", "body": "Entre deux demandes pour le même compte, il faut attendre deux minutes. Personne ne peut remplir la boîte d’un membre de liens de réinitialisation.", "scope": "1-25", "focus": "15-15"}, {"title": "createPasswordResetToken : 256 bits de hasard", "body": "crypto.randomBytes(32) produit 32 octets aléatoires, écrits en hexadécimal : 64 caractères imprévisibles. Les deviner par essais successifs est hors de portée.", "scope": "1-25", "focus": "17-21"}, {"title": "hashResetToken : SHA-256", "body": "Le jeton est réduit à son empreinte avant d’être stocké. Pourquoi pas bcrypt ? bcrypt est fait pour des secrets faibles, choisis par des humains. Ce jeton a déjà 256 bits d’entropie : SHA-256, rapide, suffit.", "scope": "1-25", "focus": "23-25"}]'
 />
 
 ---
@@ -82,14 +82,16 @@ C’est le même principe que pour les mots de passe : on garde l’empreinte, j
 
 ## La demande de lien
 
+La demande tient dans une fonction du service, à la suite des deux précédentes :
+
 <CodeExample
   language="ts"
-  filepath="packages/backend/src/modules/auth/router.ts"
-  filename="router.ts"
-  snippetStart="requestPasswordReset: publicProcedure"
-  snippetEnd="}),"
-  snippetHighlight="40-48"
-  snippetTitle="auth.requestPasswordReset"
+  filepath="packages/backend/src/modules/auth/services/passwordReset.service.ts"
+  filename="passwordReset.service.ts"
+  snippetStart="export async function requestPasswordReset("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="42-50"
+  snippetTitle="requestPasswordReset : la demande de lien"
   fullFileTitle="Voir le fichier complet"
 />
 
@@ -99,17 +101,17 @@ C’est le même principe que pour les mots de passe : on garde l’empreinte, j
 
 <CodeWalkthrough
   language="ts"
-  filepath="packages/backend/src/modules/auth/router.ts"
-  filename="router.ts"
-  snippetStart="requestPasswordReset: publicProcedure"
-  snippetEnd="}),"
+  filepath="packages/backend/src/modules/auth/services/passwordReset.service.ts"
+  filename="passwordReset.service.ts"
+  snippetStart="export async function requestPasswordReset("
+  snippetEnd="(fin du bloc)"
   title="La demande de lien, sans rien révéler"
-  stepsJson='[{"title": "Une adresse déjà normalisée", "body": "emailSchema a nettoyé l’adresse et l’a mise en minuscules, comme toutes les adresses enregistrées : elle est cherchée telle quelle.", "scope": "1-51", "focus": "4-6"}, {"title": "Pas de compte : la même réponse", "body": "Sans compte, la procédure répond { ok: true } — exactement ce qu’elle répond quand un lien part.", "scope": "1-51", "focus": "10-12"}, {"title": "Le délai entre deux demandes", "body": "Si un lien a été demandé il y a moins de deux minutes, rien ne repart, et la réponse est toujours la même.", "scope": "1-51", "focus": "14-25"}, {"title": "Le jeton : l’empreinte en base, le brut dans l’e-mail", "body": "createPasswordResetToken fabrique les deux. L’empreinte est enregistrée avec sa date d’expiration, l’adresse IP et le navigateur de la demande, pour la traçabilité.", "scope": "1-51", "focus": "27-38"}, {"title": "L’envoi n’est pas attendu", "body": "void … .catch(…) : l’e-mail part en arrière-plan. La réponse ne dépend plus de la lenteur du serveur de messagerie, et ne trahit donc pas qu’un compte existe. Un échec est journalisé, sans le jeton.", "scope": "1-51", "focus": "40-48"}]'
+  stepsJson='[{"title": "Une adresse déjà normalisée", "body": "emailSchema a nettoyé l’adresse et l’a mise en minuscules, comme toutes les adresses enregistrées : elle est cherchée telle quelle.", "scope": "1-51", "focus": "6-10"}, {"title": "Pas de compte : la même réponse", "body": "Sans compte, la fonction s’arrête là, sans rien signaler : celui qui l’appelle répond exactement ce qu’il répond quand un lien part.", "scope": "1-51", "focus": "12-14"}, {"title": "Le délai entre deux demandes", "body": "Si un lien a été demandé il y a moins de deux minutes, rien ne repart, et la réponse est toujours la même.", "scope": "1-51", "focus": "16-27"}, {"title": "Le jeton : l’empreinte en base, le brut dans l’e-mail", "body": "createPasswordResetToken fabrique les deux. L’empreinte est enregistrée avec sa date d’expiration, l’adresse IP et le navigateur de la demande, pour la traçabilité.", "scope": "1-51", "focus": "29-40"}, {"title": "L’envoi n’est pas attendu", "body": "void … .catch(…) : l’e-mail part en arrière-plan. La réponse ne dépend plus de la lenteur du serveur de messagerie, et ne trahit donc pas qu’un compte existe. Un échec est journalisé, sans le jeton.", "scope": "1-51", "focus": "42-50"}]'
 />
 
 ---
 
-Cette procédure a eu le même défaut que la connexion (chapitre 3), en plus visible. Elle attendait la fin de l’envoi de l’e-mail avant de répondre : plusieurs secondes, le temps de joindre le serveur de messagerie. Pour une adresse sans compte, elle répondait aussitôt. Le texte affiché était identique — « Si un compte existe pour cet email, un lien a été envoyé. » —, mais un simple chronomètre disait qui était membre du club. L’envoi part désormais sans être attendu.
+Cette demande a eu le même défaut que la connexion (chapitre 3), en plus visible. Elle attendait la fin de l’envoi de l’e-mail avant de répondre : plusieurs secondes, le temps de joindre le serveur de messagerie. Pour une adresse sans compte, elle répondait aussitôt. Le texte affiché était identique — « Si un compte existe pour cet email, un lien a été envoyé. » —, mais un simple chronomètre disait qui était membre du club. L’envoi part désormais sans être attendu.
 
 ---
 

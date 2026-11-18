@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 
 import { prisma } from "#prisma.ts";
 import { getSessionFromRequest } from "#modules/auth/getSessionFromRequest.ts";
+import { getRequestIp } from "#lib/security/requestIp.ts";
 import { APP_ROOT } from "../../../config/app";
 
 export type TRPCContext = {
@@ -23,19 +24,6 @@ type AuthenticatedTRPCContext = Omit<TRPCContext, "sessionClient"> & {
   sessionClient: AuthenticatedSessionClient;
 };
 
-function getIpFromRequest(req: Request | NextRequest): string | null {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) {
-    const first = xff.split(",")[0]?.trim();
-    if (first) return first;
-  }
-
-  const realIp = req.headers.get("x-real-ip");
-  if (realIp) return realIp;
-
-  return null;
-}
-
 export async function createTRPCContext({
   req,
 }: {
@@ -46,7 +34,7 @@ export async function createTRPCContext({
   return {
     sessionClient,
     prisma,
-    requestIp: getIpFromRequest(req),
+    requestIp: getRequestIp(req.headers),
     userAgent: req.headers.get("user-agent"),
     appRoot: APP_ROOT,
   };

@@ -2962,7 +2962,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 28,
+   "line": 22,
    "effects": [
     {
      "model": "Session",
@@ -3036,7 +3036,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 61,
+   "line": 55,
    "effects": [
     {
      "model": "Session",
@@ -3062,7 +3062,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 75,
+   "line": 69,
    "effects": [
     {
      "model": "Session",
@@ -3072,7 +3072,7 @@
       [
        [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:115"
+        "packages/backend/src/modules/auth/router.ts:109"
        ]
       ]
      ]
@@ -3085,7 +3085,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/auth/router.ts:80"
+        "packages/backend/src/modules/auth/router.ts:74"
        ]
       ]
      ]
@@ -3100,7 +3100,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:111"
+        "packages/backend/src/modules/auth/router.ts:105"
        ]
       ]
      ]
@@ -3112,7 +3112,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 126,
+   "line": 120,
    "effects": [],
    "emails": []
   },
@@ -3120,7 +3120,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 130,
+   "line": 124,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3135,8 +3135,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.passwordResetToken.create",
-        "packages/backend/src/modules/auth/router.ts:159"
+        "requestPasswordReset",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+       ],
+       [
+        "prisma.passwordResetToken.create",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:65"
        ]
       ]
      ]
@@ -3148,8 +3152,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.passwordResetToken.findFirst",
-        "packages/backend/src/modules/auth/router.ts:143"
+        "requestPasswordReset",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+       ],
+       [
+        "prisma.passwordResetToken.findFirst",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:49"
        ]
       ]
      ]
@@ -3160,6 +3168,10 @@
      "fields": [],
      "trails": [
       [
+       [
+        "requestPasswordReset",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+       ],
        [
         "sendPasswordResetEmail",
         "packages/backend/src/email/services/sendPasswordResetEmail.ts:12"
@@ -3178,8 +3190,12 @@
      "trails": [
       [
        [
-        "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/auth/router.ts:134"
+        "requestPasswordReset",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:34"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:40"
        ]
       ]
      ]
@@ -3193,7 +3209,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 182,
+   "line": 136,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3203,7 +3219,7 @@
       [
        [
         "ctx.prisma.passwordResetToken.findUnique",
-        "packages/backend/src/modules/auth/router.ts:188"
+        "packages/backend/src/modules/auth/router.ts:142"
        ]
       ]
      ]
@@ -3218,7 +3234,7 @@
       [
        [
         "tx.passwordResetToken.updateMany",
-        "packages/backend/src/modules/auth/router.ts:223"
+        "packages/backend/src/modules/auth/router.ts:177"
        ]
       ]
      ]
@@ -3231,7 +3247,7 @@
       [
        [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:231"
+        "packages/backend/src/modules/auth/router.ts:185"
        ]
       ]
      ]
@@ -3246,7 +3262,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:213"
+        "packages/backend/src/modules/auth/router.ts:167"
        ]
       ]
      ]
@@ -21710,6 +21726,77 @@
    ],
    "emails": []
   },
+  "requestPasswordReset": {
+   "file": "packages/backend/src/modules/auth/services/passwordReset.service.ts",
+   "line": 34,
+   "effects": [
+    {
+     "model": "PasswordResetToken",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "requestIp",
+      "tokenHash",
+      "userAgent",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "prisma.passwordResetToken.create",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:65"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PasswordResetToken",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.passwordResetToken.findFirst",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:49"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendPasswordResetEmail",
+        "packages/backend/src/email/services/sendPasswordResetEmail.ts:12"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/services/sendPasswordResetEmail.ts:24"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/auth/services/passwordReset.service.ts:40"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendPasswordResetEmail"
+   ]
+  },
   "deleteAvatar": {
    "file": "packages/backend/src/modules/avatar/avatar.service.ts",
    "line": 32,
@@ -36095,7 +36182,7 @@
   },
   "createTRPCContext": {
    "file": "packages/backend/src/trpc/core.ts",
-   "line": 39,
+   "line": 27,
    "effects": [
     {
      "model": "Session",

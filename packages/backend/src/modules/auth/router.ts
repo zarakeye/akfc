@@ -1,13 +1,7 @@
 import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
 import { deleteSessionFromCookie } from "#lib/session/session.server.ts";
 import { loginService } from "#modules/auth/services/auth.service.ts";
-import {
-  createPasswordResetToken,
-  hashResetToken,
-  RESET_TOKEN_COOLDOWN_MS,
-  RESET_TOKEN_TTL_MS,
-} from "#modules/auth/services/passwordReset.service.ts";
-import { sendPasswordResetEmail } from "#email/services/sendPasswordResetEmail.ts";
+import { hashResetToken, requestPasswordReset } from "#modules/auth/services/passwordReset.service.ts";
 
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword } from "#lib/auth/password.ts";
@@ -130,50 +124,10 @@ export const authRouter = router({
   requestPasswordReset: publicProcedure
     .input(requestPasswordResetSchema)
     .mutation(async ({ input, ctx }) => {
-      // Déjà nettoyée et mise en minuscules par emailSchema, comme toutes les adresses enregistrées.
-      const user = await ctx.prisma.user.findUnique({
-        where: { email: input.email },
-        select: { id: true, email: true },
-      });
-
-      if (!user) {
-        return { ok: true as const };
-      }
-
-      const lastToken = await ctx.prisma.passwordResetToken.findFirst({
-        where: { userId: user.id },
-        orderBy: { createdAt: "desc" },
-        select: { createdAt: true },
-      });
-
-      if (lastToken) {
-        const elapsed = Date.now() - lastToken.createdAt.getTime();
-        if (elapsed < RESET_TOKEN_COOLDOWN_MS) {
-          return { ok: true as const };
-        }
-      }
-
-      const { token, tokenHash } = createPasswordResetToken();
-      const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
-
-      await ctx.prisma.passwordResetToken.create({
-        data: {
-          userId: user.id,
-          tokenHash,
-          expiresAt,
-          requestIp: ctx.requestIp ?? null,
-          userAgent: ctx.userAgent ?? null,
-        },
-      });
-
-      // L'envoi n'est PAS attendu : il prend plusieurs secondes, et une réponse lente pour une
-      // adresse connue, rapide pour une inconnue, trahirait qui a un compte. Jamais le jeton dans
-      // les journaux ; un échec d'envoi est journalisé, la réponse reste la même.
-      void sendPasswordResetEmail({ toEmail: user.email, token }).catch((err: unknown) => {
-        console.error(
-          "[auth] e-mail de réinitialisation non envoyé :",
-          err instanceof Error ? err.message : err,
-        );
+      await requestPasswordReset({
+        email: input.email,
+        requestIp: ctx.requestIp ?? null,
+        userAgent: ctx.userAgent ?? null,
       });
 
       return { ok: true as const };
