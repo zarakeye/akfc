@@ -188,16 +188,16 @@ function MinorWishes({
 
 type Choices = { usages: ImageUsageValue[]; keepAfterLeave: boolean | null } | null;
 
-/** Le submit commun : la validation de React Hook Form, puis la server action. */
-function submitWith(form: { trigger: () => Promise<boolean> }, formAction: (fd: FormData) => void) {
+/** Le submit commun : la validation de React Hook Form (handleSubmit), puis la server action. */
+function submitWith(
+  form: { handleSubmit: (onValid: () => void) => (e: React.BaseSyntheticEvent) => Promise<void> },
+  formAction: (fd: FormData) => void,
+) {
   return (e: React.FormEvent<HTMLFormElement>) => {
-    // La validation de React Hook Form est asynchrone : on suspend TOUJOURS l'envoi (un
-    // preventDefault après un await arriverait trop tard), puis on le relance s'il est valide.
-    e.preventDefault();
+    // Lu tout de suite, tant que l'évènement est disponible.
     const formData = new FormData(e.currentTarget);
-    void form.trigger().then((valid) => {
-      if (valid) startTransition(() => formAction(formData));
-    });
+    // handleSubmit arrête l'envoi natif, valide, et ne relance l'action que si tout est valide.
+    void form.handleSubmit(() => startTransition(() => formAction(formData)))(e);
   };
 }
 

@@ -173,14 +173,10 @@ export function CreateGalleryForm(): JSX.Element {
       <form
         action={formAction}
         onSubmit={(e) => {
-          // La validation du client est asynchrone : on suspend TOUJOURS l'envoi (un
-          // preventDefault après un await arriverait trop tard, l'action serait déjà partie),
-          // puis on le relance si le formulaire est valide.
-          e.preventDefault();
+          // Lu tout de suite, tant que l'évènement est disponible.
           const formData = new FormData(e.currentTarget);
-          void form.trigger().then((valid) => {
-            if (valid) startTransition(() => formAction(formData));
-          });
+          // handleSubmit arrête l'envoi natif, valide, et ne relance l'action que si tout est valide.
+          void form.handleSubmit(() => startTransition(() => formAction(formData)))(e);
         }}
         className="space-y-4 w-full max-w-2xl"
       >

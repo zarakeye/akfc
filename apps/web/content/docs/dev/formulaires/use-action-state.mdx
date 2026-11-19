@@ -185,20 +185,21 @@ Le `<form>`, lui, ne se contente plus de `action={formAction}` :
   filepath="apps/web/src/features/admin/categories/forms/CategoryForm.tsx"
   filename="CategoryForm.tsx"
   snippetStart="<form"
-  snippetLines="16"
-  snippetHighlight="2,7,8,9,10"
+  snippetLines="12"
+  snippetHighlight="2,5,7"
   snippetTitle="Suspendre l’envoi, valider, relancer"
   fullFileTitle="Voir le fichier complet"
 />
 
-La validation de React Hook Form est **asynchrone** : `form.trigger()` renvoie une promesse (un résultat qui arrivera plus tard, qu’on attend avec `await`). Or le navigateur envoie le formulaire dès que le gestionnaire `onSubmit` se termine, s’il n’a pas appelé `preventDefault()`. Un `preventDefault()` placé après un `await` arriverait trop tard : l’action serait déjà partie.
+Le gestionnaire `onSubmit` confie l’envoi à `handleSubmit`, la fonction de React Hook Form qui valide avant d’envoyer. Elle reçoit ce qu’il faut faire si tout est valide, et renvoie un gestionnaire d’évènement, qu’on appelle aussitôt avec `e` :
 
-Le composant suspend donc **toujours** l’envoi, valide, puis relance l’action lui-même :
-
-- `e.preventDefault()` arrête l’envoi natif, immédiatement, avant toute attente ;
 - `new FormData(e.currentTarget)` lit les champs tout de suite, tant que l’évènement est disponible ;
-- `form.trigger()` lance la validation de React Hook Form ;
-- si elle passe, `formAction(formData)` relance l’action, dans une `startTransition` : c’est ce qui garde `isPending` exact, comme si le formulaire était parti tout seul.
+- `handleSubmit` appelle `preventDefault()` immédiatement, avant toute attente : l’envoi natif est arrêté ;
+- il lance ensuite la validation, qui est **asynchrone** (elle renvoie une promesse : un résultat qui arrivera plus tard) ;
+- si elle passe, `formAction(formData)` relance l’action, dans une `startTransition` : c’est ce qui garde `isPending` exact, comme si le formulaire était parti tout seul ;
+- sinon, les erreurs s’affichent, et le curseur se place sur le premier champ en erreur.
+
+`handleSubmit` fait une dernière chose, moins visible : il marque le formulaire comme envoyé. React Hook Form s’en sert pour choisir le moment de ses vérifications. Avant le premier envoi, il laisse l’utilisateur taper sans l’interrompre. Ensuite, il revérifie chaque champ à la frappe (`reValidateMode: "onChange"`, le réglage vu avec React Hook Form), et une erreur corrigée disparaît aussitôt.
 
 L’attribut `action={formAction}` reste en place. Sans JavaScript (une page encore en chargement, un navigateur qui l’a désactivé), le `<form>` s’envoie quand même, à la manière du web d’origine, et c’est le serveur qui valide.
 

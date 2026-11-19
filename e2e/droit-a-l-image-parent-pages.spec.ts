@@ -42,8 +42,9 @@ test("souhaits du mineur, page du parent, changements visibles sur la fiche", as
   // La date de naissance est facultative : le club ne la connaît pas, le parent peut la donner.
   const date = parent.getByLabel(`Date de naissance de ${name}`);
   await expect(date).toHaveValue("");
-  // Cochée, la validation passe : la date reste facultative.
+  // Cochée, l'erreur s'efface aussitôt ; la date reste facultative.
   await parent.getByRole("checkbox").check();
+  await expect(parent.getByText("Pour valider, cochez la case")).toHaveCount(0);
   await date.fill("2012-09-10");
   await submit.click();
   await expect(parent.getByRole("status")).toContainText(`l'autorisation de ${name} est enregistrée`);

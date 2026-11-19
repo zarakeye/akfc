@@ -119,13 +119,10 @@ export function CreateUserForm(): JSX.Element {
     <form
       action={formAction}
       onSubmit={(e) => {
-        // La validation de React Hook Form est asynchrone : on suspend TOUJOURS l'envoi (un
-        // preventDefault après un await arriverait trop tard), puis on le relance s'il est valide.
-        e.preventDefault();
+        // Lu tout de suite, tant que l'évènement est disponible.
         const formData = new FormData(e.currentTarget);
-        void form.trigger().then((valid) => {
-          if (valid) startTransition(() => formAction(formData));
-        });
+        // handleSubmit arrête l'envoi natif, valide, et ne relance l'action que si tout est valide.
+        void form.handleSubmit(() => startTransition(() => formAction(formData)))(e);
       }}
       noValidate
       className="flex max-w-md flex-col gap-4"
