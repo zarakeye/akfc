@@ -2,7 +2,13 @@ import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "#trpc/core.ts";
 import { isAdmin } from "#trpc/middleware.ts";
-import { IMAGE_USAGE_VALUES } from "@akfc/contracts/legal/imageConsent.ts";
+import {
+  confirmBirthDateSchema,
+  confirmGuardianSchema,
+  confirmMineSchema,
+  guardianTokenSchema,
+  requestGuardianSchema,
+} from "@akfc/contracts/legal/imageConsentForms.schema.ts";
 import {
   deleteImageConsentForm,
   imageConsentFormSelect,
@@ -25,15 +31,10 @@ import {
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 
-/** Choix d'autorisation, tels que le formulaire en ligne les envoie. */
-const choicesInput = z.object({
-  usages: z.array(z.enum(IMAGE_USAGE_VALUES)),
-  keepAfterLeave: z.boolean().nullable(),
-});
+// Les schémas des formulaires viennent de contracts : les server actions et les formulaires
+// appliquent les mêmes. Les procédures restent pour les tests et la future application mobile.
 /** Jeton du lien envoyé au parent (forme vérifiée par le service). */
-const tokenInput = z.object({ token: z.string().min(1).max(100) });
-/** Date saisie par le parent (« AAAA-MM-JJ »). */
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date de naissance invalide.");
+const tokenInput = z.object({ token: guardianTokenSchema });
 
 /**
  * Droit à l'image : tout se fait en ligne (le membre majeur confirme, le parent d'un mineur valide).
@@ -59,13 +60,7 @@ export const imageConsentRouter = router({
 
   /** Membre majeur : confirme en ligne ses choix, avec son mot de passe. */
   confirmMine: protectedProcedure
-    .input(
-      z.object({
-        usages: z.array(z.enum(IMAGE_USAGE_VALUES)),
-        keepAfterLeave: z.boolean().nullable(),
-        password: z.string().min(1, "Saisissez votre mot de passe."),
-      }),
-    )
+    .input(confirmMineSchema)
     .mutation(({ ctx, input }) =>
       confirmMemberConsent({
         prisma: ctx.prisma,
@@ -78,7 +73,7 @@ export const imageConsentRouter = router({
 
   /** Membre mineur : ses souhaits, et le lien envoyé à son parent référent (remplace le précédent). */
   requestGuardian: protectedProcedure
-    .input(choicesInput)
+    .input(requestGuardianSchema)
     .mutation(({ ctx, input }) =>
       requestGuardianConsent({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, ...input }),
     ),
@@ -98,15 +93,7 @@ export const imageConsentRouter = router({
 
   /** Le parent valide : il se déclare représentant légal ; ses choix font foi. */
   confirmGuardian: publicProcedure
-    .input(
-      tokenInput.merge(choicesInput).extend({
-        isLegalRepresentative: z.literal(true),
-        /** Facultative : le parent la confirme, la corrige ou la donne s'il le souhaite. */
-        birthDate: isoDate.nullable().optional(),
-        /** Une date de majeur : le parent la confirme (le membre passe majeur, ses choix ne sont pas gardés). */
-        confirmAdult: z.boolean().optional(),
-      }),
-    )
+    .input(confirmGuardianSchema)
     .mutation(({ ctx, input }) =>
       confirmGuardianConsent({
         prisma: ctx.prisma,
@@ -129,13 +116,7 @@ export const imageConsentRouter = router({
 
   /** Le parent valide la date (null : l'efface) ; il se déclare représentant légal. */
   confirmBirthDate: publicProcedure
-    .input(
-      tokenInput.extend({
-        isLegalRepresentative: z.literal(true),
-        birthDate: isoDate.nullable(),
-        confirmAdult: z.boolean().optional(),
-      }),
-    )
+    .input(confirmBirthDateSchema)
     .mutation(({ ctx, input }) =>
       confirmBirthDateByGuardian({
         prisma: ctx.prisma,

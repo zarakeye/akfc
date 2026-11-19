@@ -116,6 +116,12 @@ export function parseGuardianBirthDate(value: string, now: Date = new Date()): {
   return { date: d, adult: ageOn(d, now) >= 18 };
 }
 
+/** La date saisie fait-elle du membre un majeur ? (date vide ou invalide : non) */
+export function isAdultBirthDate(value: string, now: Date = new Date()): boolean {
+  const parsed = parseGuardianBirthDate(value, now);
+  return typeof parsed !== "string" && parsed.adult;
+}
+
 /** Le parent a saisi une date de majeur sans la confirmer. */
 export const ADULT_BIRTH_DATE_UNCONFIRMED =
   "À cette date, le membre a 18 ans ou plus : il est majeur. Vérifiez la date, ou confirmez-la.";

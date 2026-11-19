@@ -118,6 +118,9 @@ export function maskEmail(email: string): string {
 }
 
 /** Confirmation en ligne par le membre majeur. */
+/** Mot de passe faux à la signature : le formulaire range ce refus sous le champ du mot de passe. */
+export const CONSENT_WRONG_PASSWORD = "Mot de passe incorrect.";
+
 export async function confirmMemberConsent(params: {
   prisma: PrismaClient;
   userId: string;
@@ -146,7 +149,7 @@ export async function confirmMemberConsent(params: {
     userId,
     password: params.password,
     hash: m.password,
-    wrongMessage: "Mot de passe incorrect.",
+    wrongMessage: CONSENT_WRONG_PASSWORD,
   });
 
   const usages = normalizeUsages(params.usages);
