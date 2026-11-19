@@ -40,7 +40,8 @@ test.describe("Date de naissance demandée au parent", () => {
     await date.fill("2003-02-02");
     const alerte = parent.getByRole("alert").filter({ hasText: "il est majeur" });
     await expect(alerte).toBeVisible();
-    await expect(submit).toBeDisabled();
+    await submit.click();
+    await expect(parent.getByText("Vérifiez la date, ou confirmez-la.")).toBeVisible();
     await date.fill("2013-03-03");
     await expect(alerte).toHaveCount(0);
     await submit.click();
@@ -57,7 +58,8 @@ test.describe("Date de naissance demandée au parent", () => {
     await parent.getByLabel(`Date de naissance de ${name}`).fill("2005-01-01");
     await parent.getByRole("checkbox", { name: /représentant légal/ }).check();
     const submit = parent.getByRole("button", { name: "J'enregistre la date" });
-    await expect(submit).toBeDisabled();
+    await submit.click();
+    await expect(parent.getByText("Vérifiez la date, ou confirmez-la.")).toBeVisible();
     await parent.getByRole("checkbox", { name: "Je confirme cette date de naissance." }).check();
     await submit.click();
     await expect(parent.getByRole("status")).toContainText(`${name} est majeur`);

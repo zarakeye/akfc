@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, type JSX } from "react";
+import { startTransition, useActionState, useEffect, useState, type JSX } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@akfc/backend/modules/index.ts";
 import { PenLine, Send } from "lucide-react";
@@ -10,6 +13,17 @@ import type { ImageUsageValue } from "@akfc/contracts/legal/imageConsent.ts";
 import { BlankConsentFormPreview } from "#features/image-consent/BlankConsentFormCard.tsx";
 import { ConsentChoicesFields } from "#features/image-consent/ConsentChoicesFields.tsx";
 import { formatDate } from "#features/image-consent/consentFormat.ts";
+import { confirmMineSchema, requestGuardianSchema } from "@akfc/contracts/legal/imageConsentForms.schema.ts";
+import { confirmMineFormAction } from "#features/image-consent/actions/confirmMineForm.action.ts";
+import {
+  initialConfirmMineFormState,
+  type ConfirmMineFormState,
+} from "#features/image-consent/actions/confirmMineForm.types.ts";
+import { requestGuardianFormAction } from "#features/image-consent/actions/requestGuardianForm.action.ts";
+import {
+  initialRequestGuardianFormState,
+  type RequestGuardianFormState,
+} from "#features/image-consent/actions/requestGuardianForm.types.ts";
 
 /**
  * Profil : autorisation de droit à l'image EN LIGNE.
@@ -19,23 +33,16 @@ import { formatDate } from "#features/image-consent/consentFormat.ts";
  *   (page /autorisation-parent/…). La page dit ce qui manque au club, et où en est la demande.
  * - Majorité non renseignée : le club doit d'abord la renseigner.
  * Tout se fait en ligne : une fois le majeur ou le parent ayant validé, le récapitulatif PDF des
- * autorisations et refus rejoint les formulaires du membre.
+ * autorisations et refus rejoint les formulaires du membre. *
+ * Les deux formulaires (majeur, mineur) suivent le modèle hybride : React Hook Form et le schéma
+ * partagé dans le navigateur, une server action pour l'enregistrement.
  */
 export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValue[]; keepAfterLeave: boolean | null } | null }): JSX.Element | null {
   const utils = trpc.useUtils();
   const state = trpc.imageConsent.onlineState.useQuery();
-  const confirm = trpc.imageConsent.confirmMine.useMutation({
-    onSuccess: async () => {
-      setOpen(false);
-      setPassword("");
-      await Promise.all([utils.imageConsent.mine.invalidate(), utils.imageConsent.onlineState.invalidate()]);
-    },
-  });
   const [open, setOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [textOpen, setTextOpen] = useState(false);
-  const [usages, setUsages] = useState<ImageUsageValue[]>(latest?.usages ?? []);
-  const [keep, setKeep] = useState<boolean>(latest?.keepAfterLeave ?? false);
-  const [password, setPassword] = useState("");
 
   const s = state.data;
   if (!s) return null;
@@ -72,7 +79,10 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
         <div className="mt-2 flex flex-wrap items-center gap-4">
           <button
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setSaved(false);
+              setOpen(true);
+            }}
             className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700"
           >
             <PenLine className="h-4 w-4" />
@@ -80,49 +90,18 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
           </button>
         </div>
       ) : (
-        <form
-          className="mt-3 space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            confirm.mutate({ usages, keepAfterLeave: keep, password });
+        <AdultConsentForm
+          latest={latest}
+          onText={() => setTextOpen(true)}
+          onCancel={() => setOpen(false)}
+          onDone={async () => {
+            setOpen(false);
+            setSaved(true);
+            await Promise.all([utils.imageConsent.mine.invalidate(), utils.imageConsent.onlineState.invalidate()]);
           }}
-        >
-          <p className="text-gray-600">
-            Pour chaque usage, choisissez Oui ou Non. L&apos;autorisation est facultative : la refuser ne change rien à
-            votre inscription.{" "}
-            <button type="button" onClick={() => setTextOpen(true)} className="text-emerald-700 underline">
-              Lire le texte complet de l&apos;autorisation
-            </button>
-          </p>
-          <ConsentChoicesFields usages={usages} onUsages={setUsages} keep={keep} onKeep={setKeep} subject="self" />
-
-          <label className="flex max-w-xs flex-col gap-1">
-            <span className="font-medium">Votre mot de passe, pour signer</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="rounded border border-gray-300 px-2 py-1.5"
-            />
-          </label>
-
-          {confirm.error && <p className="text-red-600">{confirm.error.message}</p>}
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="submit"
-              disabled={confirm.isPending || password === ""}
-              className="rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {confirm.isPending ? "Enregistrement…" : "Je confirme mes choix"}
-            </button>
-            <button type="button" onClick={() => setOpen(false)} className="rounded-md border border-gray-300 px-3 py-2">
-              Annuler
-            </button>
-          </div>
-        </form>
+        />
       )}
-      {confirm.isSuccess && !open && (
+      {saved && !open && (
         <p className="mt-3 text-emerald-700">
           Autorisation enregistrée. Le récapitulatif signé figure ci-dessous, avec vos formulaires.
         </p>
@@ -155,14 +134,6 @@ function MinorWishes({
   const pending = s.pendingGuardian;
   const start = pending ?? latest;
   const [open, setOpen] = useState(false);
-  const [usages, setUsages] = useState<ImageUsageValue[]>(start?.usages ?? []);
-  const [keep, setKeep] = useState<boolean>(start?.keepAfterLeave ?? false);
-  const send = trpc.imageConsent.requestGuardian.useMutation({
-    onSuccess: async () => {
-      setOpen(false);
-      await utils.imageConsent.onlineState.invalidate();
-    },
-  });
 
   return (
     <div className="rounded-lg border border-border p-4 text-sm">
@@ -200,37 +171,184 @@ function MinorWishes({
           </button>
         </div>
       ) : (
-        <form
-          className="mt-3 space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            send.mutate({ usages, keepAfterLeave: keep });
+        <MinorWishesForm
+          start={start}
+          onText={onText}
+          onCancel={() => setOpen(false)}
+          onDone={async () => {
+            setOpen(false);
+            await utils.imageConsent.onlineState.invalidate();
           }}
-        >
-          <p className="text-gray-600">
-            Pour chaque usage, choisissez Oui ou Non : ce sont vos souhaits, votre parent décide.{" "}
-            <button type="button" onClick={onText} className="text-emerald-700 underline">
-              Lire le texte complet de l&apos;autorisation
-            </button>
-          </p>
-          <ConsentChoicesFields usages={usages} onUsages={setUsages} keep={keep} onKeep={setKeep} subject="self" />
-          {send.error && <p className="text-red-600">{send.error.message}</p>}
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="submit"
-              disabled={send.isPending}
-              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-            >
-              <Send className="h-4 w-4" />
-              {send.isPending ? "Envoi…" : "Envoyer à mon parent"}
-            </button>
-            <button type="button" onClick={() => setOpen(false)} className="rounded-md border border-gray-300 px-3 py-2">
-              Annuler
-            </button>
-          </div>
-        </form>
+        />
       )}
       {textOpen && <BlankConsentFormPreview onClose={onCloseText} />}
     </div>
+  );
+}
+
+type Choices = { usages: ImageUsageValue[]; keepAfterLeave: boolean | null } | null;
+
+/** Le submit commun : la validation de React Hook Form, puis la server action. */
+function submitWith(form: { trigger: () => Promise<boolean> }, formAction: (fd: FormData) => void) {
+  return (e: React.FormEvent<HTMLFormElement>) => {
+    // La validation de React Hook Form est asynchrone : on suspend TOUJOURS l'envoi (un
+    // preventDefault après un await arriverait trop tard), puis on le relance s'il est valide.
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    void form.trigger().then((valid) => {
+      if (valid) startTransition(() => formAction(formData));
+    });
+  };
+}
+
+/** Majeur : ses choix, signés de son mot de passe (server action confirmMineFormAction). */
+function AdultConsentForm({
+  latest,
+  onText,
+  onCancel,
+  onDone,
+}: {
+  latest: Choices;
+  onText: () => void;
+  onCancel: () => void;
+  onDone: () => Promise<void>;
+}): JSX.Element {
+  // Hors du React Compiler : react-hook-form signale ses changements par un proxy (`formState`)
+  // que le compilateur ne voit pas ; mémorisé, le rendu ne suivrait plus les erreurs.
+  "use no memo";
+  const [state, formAction, isPending] = useActionState<ConfirmMineFormState, FormData>(
+    confirmMineFormAction,
+    initialConfirmMineFormState,
+  );
+  const form = useForm<z.input<typeof confirmMineSchema>>({
+    resolver: zodResolver(confirmMineSchema),
+    defaultValues: { usages: latest?.usages ?? [], keepAfterLeave: latest?.keepAfterLeave ?? false, password: "" },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
+  const { register, setValue, setError, control, formState } = form;
+  const [usages, keep] = useWatch({ control, name: ["usages", "keepAfterLeave"] });
+
+  useEffect(() => {
+    if (state.status === "success") {
+      void onDone();
+      return;
+    }
+    if (state.status === "error" && state.fieldErrors?.password) {
+      setError("password", { type: "server", message: state.fieldErrors.password });
+    }
+  }, [state, onDone, setError]);
+
+  const errMsg = state.status === "error" && !state.fieldErrors ? state.error : null;
+
+  return (
+    <form action={formAction} onSubmit={submitWith(form, formAction)} noValidate className="mt-3 space-y-4">
+      <p className="text-gray-600">
+        Pour chaque usage, choisissez Oui ou Non. L&apos;autorisation est facultative : la refuser ne change rien à
+        votre inscription.{" "}
+        <button type="button" onClick={onText} className="text-emerald-700 underline">
+          Lire le texte complet de l&apos;autorisation
+        </button>
+      </p>
+      <ConsentChoicesFields
+        usages={usages}
+        onUsages={(v) => setValue("usages", v)}
+        keep={keep ?? false}
+        onKeep={(v) => setValue("keepAfterLeave", v)}
+        subject="self"
+      />
+
+      <label className="flex max-w-xs flex-col gap-1">
+        <span className="font-medium">Votre mot de passe, pour signer</span>
+        <input
+          type="password"
+          autoComplete="current-password"
+          className="rounded border border-gray-300 px-2 py-1.5"
+          {...register("password")}
+        />
+        {formState.errors.password && <span className="text-red-600">{formState.errors.password.message}</span>}
+      </label>
+
+      {errMsg && <p className="text-red-600">{errMsg}</p>}
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+        >
+          {isPending ? "Enregistrement…" : "Je confirme mes choix"}
+        </button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 px-3 py-2">
+          Annuler
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/** Mineur : ses souhaits, envoyés à son parent (server action requestGuardianFormAction). */
+function MinorWishesForm({
+  start,
+  onText,
+  onCancel,
+  onDone,
+}: {
+  start: Choices;
+  onText: () => void;
+  onCancel: () => void;
+  onDone: () => Promise<void>;
+}): JSX.Element {
+  // Hors du React Compiler : react-hook-form signale ses changements par un proxy (`formState`)
+  // que le compilateur ne voit pas ; mémorisé, le rendu ne suivrait plus les erreurs.
+  "use no memo";
+  const [state, formAction, isPending] = useActionState<RequestGuardianFormState, FormData>(
+    requestGuardianFormAction,
+    initialRequestGuardianFormState,
+  );
+  const form = useForm<z.input<typeof requestGuardianSchema>>({
+    resolver: zodResolver(requestGuardianSchema),
+    defaultValues: { usages: start?.usages ?? [], keepAfterLeave: start?.keepAfterLeave ?? false },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
+  const { setValue, control } = form;
+  const [usages, keep] = useWatch({ control, name: ["usages", "keepAfterLeave"] });
+
+  useEffect(() => {
+    if (state.status === "success") void onDone();
+  }, [state, onDone]);
+
+  const errMsg = state.status === "error" ? state.error : null;
+
+  return (
+    <form action={formAction} onSubmit={submitWith(form, formAction)} noValidate className="mt-3 space-y-4">
+      <p className="text-gray-600">
+        Pour chaque usage, choisissez Oui ou Non : ce sont vos souhaits, votre parent décide.{" "}
+        <button type="button" onClick={onText} className="text-emerald-700 underline">
+          Lire le texte complet de l&apos;autorisation
+        </button>
+      </p>
+      <ConsentChoicesFields
+        usages={usages}
+        onUsages={(v) => setValue("usages", v)}
+        keep={keep ?? false}
+        onKeep={(v) => setValue("keepAfterLeave", v)}
+        subject="self"
+      />
+      {errMsg && <p className="text-red-600">{errMsg}</p>}
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+        >
+          <Send className="h-4 w-4" />
+          {isPending ? "Envoi…" : "Envoyer à mon parent"}
+        </button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 px-3 py-2">
+          Annuler
+        </button>
+      </div>
+    </form>
   );
 }

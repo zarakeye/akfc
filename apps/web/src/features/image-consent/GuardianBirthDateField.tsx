@@ -2,20 +2,13 @@
 
 import type { JSX } from "react";
 
-import { ageOn } from "@akfc/contracts/legal/imageConsent.ts";
-
-/** La date saisie fait-elle du membre un majeur ? (date invalide ou vide : non) */
-export function isAdultBirthDate(value: string, now: Date = new Date()): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const d = new Date(`${value}T00:00:00Z`);
-  return !Number.isNaN(d.getTime()) && d <= now && ageOn(d, now) >= 18;
-}
+import { isAdultBirthDate } from "@akfc/contracts/legal/imageConsent.ts";
 
 /**
  * Date de naissance saisie par le parent d'un mineur (pages du parent : droit à l'image, date
  * seule). Une date qui fait du membre un MAJEUR affiche une alerte : une faute de frappe le ferait
  * sortir de l'autorité de son parent. Le parent corrige la date, ou coche « Je confirme » ; le
- * serveur refait le contrôle.
+ * serveur refait le contrôle. Les champs portent un `name` : la server action les relit.
  */
 export function GuardianBirthDateField({
   memberName,
@@ -44,6 +37,7 @@ export function GuardianBirthDateField({
         <span className="font-medium">{label}</span>
         <input
           type="date"
+          name="birthDate"
           value={value}
           onChange={(e) => {
             onChange(e.target.value);
@@ -60,7 +54,7 @@ export function GuardianBirthDateField({
           </p>
           <p>{adultConsequence}</p>
           <label className="flex items-start gap-2">
-            <input type="checkbox" className="mt-1" checked={confirmAdult} onChange={(e) => onConfirmAdult(e.target.checked)} />
+            <input type="checkbox" name="confirmAdult" className="mt-1" checked={confirmAdult} onChange={(e) => onConfirmAdult(e.target.checked)} />
             <span>Je confirme cette date de naissance.</span>
           </label>
         </div>

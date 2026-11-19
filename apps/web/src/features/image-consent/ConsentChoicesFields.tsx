@@ -26,6 +26,8 @@ export const USAGE_DETAIL: Record<ImageUsageValue, string> = {
  *   (« son départ »), pour le parent.
  * - `wishes` : souhaits du membre, montrés en regard (page du parent) ; une ligne dont le choix
  *   s'en écarte est marquée « modifié ».
+ * Chaque bouton porte un `name` et une `value` : les server actions relisent les choix dans le
+ * FormData (choicesFromFormData).
  */
 export function ConsentChoicesFields({
   usages,
@@ -71,10 +73,10 @@ export function ConsentChoicesFields({
                 </td>
                 {wishes && <td className="text-center text-gray-600">{wished ? "Oui" : "Non"}</td>}
                 <td className="text-center">
-                  <input type="radio" name={`usage-${u}`} aria-label={`${IMAGE_USAGE_LABEL[u]} : oui`} checked={yes} onChange={() => set(true)} />
+                  <input type="radio" name={`usage-${u}`} value="yes" aria-label={`${IMAGE_USAGE_LABEL[u]} : oui`} checked={yes} onChange={() => set(true)} />
                 </td>
                 <td className="text-center">
-                  <input type="radio" name={`usage-${u}`} aria-label={`${IMAGE_USAGE_LABEL[u]} : non`} checked={!yes} onChange={() => set(false)} />
+                  <input type="radio" name={`usage-${u}`} value="no" aria-label={`${IMAGE_USAGE_LABEL[u]} : non`} checked={!yes} onChange={() => set(false)} />
                 </td>
               </tr>
             );
@@ -93,14 +95,14 @@ export function ConsentChoicesFields({
           </p>
         )}
         <label className="flex items-start gap-2">
-          <input type="radio" name="keep" className="mt-1" checked={!keep} onChange={() => onKeep(false)} />
+          <input type="radio" name="keepAfterLeave" value="false" className="mt-1" checked={!keep} onChange={() => onKeep(false)} />
           <span>
             Les photos et vidéos où {self ? "j'apparais" : "il ou elle apparaît"} sont retirées et supprimées au plus tard un an
             après {self ? "mon" : "son"} départ.
           </span>
         </label>
         <label className="flex items-start gap-2">
-          <input type="radio" name="keep" className="mt-1" checked={keep} onChange={() => onKeep(true)} />
+          <input type="radio" name="keepAfterLeave" value="true" className="mt-1" checked={keep} onChange={() => onKeep(true)} />
           <span>
             Le club peut continuer à utiliser celles déjà prises, pour les seuls usages cochés, afin de garder la mémoire de sa
             vie. {self ? "Je peux" : "Vous pouvez"} retirer cet accord à tout moment.

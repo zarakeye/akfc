@@ -28,11 +28,20 @@ test("majorité non renseignée : la page dit pourquoi, et quoi faire", async ({
   await expect(page.getByText("contact@akfc.fr pour qu'un administrateur le renseigne", { exact: false })).toBeVisible();
 });
 
-test("majeur : le formulaire en ligne s'ouvre depuis la page", async ({ page }) => {
+test("majeur : le formulaire en ligne s'ouvre depuis la page, et la signature demande le bon mot de passe", async ({ page }) => {
   await loginAs(page, USERS.tagAccord.email);
   await page.goto("/profil/droit-a-l-image");
   await page.getByRole("button", { name: /Donner mon autorisation|Modifier mes choix/ }).click();
-  await expect(page.getByRole("button", { name: "Je confirme mes choix" })).toBeVisible();
+  const confirmer = page.getByRole("button", { name: "Je confirme mes choix" });
+  await expect(confirmer).toBeVisible();
+
+  // Sans mot de passe : l'erreur du schéma partagé, avant tout envoi.
+  await confirmer.click();
+  await expect(page.getByText("Saisissez votre mot de passe.")).toBeVisible();
+  // Un mot de passe faux : seul le serveur le sait ; son refus revient sous le champ. Rien n'est signé.
+  await page.getByLabel("Votre mot de passe, pour signer").fill("pas-le-bon-mot-de-passe");
+  await confirmer.click();
+  await expect(page.getByText("Mot de passe incorrect.")).toBeVisible();
 });
 
 test("le formulaire vierge se lit, sans Télécharger ni Imprimer", async ({ page }) => {

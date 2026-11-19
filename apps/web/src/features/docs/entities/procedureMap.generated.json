@@ -38479,6 +38479,671 @@
    ],
    "emails": []
   },
+  "confirmBirthDateFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/image-consent/actions/confirmBirthDateForm.action.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "BirthDateRequest",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmBirthDateByGuardian",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:108"
+       ],
+       [
+        "makeAdult",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:15"
+       ],
+       [
+        "db.birthDateRequest.deleteMany",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:40"
+       ]
+      ],
+      [
+       [
+        "confirmBirthDateByGuardian",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:108"
+       ],
+       [
+        "tx.birthDateRequest.deleteMany",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:132"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "BirthDateRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmBirthDateByGuardian",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:108"
+       ],
+       [
+        "findByToken",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:81"
+       ],
+       [
+        "prisma.birthDateRequest.findUnique",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:83"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmBirthDateByGuardian",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:108"
+       ],
+       [
+        "makeAdult",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:15"
+       ],
+       [
+        "db.imageConsentRequest.deleteMany",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:39"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmBirthDateByGuardian",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:108"
+       ],
+       [
+        "findByToken",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:81"
+       ],
+       [
+        "prisma.birthDateRequest.findUnique",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:83"
+       ]
+      ],
+      [
+       [
+        "confirmBirthDateByGuardian",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:108"
+       ],
+       [
+        "makeAdult",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:15"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:20"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "birthDate",
+      "birthDateVerified",
+      "guardianEmail",
+      "guardianName",
+      "guardianPhone",
+      "guardianRelation",
+      "legalAge"
+     ],
+     "trails": [
+      [
+       [
+        "confirmBirthDateByGuardian",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:108"
+       ],
+       [
+        "makeAdult",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:15"
+       ],
+       [
+        "db.user.update",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:26"
+       ]
+      ],
+      [
+       [
+        "confirmBirthDateByGuardian",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:108"
+       ],
+       [
+        "tx.user.update",
+        "packages/backend/src/modules/users/birthDateRequest.service.ts:134"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "send",
+    "sendBirthDateUpdatedToMember",
+    "sendComingOfAgeNotice"
+   ]
+  },
+  "confirmGuardianFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/image-consent/actions/confirmGuardianForm.action.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "BirthDateRequest",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "makeAdult",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:15"
+       ],
+       [
+        "db.birthDateRequest.deleteMany",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:40"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "create",
+     "fields": [
+      "fileName",
+      "keepAfterLeave",
+      "memberBirthDate",
+      "memberName",
+      "memberWishes",
+      "mimeType",
+      "signedAt",
+      "signerName",
+      "signerQuality",
+      "size",
+      "source",
+      "storageKey",
+      "textVersion",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "tx.imageConsentForm.create",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:245"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "latestFormUsages",
+        "packages/backend/src/modules/imageConsent/formOrder.ts:25"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/imageConsent/formOrder.ts:26"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "makeAdult",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:15"
+       ],
+       [
+        "db.imageConsentRequest.deleteMany",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:39"
+       ]
+      ],
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "tx.imageConsentRequest.deleteMany",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:243"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:144"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:142"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:144"
+       ]
+      ],
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "makeAdult",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:15"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:20"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "birthDate",
+      "birthDateVerified",
+      "guardianEmail",
+      "guardianName",
+      "guardianPhone",
+      "guardianRelation",
+      "imageConsent",
+      "imageConsentAt",
+      "legalAge"
+     ],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "makeAdult",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:15"
+       ],
+       [
+        "db.user.update",
+        "packages/backend/src/modules/users/comingOfAge.service.ts:26"
+       ]
+      ],
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:181"
+       ],
+       [
+        "tx.user.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:265"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendComingOfAgeNotice",
+    "sendGuardianConsentResultToMember",
+    "sendImageConsentNotice"
+   ]
+  },
+  "confirmMineFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/image-consent/actions/confirmMineForm.action.ts",
+   "line": 19,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "create",
+     "fields": [
+      "fileName",
+      "keepAfterLeave",
+      "memberBirthDate",
+      "memberName",
+      "mimeType",
+      "signedAt",
+      "signerName",
+      "size",
+      "source",
+      "storageKey",
+      "textVersion",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "confirmMemberConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:124"
+       ],
+       [
+        "prisma.imageConsentForm.create",
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:173"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmMemberConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:124"
+       ],
+       [
+        "latestFormUsages",
+        "packages/backend/src/modules/imageConsent/formOrder.ts:25"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/imageConsent/formOrder.ts:26"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmMemberConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:124"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:132"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsent",
+      "imageConsentAt"
+     ],
+     "trails": [
+      [
+       [
+        "confirmMemberConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:124"
+       ],
+       [
+        "prisma.user.update",
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:191"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendImageConsentNotice"
+   ]
+  },
+  "requestGuardianFormAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/image-consent/actions/requestGuardianForm.action.ts",
+   "line": 16,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:121"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:85"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:121"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:85"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "update",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:121"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:85"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:121"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:85"
+       ],
+       [
+        "prisma.imageConsentRequest.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:113"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:121"
+       ],
+       [
+        "loadMinor",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:71"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:72"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendGuardianConsentLink"
+   ]
+  },
   "replyTicketFormAction": {
    "kind": "server action",
    "file": "apps/web/src/features/tickets/reply/replyTicketForm.action.ts",
