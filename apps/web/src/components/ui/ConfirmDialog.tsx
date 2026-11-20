@@ -83,7 +83,7 @@ export default function ConfirmDialog({
       role="presentation"
     >
       <div
-        className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4"
+        className="bg-card rounded-lg shadow-xl max-w-md w-full p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -93,7 +93,7 @@ export default function ConfirmDialog({
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             {destructive && (
-              <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" aria-hidden />
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" aria-hidden />
             )}
             <h2 id={titleId} className="text-lg font-semibold">
               {title}
@@ -102,27 +102,27 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Fermer"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div id={descId} className="space-y-2 text-sm text-gray-600">
+        <div id={descId} className="space-y-2 text-sm text-muted-foreground">
           {description}
         </div>
 
         {requireTypedConfirmation && (
           <div className="space-y-2">
-            <label className="text-sm text-gray-700">
-              Tape <code className="bg-gray-100 px-1.5 py-0.5 rounded text-red-700 font-mono">{requireTypedConfirmation}</code> pour confirmer :
+            <label className="text-sm text-foreground">
+              Tape <code className="bg-muted px-1.5 py-0.5 rounded text-destructive font-mono">{requireTypedConfirmation}</code> pour confirmer :
             </label>
             <input
               type="text"
               value={typedValue}
               onChange={(e) => setTypedValue(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               autoFocus
             />
           </div>
@@ -132,7 +132,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm rounded border hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-sm rounded border hover:bg-muted transition-colors"
           >
             {cancelLabel}
           </button>
@@ -140,10 +140,10 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={!canConfirm}
-            className={`px-4 py-2 text-sm rounded text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`px-4 py-2 text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               destructive
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-blue-600 hover:bg-blue-700'
+                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                : 'bg-brand text-brand-foreground hover:bg-brand/90'
             }`}
           >
             {confirmLabel}

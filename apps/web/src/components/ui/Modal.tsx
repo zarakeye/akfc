@@ -20,7 +20,7 @@ export function Modal({ open, onClose, children }: Props) {
       />
 
       {/* content */}
-      <div className="relative bg-white rounded-lg shadow-lg w-200 max-h-[80vh] flex flex-col">
+      <div className="relative bg-card rounded-lg shadow-lg w-200 max-h-[80vh] flex flex-col">
         {children}
       </div>
     </div>

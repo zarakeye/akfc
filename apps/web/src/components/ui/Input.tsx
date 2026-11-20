@@ -12,7 +12,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         ref={ref}
-        className={`border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${className}`}
+        className={`border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring ${className}`}
         type={type}
         {...props}
       />

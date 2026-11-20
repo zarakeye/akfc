@@ -38,6 +38,17 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  /* Rôles d'état et de marque : jamais de vert, d'ambre ou de bleu écrits en dur. */
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-muted: var(--destructive-muted);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-muted: var(--warning-muted);
+  --color-info: var(--info);
+  --color-info-muted: var(--info-muted);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -73,6 +84,18 @@
   --accent: oklch(0.967 0.003 264.542);
   --accent-foreground: oklch(0.21 0.034 264.665);
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --destructive-muted: oklch(0.971 0.013 17.38);
+  /* L'émeraude du club : boutons d'action principaux. */
+  --brand: oklch(0.596 0.145 163.225);
+  --brand-foreground: oklch(0.985 0 0);
+  /* Encadrés : un texte soutenu sur un fond pastel. */
+  --success: oklch(0.508 0.118 165.612);
+  --success-muted: oklch(0.979 0.021 166.113);
+  --warning: oklch(0.473 0.137 46.201);
+  --warning-muted: oklch(0.987 0.022 95.277);
+  --info: oklch(0.488 0.243 264.376);
+  --info-muted: oklch(0.97 0.014 254.604);
   --border: oklch(0.928 0.006 264.531);
   --input: oklch(0.928 0.006 264.531);
   --ring: oklch(0.707 0.022 261.325);
@@ -107,6 +130,16 @@
   --accent: oklch(0.34 0.014 258);
   --accent-foreground: oklch(0.985 0.002 247.839);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --destructive-muted: oklch(0.258 0.092 26.042);
+  --brand: oklch(0.696 0.17 162.48);
+  --brand-foreground: oklch(0.21 0.034 264.665);
+  --success: oklch(0.845 0.143 164.978);
+  --success-muted: oklch(0.262 0.051 172.552);
+  --warning: oklch(0.879 0.169 91.605);
+  --warning-muted: oklch(0.279 0.077 45.635);
+  --info: oklch(0.809 0.105 251.813);
+  --info-muted: oklch(0.282 0.091 267.935);
   --border: oklch(1 0 0 / 14%);
   --input: oklch(1 0 0 / 18%);
   --ring: oklch(0.551 0.027 264.364);
