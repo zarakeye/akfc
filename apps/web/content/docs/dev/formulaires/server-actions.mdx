@@ -18,7 +18,7 @@ C’est ici que l’App Router change la donne. Dans un modèle React classique,
 - il appelle une API (`fetch`) ;
 - il interprète la réponse.
 
-Le serveur est toujours « derrière une URL ».
+Le serveur est toujours « derrière une URL » : la distance née avec les API, au premier chapitre, est toujours là, avec ses `fetch`, son JSON et ses types écrits deux fois.
 
 ### Le problème réel
 
@@ -41,7 +41,7 @@ Maintenant :
 2. React appelle la server action ;
 3. la server action exécute la logique métier.
 
-Le pont est intégré au framework.
+Le pont est intégré au framework. Et la distance se referme : le serveur revient dans le même système que l’interface. Le formulaire appelle une fonction, plus une adresse ; les types sont les mêmes des deux côtés, puisque c’est le même TypeScript ; et un seul schéma peut décrire la règle pour le navigateur comme pour le serveur.
 
 `useActionState` change de statut au passage. Avec le Pages Router, il organisait mieux le code, mais reposait toujours sur `fetch`. Avec l’App Router, il devient un vrai pont, où chacun a son étape : le DOM déclenche, React orchestre, le serveur exécute, et l’interface lit l’état de retour. La répartition des rôles est claire :
 
@@ -180,5 +180,5 @@ Un piège propre aux fichiers `"use server"` : ils ne peuvent exporter **que des
 L’App Router a redonné au serveur son statut : il n’est plus derrière une URL à construire, mais directement au bout du `<form>`. Avec `useActionState`, le `fetch` écrit à la main disparaît, et le formulaire retrouve le modèle natif du web, en version augmentée. Le modèle tient sur le papier, et sur un vrai formulaire du projet. Reste à le confronter à ce qui ne dépend pas de nous : une API externe, un backend séparé, et nos propres raccourcis.
 
 <Callout type="tip">
-**Chapitre suivant : le modèle hybride face au réel.** Quand `fetch` redevient nécessaire, ce qu’un contrat partagé garantit (et ce qu’il ne garantit pas), la hiérarchie de vérité, et un contre-exemple tiré du projet.
+**Chapitre suivant : le modèle hybride, assemblé puis confronté au réel.** Le contrat, la server action, le client recentré et le flux complet sur un formulaire du projet ; puis ce qui résiste : `fetch` qui redevient nécessaire, le coût de l’existant, la hiérarchie de vérité, et un contre-exemple tiré du projet.
 </Callout>

@@ -497,7 +497,55 @@ Mais en le faisant :
 👉 il va déplacer une partie des responsabilités  
 👉 et introduire une nouvelle complexité
 
-👉 c’est ce basculement que nous allons analyser maintenant
+👉 mais ce basculement a commencé avant lui
+
+### 🌐 Puis le serveur s’éloigne
+
+Pour gagner ce contrôle, le web a d’abord changé de forme.
+
+À la fin des années 1990, les navigateurs reçoivent un nouvel outil : `XMLHttpRequest` (Internet Explorer 5, en 1999). Une page peut désormais demander des données au serveur **sans se recharger**. En 2005, la pratique reçoit un nom, AJAX, et des vitrines : Gmail, Google Maps. Le web devient interactif.
+
+Mais cette interactivité a un prix : le serveur change de rôle.
+
+👉 il ne renvoie plus une page  
+👉 il renvoie des **données**
+
+Le format qui s’impose est le JSON, un texte qui décrit des objets. Le serveur devient une **API** : une liste d’adresses, chacune recevant et renvoyant du JSON.
+
+Et peu à peu, le site se coupe en deux applications :
+
+- un **front**, qui tourne dans le navigateur et construit l’interface ;
+- un **back**, qui expose l’API, porte la logique et parle à la base.
+
+Souvent deux équipes, deux dépôts, deux déploiements, et deux domaines (`app.exemple.fr`, `api.exemple.fr`). Le navigateur se méfie d’ailleurs d’une page qui interroge un autre domaine : il faut que le serveur l’y autorise explicitement (c’est le rôle de CORS).
+
+#### Ce que la distance coûte
+
+Le serveur n’est plus dans le même système que l’interface : il est **derrière une URL**. Et cette distance se paie à chaque échange :
+
+- un `fetch` à écrire, avec son adresse, sa méthode, ses en-têtes ;
+- des données à transformer en JSON à l’aller, et à relire au retour ;
+- des types perdus en route : une date voyage comme une simple chaîne, et rien ne garantit au front que la réponse a la forme attendue ;
+- les mêmes types écrits deux fois, une fois de chaque côté, et qui divergent sans bruit ;
+- les mêmes règles de validation, écrites deux fois elles aussi ;
+- des statuts HTTP (400, 403, 500…) que le front doit réinterpréter en messages.
+
+👉 le contrat simple du formulaire natif est remplacé par un contrat implicite, réparti entre deux bases de code
+
+#### Le client comble la distance
+
+Face à un serveur lointain, quelqu’un doit orchestrer l’échange : préparer les données, appeler l’API, attendre, interpréter la réponse, mettre l’interface à jour.
+
+👉 ce sera le navigateur
+
+Des frameworks d’application naissent pour porter cette charge : AngularJS en 2010, puis React en 2013. Ils donnent enfin le contrôle de l’interface que le modèle natif n’offrait pas.
+
+Mais en comblant la distance, le client prend peu à peu des rôles qui n’étaient pas les siens. Puisqu’il doit de toute façon tout préparer, il commence aussi à vérifier, à décider de ce qui est valide, à reconstruire une partie de la vérité.
+
+👉 React n’a pas causé seul la rupture  
+👉 il est arrivé dans un web où le serveur s’était déjà éloigné
+
+C’est ce basculement que nous allons analyser maintenant, côté formulaire. Et c’est cette distance que la suite de cette partie va refermer : avec l’App Router, le serveur reviendra dans le même système que l’interface.
 
 👉 **Où nous en sommes :** le web avait déjà tout pensé — un formulaire, une action, une méthode, et le navigateur qui fait le travail de transmission en respectant le serveur comme source de vérité. Ce modèle n’était pas primitif, il était juste : chaque couche tenait son rôle, sans qu’une autre ait à le deviner. Reste à voir ce que React en a fait, et pourquoi ce qui ressemblait à une amélioration a en réalité déplacé le problème ailleurs.
 

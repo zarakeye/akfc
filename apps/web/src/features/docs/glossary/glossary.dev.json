@@ -1936,7 +1936,7 @@
   "definition": "Un format standard qui décrit une API REST dans un fichier ; des outils en tirent des types et un client.",
   "definiEn": {
    "vers": "dev/formulaires/le-modele-hybride-face-au-reel",
-   "section": "6.2 — Réduire la casse (ce que nous ferions dans la vraie vie)"
+   "section": "6.7 — Réduire la casse (ce que nous ferions dans la vraie vie)"
   }
  },
  {
@@ -1948,7 +1948,7 @@
   "definition": "*Software Development Kit* : un paquet qui offre des fonctions toutes prêtes pour utiliser une API ou un service.",
   "definiEn": {
    "vers": "dev/formulaires/le-modele-hybride-face-au-reel",
-   "section": "6.2 — Réduire la casse (ce que nous ferions dans la vraie vie)"
+   "section": "6.7 — Réduire la casse (ce que nous ferions dans la vraie vie)"
   }
  },
  {

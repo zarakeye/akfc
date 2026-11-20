@@ -1,6 +1,6 @@
 ---
-title: "Le modèle hybride face au réel"
-description: "Quand le backend est externe et que fetch redevient nécessaire : la différence entre un mauvais modèle et un modèle contraint, les contrats partagés et leurs limites, la hiérarchie de vérité, et un contre-exemple réel tiré du formulaire de connexion du projet."
+title: "Le modèle hybride, assemblé puis confronté au réel"
+description: "Le modèle hybride complet, sur un formulaire réel : le contrat, la server action qui concentre la vérité (ou la confie à un service quand plusieurs entrées la partagent), le client recentré sur l’interface, le flux complet. Puis sa confrontation au réel : backend externe, contrats partagés et leurs limites, hiérarchie de vérité, et un contre-exemple tiré du formulaire de connexion."
 section: "Formulaires"
 order: 5
 ---
@@ -13,62 +13,69 @@ import { CodeSnippetWalkthrough } from "#features/docs/ui/CodeSnippetWalkthrough
 
 ## 6 — RHF, useActionState et server actions : renouer avec le modèle d’origine du web
 
-Nous avons construit quelque chose de solide. Mais, pour être honnêtes, il reste une zone floue : nous avons présenté un modèle sans l’avoir confronté au réel. Nous pourrions dire « voilà le bon modèle » ; ce serait mentir un peu, car ce modèle **n’est pas universel**.
+Jusqu’ici, nous avons remonté le fil de l’histoire :
 
-### 6.1 — Le cas réel : quand notre architecture nous contraint
+- le modèle HTML d’origine ;
+- la rupture introduite par React ;
+- la tentative de réparation côté client, avec React Hook Form ;
+- puis l’apparition de `useActionState`, et des server actions.
 
-Jusqu’ici, nous avons travaillé dans un contexte particulier :
+Toutes les pièces sont là. Il reste à les voir fonctionner **ensemble**, dans un formulaire réel du projet.
 
-- un monorepo ;
-- un backend accessible ;
-- des server actions possibles.
+Et surtout, le serveur n’est plus distant. Au premier chapitre, nous l’avons vu s’éloigner derrière une URL, souvent sur un autre domaine, avec son cortège de `fetch`, de JSON et de types écrits deux fois. Avec l’App Router, il revient dans le même système que l’interface : le formulaire appelle une fonction, les types sont les mêmes des deux côtés, et un seul schéma décrit la règle.
 
-Nous pouvions donc mettre la logique métier côté serveur, accéder directement à Prisma, et n’écrire aucun `fetch`. Mais si nous n’avions **pas** ce luxe ?
+👉 le serveur n’est plus une destination lointaine atteinte par `fetch`  
+👉 il redevient un acteur direct du cycle du formulaire
 
-Dans beaucoup de projets, le backend est externe, l’API est publique, et le frontend est découplé : une API REST fournie par un service tiers, ou un backend maintenu par une autre équipe. Nous ne pouvons alors **pas** appeler une server action interne : nous **devons** passer par HTTP. `fetch` redevient normal, et nécessaire.
+À partir de là, nous ne cherchons plus seulement à rendre le client plus confortable. Nous réorganisons le système complet :
+
+- le client garde l’expérience utilisateur ;
+- le serveur reprend la logique métier ;
+- `useActionState` devient le pont entre les deux.
+
+Autrement dit, nous ne collons plus un formulaire React sur une API distante : nous reconnectons le formulaire à une logique serveur qui vit déjà dans le même système.
 
 <Callout type="info">
-Le problème n’a jamais été `fetch`. Le problème commence quand le client devient une autorité métier.
+C’est ici que le modèle hybride atteint sa forme mature :
+
+- React Hook Form garde la responsabilité de l’expérience utilisateur ;
+- la server action reprend la logique métier ;
+- `useActionState` orchestre le cycle entre les deux.
+
+👉 le client n’imite plus le serveur  
+👉 il coopère avec lui
 </Callout>
 
-### Mauvais modèle ou modèle contraint
+### 6.1 — Le contrat : définir la forme de la vérité
 
-Il faut être précis ici : tout n’est pas « mauvais » ou « bon ».
+Avant même de parler de server action ou de composant, il faut comprendre une chose essentielle :
 
-Le **mauvais modèle**, celui que nous avons tous écrit au début, est un client qui :
+👉 un formulaire mature ne commence pas par son JSX  
+👉 il commence par son **contrat**
 
-- valide des règles métier ;
-- décide de ce qui est correct ou non ;
-- reconstruit la vérité ;
-- interprète lui-même les erreurs du serveur.
+Dans le modèle hybride, trois mondes doivent s’aligner :
 
-Autrement dit, un backend déguisé en frontend.
+- le client (React Hook Form) manipule des valeurs typées ;
+- le serveur (la server action) traite un `FormData` brut ;
+- le retour renvoie un état structuré vers l’interface.
 
-Le **modèle contraint**, propre, accepte la contrainte d’une API publique et répartit les rôles :
+S’ils ne parlent pas la même langue, les erreurs deviennent difficiles à ranger sous le bon champ, les comportements imprévisibles, et l’expérience se dégrade. Le fichier `updateMeForm.types.ts`, celui du formulaire « Mon profil », fixe cette langue commune :
 
-- le client envoie les données (`fetch`) et affiche le résultat ;
-- le serveur valide, décide et enregistre.
-
-Le client reste un **consommateur**. Le problème n’est pas l’outil, c’est la répartition des responsabilités.
-
-### 6.2 — Réduire la casse (ce que nous ferions dans la vraie vie)
-
-Quand les server actions sont impossibles, nous ne cherchons pas la perfection, mais à **limiter la divergence** entre le client et le serveur. Trois moyens existent.
-
-#### 1 — Partager un contrat
-
-<CodeSnippet
+<CodeWalkthrough
   language="ts"
-  title="Contrat partagé (Zod + TS)"
-  filename="@acme/contracts/user.ts"
-  codeJson='"import { z } from \"zod\"\n\nexport const LoginSchema = z.object({\n  email: z.string().email(),\n  password: z.string().min(8),\n})\n\nexport type LoginInput = z.infer<typeof LoginSchema>"'
+  filepath="apps/web/src/features/admin/users/forms/update-me/updateMeForm.types.ts"
+  filename="updateMeForm.types.ts"
+  snippetRange="1-24"
+  title="Le contrat du formulaire « Mon profil »"
+  stepsJson='[{"title": "Un fichier qui n’appartient à personne", "body": "Ni au client, ni au serveur : il fixe la langue commune que toutes les couches doivent parler.", "scope": "1-24"}, {"title": "Les champs du formulaire", "body": "UpdateMeField nomme les clés qu’une erreur peut viser : c’est la surface officielle du formulaire.", "scope": "1-24", "focus": "3-4"}, {"title": "L’état que renvoie le serveur", "body": "UpdateMeFormState applique le contrat commun à tous les formulaires du projet (FormActionState) : idle, success ou error, avec des erreurs rangées par champ.", "scope": "1-24", "focus": "6"}, {"title": "Les valeurs que manipule le client", "body": "UpdateMeFormValues décrit ce que React Hook Form tient en main : des chaînes éditables, pas encore validées.", "scope": "1-24", "focus": "8-15"}, {"title": "L’état de départ, ici et pas dans l’action", "body": "Un module \"use server\" n’exporte que des fonctions async : l’état initial vit donc dans ce fichier de types.", "scope": "1-24", "focus": "17-24"}]'
 />
 
-Frontend et backend parlent alors la même langue. Mais soyons lucides : ce contrat n’exécute rien, et ne valide rien côté serveur. C’est une **projection** de la règle, pas la règle appliquée.
+Ce fichier ne fait pas « que du typage ».
 
-#### Dans le projet : `packages/contracts/src/forms`
+👉 il définit la réalité du formulaire  
+👉 il aligne le client, le serveur et le retour dans un même langage
 
-Ce contrat partagé, le projet l’a, même s’il utilise des server actions : il vit dans le paquet `packages/contracts`, que le navigateur et le serveur importent tous les deux. Voici le schéma de la catégorie (la catégorie choisie dans la liste fixe, et son libellé) :
+Le contrat a une deuxième moitié : le **schéma**, qui dit non plus la forme des données, mais ce qui est valide. Dans le projet, il vit dans le paquet `packages/contracts`, que le navigateur et le serveur importent tous les deux. Voici celui de la catégorie (la catégorie choisie dans la liste fixe, et son libellé) :
 
 <CodeExample
   language="ts"
@@ -88,7 +95,248 @@ Il est utilisé deux fois, de deux façons différentes :
 
 Les messages d’erreur sont écrits dans le schéma, en français, pour l’utilisateur final : ce sont eux qui s’affichent sous les champs, qu’ils viennent du navigateur ou du serveur.
 
-La remarque précédente vaut ici aussi : ce fichier n’exécute rien, et n’empêche rien tant que l’action ne l’appelle pas. Sa seule garantie est que, **quand** les deux côtés l’utilisent, ils appliquent la même règle.
+<Callout type="info">
+Un formulaire robuste commence par un contrat clair.
+
+👉 sans contrat, il n’y a pas de système stable
+</Callout>
+
+#### Sans contrat, avec contrat
+
+```ts
+// ❌ sans contrat
+const email = formData.get("email");
+// string | File | null → incertain → fragile
+
+// ✅ avec contrat
+const parsed = updateMeFormSchema.safeParse(input);
+// en cas de succès, parsed.data a la forme attendue → stable → prévisible
+```
+
+Sans contrat : des types flous, des erreurs difficiles à tracer, des comportements imprévisibles. Avec contrat : une langue commune, des erreurs maîtrisées, un système fiable.
+
+### 6.2 — La server action concentre la vérité métier
+
+À ce stade, une bascule importante se produit. Jusqu’ici, le client portait encore une partie de la logique du formulaire ; avec la server action, cette logique est replacée au bon endroit.
+
+👉 le serveur ne se contente plus de répondre  
+👉 il devient le point de décision du système
+
+Nous avons lu une action ligne par ligne au chapitre précédent, celle de la catégorie. Elle vérifie les droits, valide avec le schéma partagé, applique les règles que seul le serveur connaît, écrit avec Prisma et renvoie un état. La logique métier n’est plus atteinte par `fetch` : elle est exécutée là où elle doit vivre.
+
+👉 ce n’est pas une étape technique de plus  
+👉 c’est un changement d’autorité
+
+#### Quand le formulaire n’est pas la seule entrée
+
+Le projet ajoute une contrainte que le modèle doit absorber : une application mobile est prévue. Elle n’aura pas de server actions ; elle appellera les procédures tRPC. Une même opération, changer son mot de passe par exemple, a donc **deux entrées** : la procédure `auth.changePassword` et la server action du formulaire de la page profil.
+
+Écrire la logique deux fois, ce serait recréer la duplication que ce chapitre combat. Elle descend donc d’un étage, dans un **service** : une fonction du backend, `changePassword`, que les deux entrées appellent.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetStart="  changePassword: protectedProcedure"
+  snippetLines="12"
+  snippetHighlight="5-10"
+  snippetTitle="L’entrée tRPC : la procédure appelle le service"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/auth/change-password/changePasswordForm.action.ts"
+  filename="changePasswordForm.action.ts"
+  snippetStart="    await changePassword({"
+  snippetLines="6"
+  snippetHighlight="1"
+  snippetTitle="L’entrée du formulaire : la server action appelle le même service"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Chaque entrée garde ce qui lui est propre : la procédure reçoit des données déjà validées par son schéma, la server action lit un `FormData` brut et le valide avec le schéma partagé. Mais ni l’une ni l’autre ne contient de règle : vérifier le mot de passe actuel, refuser un mot de passe identique, fermer les autres sessions, tout cela est dans le service. La server action reste le point d’entrée du formulaire ; elle n’est plus le seul lieu de la vérité, elle en est la porte.
+
+### 6.3 — Le composant client se recentre sur l’interface
+
+Une fois la logique métier déplacée côté serveur, le rôle du composant client change profondément. Il ne disparaît pas, mais il cesse de porter des responsabilités qui ne lui appartenaient pas.
+
+👉 il ne décide plus  
+👉 il orchestre
+
+Il garde :
+
+- la gestion locale des champs ;
+- l’hydratation du formulaire ;
+- l’affichage des erreurs ;
+- la réaction au cycle de l’action (en cours, succès, erreur).
+
+Le formulaire « Mon profil » montre ce rééquilibrage :
+
+<CodeWalkthrough
+  language="tsx"
+  filepath="apps/web/src/features/admin/users/forms/update-me/UpdateMeForm.tsx"
+  filename="UpdateMeForm.tsx"
+  snippetStart="export default function UpdateMeForm(): JSX.Element {"
+  snippetEnd="(fin du bloc)"
+  title="Le composant client orchestre, sans redevenir un backend miniature"
+  stepsJson='[{"title": "Ce bloc appartient au client", "body": "Ce code s’exécute dans le navigateur. Il orchestre l’interface, mais ne contient plus la logique métier.", "scope": "1-265"}, {"title": "Le branchement de la server action", "body": "useActionState relie le composant à updateMeFormAction : le formulaire n’a plus d’URL à connaître.", "scope": "1-265", "focus": "15-18"}, {"title": "React Hook Form tient les champs", "body": "useForm garde les valeurs et les erreurs locales, et sait si quelque chose a changé (isDirty).", "scope": "1-265", "focus": "20-39"}, {"title": "Hydrater le formulaire depuis le serveur", "body": "reset(...) remplit les champs avec le profil enregistré : le point de départ vient du serveur, pas d’un état inventé par le client.", "scope": "1-265", "focus": "41-57"}, {"title": "Réinjecter les erreurs du serveur", "body": "Les fieldErrors renvoyées par l’action rejoignent React Hook Form par setError : sous les champs, comme les siennes.", "scope": "1-265", "focus": "59-82"}, {"title": "Se resynchroniser après un succès", "body": "Le composant relit le profil et la session, puis repart d’où l’on venait : l’interface ne garde pas une vérité périmée.", "scope": "1-265", "focus": "84-96"}, {"title": "Afficher le cycle de l’action", "body": "Le message d’erreur ou de succès vient de l’état renvoyé par le serveur.", "scope": "1-265", "focus": "141-151"}, {"title": "Le form appelle formAction", "body": "Le navigateur soumet le formulaire ; React appelle la server action.", "scope": "1-265", "focus": "153"}]'
+/>
+
+Le bouton « Enregistrer », lui, est un petit composant à part, `SubmitButton`, au-dessus du formulaire : `useFormStatus` lui dit si l’envoi est en cours, sans que le formulaire ait à le lui transmettre.
+
+Cette lecture montre que le client n’est pas « allégé » au point de devenir vide.
+
+👉 il reste essentiel  
+👉 mais il cesse d’usurper le rôle du serveur
+
+Le composant n’est plus responsable du « comment envoyer les données ». Il devient responsable du « comment les afficher et réagir ».
+
+👉 il ne construit plus le pont  
+👉 il l’utilise
+
+### 6.4 — Le nouveau flux complet
+
+À ce stade, le fonctionnement du formulaire n’a plus grand-chose à voir avec le modèle React classique. Ce qui change n’est pas seulement la syntaxe : c’est la manière dont les responsabilités sont distribuées.
+
+**Côté client**
+
+1. l’utilisateur modifie les champs ;
+2. React Hook Form gère les valeurs, et valide avec le schéma partagé ;
+3. le `<form>` déclenche `formAction`.
+
+**Le pont**
+
+4. `formAction` appelle la server action.
+
+**Côté serveur**
+
+5. lecture du `FormData` ;
+6. vérification des droits ;
+7. normalisation et validation ;
+8. logique métier, dans l’action ou dans son service ;
+9. persistance.
+
+**Le retour**
+
+10. un état structuré ;
+11. la mise à jour de l’interface ;
+12. la resynchronisation, s’il le faut.
+
+Ce flux est plus long à lire que l’ancien modèle, mais beaucoup plus simple à comprendre : chaque étape a une responsabilité claire.
+
+- le client guide l’utilisateur ;
+- le serveur décide ;
+- le formulaire relie les deux.
+
+<ArchitectureDiagram
+  steps="L’utilisateur saisit | React Hook Form valide | Le form déclenche formAction | La server action lit le FormData | Droits et schéma | Service et Prisma | État structuré | Erreurs sous les champs, ou resynchronisation"
+/>
+
+<Callout type="info">
+Dans ce modèle :
+
+- le formulaire redevient un point de passage naturel ;
+- le serveur redevient le lieu de décision ;
+- le client redevient une interface.
+
+👉 chacun retrouve son rôle
+</Callout>
+
+### 6.5 — Pourquoi ce modèle est supérieur
+
+Pour le mesurer, revenons à ce que faisait le client auparavant. Dans un modèle React classique, le composant devait :
+
+- gérer les champs ;
+- valider ;
+- construire une requête ;
+- appeler `fetch` ;
+- gérer la réponse HTTP ;
+- interpréter les erreurs ;
+- les ranger dans l’interface ;
+- maintenir les états de soumission.
+
+👉 il imitait un backend, sans en avoir les garanties
+
+Avec le modèle hybride, cette charge est répartie :
+
+- React Hook Form garde l’expérience utilisateur ;
+- la server action reprend la logique métier, ou la confie à un service quand plusieurs entrées la partagent ;
+- `useActionState` orchestre le cycle.
+
+Le résultat n’est pas seulement plus confortable : il est plus juste. Le client ne prend plus de décisions métier, le serveur n’est plus contourné, le formulaire redevient un passage structuré. Ce n’est pas une amélioration de plus : c’est un réalignement du système avec le web lui-même.
+
+<Callout type="info">
+Nous n’inventons pas un nouveau modèle. Nous en retrouvons un, avec de meilleurs outils.
+</Callout>
+
+### 6.6 — Le modèle face au réel
+
+Nous avons construit quelque chose de solide. Mais, pour être honnêtes, il reste une zone floue : nous avons présenté un modèle sans l’avoir confronté au réel. Nous pourrions dire « voilà le bon modèle » ; ce serait mentir un peu, car ce modèle **n’est pas universel**.
+
+#### Le cas réel : quand notre architecture nous contraint
+
+Jusqu’ici, nous avons travaillé dans un contexte particulier :
+
+- un monorepo ;
+- un backend accessible ;
+- des server actions possibles.
+
+Nous pouvions donc mettre la logique métier côté serveur, accéder directement à Prisma, et n’écrire aucun `fetch`. Mais si nous n’avions **pas** ce luxe ?
+
+Dans beaucoup de projets, le backend est externe, l’API est publique, et le frontend est découplé : une API REST fournie par un service tiers, ou un backend maintenu par une autre équipe. Nous ne pouvons alors **pas** appeler une server action interne : nous **devons** passer par HTTP. `fetch` redevient normal, et nécessaire.
+
+<Callout type="info">
+Le problème n’a jamais été `fetch`. Le problème commence quand le client devient une autorité métier.
+</Callout>
+
+#### Le coût de l’existant
+
+Une autre contrainte, la plus fréquente, ne vient pas de la technique mais de l’histoire du projet. Un front et un back déjà séparés, deux équipes, une API dont d’autres applications dépendent : atteindre ce modèle demande alors un changement d’approche radical. Rapprocher les deux bases de code, revoir les déploiements, réécrire les formulaires un à un : c’est coûteux, et ce n’est pas toujours possible, ni même raisonnable.
+
+Les bénéfices sont pourtant réels, et flagrants une fois le pas franchi. Le projet l’a vécu en convertissant ses formulaires : chaque logique descendue dans un service, chaque règle écrite une seule fois, des messages identiques dans le navigateur et sur le serveur. Même ici, la conversion n’est pas totale : les éditeurs riches et le dépôt de fichiers restent sur tRPC, pour des raisons que le chapitre 7 détaille.
+
+👉 le modèle hybride est une cible, pas un prérequis  
+👉 on s’en rapproche par étapes, en sachant ce que chaque étape coûte et rapporte
+
+#### Mauvais modèle ou modèle contraint
+
+Il faut être précis ici : tout n’est pas « mauvais » ou « bon ».
+
+Le **mauvais modèle**, celui que nous avons tous écrit au début, est un client qui :
+
+- valide des règles métier ;
+- décide de ce qui est correct ou non ;
+- reconstruit la vérité ;
+- interprète lui-même les erreurs du serveur.
+
+Autrement dit, un backend déguisé en frontend.
+
+Le **modèle contraint**, propre, accepte la contrainte d’une API publique et répartit les rôles :
+
+- le client envoie les données (`fetch`) et affiche le résultat ;
+- le serveur valide, décide et enregistre.
+
+Le client reste un **consommateur**. Le problème n’est pas l’outil, c’est la répartition des responsabilités.
+
+### 6.7 — Réduire la casse (ce que nous ferions dans la vraie vie)
+
+Quand les server actions sont impossibles, nous ne cherchons pas la perfection, mais à **limiter la divergence** entre le client et le serveur. Trois moyens existent.
+
+#### 1 — Partager un contrat
+
+<CodeSnippet
+  language="ts"
+  title="Contrat partagé (Zod + TS)"
+  filename="@acme/contracts/user.ts"
+  codeJson='"import { z } from \"zod\"\n\nexport const LoginSchema = z.object({\n  email: z.string().email(),\n  password: z.string().min(8),\n})\n\nexport type LoginInput = z.infer<typeof LoginSchema>"'
+/>
+
+Frontend et backend parlent alors la même langue. Mais soyons lucides : ce contrat n’exécute rien, et ne valide rien côté serveur. C’est une **projection** de la règle, pas la règle appliquée.
+
+#### Dans le projet : `packages/contracts`
+
+Ce contrat partagé, le projet l’a, même s’il utilise des server actions : c’est le schéma de la catégorie vu en 6.1. La remarque précédente vaut pour lui aussi : ce fichier n’exécute rien, et n’empêche rien tant que l’action ne l’appelle pas. Sa seule garantie est que, **quand** les deux côtés l’utilisent, ils appliquent la même règle.
 
 #### 2 — Générer les types avec OpenAPI
 
@@ -107,7 +355,7 @@ Le transport est automatisé et sécurisé ; mais, encore une fois, cela ne remp
 
 Un **SDK** (*Software Development Kit*) est ici un petit paquet, publié par l’équipe du backend, qui offre des fonctions toutes prêtes pour appeler son API (un client npm, des fonctions typées, le `fetch` caché à l’intérieur), au lieu d’écrire chaque `fetch` à la main. La **DX** (*developer experience*), le confort du développeur qui l’utilise, s’en trouve meilleure ; la contrainte fondamentale reste la même.
 
-### 6.3 — Hiérarchie de vérité (le vrai déclic)
+### 6.8 — Hiérarchie de vérité (le vrai déclic)
 
 Selon le contexte, la vérité ne vit pas au même endroit.
 
@@ -123,11 +371,18 @@ Avec une **API publique** (le cas contraint) :
 - le contrat partagé en est une projection ;
 - le client est un consommateur.
 
+Avec **deux entrées** (le cas du projet, server actions pour le site et tRPC pour l’application mobile) :
+
+- Prisma est la vérité ;
+- le service porte la logique métier ;
+- la server action et la procédure sont deux portes vers lui ;
+- chaque client est une interface.
+
 <Callout type="info">
 Le client ne doit jamais être la source de vérité métier : il consomme une vérité définie ailleurs.
 </Callout>
 
-### 6.4 — Contre-exemple réel : quand nous dérapons
+### 6.9 — Contre-exemple réel : quand nous dérapons
 
 Regardons un cas que nous avons tous écrit à un moment :
 
@@ -166,14 +421,14 @@ La règle « au moins 12 caractères » existait pourtant déjà ailleurs : dans
 
 Et une troisième fois dans `packages/contracts`, dans un schéma `authSchema` prévu pour être partagé… que personne n’importait. La procédure de réinitialisation, la page « Mot de passe oublié » et la page du nouveau mot de passe avaient chacune leur copie, de la règle des 12 caractères ou de celle de l’adresse e-mail.
 
-Le schéma partagé existait, il était juste, et il ne servait à rien : c’est la remarque de la section 6.2 (« ce contrat n’exécute rien ») prise sur le fait. Le jour où la longueur minimale serait passée à 14 caractères, il aurait fallu penser à six fichiers. Un seul oubli, et deux scénarios étaient possibles :
+Le schéma partagé existait, il était juste, et il ne servait à rien : c’est la remarque de la section 6.7 (« ce contrat n’exécute rien ») prise sur le fait. Le jour où la longueur minimale serait passée à 14 caractères, il aurait fallu penser à six fichiers. Un seul oubli, et deux scénarios étaient possibles :
 
 - le formulaire exige 12, la procédure 14 : l’utilisateur voit un formulaire « valide » refusé par le serveur, avec un message qu’il n’a jamais vu ;
 - le formulaire exige 14, la procédure 12 : rien ne casse, mais la règle affichée n’est plus celle du système.
 
 Chaque copie avait été écrite de bonne foi, à un moment différent. C’est ainsi qu’une duplication s’installe : jamais d’un coup.
 
-La correction suit la hiérarchie de vérité de la section 6.3. Les règles ne vivent plus qu’à un endroit :
+La correction suit la hiérarchie de vérité de la section 6.8. Les règles ne vivent plus qu’à un endroit :
 
 <CodeExample
   language="ts"
