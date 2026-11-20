@@ -65,7 +65,7 @@ export function SummaryCards({
       {cards.map((card) => (
         <article
           key={card.key}
-          className="flex h-full flex-col rounded-lg border border-border bg-white p-6"
+          className="flex h-full flex-col rounded-lg border border-border bg-card p-6"
         >
           {card.imageUrl && (
             // Hors du repli, et en `aspect-video` : c'est ce qui rend les
@@ -106,7 +106,7 @@ export function SummaryCards({
             <div className="mt-auto border-t border-border pt-3">
               <Link
                 href={card.href}
-                className="group inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700"
+                className="group inline-flex items-center gap-1.5 text-sm font-medium text-success transition-colors hover:text-success"
               >
                 {card.linkLabel}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

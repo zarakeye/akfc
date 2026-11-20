@@ -32,7 +32,7 @@ export function BlankConsentFormCard({ className = "", linkToPage = false }: { c
   return (
     <div className={`rounded-lg border border-border p-4 text-sm ${className}`}>
       <p className="font-semibold">Droit à l&apos;image</p>
-      <p className="mt-1 text-gray-600">
+      <p className="mt-1 text-muted-foreground">
         Le club prend des photos et des vidéos pendant les cours et les stages. Pour qu&apos;il puisse les diffuser,
         l&apos;autorisation se donne en ligne, depuis la page « Mon droit à l&apos;image » (pour un mineur, c&apos;est
         son parent qui valide). Elle est facultative et vous choisissez chaque usage. Le formulaire du club est
@@ -42,13 +42,13 @@ export function BlankConsentFormCard({ className = "", linkToPage = false }: { c
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 font-medium hover:bg-gray-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 font-medium hover:bg-muted"
         >
           <FileText className="h-4 w-4" />
           Lire le formulaire
         </button>
         {linkToPage && (
-          <Link href="/profil/droit-a-l-image" className="text-emerald-700 hover:underline">
+          <Link href="/profil/droit-a-l-image" className="text-success hover:underline">
             Mon droit à l&apos;image
           </Link>
         )}

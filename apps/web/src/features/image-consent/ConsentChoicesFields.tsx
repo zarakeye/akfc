@@ -50,7 +50,7 @@ export function ConsentChoicesFields({
     <>
       <table className="w-full text-left">
         <thead>
-          <tr className="text-xs text-gray-500">
+          <tr className="text-xs text-muted-foreground">
             <th className="py-1 font-normal">Usage</th>
             {wishes && <th className="w-24 py-1 text-center font-normal">Souhait du membre</th>}
             <th className="w-14 py-1 text-center font-normal">Oui</th>
@@ -65,13 +65,13 @@ export function ConsentChoicesFields({
             const set = (v: boolean): void =>
               onUsages(v ? [...usages.filter((x) => x !== u), u] : usages.filter((x) => x !== u));
             return (
-              <tr key={u} className={`border-t border-border ${changed ? "bg-amber-50" : ""}`}>
+              <tr key={u} className={`border-t border-border ${changed ? "bg-warning-muted" : ""}`}>
                 <td className="py-2">
                   <span className="font-medium">{IMAGE_USAGE_LABEL[u]}</span>
-                  <span className="block text-xs text-gray-500">{USAGE_DETAIL[u]}</span>
-                  {changed && <span className="text-xs font-medium text-amber-800">modifié</span>}
+                  <span className="block text-xs text-muted-foreground">{USAGE_DETAIL[u]}</span>
+                  {changed && <span className="text-xs font-medium text-warning">modifié</span>}
                 </td>
-                {wishes && <td className="text-center text-gray-600">{wished ? "Oui" : "Non"}</td>}
+                {wishes && <td className="text-center text-muted-foreground">{wished ? "Oui" : "Non"}</td>}
                 <td className="text-center">
                   <input type="radio" name={`usage-${u}`} value="yes" aria-label={`${IMAGE_USAGE_LABEL[u]} : oui`} checked={yes} onChange={() => set(true)} />
                 </td>
@@ -84,13 +84,13 @@ export function ConsentChoicesFields({
         </tbody>
       </table>
 
-      <fieldset className={`space-y-1.5 ${keepChanged ? "rounded bg-amber-50 p-2" : ""}`}>
+      <fieldset className={`space-y-1.5 ${keepChanged ? "rounded bg-warning-muted p-2" : ""}`}>
         <legend className="mb-1 font-medium">
           {self ? "Après mon départ du club" : "Après le départ du membre"}
-          {keepChanged && <span className="ml-2 text-xs font-medium text-amber-800">modifié</span>}
+          {keepChanged && <span className="ml-2 text-xs font-medium text-warning">modifié</span>}
         </legend>
         {wishes && (
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-muted-foreground">
             Souhait du membre : {wishes.keepAfterLeave === null ? "non précisé" : wishes.keepAfterLeave ? "images conservées" : "retrait sous un an"}
           </p>
         )}

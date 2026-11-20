@@ -33,10 +33,10 @@ export function MyImageConsent(): JSX.Element {
           <p>
             <span className="font-semibold">Votre autorisation : </span>
             {IMAGE_CONSENT_LABEL[data.consent]}
-            {data.recordedAt && <span className="text-gray-500"> (depuis le {formatDate(data.recordedAt)})</span>}
+            {data.recordedAt && <span className="text-muted-foreground"> (depuis le {formatDate(data.recordedAt)})</span>}
           </p>
           {latest && (
-            <p className="mt-1 text-gray-600">
+            <p className="mt-1 text-muted-foreground">
               Usages autorisés : {formatUsages(latest.usages)}
               {formatKeepAfterLeave(latest.keepAfterLeave) && <> ; {formatKeepAfterLeave(latest.keepAfterLeave)}</>}.
             </p>
@@ -48,7 +48,7 @@ export function MyImageConsent(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => setOpen(f)}
-                    className="inline-flex items-center gap-1.5 text-emerald-700 hover:underline"
+                    className="inline-flex items-center gap-1.5 text-success hover:underline"
                   >
                     <Eye className="h-4 w-4" />
                     {i === 0 ? "Voir l'autorisation en vigueur" : "Version précédente"}
@@ -58,9 +58,9 @@ export function MyImageConsent(): JSX.Element {
               ))}
             </ul>
           ) : (
-            <p className="mt-1 text-gray-500">Le club n&apos;a pas encore enregistré de formulaire signé.</p>
+            <p className="mt-1 text-muted-foreground">Le club n&apos;a pas encore enregistré de formulaire signé.</p>
           )}
-          <p className="mt-3 text-gray-500">
+          <p className="mt-3 text-muted-foreground">
             Pour changer d&apos;avis, remettez un nouveau formulaire ou écrivez à contact@akfc.fr.
           </p>
         </div>

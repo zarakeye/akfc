@@ -34,11 +34,11 @@ export function BirthDateGuardianPage({ token }: { token: string }): JSX.Element
   return (
     <main className="mx-auto max-w-2xl px-4 py-10 text-sm">
       <h1 className="text-xl font-semibold">Date de naissance</h1>
-      <p className="mt-1 text-gray-600">AKFC — Association Kung Fu Chambéry</p>
+      <p className="mt-1 text-muted-foreground">AKFC — Association Kung Fu Chambéry</p>
       {request.isPending ? (
-        <p className="mt-6 text-gray-600">Chargement…</p>
+        <p className="mt-6 text-muted-foreground">Chargement…</p>
       ) : request.error ? (
-        <p className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900" role="alert">
+        <p className="mt-6 rounded-md border border-warning/40 bg-warning-muted p-3 text-warning" role="alert">
           {request.error.message}
         </p>
       ) : r ? (
@@ -99,7 +99,7 @@ function BirthDateForm({ token, data: r }: { token: string; data: RequestData })
           ? `La date de naissance de ${r.memberName} est effacée. ${r.memberName} en est informé.`
           : `La date de naissance de ${r.memberName} est enregistrée. ${r.memberName} en est informé.`;
     return (
-      <div className="mt-6 space-y-2 rounded-md border border-emerald-300 bg-emerald-50 p-4 text-emerald-900" role="status">
+      <div className="mt-6 space-y-2 rounded-md border border-success/40 bg-success-muted p-4 text-success" role="status">
         <p className="font-medium">Merci.</p>
         <p>{text}</p>
         <p>Ce lien ne sert plus.</p>
@@ -109,7 +109,7 @@ function BirthDateForm({ token, data: r }: { token: string; data: RequestData })
 
   if (!r.stillMinor) {
     return (
-      <p className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900" role="alert">
+      <p className="mt-6 rounded-md border border-warning/40 bg-warning-muted p-3 text-warning" role="alert">
         {r.memberName} est devenu majeur : il gère désormais lui-même son compte.
       </p>
     );
@@ -152,11 +152,11 @@ function BirthDateForm({ token, data: r }: { token: string; data: RequestData })
           }
           adultConsequence={`Confirmée, elle fait passer ${r.memberName} majeur : il gérera seul son compte et son droit à l'image.`}
         />
-        {errors.birthDate && <p className="mt-1 text-red-600">{errors.birthDate.message}</p>}
-        {errors.confirmAdult && <p className="mt-1 text-red-600">{errors.confirmAdult.message}</p>}
+        {errors.birthDate && <p className="mt-1 text-destructive">{errors.birthDate.message}</p>}
+        {errors.confirmAdult && <p className="mt-1 text-destructive">{errors.confirmAdult.message}</p>}
       </div>
       {clearing && (
-        <p className="rounded-md border border-gray-300 bg-gray-50 p-3 text-gray-700">
+        <p className="rounded-md border border-border bg-muted p-3 text-foreground">
           Champ vide : la date enregistrée sera effacée.
         </p>
       )}
@@ -168,18 +168,18 @@ function BirthDateForm({ token, data: r }: { token: string; data: RequestData })
             Je suis {r.guardianName}, représentant légal ({r.guardianRelation}) de {r.memberName}.
           </span>
         </label>
-        {errors.isLegalRepresentative && <p className="mt-1 text-red-600">{errors.isLegalRepresentative.message}</p>}
+        {errors.isLegalRepresentative && <p className="mt-1 text-destructive">{errors.isLegalRepresentative.message}</p>}
       </div>
 
-      {errMsg && <p className="text-red-600">{errMsg}</p>}
+      {errMsg && <p className="text-destructive">{errMsg}</p>}
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+        className="rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
       >
         {isPending ? "Enregistrement…" : clearing ? "J'efface la date" : "J'enregistre la date"}
       </button>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Lien personnel, valable jusqu&apos;au {formatDate(r.expiresAt)} et utilisable une seule fois.
       </p>
     </form>

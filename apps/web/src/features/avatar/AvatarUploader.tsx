@@ -242,29 +242,29 @@ export function AvatarUploader({
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-stretch gap-4">
             <div className="flex flex-col items-center gap-1.5">
-              <span className="text-xs uppercase tracking-wide text-gray-400">Actuel</span>
-              <div className={`h-32 w-32 overflow-hidden border border-gray-200 bg-gray-100 ${avatarRadius}`}>
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">Actuel</span>
+              <div className={`h-32 w-32 overflow-hidden border border-border bg-muted ${avatarRadius}`}>
                 {currentUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- proxy signé
                   <img key={currentUrl} src={currentUrl} alt="Avatar actuel" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-gray-400">
+                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                     <Camera className="h-8 w-8" />
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="w-px self-stretch bg-gray-300" />
+            <div className="w-px self-stretch bg-secondary" />
 
             <div className="flex flex-col items-center gap-1.5">
-              <span className="text-xs uppercase tracking-wide text-emerald-600">Nouveau</span>
+              <span className="text-xs uppercase tracking-wide text-success">Nouveau</span>
               <button
                 type="button"
                 disabled={busy}
                 onClick={reopenPending}
                 title="Rouvrir le recadrage dans le même état"
-                className={`group relative h-32 w-32 overflow-hidden border-2 border-emerald-400 bg-gray-100 ${avatarRadius} disabled:cursor-default`}
+                className={`group relative h-32 w-32 overflow-hidden border-2 border-success/40 bg-muted ${avatarRadius} disabled:cursor-default`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- blob local */}
                 <img src={pendingUrl} alt="Nouvel avatar" className="h-full w-full object-cover" />
@@ -284,7 +284,7 @@ export function AvatarUploader({
                   disabled={busy}
                   onClick={cancelPending}
                   aria-label="Annuler"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -293,7 +293,7 @@ export function AvatarUploader({
                   disabled={busy}
                   onClick={confirmPending}
                   aria-label="Valider"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
                 >
                   <Check className="h-5 w-5" />
                 </button>
@@ -301,7 +301,7 @@ export function AvatarUploader({
             </div>
           </div>
           {heicConverting && <p className="text-sm text-muted-foreground">{heicProgressMessage(1)}</p>}
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
       ) : (
         /* -------- MODE NORMAL : avatar actuel + sources -------- */
@@ -309,11 +309,11 @@ export function AvatarUploader({
           <div
             {...getRootProps()}
             className={`flex flex-col items-center gap-3 rounded-lg p-3 transition-colors ${
-              isDragActive ? "bg-emerald-50 ring-2 ring-emerald-300" : ""
+              isDragActive ? "bg-success-muted ring-2 ring-ring" : ""
             }`}
           >
             <input {...getInputProps()} />
-            <div className={`relative h-32 w-32 overflow-hidden border border-gray-200 bg-gray-100 ${avatarRadius}`}>
+            <div className={`relative h-32 w-32 overflow-hidden border border-border bg-muted ${avatarRadius}`}>
               {awaitingImage && settlingUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- blob local
                 <img src={settlingUrl} alt="Votre avatar" className="h-full w-full object-cover" />
@@ -321,7 +321,7 @@ export function AvatarUploader({
                 // eslint-disable-next-line @next/next/no-img-element -- proxy signé
                 <img key={currentUrl} src={currentUrl} alt="Votre avatar" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                   <Camera className="h-8 w-8" />
                 </div>
               )}
@@ -345,7 +345,7 @@ export function AvatarUploader({
                 </div>
               )}
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               {isDragActive ? "Déposez l'image ici" : "ou glissez une image ici"}
             </p>
           </div>
@@ -355,7 +355,7 @@ export function AvatarUploader({
               type="button"
               disabled={busy}
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
             >
               <ImageUp className="h-4 w-4" />
               Choisir un fichier
@@ -364,7 +364,7 @@ export function AvatarUploader({
               type="button"
               disabled={busy}
               onClick={() => setCameraOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted disabled:opacity-50"
             >
               <Video className="h-4 w-4" />
               Caméra
@@ -374,7 +374,7 @@ export function AvatarUploader({
                 type="button"
                 disabled={busy}
                 onClick={handleRemove}
-                className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
                 Retirer
@@ -383,7 +383,7 @@ export function AvatarUploader({
           </div>
 
           {heicConverting && <p className="text-sm text-muted-foreground">{heicProgressMessage(1)}</p>}
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </>
       )}
 

@@ -43,12 +43,12 @@ export function GuardianBirthDateField({
             onChange(e.target.value);
             onConfirmAdult(false);
           }}
-          className="rounded border border-gray-300 px-2 py-1.5"
+          className="rounded border border-border px-2 py-1.5"
         />
-        {hint && <span className="text-xs text-gray-500">{hint}</span>}
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
       </label>
       {adult && (
-        <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900" role="alert">
+        <div className="space-y-2 rounded-md border border-warning/40 bg-warning-muted p-3 text-warning" role="alert">
           <p>
             À cette date, {memberName} a 18 ans ou plus : il est <strong>majeur</strong>. Est-ce bien sa date de naissance ?
           </p>

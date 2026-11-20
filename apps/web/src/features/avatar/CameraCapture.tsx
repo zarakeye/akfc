@@ -15,6 +15,9 @@ import { Camera, Grid3x3, X, Zap, ZapOff } from "lucide-react";
  *    `torch` si la capability existe, sinon on bascule sur un FLASH LOGICIEL
  *    (l'écran s'illumine en blanc le temps de la capture pour éclairer le
  *    visage). Le bouton s'adapte au matériel de façon transparente.
+ *
+ * Couleurs en valeurs fixes (`bg-[#fff]`…), pas les rôles du thème : le blanc du flash
+ * éclaire réellement le visage, et les boutons sont posés sur la vidéo, pas sur la page.
  */
 
 interface CameraCaptureProps {
@@ -177,12 +180,12 @@ export function CameraCapture({
   return (
     <div
       className={`fixed inset-0 z-[70] flex flex-col items-center justify-center gap-4 p-4 ${
-        litOn ? "bg-white" : "bg-black/80 backdrop-blur-sm"
+        litOn ? "bg-[#fff]" : "bg-black/80 backdrop-blur-sm"
       }`}
     >
       {/* Flash logiciel de capture (bref, opaque) */}
       {screenFlash && (
-        <div className="pointer-events-none absolute inset-0 z-[80] bg-white" />
+        <div className="pointer-events-none absolute inset-0 z-[80] bg-[#fff]" />
       )}
 
       {/* Barre d'actions haut : grille, flash, fermer. Fond noir permanent
@@ -195,7 +198,7 @@ export function CameraCapture({
           onClick={() => setShowGrid((v) => !v)}
           className={`rounded-full p-2 transition-colors ${
             showGrid
-              ? "bg-white text-gray-900"
+              ? "bg-[#fff] text-[#111827]"
               : "bg-white/10 text-white hover:bg-white/25"
           }`}
         >
@@ -221,9 +224,9 @@ export function CameraCapture({
             }
             className={`rounded-full p-2 transition-colors ${
               flashMode === "on"
-                ? "bg-amber-400 text-gray-900"
+                ? "bg-amber-400 text-[#111827]"
                 : flashMode === "capture"
-                  ? "bg-white text-gray-900"
+                  ? "bg-[#fff] text-[#111827]"
                   : "bg-white/10 text-white hover:bg-white/25"
             }`}
           >
@@ -279,7 +282,7 @@ export function CameraCapture({
             className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${
               litOn
                 ? "bg-gray-900 text-white hover:bg-gray-800"
-                : "bg-white text-gray-900 hover:bg-gray-100"
+                : "bg-[#fff] text-[#111827] hover:bg-[#f3f4f6]"
             }`}
           >
             <Camera className="h-5 w-5" />

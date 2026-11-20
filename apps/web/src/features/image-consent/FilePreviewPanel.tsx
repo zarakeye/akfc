@@ -36,18 +36,18 @@ export function FilePreviewPanel({
     <>
       <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} aria-hidden />
       <aside
-        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-white shadow-2xl md:w-[min(760px,55vw)]"
+        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-card shadow-2xl md:w-[min(760px,55vw)]"
         role="dialog"
         aria-label={title}
       >
-        <header className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
-          <h2 className="min-w-0 flex-1 truncate text-base font-semibold text-gray-900">{title}</h2>
+        <header className="flex items-center gap-2 border-b border-border px-4 py-3">
+          <h2 className="min-w-0 flex-1 truncate text-base font-semibold text-foreground">{title}</h2>
           {!readOnly && (
             <>
               <button
                 type="button"
                 onClick={() => printFile(src, kind)}
-                className={`${pill} text-gray-700 hover:bg-gray-100`}
+                className={`${pill} text-foreground hover:bg-muted`}
                 title="Imprimer"
               >
                 <Printer className="h-4 w-4" />
@@ -56,7 +56,7 @@ export function FilePreviewPanel({
               <a
                 href={downloadHref ?? src}
                 download={downloadName ?? true}
-                className={`${pill} bg-emerald-600 text-white hover:bg-emerald-700`}
+                className={`${pill} bg-brand text-brand-foreground hover:bg-brand/90`}
               >
                 <Download className="h-4 w-4" />
                 <span className="hidden sm:inline">Télécharger</span>
@@ -67,12 +67,12 @@ export function FilePreviewPanel({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100"
+            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted"
           >
             <X className="h-5 w-5" />
           </button>
         </header>
-        <div className="min-h-0 flex-1 overflow-auto bg-gray-100">
+        <div className="min-h-0 flex-1 overflow-auto bg-muted">
           {kind === "pdf" ? (
             <PdfViewer src={src} />
           ) : (

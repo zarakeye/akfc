@@ -53,7 +53,7 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
 
   if (s.legalAge === "UNKNOWN") {
     return (
-      <div className="rounded-lg border border-border p-4 text-sm text-gray-600">
+      <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
         <p className="font-semibold text-foreground">Pourquoi pas de formulaire en ligne ?</p>
         <p className="mt-1">
           Le club n&apos;a pas encore indiqué si vous êtes majeur(e) ou mineur(e) : un mineur ne signe pas lui-même,
@@ -68,13 +68,13 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
     <div className="rounded-lg border border-border p-4 text-sm">
       <p className="font-semibold">Donner ou modifier votre autorisation en ligne</p>
       {s.reconfirm && (
-        <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900" role="status">
+        <p className="mt-2 rounded-md border border-warning/40 bg-warning-muted p-3 text-warning" role="status">
           Vous êtes majeur(e) : c&apos;est désormais vous qui décidez. Les choix de votre parent restent valables
           jusqu&apos;à ce que vous confirmiez ou modifiiez les vôtres.
         </p>
       )}
       {!s.canConfirmOnline ? (
-        <p className="mt-1 text-amber-800">Renseignez d&apos;abord vos nom et prénom dans votre profil.</p>
+        <p className="mt-1 text-warning">Renseignez d&apos;abord vos nom et prénom dans votre profil.</p>
       ) : !open ? (
         <div className="mt-2 flex flex-wrap items-center gap-4">
           <button
@@ -83,7 +83,7 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
               setSaved(false);
               setOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700"
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90"
           >
             <PenLine className="h-4 w-4" />
             {s.reconfirm ? "Confirmer ou modifier mes choix" : latest ? "Modifier mes choix" : "Donner mon autorisation"}
@@ -102,7 +102,7 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
         />
       )}
       {saved && !open && (
-        <p className="mt-3 text-emerald-700">
+        <p className="mt-3 text-success">
           Autorisation enregistrée. Le récapitulatif signé figure ci-dessous, avec vos formulaires.
         </p>
       )}
@@ -138,33 +138,33 @@ function MinorWishes({
   return (
     <div className="rounded-lg border border-border p-4 text-sm">
       <p className="font-semibold">Autorisation par votre parent référent</p>
-      <p className="mt-1 text-gray-600">
+      <p className="mt-1 text-muted-foreground">
         Vous êtes mineur : c&apos;est votre parent référent qui autorise l&apos;usage de votre image
         {s.guardianEmailMasked ? <> (adresse enregistrée par le club : {s.guardianEmailMasked})</> : null}. Vous indiquez vos
         souhaits ; il les reçoit pré-cochés, peut les modifier, confirmer votre date de naissance, puis valide.
       </p>
 
       {s.missing.length > 0 ? (
-        <p className="mt-2 text-amber-800">
+        <p className="mt-2 text-warning">
           Le club doit d&apos;abord renseigner : {s.missing.join(", ")}. Parlez-en à un instructeur.
         </p>
       ) : pending?.active && !open ? (
         <div className="mt-3 space-y-2" role="status">
-          <p className="text-emerald-800">
+          <p className="text-success">
             En attente de votre parent : lien envoyé à {pending.sentToMasked} le {pending.sentAt ? formatDate(pending.sentAt) : "—"},
             valable jusqu&apos;au {pending.expiresAt ? formatDate(pending.expiresAt) : "—"}.
           </p>
-          <button type="button" onClick={() => setOpen(true)} className="rounded-md border border-gray-300 px-3 py-2 hover:bg-gray-50">
+          <button type="button" onClick={() => setOpen(true)} className="rounded-md border border-border px-3 py-2 hover:bg-muted">
             Modifier mes souhaits et renvoyer le lien
           </button>
         </div>
       ) : !open ? (
         <div className="mt-3 flex flex-wrap items-center gap-4">
-          {pending && !pending.active && <p className="w-full text-amber-800">Le lien envoyé à votre parent a expiré.</p>}
+          {pending && !pending.active && <p className="w-full text-warning">Le lien envoyé à votre parent a expiré.</p>}
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700"
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90"
           >
             <PenLine className="h-4 w-4" />
             Indiquer mes souhaits
@@ -243,10 +243,10 @@ function AdultConsentForm({
 
   return (
     <form action={formAction} onSubmit={submitWith(form, formAction)} noValidate className="mt-3 space-y-4">
-      <p className="text-gray-600">
+      <p className="text-muted-foreground">
         Pour chaque usage, choisissez Oui ou Non. L&apos;autorisation est facultative : la refuser ne change rien à
         votre inscription.{" "}
-        <button type="button" onClick={onText} className="text-emerald-700 underline">
+        <button type="button" onClick={onText} className="text-success underline">
           Lire le texte complet de l&apos;autorisation
         </button>
       </p>
@@ -263,22 +263,22 @@ function AdultConsentForm({
         <input
           type="password"
           autoComplete="current-password"
-          className="rounded border border-gray-300 px-2 py-1.5"
+          className="rounded border border-border px-2 py-1.5"
           {...register("password")}
         />
-        {formState.errors.password && <span className="text-red-600">{formState.errors.password.message}</span>}
+        {formState.errors.password && <span className="text-destructive">{formState.errors.password.message}</span>}
       </label>
 
-      {errMsg && <p className="text-red-600">{errMsg}</p>}
+      {errMsg && <p className="text-destructive">{errMsg}</p>}
       <div className="flex flex-wrap gap-3">
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
         >
           {isPending ? "Enregistrement…" : "Je confirme mes choix"}
         </button>
-        <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 px-3 py-2">
+        <button type="button" onClick={onCancel} className="rounded-md border border-border px-3 py-2">
           Annuler
         </button>
       </div>
@@ -322,9 +322,9 @@ function MinorWishesForm({
 
   return (
     <form action={formAction} onSubmit={submitWith(form, formAction)} noValidate className="mt-3 space-y-4">
-      <p className="text-gray-600">
+      <p className="text-muted-foreground">
         Pour chaque usage, choisissez Oui ou Non : ce sont vos souhaits, votre parent décide.{" "}
-        <button type="button" onClick={onText} className="text-emerald-700 underline">
+        <button type="button" onClick={onText} className="text-success underline">
           Lire le texte complet de l&apos;autorisation
         </button>
       </p>
@@ -335,17 +335,17 @@ function MinorWishesForm({
         onKeep={(v) => setValue("keepAfterLeave", v)}
         subject="self"
       />
-      {errMsg && <p className="text-red-600">{errMsg}</p>}
+      {errMsg && <p className="text-destructive">{errMsg}</p>}
       <div className="flex flex-wrap gap-3">
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
         >
           <Send className="h-4 w-4" />
           {isPending ? "Envoi…" : "Envoyer à mon parent"}
         </button>
-        <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 px-3 py-2">
+        <button type="button" onClick={onCancel} className="rounded-md border border-border px-3 py-2">
           Annuler
         </button>
       </div>

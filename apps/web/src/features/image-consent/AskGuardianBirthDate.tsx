@@ -19,11 +19,11 @@ export function AskGuardianBirthDate({ hasDate }: { hasDate: boolean }): JSX.Ele
   const sent = pending.data;
   return (
     <div className="space-y-1 rounded-md border border-border p-3 text-xs">
-      <p className="text-gray-600">
+      <p className="text-muted-foreground">
         C&apos;est votre parent référent qui {hasDate ? "corrige votre date de naissance (ou l'efface)" : "renseigne votre date de naissance"}.
       </p>
       {sent && (
-        <p role="status" className="text-emerald-700 dark:text-emerald-400">
+        <p role="status" className="text-success">
           Demande envoyée à {sent.sentToMasked} ; son lien est valable jusqu&apos;au {formatDate(sent.expiresAt)}.
         </p>
       )}
@@ -31,13 +31,13 @@ export function AskGuardianBirthDate({ hasDate }: { hasDate: boolean }): JSX.Ele
         type="button"
         onClick={() => ask.mutate()}
         disabled={ask.isPending}
-        className="rounded-md border border-gray-300 px-2 py-1 font-medium hover:bg-gray-50 disabled:opacity-50"
+        className="rounded-md border border-border px-2 py-1 font-medium hover:bg-muted disabled:opacity-50"
       >
         {ask.isPending
           ? "Envoi…"
           : `${sent ? "Renvoyer" : "Demander"} à mon parent de ${hasDate ? "corriger" : "renseigner"} ma date de naissance`}
       </button>
-      {ask.error && <p className="text-red-600">{ask.error.message}</p>}
+      {ask.error && <p className="text-destructive">{ask.error.message}</p>}
     </div>
   );
 }

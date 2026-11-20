@@ -64,7 +64,7 @@ export function DocumentsNavLink({
         {label}
       </Link>
       {total > 0 && (
-        <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+        <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
           {total}
         </span>
       )}

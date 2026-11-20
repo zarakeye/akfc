@@ -37,11 +37,11 @@ export function PdfViewer({ src }: { src: string }) {
   }, []);
 
   const btn =
-    "rounded-md p-1.5 text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent";
+    "rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent";
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-center gap-1 border-b border-gray-200 bg-white px-3 py-2 text-sm">
+      <div className="flex items-center justify-center gap-1 border-b border-border bg-card px-3 py-2 text-sm">
         <button
           type="button"
           className={btn}
@@ -51,7 +51,7 @@ export function PdfViewer({ src }: { src: string }) {
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <span className="w-16 text-center tabular-nums text-gray-600">
+        <span className="w-16 text-center tabular-nums text-muted-foreground">
           {page} / {numPages || "…"}
         </span>
         <button
@@ -63,7 +63,7 @@ export function PdfViewer({ src }: { src: string }) {
         >
           <ChevronRight className="h-4 w-4" />
         </button>
-        <span className="mx-2 h-4 w-px bg-gray-200" />
+        <span className="mx-2 h-4 w-px bg-secondary" />
         <button
           type="button"
           className={btn}
@@ -84,18 +84,18 @@ export function PdfViewer({ src }: { src: string }) {
 
       <div
         ref={containerRef}
-        className="min-h-0 flex-1 overflow-auto bg-gray-100 p-4"
+        className="min-h-0 flex-1 overflow-auto bg-muted p-4"
       >
         <Document
           file={src}
           onLoadSuccess={onLoadSuccess}
           loading={
-            <div className="py-10 text-center text-sm text-gray-500">
+            <div className="py-10 text-center text-sm text-muted-foreground">
               Chargement…
             </div>
           }
           error={
-            <div className="py-10 text-center text-sm text-gray-600">
+            <div className="py-10 text-center text-sm text-muted-foreground">
               Impossible d&apos;afficher le document. Utilisez le bouton
               Télécharger.
             </div>

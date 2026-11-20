@@ -44,15 +44,15 @@ function detectDocKind(doc: ReaderDoc): DocKind {
 
 function MarkdownDocView({ src }: { src: string }) {
   const { content, loading, error, truncated } = useNodeTextContent(src);
-  if (loading) return <div className="p-6 text-sm text-gray-500">Chargement…</div>;
-  if (error) return <div className="p-6 text-sm text-red-600">Impossible de lire ce fichier.</div>;
+  if (loading) return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
+  if (error) return <div className="p-6 text-sm text-destructive">Impossible de lire ce fichier.</div>;
   return (
-    <div className="h-full overflow-auto bg-white p-6">
+    <div className="h-full overflow-auto bg-card p-6">
       <div className="prose prose-sm max-w-none">
         <ReactMarkdown>{content ?? ""}</ReactMarkdown>
       </div>
       {truncated && (
-        <p className="mt-4 text-xs text-gray-400">Aperçu tronqué — téléchargez le fichier pour la version complète.</p>
+        <p className="mt-4 text-xs text-muted-foreground">Aperçu tronqué — téléchargez le fichier pour la version complète.</p>
       )}
     </div>
   );
@@ -60,13 +60,13 @@ function MarkdownDocView({ src }: { src: string }) {
 
 function TextDocView({ src }: { src: string }) {
   const { content, loading, error, truncated } = useNodeTextContent(src);
-  if (loading) return <div className="p-6 text-sm text-gray-500">Chargement…</div>;
-  if (error) return <div className="p-6 text-sm text-red-600">Impossible de lire ce fichier.</div>;
+  if (loading) return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
+  if (error) return <div className="p-6 text-sm text-destructive">Impossible de lire ce fichier.</div>;
   return (
-    <div className="h-full overflow-auto bg-gray-50 p-6">
-      <pre className="whitespace-pre-wrap break-words font-mono text-sm text-gray-800">{content ?? ""}</pre>
+    <div className="h-full overflow-auto bg-muted p-6">
+      <pre className="whitespace-pre-wrap break-words font-mono text-sm text-foreground">{content ?? ""}</pre>
       {truncated && (
-        <p className="mt-4 text-xs text-gray-400">Aperçu tronqué — téléchargez le fichier pour la version complète.</p>
+        <p className="mt-4 text-xs text-muted-foreground">Aperçu tronqué — téléchargez le fichier pour la version complète.</p>
       )}
     </div>
   );
@@ -75,8 +75,8 @@ function TextDocView({ src }: { src: string }) {
 function UnsupportedDocView() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
-      <p className="text-sm font-medium text-gray-700">Aperçu non disponible pour ce format.</p>
-      <p className="text-xs text-gray-500">Utilisez le bouton « Télécharger » pour ouvrir le fichier.</p>
+      <p className="text-sm font-medium text-foreground">Aperçu non disponible pour ce format.</p>
+      <p className="text-xs text-muted-foreground">Utilisez le bouton « Télécharger » pour ouvrir le fichier.</p>
     </div>
   );
 }
@@ -134,17 +134,17 @@ export function DocumentReaderPanel({
         aria-hidden
       />
       <aside
-        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-white shadow-2xl md:w-[min(760px,55vw)]"
+        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-card shadow-2xl md:w-[min(760px,55vw)]"
         role="dialog"
         aria-label={doc.title}
       >
-        <header className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
+        <header className="flex items-center gap-2 border-b border-border px-4 py-3">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-base font-semibold text-gray-900">
+            <h2 className="truncate text-base font-semibold text-foreground">
               {doc.title}
             </h2>
             {doc.versionedAt && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Nouvelle version du {new Date(doc.versionedAt).toLocaleDateString("fr-FR")}
               </p>
             )}
@@ -157,7 +157,7 @@ export function DocumentReaderPanel({
                 ? markUnread.mutate({ id: doc.id })
                 : markRead.mutate({ id: doc.id })
             }
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
             title={isRead ? "Marquer comme non lu" : "Marquer comme lu"}
             data-tour="documents.reader.read"
           >
@@ -177,7 +177,7 @@ export function DocumentReaderPanel({
           <a
             href={`${src}?download=1`}
             data-tour="documents.reader.download"
-            className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90"
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Télécharger</span>
@@ -187,14 +187,14 @@ export function DocumentReaderPanel({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100"
+            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted"
           >
             <X className="h-5 w-5" />
           </button>
         </header>
 
         {/* Aperçu selon le type de fichier. */}
-        <div className="min-h-0 flex-1 bg-gray-100">
+        <div className="min-h-0 flex-1 bg-muted">
           {(() => {
             switch (detectDocKind(doc)) {
               case "pdf":
