@@ -199,22 +199,22 @@ La procédure applique le schéma tel quel :
   fullFileTitle="Voir le fichier complet"
 />
 
-Et le formulaire l’applique aussi, sans rien réécrire :
+Et le formulaire l’applique aussi, sans rien réécrire, par le résolveur de React Hook Form :
 
 <CodeExample
   language="tsx"
-  filepath="apps/web/src/features/auth/components/LoginForm.tsx"
+  filepath="apps/web/src/features/auth/login/LoginForm.tsx"
   filename="LoginForm.tsx"
-  snippetStart="// Les règles viennent du schéma partagé avec la procédure auth.login"
-  snippetLines="9"
-  snippetHighlight="3,4,5"
+  snippetStart="const form = useForm<LoginFormValues>({"
+  snippetLines="7"
+  snippetHighlight="2"
   snippetTitle="Le formulaire de connexion applique le même schéma"
   fullFileTitle="Voir le fichier complet"
 />
 
-`safeParse` ne lève pas d’erreur : il renvoie la liste des problèmes, dans l’ordre où le schéma les vérifie. Le formulaire affiche le premier, et marque comme invalide chaque champ concerné. Les messages sont désormais ceux du schéma, en français, identiques des deux côtés. La longueur minimale est une constante, `PASSWORD_MIN_LENGTH`, que les textes d’aide de la page du nouveau mot de passe affichent au lieu d’écrire « 12 » en dur.
+Les messages sont désormais ceux du schéma, en français, identiques des deux côtés. La longueur minimale est une constante, `PASSWORD_MIN_LENGTH`, que les textes d’aide de la page du nouveau mot de passe affichent au lieu d’écrire « 12 » en dur.
 
-Le formulaire garde son état contrôlé plutôt que de passer à React Hook Form : le bouton reste désactivé tant que la saisie n’est pas valide, et son info-bulle donne la raison. Ce qui comptait n’était pas l’outil, mais la source de la règle.
+Le formulaire a d’abord gardé son état contrôlé, le bouton désactivé tant que la saisie n’était pas valide : ce qui comptait alors n’était pas l’outil, mais la source de la règle. Il est passé depuis au modèle hybride, comme les autres formulaires du projet, et la règle n’a pas bougé d’une ligne : elle était déjà au bon endroit.
 
 ## Ce que nous gardons
 

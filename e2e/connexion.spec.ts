@@ -16,6 +16,16 @@ test.describe("Connexion", () => {
     await expect(form.submit).toHaveCount(0);
   });
 
+  test("champs vides : le message du schéma partagé, puis effacé à la frappe", async ({ page }) => {
+    await page.goto("/");
+    const form = loginForm(page);
+    await form.submit.click();
+    const erreur = page.getByText("Saisissez votre adresse e-mail.").filter({ visible: true });
+    await expect(erreur).toBeVisible();
+    await form.email.fill(USERS.membreA.email);
+    await expect(erreur).toHaveCount(0);
+  });
+
   test("un mauvais mot de passe est refusé, avec le même message qu'une adresse inconnue", async ({ page }) => {
     await page.goto("/");
     const form = loginForm(page);

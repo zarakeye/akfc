@@ -117,29 +117,43 @@ Le store a d’ailleurs été allégé pendant l’écriture de cette partie. Il
 
 ## Le formulaire de connexion : le cœur de la soumission
 
+La connexion suit le modèle hybride de la partie « Formulaires ». React Hook Form valide la saisie avec le schéma partagé ; la server action `loginFormAction` revalide, puis appelle le même service que la procédure `auth.login`, `loginService`, qui pose le cookie de session.
+
 <CodeExample
-  language="tsx"
-  filepath="apps/web/src/features/auth/components/LoginForm.tsx"
-  filename="LoginForm.tsx"
-  snippetStart="const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {"
+  language="ts"
+  filepath="apps/web/src/features/auth/login/loginForm.action.ts"
+  filename="loginForm.action.ts"
+  snippetStart="export async function loginFormAction("
   snippetEnd="(fin du bloc)"
-  snippetHighlight="13-30"
-  snippetTitle="Le handler de soumission du formulaire de connexion"
+  snippetHighlight="2,16,19-20"
+  snippetTitle="La server action de connexion"
   fullFileTitle="Voir le fichier complet"
 />
 
 ---
 
-## Lecture guidée du handler
+## Lecture guidée de la connexion
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/auth/login/loginForm.action.ts"
+  filename="loginForm.action.ts"
+  snippetStart="export async function loginFormAction("
+  snippetEnd="(fin du bloc)"
+  title="Du formulaire au cookie"
+  stepsJson='[{"title": "Le schéma partagé, encore une fois", "body": "La server action revalide le formulaire avec loginSchema, le schéma que le formulaire et la procédure appliquent aussi. Une erreur revient rangée par champ.", "scope": "1-25", "focus": "2-13"}, {"title": "Le même service que la procédure", "body": "loginService vérifie le mot de passe, compte les échecs, et pose le cookie de session. La procédure auth.login l’appelle aussi : une seule logique, deux entrées.", "scope": "1-25", "focus": "15-17"}, {"title": "Un échec attendu", "body": "INVALID_CREDENTIALS et TOO_MANY_ATTEMPTS ne sont pas des pannes : AUTH_ERRORS les traduit en messages pour le membre.", "scope": "1-25", "focus": "18-21"}, {"title": "Une erreur imprévue", "body": "Toute autre erreur (base injoignable, bug) est journalisée côté serveur ; le membre voit un message générique.", "scope": "1-25", "focus": "22-23"}]'
+/>
+
+Côté navigateur, une fois l’action réussie, le formulaire termine le travail :
 
 <CodeWalkthrough
   language="tsx"
-  filepath="apps/web/src/features/auth/components/LoginForm.tsx"
+  filepath="apps/web/src/features/auth/login/LoginForm.tsx"
   filename="LoginForm.tsx"
-  snippetStart="const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {"
-  snippetEnd="(fin du bloc)"
-  title="Du clic au tableau de bord"
-  stepsJson='[{"title": "preventDefault et validation", "body": "Le handler empêche l’envoi HTML classique, et refuse d’appeler le serveur si le schéma partagé signale un problème : le message affiché est celui du schéma.", "scope": "1-38", "focus": "2-7"}, {"title": "L’appel tRPC", "body": "trpcClient.auth.login.mutate, typé de bout en bout. L’adresse est envoyée sans ses espaces.", "scope": "1-38", "focus": "12-16"}, {"title": "Un échec attendu", "body": "Si success est faux, TypeScript sait que error existe. AUTH_ERRORS traduit INVALID_CREDENTIALS et TOO_MANY_ATTEMPTS en messages pour le membre.", "scope": "1-38", "focus": "18-21"}, {"title": "Relire la session", "body": "La connexion ne renvoie pas la session : le formulaire la demande à getSession, voir l’encart ci-dessous.", "scope": "1-38", "focus": "23-28"}, {"title": "Remplir le store, puis partir", "body": "loginSuccess range la session dans le store, puis le routeur mène à l’accueil.", "scope": "1-38", "focus": "30-31"}, {"title": "Une erreur imprévue", "body": "Toute autre erreur — réseau, serveur — atterrit ici, avec un message générique. Le détail est dans la console du navigateur et, côté serveur, dans les journaux.", "scope": "1-38", "focus": "32-37"}]'
+  snippetStart="  useEffect(() => {"
+  snippetLines="21"
+  title="Du cookie au tableau de bord"
+  stepsJson='[{"title": "Relire la session", "body": "Le cookie est posé, mais la connexion ne renvoie pas la session : le formulaire la demande à getSession, voir l’encart ci-dessous.", "scope": "1-21", "focus": "2-10"}, {"title": "Remplir le store, puis partir", "body": "loginSuccess range la session dans le store, puis le routeur mène à l’accueil.", "scope": "1-21", "focus": "11-12"}, {"title": "Les refus du serveur, sous les champs", "body": "Une erreur de champ renvoyée par l’action rejoint React Hook Form, comme celles qu’il a trouvées lui-même.", "scope": "1-21", "focus": "17-20"}]'
 />
 
 ---

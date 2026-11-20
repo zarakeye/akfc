@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import LoginForm from "#features/auth/components/LoginForm.tsx";
+import LoginForm from "#features/auth/login/LoginForm.tsx";
 import UserMenu from "#features/app-shell/UserMenu.tsx";
 import { NotificationBell } from "#features/app-shell/NotificationBell.tsx";
 import { CollaborativeBell } from "#features/app-shell/CollaborativeBell.tsx";
