@@ -10,7 +10,7 @@ import { createThrottle } from "#lib/security/throttle.ts";
  * refusée sans comparaison jusqu'à ce que la fenêtre glisse. La clé est l'adresse, pas l'adresse IP :
  * l'IP vient d'un en-tête qu'un client peut écrire lui-même, et tout un club peut partager la même.
  */
-const loginThrottle = createThrottle({ limit: 10, windowMs: 15 * 60 * 1000 });
+const loginThrottle = createThrottle({ name: "login", limit: 10, windowMs: 15 * 60 * 1000 });
 
 /**
  * Connexion : vérifie l'adresse et le mot de passe, puis ouvre une session (ligne en base, jeton

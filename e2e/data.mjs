@@ -38,6 +38,8 @@ export const USERS = {
   mineurMajeur: { id: "e2e-mineur-majeur", email: "zz-tom@e2e.test", firstName: "Tom" },
   // Change son mot de passe (ses autres sessions sont fermées). À lui seul.
   motDePasse: { id: "e2e-mot-de-passe", email: "zz-mot-de-passe@e2e.test", firstName: "Oscar" },
+  // Essaie de faux mots de passe : la limite des essais doit valoir pour toutes les entrées.
+  limiteMdp: { id: "e2e-limite-mdp", email: "zz-limite-mdp@e2e.test", firstName: "Hugo" },
 };
 
 /** Les deux mineurs de la date de naissance : un nom, un parent (Lou a une date, Tom aucune). */

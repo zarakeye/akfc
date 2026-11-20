@@ -181,7 +181,7 @@ Trois choix méritent d’être expliqués.
 
 **Le prix est assumé.** Un tiers peut, en se trompant exprès dix fois, empêcher un membre de se connecter pendant un quart d’heure. C’est le compromis de toute limite : le formulaire le dit au membre, et lui propose « Mot de passe oublié », qui n’est pas limité de la même façon.
 
-Le limiteur lui-même est un petit module partagé, `lib/security/throttle.ts`. Il existait déjà, enfermé dans le formulaire de contact ; il a été sorti pour servir aux deux. Il vit en mémoire : remis à zéro au redémarrage, et valable pour un seul serveur — c’est le cas du site.
+Le limiteur lui-même est un petit module partagé, `lib/security/throttle.ts`. Il existait déjà, enfermé dans le formulaire de contact ; il a été sorti pour servir aux deux. Il vit en mémoire : remis à zéro au redémarrage, et valable pour un seul serveur — c’est le cas du site. Ses compteurs sont rangés sur `globalThis`, sous le nom du limiteur : la route `/api/trpc` et les server actions, que Next compile à part, partagent ainsi la même limite. Rangés dans le module, ils seraient en double, et alterner les deux entrées doublerait les essais permis.
 
 ---
 

@@ -4,4 +4,4 @@ import { createThrottle } from "#lib/security/throttle.ts";
  * Garde-fou contre l'envoi en rafale du formulaire de contact (robots, double clic insistant) :
  * 5 envois par heure et par clé (adresse IP, adresse e-mail).
  */
-export const submitThrottle = createThrottle({ limit: 5, windowMs: 60 * 60 * 1000 });
+export const submitThrottle = createThrottle({ name: "ticket-submit", limit: 5, windowMs: 60 * 60 * 1000 });

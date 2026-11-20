@@ -4,6 +4,11 @@
  * Une clé (une adresse e-mail, une adresse IP…) a droit à `limit` tentatives par fenêtre glissante
  * de `windowMs`. En mémoire : suffisant pour une seule instance du site, remis à zéro au
  * redémarrage. Avec plusieurs instances, il faudrait un stockage partagé (la base, Redis).
+ *
+ * Les compteurs vivent sur `globalThis`, rangés sous le nom du limiteur. Next compile à part la
+ * route /api/trpc et les server actions : un même module y est chargé deux fois, avec deux copies
+ * de ses variables. Une Map propre au module donnerait deux limites, une par entrée, et un
+ * attaquant doublerait ses essais en alternant les deux ; sur `globalThis`, il n'y en a qu'une.
  */
 export type Throttle = {
   /** L'une des clés a-t-elle atteint la limite ? Ne compte rien. */
@@ -16,8 +21,13 @@ export type Throttle = {
   clear: (keys: Array<string | null | undefined>) => void;
 };
 
-export function createThrottle({ limit, windowMs }: { limit: number; windowMs: number }): Throttle {
-  const hits = new Map<string, number[]>();
+const registry = ((globalThis as { __akfcThrottles?: Map<string, Map<string, number[]>> }).__akfcThrottles ??=
+  new Map());
+
+export function createThrottle({ name, limit, windowMs }: { name: string; limit: number; windowMs: number }): Throttle {
+  // Un nom par limiteur : deux limiteurs ne partagent jamais leurs compteurs.
+  const hits: Map<string, number[]> = registry.get(name) ?? new Map();
+  registry.set(name, hits);
   const live = (keys: Array<string | null | undefined>): string[] => keys.filter((k): k is string => Boolean(k));
   const recent = (key: string, now: number): number[] => (hits.get(key) ?? []).filter((t) => now - t < windowMs);
 

@@ -12,7 +12,7 @@ import { createThrottle } from "#lib/security/throttle.ts";
  * passe sans fin, pour le changer ou pour l'apprendre — un mot de passe resservant souvent ailleurs.
  * 5 essais faux par quart d'heure et par membre ; une réussite remet le compteur à zéro.
  */
-const passwordCheckThrottle = createThrottle({ limit: 5, windowMs: 15 * 60 * 1000 });
+const passwordCheckThrottle = createThrottle({ name: "password-check", limit: 5, windowMs: 15 * 60 * 1000 });
 
 export async function assertPasswordOfConnectedUser(params: {
   userId: string;
