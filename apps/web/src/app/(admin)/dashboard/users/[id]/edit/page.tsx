@@ -7,6 +7,7 @@ import { ArrowLeft, Trash2 } from "lucide-react";
 
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { useConfirm } from "#components/ui/useConfirm.tsx";
 
 /**
  * Édition d'un utilisateur — `/(admin)/dashboard/users/[id]/edit`.
@@ -21,6 +22,7 @@ export default function EditUserPage({
   params: Promise<{ id: string }>;
 }): JSX.Element {
   const router = useRouter();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { id } = use(params);
   const utils = trpc.useUtils();
   const sessionUserId = useSessionStore((s) => s.session?.user?.id);
@@ -60,9 +62,7 @@ export default function EditUserPage({
   };
 
   const handleDelete = async () => {
-    if (
-      !window.confirm("Supprimer cet utilisateur ? Cette action est définitive.")
-    ) {
+    if (!(await confirm({ title: "Supprimer cet utilisateur ?", description: "Cette action est définitive." }))) {
       return;
     }
     setActionError(null);
@@ -77,6 +77,7 @@ export default function EditUserPage({
 
   return (
     <div>
+      {confirmDialog}
       <div className="mb-4 flex items-center justify-between">
         <Link
           href={`/dashboard/users/${user.id}`}

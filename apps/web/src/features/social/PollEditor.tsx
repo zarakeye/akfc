@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type JSX } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 
 import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { useConfirm } from "#components/ui/useConfirm.tsx";
 
 type PollData = NonNullable<
   Awaited<ReturnType<typeof trpcClient.poll.getByPost.query>>
@@ -82,9 +83,10 @@ function ExistingPoll({
   onDeleted: () => Promise<void>;
 }): JSX.Element {
   const [deleting, setDeleting] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const handleDelete = async () => {
-    if (!window.confirm("Supprimer ce sondage et tous ses votes ?")) return;
+    if (!(await confirm({ title: "Supprimer ce sondage ?", description: "Tous ses votes sont supprimés avec lui." }))) return;
     setDeleting(true);
     try {
       await trpcClient.poll.delete.mutate({ id: poll.id });
@@ -96,6 +98,7 @@ function ExistingPoll({
 
   return (
     <div className="flex flex-col gap-3">
+      {confirmDialog}
       <div className="flex items-start justify-between gap-4">
         <p className="font-medium">{poll.question}</p>
         <button

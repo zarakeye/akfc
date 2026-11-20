@@ -7,6 +7,7 @@ import {
   TimeInput,
 } from "#features/admin/common/components/TimeInput.tsx";
 import { formatHHMM } from "#lib/time/formatHHMM.ts";
+import { useConfirm } from "#components/ui/useConfirm.tsx";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types                                                                  */
@@ -97,6 +98,7 @@ export function SessionsManager({
 }: SessionsManagerProps) {
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const handleCreate = async (draft: SessionDraft) => {
     await onCreate(draft);
@@ -109,7 +111,7 @@ export function SessionsManager({
   };
 
   const handleDelete = async (id: number) => {
-    const confirmed = window.confirm("Supprimer cette séance ?");
+    const confirmed = await confirm({ title: "Supprimer cette séance ?", description: "Elle disparaît du programme. Cette action est définitive." });
     if (!confirmed) return;
     setDeletingId(id);
     try {
@@ -121,6 +123,7 @@ export function SessionsManager({
 
   return (
     <section className="mt-8 rounded-lg border border-border p-6">
+      {confirmDialog}
       <div className="mb-4 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-lg font-medium">
           <Calendar className="h-5 w-5" />

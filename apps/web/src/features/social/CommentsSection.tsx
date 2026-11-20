@@ -10,6 +10,7 @@ import { formatUserName } from "#features/social/userDisplay.ts";
 import { CommentEditor } from "#features/social/CommentEditor.tsx";
 import { CommentContent } from "#features/social/CommentContent.tsx";
 import type { ProseMirrorContent } from "@akfc/contracts/shared/prosemirror.ts";
+import { useConfirm } from "#components/ui/useConfirm.tsx";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types & helpers                                                        */
@@ -216,12 +217,14 @@ function CommentNode({
 }: CommentNodeProps) {
   const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const isAuthor = currentUserId != null && node.authorId === currentUserId;
   // Supprimer : l'auteur, ou un administrateur. Éditer : l'auteur seul.
   const canDelete = isAuthor || isAdmin;
 
   return (
     <li className="flex flex-col gap-2">
+      {confirmDialog}
       <div className="flex items-start gap-3">
         <UserPortrait user={node.author} size="md" />
 
@@ -275,14 +278,12 @@ function CommentNode({
                 <>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          "Supprimer ce commentaire et ses réponses ?",
-                        )
-                      ) {
-                        void onDelete(node.id);
-                      }
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Supprimer ce commentaire ?",
+                        description: "Ses réponses sont supprimées avec lui.",
+                      });
+                      if (ok) void onDelete(node.id);
                     }}
                     className="text-xs text-destructive transition-colors hover:underline"
                   >

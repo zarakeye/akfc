@@ -16,6 +16,7 @@ import {
 import { ImageConsentFormViewer, type ViewableConsentForm } from "#features/image-consent/ImageConsentFormViewer.tsx";
 import { BlankConsentFormPreview } from "#features/image-consent/BlankConsentFormCard.tsx";
 import { formatDate, formatKeepAfterLeave, formatUsages } from "#features/image-consent/consentFormat.ts";
+import { useConfirm } from "#components/ui/useConfirm.tsx";
 
 /** Souhaits du membre gardés avec une validation par le parent (JSON), ou null. */
 function readWishes(v: unknown): ConsentChoices | null {
@@ -34,6 +35,7 @@ function readWishes(v: unknown): ConsentChoices | null {
  */
 export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
   const router = useRouter();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const utils = trpc.useUtils();
   const list = trpc.imageConsent.listForUser.useQuery({ userId });
   const remove = trpc.imageConsent.remove.useMutation();
@@ -48,7 +50,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
   };
 
   const del = async (id: string): Promise<void> => {
-    if (!window.confirm("Supprimer ce formulaire signé ? Le statut du membre ne change pas.")) return;
+    if (!(await confirm({ title: "Supprimer ce formulaire signé ?", description: "Le statut du membre ne change pas." }))) return;
     setError(null);
     try {
       await remove.mutateAsync({ id });
@@ -61,6 +63,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
   return (
     <fieldset className="mt-6 rounded-lg border border-border p-4 text-sm" data-tour="users.image-consent.forms">
       <legend className="px-1 font-medium">Formulaires signés</legend>
+      {confirmDialog}
 
       {list.data && list.data.length > 0 ? (
         <ul className="mb-4 divide-y divide-border">

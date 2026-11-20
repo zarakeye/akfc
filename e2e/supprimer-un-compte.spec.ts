@@ -37,8 +37,8 @@ test("un membre qui a commenté, réagi et envoyé un fichier peut être supprim
   await expect(card.getByRole("button", { name: "Éditer" })).toHaveCount(0);
 
   // La modération : l'administrateur retire le commentaire.
-  page.once("dialog", (d) => void d.accept());
   await card.getByRole("button", { name: "Supprimer" }).click();
+  await page.getByRole("dialog", { name: "Supprimer ce commentaire ?" }).getByRole("button", { name: "Supprimer" }).click();
   await expect(card.getByText("Merci pour le stage !")).toHaveCount(0);
 });
 

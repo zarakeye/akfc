@@ -11,6 +11,7 @@ import {
 } from "#features/admin/seminars/forms/SeminarForm.tsx";
 import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 import { SessionsManager } from "#features/admin/common/components/SessionsManager.tsx";
+import { useConfirm } from "#components/ui/useConfirm.tsx";
 
 /**
  * Édition d'un stage — `/(admin)/dashboard/seminars/[id]/edit`.
@@ -23,6 +24,7 @@ export default function EditStagePage({
   params: Promise<{ id: string }>;
 }): JSX.Element {
   const { id } = use(params);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const seminarId = Number(id);
   const utils = trpc.useUtils();
   const updateMutation = trpc.seminar.update.useMutation();
@@ -53,12 +55,7 @@ export default function EditStagePage({
   };
 
   const handleDelete = async (): Promise<void> => {
-    if (
-      !window.confirm(
-        "Supprimer définitivement ce stage ? Cette action est irréversible.",
-      )
-    )
-      return;
+    if (!(await confirm({ title: "Supprimer ce stage ?", description: "Cette action est irréversible." }))) return;
     setDeleting(true);
     try {
       await deleteMutation.mutateAsync({ id: seminarId });
@@ -71,6 +68,7 @@ export default function EditStagePage({
 
   return (
     <div>
+      {confirmDialog}
       <Link
         href={`/dashboard/seminars/${seminarId}`}
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"

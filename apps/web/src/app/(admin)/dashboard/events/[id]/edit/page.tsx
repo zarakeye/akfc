@@ -11,6 +11,7 @@ import {
 } from "#features/admin/events/forms/EventForm.tsx";
 import { SuccessRedirect } from "#features/admin/common/components/SuccessRedirect.tsx";
 import { SessionsManager } from "#features/admin/common/components/SessionsManager.tsx";
+import { useConfirm } from "#components/ui/useConfirm.tsx";
 
 /**
  * Édition d'un évènement — `/(admin)/dashboard/events/[id]/edit`.
@@ -23,6 +24,7 @@ export default function EditEventPage({
   params: Promise<{ id: string }>;
 }): JSX.Element {
   const { id } = use(params);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const eventId = Number(id);
   const utils = trpc.useUtils();
   const updateMutation = trpc.event.update.useMutation();
@@ -56,12 +58,7 @@ export default function EditEventPage({
   };
 
   const handleDelete = async (): Promise<void> => {
-    if (
-      !window.confirm(
-        "Supprimer définitivement cet évènement ? Cette action est irréversible.",
-      )
-    )
-      return;
+    if (!(await confirm({ title: "Supprimer cet évènement ?", description: "Cette action est irréversible." }))) return;
     setDeleting(true);
     try {
       await deleteMutation.mutateAsync({ id: eventId });
@@ -75,6 +72,7 @@ export default function EditEventPage({
 
   return (
     <div>
+      {confirmDialog}
       <Link
         href={`/dashboard/events/${eventId}`}
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"

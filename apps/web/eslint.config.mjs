@@ -16,6 +16,22 @@ const eslintConfig = [
       "public/**",
     ],
   },
+  {
+    // Les boîtes natives du navigateur bloquent la page, n'ont ni titre ni bouton nommé et ignorent
+    // le thème : le site a sa propre fenêtre de confirmation (useConfirm, ConfirmDialog).
+    rules: {
+      "no-restricted-properties": [
+        "error",
+        { object: "window", property: "confirm", message: "Utiliser useConfirm() (#components/ui/useConfirm.tsx)." },
+        { object: "window", property: "alert", message: "Afficher le message dans la page, pas dans une boîte du navigateur." },
+      ],
+      "no-restricted-globals": [
+        "error",
+        { name: "confirm", message: "Utiliser useConfirm() (#components/ui/useConfirm.tsx)." },
+        { name: "alert", message: "Afficher le message dans la page, pas dans une boîte du navigateur." },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

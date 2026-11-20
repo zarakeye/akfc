@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { trpc } from "#core/trpc/trpcClient.ts";
 
 import { BreakingNewsForm } from "#features/admin/breaking-news/forms/BreakingNewsForm.tsx";
+import { useConfirm } from "#components/ui/useConfirm.tsx";
 
 /**
  * Édition + suppression (pas de fiche de présentation : tout est ici). L'enregistrement passe par
@@ -12,6 +13,7 @@ import { BreakingNewsForm } from "#features/admin/breaking-news/forms/BreakingNe
  */
 export function EditBreakingNews({ id }: { id: number }): JSX.Element {
   const router = useRouter();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const utils = trpc.useUtils();
   const { data, isLoading, isError } = trpc.breakingNews.getByIdAdmin.useQuery({
     id,
@@ -23,7 +25,7 @@ export function EditBreakingNews({ id }: { id: number }): JSX.Element {
     return <div>Erreur lors du chargement du flash info.</div>;
 
   const handleDelete = async () => {
-    if (!window.confirm("Supprimer définitivement ce flash info ?")) return;
+    if (!(await confirm({ title: "Supprimer ce flash info ?", description: "La suppression est définitive." }))) return;
     await remove.mutateAsync({ id });
     await utils.breakingNews.getAllAdmin.invalidate(undefined, {
       refetchType: "all",
@@ -33,6 +35,7 @@ export function EditBreakingNews({ id }: { id: number }): JSX.Element {
 
   return (
     <div className="flex flex-col gap-6">
+      {confirmDialog}
       <BreakingNewsForm initial={data} />
       <div>
         <button

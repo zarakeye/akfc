@@ -11,6 +11,7 @@ import {
   type PostFormInput,
 } from "#features/admin/posts/forms/PostForm.tsx";
 import { PollEditor } from "#features/social/PollEditor.tsx";
+import { useConfirm } from "#components/ui/useConfirm.tsx";
 
 /**
  * EditPostPage
@@ -29,6 +30,7 @@ export default function EditPostPage({
   params: Promise<{ id: string }>;
 }): JSX.Element {
   const router = useRouter();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { id } = use(params);
   const postId = Number(id);
 
@@ -66,9 +68,7 @@ export default function EditPostPage({
   };
 
   const handleDelete = async () => {
-    if (
-      !window.confirm("Supprimer cet article ? Cette action est définitive.")
-    ) {
+    if (!(await confirm({ title: "Supprimer cet article ?", description: "Cette action est définitive." }))) {
       return;
     }
     setDeleteError(null);
@@ -84,6 +84,7 @@ export default function EditPostPage({
 
   return (
     <div>
+      {confirmDialog}
       <div className="mb-4 flex items-center justify-between">
         <Link
           href="/dashboard/posts"
