@@ -136,7 +136,7 @@ export default function ContextMenu({
         left: adjustedPos.x,
         zIndex: 1000,
       }}
-      className="bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[200px]"
+      className="bg-card border border-border rounded-md shadow-lg py-1 min-w-[200px]"
       // Empêche le mousedown DANS le menu de remonter à l'écouteur global
       // qui fermerait le menu avant que le onClick de l'item ne soit lu.
       onMouseDown={(e) => e.stopPropagation()}
@@ -146,7 +146,7 @@ export default function ContextMenu({
           return (
             <div
               key={idx}
-              className="my-1 border-t border-gray-200"
+              className="my-1 border-t border-border"
               role="separator"
             />
           );
@@ -156,7 +156,7 @@ export default function ContextMenu({
           return (
             <div
               key={idx}
-              className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
             >
               {item.label}
             </div>
@@ -178,14 +178,14 @@ export default function ContextMenu({
             className={clsx(
               'w-full text-left px-3 py-1.5 text-sm transition-colors',
               'flex items-center gap-2',
-              item.disabled && 'text-gray-400 cursor-not-allowed',
-              !item.disabled && !item.destructive && 'text-gray-700 hover:bg-gray-100',
-              !item.disabled && item.destructive && 'text-red-600 hover:bg-red-50',
+              item.disabled && 'text-muted-foreground cursor-not-allowed',
+              !item.disabled && !item.destructive && 'text-foreground hover:bg-muted',
+              !item.disabled && item.destructive && 'text-destructive hover:bg-destructive-muted',
             )}
           >
             {/* Slot pour le ✓ — toujours rendu pour aligner les labels même
                 quand pas coché. Plus propre que d'aligner via padding. */}
-            <span className="inline-block w-3 shrink-0 text-blue-600">
+            <span className="inline-block w-3 shrink-0 text-info">
               {item.checked ? '✓' : ''}
             </span>
             <span className="flex-1 truncate">{item.label}</span>

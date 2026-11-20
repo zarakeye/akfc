@@ -109,7 +109,7 @@ export function MediaPicker({
       <div className="p-4 border-b font-medium">Sélectionner des médias</div>
 
       {/* Règle posée d'emblée : seuls les médias validés sont épinglables. */}
-      <div className="px-4 py-2 border-b bg-blue-50 text-xs text-blue-800">
+      <div className="px-4 py-2 border-b bg-info-muted text-xs text-info">
         Cliquez sur un média <strong>validé</strong> pour l&apos;ajouter à la
         sélection. Vous pouvez naviguer entre les dossiers&nbsp;: la sélection
         est conservée. Un média en attente ou à la corbeille reste visible mais
@@ -131,7 +131,7 @@ export function MediaPicker({
       <PickerCart nodes={cartNodes} onRemove={removeFromCart} onClear={clearCart} />
 
       <div className="p-4 border-t flex justify-between items-center">
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-muted-foreground">
           {cartCount} média{cartCount > 1 ? 's' : ''} sélectionné
           {cartCount > 1 ? 's' : ''}
         </span>
@@ -144,7 +144,7 @@ export function MediaPicker({
           <button
             onClick={handleSubmit}
             disabled={cartCount === 0}
-            className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
+            className="px-3 py-1 bg-brand text-brand-foreground rounded disabled:opacity-50"
           >
             Ajouter à la galerie
           </button>

@@ -50,46 +50,46 @@ export default function VersionsPanel({ file }: { file: FinderNode }): JSX.Eleme
   const busy = restore.isPending || remove.isPending;
 
   return (
-    <details className="border-t border-gray-100 pt-3 text-xs" data-testid="versions-panel">
-      <summary className="flex cursor-pointer items-center gap-1.5 font-medium text-gray-700" data-tour="finder.versions">
-        <History className="h-3.5 w-3.5 text-gray-500" aria-hidden />
+    <details className="border-t border-border pt-3 text-xs" data-testid="versions-panel">
+      <summary className="flex cursor-pointer items-center gap-1.5 font-medium text-foreground" data-tour="finder.versions">
+        <History className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
         Versions ({data.versions.length + 1})
       </summary>
 
       <ol className="mt-2 space-y-2">
-        <li className="rounded border border-emerald-200 bg-emerald-50/60 px-2 py-1.5">
-          <div className="font-medium text-emerald-800">Version actuelle</div>
-          <div className="text-gray-600">
+        <li className="rounded border border-success/40 bg-success-muted/60 px-2 py-1.5">
+          <div className="font-medium text-success">Version actuelle</div>
+          <div className="text-muted-foreground">
             {formatDate(data.current.uploadedAt)}
             {data.current.authorName ? ` · ${data.current.authorName}` : ''} · {formatBytes(data.current.bytes)}
           </div>
         </li>
 
         {data.versions.map((v) => (
-          <li key={v.id} className="rounded border border-gray-200 px-2 py-1.5">
-            <div className="text-gray-800">
+          <li key={v.id} className="rounded border border-border px-2 py-1.5">
+            <div className="text-foreground">
               Déposée le {formatDate(v.uploadedAt)}
               {v.authorName ? ` par ${v.authorName}` : ''}
             </div>
-            <div className="text-gray-500">
+            <div className="text-muted-foreground">
               Remplacée le {formatDate(v.replacedAt)} · {formatBytes(v.bytes)}
             </div>
 
             {confirmId === v.id ? (
               <div className="mt-1.5 flex flex-wrap items-center gap-2" role="alert">
-                <span className="text-gray-700">Remettre cette version à la place de l&apos;actuelle ?</span>
+                <span className="text-foreground">Remettre cette version à la place de l&apos;actuelle ?</span>
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => restore.mutate({ versionId: v.id })}
-                  className="rounded bg-blue-600 px-2 py-0.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded bg-brand px-2 py-0.5 font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
                 >
                   Restaurer
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmId(null)}
-                  className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50"
+                  className="rounded border border-border px-2 py-0.5 hover:bg-muted"
                 >
                   Annuler
                 </button>
@@ -99,7 +99,7 @@ export default function VersionsPanel({ file }: { file: FinderNode }): JSX.Eleme
                 <button
                   type="button"
                   onClick={() => download.mutate({ versionId: v.id })}
-                  className="inline-flex items-center gap-1 rounded border border-gray-300 px-1.5 py-0.5 text-gray-700 hover:bg-gray-50"
+                  className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-foreground hover:bg-muted"
                 >
                   <Download className="h-3 w-3" aria-hidden />
                   Télécharger
@@ -112,7 +112,7 @@ export default function VersionsPanel({ file }: { file: FinderNode }): JSX.Eleme
                       setMessage(null);
                       setConfirmId(v.id);
                     }}
-                    className="inline-flex items-center gap-1 rounded border border-gray-300 px-1.5 py-0.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-foreground hover:bg-muted disabled:opacity-50"
                   >
                     <RotateCcw className="h-3 w-3" aria-hidden />
                     Restaurer…
@@ -123,7 +123,7 @@ export default function VersionsPanel({ file }: { file: FinderNode }): JSX.Eleme
                     type="button"
                     disabled={busy}
                     onClick={() => remove.mutate({ versionId: v.id })}
-                    className="inline-flex items-center gap-1 rounded border border-red-200 px-1.5 py-0.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded border border-destructive/40 px-1.5 py-0.5 text-destructive hover:bg-destructive-muted disabled:opacity-50"
                     aria-label={`Effacer la version déposée le ${formatDate(v.uploadedAt)}`}
                   >
                     <Trash2 className="h-3 w-3" aria-hidden />
@@ -137,16 +137,16 @@ export default function VersionsPanel({ file }: { file: FinderNode }): JSX.Eleme
       </ol>
 
       {data.versions.length === 0 && (
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-muted-foreground">
           Aucune ancienne version. Remplacer ce fichier par un fichier du même nom gardera l&apos;actuel ici.
         </p>
       )}
       {message && (
-        <p className={`mt-2 ${message.ok ? 'text-emerald-700' : 'text-red-600'}`} role="status">
+        <p className={`mt-2 ${message.ok ? 'text-success' : 'text-destructive'}`} role="status">
           {message.text}
         </p>
       )}
-      <p className="mt-2 text-gray-400">Les 10 dernières versions sont gardées, un an au plus.</p>
+      <p className="mt-2 text-muted-foreground">Les 10 dernières versions sont gardées, un an au plus.</p>
     </details>
   );
 }

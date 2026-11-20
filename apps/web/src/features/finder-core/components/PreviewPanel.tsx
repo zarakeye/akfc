@@ -92,7 +92,7 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
 
   if (ids.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-3 p-6 text-center">
+      <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-3 p-6 text-center">
         <FileSearch className="h-10 w-10 opacity-50" aria-hidden />
         <div className="text-sm">
           Sélectionnez un fichier<br />pour le prévisualiser
@@ -105,10 +105,10 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
 
   if (ids.length > 1) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3 p-6 text-center">
-        <Files className="h-10 w-10 opacity-60 text-gray-400" aria-hidden />
-        <div className="text-base font-medium text-gray-700">{ids.length} éléments sélectionnés</div>
-        <div className="text-sm text-gray-400">Aperçu multiple non disponible</div>
+      <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-3 p-6 text-center">
+        <Files className="h-10 w-10 opacity-60 text-muted-foreground" aria-hidden />
+        <div className="text-base font-medium text-foreground">{ids.length} éléments sélectionnés</div>
+        <div className="text-sm text-muted-foreground">Aperçu multiple non disponible</div>
       </div>
     );
   }
@@ -140,7 +140,7 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+            className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             title="Ouvrir en grand"
             aria-label="Ouvrir en grand"
           >
@@ -172,7 +172,7 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
       <VersionsPanel key={file.id} file={file} />
 
       {/* Path complet en bas, muted, sélectionnable pour copier */}
-      <div className="mt-auto pt-2 border-t border-gray-100 text-xs text-gray-400 break-all select-text">
+      <div className="mt-auto pt-2 border-t border-border text-xs text-muted-foreground break-all select-text">
         {file.path}
       </div>
 
@@ -279,7 +279,7 @@ export function PreviewRenderer({
 }
 
 function PreviewEmpty({ message }: { message: string }): JSX.Element {
-  return <div className="text-gray-400 text-sm italic">{message}</div>;
+  return <div className="text-muted-foreground text-sm italic">{message}</div>;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -301,14 +301,14 @@ export function TextPreview({
 
   const containerClass =
     variant === 'fullscreen'
-      ? 'h-full overflow-auto p-6 bg-gray-50 text-sm whitespace-pre-wrap break-words font-mono'
-      : 'max-h-[300px] overflow-auto p-3 rounded border bg-gray-50 text-xs whitespace-pre-wrap break-words';
+      ? 'h-full overflow-auto p-6 bg-muted text-sm whitespace-pre-wrap break-words font-mono'
+      : 'max-h-[300px] overflow-auto p-3 rounded border bg-muted text-xs whitespace-pre-wrap break-words';
 
   return (
     <div className={variant === 'fullscreen' ? 'h-full flex flex-col' : 'flex flex-col gap-1'}>
       <pre className={containerClass}>{content}</pre>
       {truncated && (
-        <div className="text-xs text-gray-400 italic px-3 py-1">
+        <div className="text-xs text-muted-foreground italic px-3 py-1">
           Aperçu tronqué — fichier trop volumineux pour un affichage complet.
         </div>
       )}
@@ -331,8 +331,8 @@ export function MarkdownPreview({
 
   const containerClass =
     variant === 'fullscreen'
-      ? 'h-full overflow-auto p-8 bg-white text-base markdown-preview max-w-4xl mx-auto'
-      : 'max-h-[300px] overflow-auto p-3 rounded border bg-gray-50 text-sm markdown-preview';
+      ? 'h-full overflow-auto p-8 bg-card text-base markdown-preview max-w-4xl mx-auto'
+      : 'max-h-[300px] overflow-auto p-3 rounded border bg-muted text-sm markdown-preview';
 
   return (
     <div className={variant === 'fullscreen' ? 'h-full flex flex-col' : 'flex flex-col gap-1'}>
@@ -340,7 +340,7 @@ export function MarkdownPreview({
         <ReactMarkdown>{content}</ReactMarkdown>
       </div>
       {truncated && (
-        <div className="text-xs text-gray-400 italic px-3 py-1">
+        <div className="text-xs text-muted-foreground italic px-3 py-1">
           Aperçu tronqué — fichier trop volumineux pour un affichage complet.
         </div>
       )}
@@ -406,8 +406,8 @@ function DocxPreview({
 
   const containerClass =
     variant === 'fullscreen'
-      ? 'h-full overflow-auto p-8 bg-white text-base docx-preview max-w-4xl mx-auto'
-      : 'max-h-[400px] overflow-auto p-3 rounded border bg-gray-50 text-sm docx-preview';
+      ? 'h-full overflow-auto p-8 bg-card text-base docx-preview max-w-4xl mx-auto'
+      : 'max-h-[400px] overflow-auto p-3 rounded border bg-muted text-sm docx-preview';
 
   return (
     <div className={variant === 'fullscreen' ? 'h-full flex flex-col' : 'flex flex-col gap-1'}>
@@ -433,7 +433,7 @@ function MetadataBlock({
 }): JSX.Element | null {
   if (loading) {
     return (
-      <div className="border-t border-gray-100 pt-3 text-xs text-gray-400">
+      <div className="border-t border-border pt-3 text-xs text-muted-foreground">
         Chargement…
       </div>
     );
@@ -441,7 +441,7 @@ function MetadataBlock({
 
   if (error || metadata === null) {
     return (
-      <div className="border-t border-gray-100 pt-3 text-xs text-gray-400 italic">
+      <div className="border-t border-border pt-3 text-xs text-muted-foreground italic">
         Métadonnées indisponibles
       </div>
     );
@@ -466,12 +466,12 @@ function MetadataBlock({
   if (rows.length === 0 && !uploaderName) return null;
 
   return (
-    <div className="border-t border-gray-100 pt-3">
+    <div className="border-t border-border pt-3">
       <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
         {rows.map((row) => (
           <div key={row.label} className="contents">
-            <div className="text-gray-500">{row.label}</div>
-            <div className="text-gray-800 break-all">{row.value}</div>
+            <div className="text-muted-foreground">{row.label}</div>
+            <div className="text-foreground break-all">{row.value}</div>
           </div>
         ))}
       </div>

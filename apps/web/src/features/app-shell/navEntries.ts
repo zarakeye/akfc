@@ -71,5 +71,5 @@ export const NAV_ACTIVE = "font-bold underline underline-offset-4";
  * graisse s'hérite à tous ses items. L'état actif d'un menu se pose sur son libellé.
  */
 export const NAV_SUB_ACTIVE_BAR =
-  "bg-emerald-100 text-emerald-800 shadow-[inset_4px_0_0_#059669] hover:bg-emerald-100";
+  "bg-success-muted text-success shadow-[inset_4px_0_0_#059669] hover:bg-success-muted";
 export const NAV_SUB_ACTIVE_PANEL = "text-emerald-400";

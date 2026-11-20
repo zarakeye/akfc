@@ -133,7 +133,7 @@ export default function FinderTableRow({
       onTouchEnd={longPress.onTouchEnd}
       className={`
         cursor-pointer select-none
-        ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}
+        ${isSelected ? 'bg-info-muted' : 'hover:bg-muted'}
       `}
     >
       {multiSelectActive && (
@@ -150,10 +150,10 @@ export default function FinderTableRow({
       <td className="px-2 py-2 w-8">
         {renderNodeIcon(
           node,
-          `h-4 w-4 ${isFolder ? 'text-muted-foreground' : 'text-gray-500'}`,
+          `h-4 w-4 ${isFolder ? 'text-muted-foreground' : 'text-muted-foreground'}`,
         )}
       </td>
-      <td className="px-3 py-2 text-sm font-medium text-gray-900">
+      <td className="px-3 py-2 text-sm font-medium text-foreground">
         {isRenaming ? (
           <RenameInput
             initial={baseNameOf(node.name, node.meta?.format)}
@@ -190,18 +190,18 @@ export default function FinderTableRow({
           </div>
         )}
       </td>
-      <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+      <td className="px-3 py-2 text-sm text-muted-foreground whitespace-nowrap">
         {isFolder ? 'Dossier' : (node.mimeType || node.meta?.format || 'Fichier')}
       </td>
       <td className="px-3 py-2 text-sm whitespace-nowrap">
         {!isFolder &&
         statusOf(node) === 'pending' ? (
-          <span className="rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+          <span className="rounded border border-warning/40 bg-warning-muted px-1.5 py-0.5 text-[10px] font-semibold text-warning">
             En attente
           </span>
         ) : null}
       </td>
-      <td className="px-3 py-2 text-sm text-gray-500 text-right whitespace-nowrap">
+      <td className="px-3 py-2 text-sm text-muted-foreground text-right whitespace-nowrap">
         {isFolder ? '—' : formatBytes(node.size)}
       </td>
     </tr>

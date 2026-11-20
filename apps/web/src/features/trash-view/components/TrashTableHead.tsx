@@ -3,7 +3,7 @@ import { JSX } from 'react';
 /** En-tête du tableau de la corbeille (vue dédiée et finder) : les colonnes de TrashEntryTableRow. */
 export default function TrashTableHead(): JSX.Element {
   return (
-    <thead className="bg-gray-50 border-b text-gray-600 text-xs uppercase tracking-wider">
+    <thead className="bg-muted border-b text-muted-foreground text-xs uppercase tracking-wider">
       <tr>
         <th className="px-3 py-2 text-left w-8"></th>
         <th className="px-3 py-2 text-left w-8"></th>

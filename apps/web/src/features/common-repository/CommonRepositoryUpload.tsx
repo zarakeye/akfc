@@ -310,7 +310,7 @@ export function CommonRepositoryUpload(): JSX.Element {
             return (
               <div
                 key={it.id}
-                className="relative h-32 w-32 overflow-hidden rounded border bg-gray-50"
+                className="relative h-32 w-32 overflow-hidden rounded border bg-muted"
               >
                 {isImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -329,7 +329,7 @@ export function CommonRepositoryUpload(): JSX.Element {
                       {iconForMime(it.file.type)}
                     </span>
                     <span
-                      className="w-full truncate text-xs text-gray-700"
+                      className="w-full truncate text-xs text-foreground"
                       title={it.file.name}
                     >
                       {it.file.name}
@@ -353,7 +353,7 @@ export function CommonRepositoryUpload(): JSX.Element {
 
       {message && (
         <p
-          className={`text-sm ${state === "error" ? "text-red-600" : "text-green-700"}`}
+          className={`text-sm ${state === "error" ? "text-destructive" : "text-success"}`}
         >
           {message}
         </p>
@@ -361,7 +361,7 @@ export function CommonRepositoryUpload(): JSX.Element {
 
       {itemToCrop && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="max-h-full overflow-auto rounded-lg bg-white p-4">
+          <div className="max-h-full overflow-auto rounded-lg bg-card p-4">
             <Cropper
               picture={itemToCrop}
               onCrop={handleCrop}

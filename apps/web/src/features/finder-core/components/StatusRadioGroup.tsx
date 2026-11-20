@@ -68,8 +68,8 @@ export default function StatusRadioGroup({
                   ? 'cursor-not-allowed opacity-50'
                   : 'cursor-pointer',
                 checked
-                  ? 'border-blue-300 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50',
+                  ? 'border-info/40 bg-info-muted text-info'
+                  : 'border-border bg-card text-muted-foreground hover:bg-muted',
               )}
             >
               <input
@@ -92,11 +92,11 @@ export default function StatusRadioGroup({
       </fieldset>
 
       {isPending && (
-        <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" aria-hidden />
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" aria-hidden />
       )}
       {error && (
         <span
-          className="max-w-xs truncate text-xs text-red-600"
+          className="max-w-xs truncate text-xs text-destructive"
           title={error}
           role="alert"
         >

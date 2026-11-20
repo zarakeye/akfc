@@ -190,7 +190,7 @@ export default function TrashEntriesList({ entries }: Props): JSX.Element {
         <div className="overflow-auto">
           <table className="w-full text-sm border-collapse">
             <TrashTableHead />
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {entries.map((entry) => (
                 <TrashEntryTableRow
                   key={entry.id}
@@ -212,7 +212,7 @@ export default function TrashEntriesList({ entries }: Props): JSX.Element {
   // compact
   return (
     <>
-      <div className="bg-white">
+      <div className="bg-card">
         {entries.map((entry) => (
           <TrashEntryCompactRow
             key={entry.id}

@@ -185,11 +185,11 @@ export default function DescriptionField({ file }: Props): JSX.Element {
   const overLimit = charCount > MAX_LENGTH;
 
   return (
-    <div className="border-t border-gray-100 pt-3">
+    <div className="border-t border-border pt-3">
       <div className="flex items-center justify-between mb-1">
         <label
           htmlFor={`desc-${file.id}`}
-          className="text-xs text-gray-500 font-medium"
+          className="text-xs text-muted-foreground font-medium"
         >
           Description
         </label>
@@ -208,8 +208,8 @@ export default function DescriptionField({ file }: Props): JSX.Element {
           'w-full text-xs p-2 rounded border resize-y min-h-[60px] max-h-[200px]',
           'focus:outline-none focus:ring-1 transition-colors',
           overLimit
-            ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-            : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500',
+            ? 'border-destructive/40 focus:border-destructive/40 focus:ring-destructive'
+            : 'border-border focus:border-ring focus:ring-ring',
         )}
       />
 
@@ -217,7 +217,7 @@ export default function DescriptionField({ file }: Props): JSX.Element {
         <div
           className={clsx(
             'text-[10px] text-right mt-0.5',
-            overLimit ? 'text-red-600 font-medium' : 'text-gray-400',
+            overLimit ? 'text-destructive font-medium' : 'text-muted-foreground',
           )}
         >
           {charCount} / {MAX_LENGTH}
@@ -248,7 +248,7 @@ function StatusIndicator({
 
   if (status === 'saving') {
     return (
-      <span className="text-[10px] text-gray-400 flex items-center gap-1" aria-live="polite">
+      <span className="text-[10px] text-muted-foreground flex items-center gap-1" aria-live="polite">
         <Loader2 className="w-3 h-3 animate-spin" aria-hidden />
         Enregistrement…
       </span>
@@ -258,7 +258,7 @@ function StatusIndicator({
   if (status === 'saved') {
     return (
       <span
-        className="text-[10px] text-green-600 flex items-center gap-1"
+        className="text-[10px] text-success flex items-center gap-1"
         aria-live="polite"
       >
         <Check className="w-3 h-3" aria-hidden />
@@ -270,7 +270,7 @@ function StatusIndicator({
   // status === 'error'
   return (
     <span
-      className="text-[10px] text-red-600 flex items-center gap-1"
+      className="text-[10px] text-destructive flex items-center gap-1"
       title={errorMessage ?? 'Erreur inconnue'}
       aria-live="polite"
     >

@@ -127,7 +127,7 @@ export default function FinderCompactRow({
       className={`
         cursor-pointer select-none
         flex items-center gap-3 px-3 py-1.5
-        ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}
+        ${isSelected ? 'bg-info-muted' : 'hover:bg-muted'}
       `}
       role="button"
       aria-pressed={isSelected}
@@ -143,7 +143,7 @@ export default function FinderCompactRow({
       )}
       {renderNodeIcon(
         node,
-        `h-4 w-4 shrink-0 ${isFolder ? 'text-muted-foreground' : 'text-gray-500'}`,
+        `h-4 w-4 shrink-0 ${isFolder ? 'text-muted-foreground' : 'text-muted-foreground'}`,
       )}
       {isRenaming ? (
         <span className="min-w-0 flex-1">
@@ -167,7 +167,7 @@ export default function FinderCompactRow({
         </span>
       ) : (
         <span
-          className="text-sm font-medium text-gray-900 truncate min-w-0 flex-1"
+          className="text-sm font-medium text-foreground truncate min-w-0 flex-1"
           title={displayName(node.name, node.meta?.format)}
           onDoubleClick={(e) => {
             // Double-clic sur le NOM : renommer. Ailleurs sur la ligne :
@@ -182,7 +182,7 @@ export default function FinderCompactRow({
           {displayName(node.name, node.meta?.format)}
         </span>
       )}
-      <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap">
+      <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
         {isFolder ? '—' : formatBytes(node.size)}
       </span>
     </div>

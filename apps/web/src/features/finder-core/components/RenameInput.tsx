@@ -56,11 +56,11 @@ export function RenameInput({
         onBlur={() => void onCommit(value)}
         className={
           className ??
-          'w-full rounded border border-blue-400 bg-white px-1 py-0.5 text-xs text-gray-800 outline-none'
+          'w-full rounded border border-info/40 bg-card px-1 py-0.5 text-xs text-foreground outline-none'
         }
       />
       {error && (
-        <p className="mt-0.5 rounded bg-red-50 px-1 text-[10px] text-red-600">
+        <p className="mt-0.5 rounded bg-destructive-muted px-1 text-[10px] text-destructive">
           {error}
         </p>
       )}

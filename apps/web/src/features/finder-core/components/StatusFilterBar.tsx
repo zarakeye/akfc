@@ -33,7 +33,7 @@ export default function StatusFilterBar(): JSX.Element {
     <div
       role="group"
       aria-label="Filtrer par statut"
-      className="flex shrink-0 items-center rounded-md border border-neutral-300 p-0.5"
+      className="flex shrink-0 items-center rounded-md border border-border p-0.5"
     >
       {OPTIONS.map((option) => {
         const active = statusFilter === option.value;
@@ -46,8 +46,8 @@ export default function StatusFilterBar(): JSX.Element {
             className={clsx(
               'rounded px-2.5 py-1 text-xs font-medium transition-colors',
               active
-                ? 'bg-neutral-800 text-white'
-                : 'text-neutral-600 hover:bg-neutral-100',
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:bg-muted',
             )}
           >
             {option.label}

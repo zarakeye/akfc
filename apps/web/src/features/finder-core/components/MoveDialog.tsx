@@ -60,15 +60,15 @@ export function MoveDialog({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[70vh] w-full max-w-lg flex-col rounded-lg bg-white shadow-xl"
+        className="flex max-h-[70vh] w-full max-w-lg flex-col rounded-lg bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b px-4 py-3">
-          <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         </div>
 
         {/* Fil d'Ariane : chaque segment ramène à son niveau. */}
-        <div className="flex flex-wrap items-center gap-1 border-b bg-gray-50 px-4 py-2 text-xs text-gray-600">
+        <div className="flex flex-wrap items-center gap-1 border-b bg-muted px-4 py-2 text-xs text-muted-foreground">
           {segments.map((segment, index) => {
             const path = segments.slice(0, index + 1).join('/');
             const last = index === segments.length - 1;
@@ -79,13 +79,13 @@ export function MoveDialog({
                   onClick={() => setCurrent(path)}
                   className={
                     last
-                      ? 'font-medium text-gray-900'
-                      : 'hover:text-blue-600 hover:underline'
+                      ? 'font-medium text-foreground'
+                      : 'hover:text-info hover:underline'
                   }
                 >
                   {segment}
                 </button>
-                {!last && <ChevronRight className="h-3 w-3 text-gray-400" />}
+                {!last && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
               </span>
             );
           })}
@@ -93,11 +93,11 @@ export function MoveDialog({
 
         <div className="min-h-[10rem] flex-1 overflow-auto p-2">
           {tree.isLoading ? (
-            <div className="flex items-center justify-center py-8 text-gray-400">
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
           ) : folders.length === 0 ? (
-            <p className="px-2 py-6 text-center text-xs text-gray-400">
+            <p className="px-2 py-6 text-center text-xs text-muted-foreground">
               Aucun sous-dossier ici.
             </p>
           ) : (
@@ -107,9 +107,9 @@ export function MoveDialog({
                   <button
                     type="button"
                     onClick={() => setCurrent(folder.path)}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-foreground hover:bg-muted"
                   >
-                    <Folder className="h-4 w-4 shrink-0 text-gray-400" />
+                    <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="truncate">{folder.name}</span>
                   </button>
                 </li>
@@ -119,20 +119,20 @@ export function MoveDialog({
         </div>
 
         {error && (
-          <p className="mx-4 mb-2 rounded bg-red-50 px-2 py-1 text-xs text-red-600">
+          <p className="mx-4 mb-2 rounded bg-destructive-muted px-2 py-1 text-xs text-destructive">
             {error}
           </p>
         )}
 
         <div className="flex items-center justify-between gap-2 border-t px-4 py-3">
-          <span className="truncate text-xs text-gray-500">
+          <span className="truncate text-xs text-muted-foreground">
             Destination : <span className="font-mono">{current}</span>
           </span>
           <div className="flex shrink-0 gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded border px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+              className="rounded border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted"
             >
               Annuler
             </button>
@@ -140,7 +140,7 @@ export function MoveDialog({
               type="button"
               disabled={busy || isDisabled}
               onClick={() => void confirm()}
-              className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded bg-brand px-3 py-1.5 text-xs text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
             >
               {busy ? 'Déplacement…' : 'Déplacer ici'}
             </button>

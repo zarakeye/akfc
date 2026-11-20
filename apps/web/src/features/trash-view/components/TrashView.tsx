@@ -47,16 +47,16 @@ export default function TrashView(): JSX.Element {
   const inDrilldownMode = drilldown !== null;
 
   return (
-    <div className="flex flex-col h-full border rounded overflow-hidden bg-white">
+    <div className="flex flex-col h-full border rounded overflow-hidden bg-card">
 
       {/* ─── Header global ──────────────────────────────────────────────── */}
       <div className="px-4 py-3 border-b flex items-center gap-3 flex-wrap">
         <Link
           href={'/' + finderPage}
           className="
-            flex items-center gap-1 text-sm text-gray-600
-            hover:text-gray-900 hover:underline
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded px-1
+            flex items-center gap-1 text-sm text-muted-foreground
+            hover:text-foreground hover:underline
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1
             transition-colors
           "
         >
@@ -64,10 +64,10 @@ export default function TrashView(): JSX.Element {
           Retour au Finder
         </Link>
 
-        <div className="h-5 w-px bg-gray-200" aria-hidden />
+        <div className="h-5 w-px bg-secondary" aria-hidden />
 
         <h1 className="text-lg font-semibold flex items-center gap-2">
-          <Trash2 className="h-5 w-5 text-gray-500" />
+          <Trash2 className="h-5 w-5 text-muted-foreground" />
           Corbeille
         </h1>
 
@@ -131,7 +131,7 @@ function TrashListContent({
 }): JSX.Element {
   if (isLoading && entries.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-400 gap-2">
+      <div className="h-full flex items-center justify-center text-muted-foreground gap-2">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span className="text-sm">Chargement de la corbeille...</span>
       </div>
@@ -140,7 +140,7 @@ function TrashListContent({
 
   if (isError) {
     return (
-      <div className="h-full flex items-center justify-center text-red-600 text-sm">
+      <div className="h-full flex items-center justify-center text-destructive text-sm">
         Erreur lors du chargement de la corbeille.
       </div>
     );
@@ -148,7 +148,7 @@ function TrashListContent({
 
   if (entries.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2 px-6 text-center">
+      <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 px-6 text-center">
         <Trash2 className="h-10 w-10 opacity-50" aria-hidden />
         <div className="text-sm">
           {hasSearch

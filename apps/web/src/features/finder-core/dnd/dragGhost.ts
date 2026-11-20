@@ -138,7 +138,7 @@ function renderGhost(previews: GhostPreview[]): void {
   top.forEach((preview, idx) => {
     const card = document.createElement('div');
     card.className =
-      'absolute w-24 h-24 rounded border border-gray-200 bg-white/80 overflow-hidden flex flex-col items-center justify-center';
+      'absolute w-24 h-24 rounded border border-border bg-card/80 overflow-hidden flex flex-col items-center justify-center';
 
     const dx = idx * 6;
     const dy = idx * 6;
@@ -180,7 +180,7 @@ function appendPreviewContent(card: HTMLElement, preview: GhostPreview): void {
     const img = document.createElement('img');
     img.src = preview.url;
     img.alt = preview.name;
-    img.className = 'w-full h-full object-cover bg-gray-50/60';
+    img.className = 'w-full h-full object-cover bg-muted/60';
     card.appendChild(img);
     return;
   }

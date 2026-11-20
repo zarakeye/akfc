@@ -42,10 +42,10 @@ export default function FinderViewModeSwitcher(): JSX.Element {
             className={`
               p-1.5 rounded
               transition-colors
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
               ${active
-                ? 'bg-gray-200 text-gray-900'
-                : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'}
+                ? 'bg-secondary text-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'}
             `}
             title={label}
             aria-label={label}

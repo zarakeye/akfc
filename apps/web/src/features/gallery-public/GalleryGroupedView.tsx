@@ -170,7 +170,7 @@ export function GalleryGroupedView({
           className="flex w-full items-center gap-2 py-2 text-left"
         >
           <ChevronRight
-            className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
               open ? "rotate-90" : ""
             }`}
           />
@@ -207,7 +207,7 @@ export function GalleryGroupedView({
               className="flex w-full items-center gap-2 px-4 py-3 text-left"
             >
               <ChevronRight
-                className={`h-5 w-5 shrink-0 text-gray-500 transition-transform ${
+                className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${
                   discOpen ? "rotate-90" : ""
                 }`}
               />
@@ -234,7 +234,7 @@ export function GalleryGroupedView({
                             className="flex w-full items-center gap-2 py-2 text-left"
                           >
                             <ChevronRight
-                              className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${
+                              className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
                                 catOpen ? "rotate-90" : ""
                               }`}
                             />

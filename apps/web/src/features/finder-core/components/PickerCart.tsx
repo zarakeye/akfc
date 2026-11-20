@@ -54,15 +54,15 @@ export function PickerCart({ nodes, onRemove, onClear }: Props): JSX.Element | n
   if (nodes.length === 0) return null;
 
   return (
-    <div className="border-t bg-gray-50">
+    <div className="border-t bg-muted">
       <div className="flex items-center justify-between px-4 py-2">
-        <span className="text-xs font-medium text-gray-600">
+        <span className="text-xs font-medium text-muted-foreground">
           Sélection ({nodes.length})
         </span>
         <button
           type="button"
           onClick={onClear}
-          className="text-xs text-gray-500 underline-offset-2 hover:text-gray-800 hover:underline"
+          className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
           Tout retirer
         </button>
@@ -76,7 +76,7 @@ export function PickerCart({ nodes, onRemove, onClear }: Props): JSX.Element | n
           return (
             <div
               key={node.path}
-              className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-gray-200 bg-white"
+              className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border bg-card"
               title={node.name}
             >
               {thumb ? (

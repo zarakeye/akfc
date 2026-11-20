@@ -603,7 +603,7 @@ export default function Finder({
         <div className="w-4 h-4 flex items-center justify-center shrink-0">
           {loading && (
             <Loader2
-              className="h-4 w-4 animate-spin text-gray-400"
+              className="h-4 w-4 animate-spin text-muted-foreground"
               aria-label="Chargement"
             />
           )}
@@ -619,7 +619,7 @@ export default function Finder({
 
             return (
               <>
-                <span className="text-xs text-gray-600 shrink-0">
+                <span className="text-xs text-muted-foreground shrink-0">
                   {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
                 </span>
 
@@ -635,9 +635,9 @@ export default function Finder({
                   title="Quitter le mode sélection"
                   aria-label="Quitter le mode sélection"
                   className="
-                  shrink-0 rounded p-1 text-gray-500
-                  hover:text-gray-900 hover:bg-gray-100
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
+                  shrink-0 rounded p-1 text-muted-foreground
+                  hover:text-foreground hover:bg-muted
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
                   transition-colors
                 "
                 >
@@ -704,8 +704,8 @@ export default function Finder({
               }
               className={
                 canDelete
-                  ? "shrink-0 rounded p-1 text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors"
-                  : "shrink-0 rounded p-1 text-gray-300 cursor-not-allowed transition-colors"
+                  ? "shrink-0 rounded p-1 text-destructive hover:bg-destructive-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                  : "shrink-0 rounded p-1 text-muted-foreground/50 cursor-not-allowed transition-colors"
               }
             >
               <Trash2 className="h-4 w-4" />
@@ -748,9 +748,9 @@ export default function Finder({
           type="button"
           onClick={togglePreviewPanel}
           className="
-            shrink-0 rounded p-1 text-gray-500
-            hover:text-gray-900 hover:bg-gray-100
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
+            shrink-0 rounded p-1 text-muted-foreground
+            hover:text-foreground hover:bg-muted
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
             transition-colors
           "
           aria-label={
@@ -775,7 +775,7 @@ export default function Finder({
       {/* ──────────────────────── ERROR BANNER (non-décalant) ────────────── */}
       {error && (
         <div
-          className="px-3 py-2 text-sm bg-red-50 text-red-700 border-b flex items-center gap-2"
+          className="px-3 py-2 text-sm bg-destructive-muted text-destructive border-b flex items-center gap-2"
           role="alert"
         >
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -785,7 +785,7 @@ export default function Finder({
 
       {actionError && (
         <div
-          className="px-3 py-2 text-sm bg-red-50 text-red-700 border-b flex items-center gap-2"
+          className="px-3 py-2 text-sm bg-destructive-muted text-destructive border-b flex items-center gap-2"
           role="alert"
         >
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -794,7 +794,7 @@ export default function Finder({
             type="button"
             onClick={() => setActionError(null)}
             aria-label="Fermer le message"
-            className="rounded p-1 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            className="rounded p-1 hover:bg-destructive-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <X className="h-4 w-4" />
           </button>
@@ -839,10 +839,10 @@ export default function Finder({
 
         <Separator
           className="
-            w-px bg-gray-200
-            hover:bg-blue-400 hover:w-0.75
+            w-px bg-secondary
+            hover:bg-ring hover:w-0.75
             transition-all
-            focus-visible:outline-none focus-visible:bg-blue-400 focus-visible:w-0.75
+            focus-visible:outline-none focus-visible:bg-ring focus-visible:w-0.75
           "
         />
         </>
@@ -863,7 +863,7 @@ export default function Finder({
             <>
               {showInitialLoadingOverlay && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10 backdrop-blur-[1px]">
-                  <div className="flex flex-col items-center gap-2 text-gray-500">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin" />
                     <span className="text-sm">Chargement…</span>
                   </div>
@@ -879,7 +879,7 @@ export default function Finder({
                 }}
               >
                 {displayFolders.length === 0 && files.length === 0 && !loading ? (
-                  <div className="h-full flex flex-col items-center justify-center text-gray-400 text-sm py-12 gap-2">
+                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-sm py-12 gap-2">
                     <span>Ce dossier est vide</span>
                   </div>
                 ) : viewMode === "grid" ? (
@@ -896,18 +896,18 @@ export default function Finder({
                       return (
                         <React.Fragment key={group.key}>
                           {showParentHeader && (
-                            <div className="col-span-full mt-4 mb-1 pt-2 pb-2 px-2 border-b-2 border-gray-300 first:mt-0">
-                              <span className="text-sm font-bold text-gray-800">
+                            <div className="col-span-full mt-4 mb-1 pt-2 pb-2 px-2 border-b-2 border-border first:mt-0">
+                              <span className="text-sm font-bold text-foreground">
                                 {group.parentLabel}
                               </span>
                             </div>
                           )}
                           {showChildHeader && (
-                            <div className="col-span-full mt-2 mb-1 pb-1 px-1 pl-4 border-b border-gray-200">
-                              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            <div className="col-span-full mt-2 mb-1 pb-1 px-1 pl-4 border-b border-border">
+                              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                 {group.label}
                               </span>
-                              <span className="ml-2 text-xs text-gray-400">
+                              <span className="ml-2 text-xs text-muted-foreground">
                                 ({group.nodes.length})
                               </span>
                             </div>
@@ -953,7 +953,7 @@ export default function Finder({
                   </div>
                 ) : viewMode === "table" ? (
                   <table className="w-full text-sm border-collapse">
-                    <thead className="bg-gray-50 border-b text-gray-600 text-xs uppercase tracking-wider">
+                    <thead className="bg-muted border-b text-muted-foreground text-xs uppercase tracking-wider">
                       <tr>
                         {multiSelectActive && (
                           <th className="px-2 py-2 text-left w-8"></th>
@@ -965,7 +965,7 @@ export default function Finder({
                         <th className="px-3 py-2 text-right">Taille</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                       {groups.map((group, groupIndex) => {
                         const prevGroup =
                           groupIndex > 0 ? groups[groupIndex - 1] : null;
@@ -980,27 +980,27 @@ export default function Finder({
                         return (
                           <React.Fragment key={group.key}>
                             {showParentHeader && (
-                              <tr className="bg-gray-100">
+                              <tr className="bg-muted">
                                 <td
                                   colSpan={span}
-                                  className="px-3 py-2.5 border-t-2 border-gray-300"
+                                  className="px-3 py-2.5 border-t-2 border-border"
                                 >
-                                  <span className="text-sm font-bold text-gray-800">
+                                  <span className="text-sm font-bold text-foreground">
                                     {group.parentLabel}
                                   </span>
                                 </td>
                               </tr>
                             )}
                             {showChildHeader && (
-                              <tr className="bg-gray-50">
+                              <tr className="bg-muted">
                                 <td
                                   colSpan={span}
-                                  className="px-3 py-1.5 pl-6 border-y border-gray-200"
+                                  className="px-3 py-1.5 pl-6 border-y border-border"
                                 >
-                                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                     {group.label}
                                   </span>
-                                  <span className="ml-2 text-xs text-gray-400">
+                                  <span className="ml-2 text-xs text-muted-foreground">
                                     ({group.nodes.length})
                                   </span>
                                 </td>
@@ -1044,7 +1044,7 @@ export default function Finder({
                   </table>
                 ) : (
                   /* compact */
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-border">
                     {groups.map((group, groupIndex) => {
                       const prevGroup =
                         groupIndex > 0 ? groups[groupIndex - 1] : null;
@@ -1057,18 +1057,18 @@ export default function Finder({
                       return (
                         <React.Fragment key={group.key}>
                           {showParentHeader && (
-                            <div className="px-3 py-2 bg-gray-100 border-t-2 border-gray-300 first:border-t-0">
-                              <span className="text-sm font-bold text-gray-800">
+                            <div className="px-3 py-2 bg-muted border-t-2 border-border first:border-t-0">
+                              <span className="text-sm font-bold text-foreground">
                                 {group.parentLabel}
                               </span>
                             </div>
                           )}
                           {showChildHeader && (
-                            <div className="px-3 pl-6 py-1.5 bg-gray-50">
-                              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            <div className="px-3 pl-6 py-1.5 bg-muted">
+                              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                 {group.label}
                               </span>
-                              <span className="ml-2 text-xs text-gray-400">
+                              <span className="ml-2 text-xs text-muted-foreground">
                                 ({group.nodes.length})
                               </span>
                             </div>
@@ -1118,10 +1118,10 @@ export default function Finder({
         <>
         <Separator
           className="
-            w-px bg-gray-200
-            hover:bg-blue-400 hover:w-0.75
+            w-px bg-secondary
+            hover:bg-ring hover:w-0.75
             transition-all
-            focus-visible:outline-none focus-visible:bg-blue-400 focus-visible:w-0.75
+            focus-visible:outline-none focus-visible:bg-ring focus-visible:w-0.75
           "
         />
 
@@ -1164,14 +1164,14 @@ export default function Finder({
             onClick={() => setPreviewSheetOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col rounded-t-xl bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+          <div className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col rounded-t-xl bg-card shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <span className="text-sm font-semibold">Aperçu</span>
               <button
                 type="button"
                 onClick={() => setPreviewSheetOpen(false)}
                 aria-label="Fermer l'aperçu"
-                className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>

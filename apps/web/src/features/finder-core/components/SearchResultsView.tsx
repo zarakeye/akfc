@@ -45,7 +45,7 @@ export default function SearchResultsView(): JSX.Element {
 
   if (search.loading && search.results.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-gray-400 text-sm py-12 gap-2">
+      <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-sm py-12 gap-2">
         <span>Recherche en cours…</span>
       </div>
     );
@@ -53,10 +53,10 @@ export default function SearchResultsView(): JSX.Element {
 
   if (!search.loading && search.results.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-gray-400 text-sm py-12 gap-2">
+      <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-sm py-12 gap-2">
         <span>
           Aucun fichier trouvé sous{' '}
-          <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">
+          <code className="bg-muted px-1 py-0.5 rounded text-xs">
             {displayRelativePath(currentPath)}
           </code>
         </span>
@@ -88,26 +88,26 @@ export default function SearchResultsView(): JSX.Element {
   return (
     <div className="flex flex-col h-full">
       {/* Header avec compteur + warning tronqué */}
-      <div className="px-4 py-2 border-b text-xs text-gray-600 bg-gray-50">
+      <div className="px-4 py-2 border-b text-xs text-muted-foreground bg-muted">
         <span>
-          <strong className="text-gray-900">{search.results.length}</strong>{' '}
+          <strong className="text-foreground">{search.results.length}</strong>{' '}
           résultat{search.results.length > 1 ? 's' : ''}
           {folderCount > 0 && fileCount > 0 && (
-            <span className="text-gray-500 ml-1">
+            <span className="text-muted-foreground ml-1">
               ({folderCount} dossier{folderCount > 1 ? 's' : ''}, {fileCount} fichier
               {fileCount > 1 ? 's' : ''})
             </span>
           )}
         </span>
         {search.truncated && (
-          <span className="ml-3 text-amber-700">
+          <span className="ml-3 text-warning">
             ⚠️ Liste tronquée — affine la recherche pour voir tous les résultats
           </span>
         )}
       </div>
 
       {/* Liste des résultats */}
-      <div className="flex-1 overflow-auto divide-y divide-gray-100">
+      <div className="flex-1 overflow-auto divide-y divide-border">
         {search.results.map((result) => {
           const isFolder = result.type === 'folder';
 
@@ -132,7 +132,7 @@ export default function SearchResultsView(): JSX.Element {
               type="button"
               onClick={() => handleClick(result)}
               className="
-                w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors
+                w-full text-left px-4 py-2 hover:bg-info-muted transition-colors
                 flex items-start gap-3 group
               "
             >
@@ -140,8 +140,8 @@ export default function SearchResultsView(): JSX.Element {
               <div
                 className={
                   isFolder
-                    ? 'shrink-0 mt-0.5 text-blue-500 group-hover:text-blue-600'
-                    : 'shrink-0 mt-0.5 text-gray-400 group-hover:text-blue-500'
+                    ? 'shrink-0 mt-0.5 text-info group-hover:text-info'
+                    : 'shrink-0 mt-0.5 text-muted-foreground group-hover:text-info'
                 }
               >
                 {isFolder ? (
@@ -154,12 +154,12 @@ export default function SearchResultsView(): JSX.Element {
               {/* Texte */}
               <div className="flex-1 min-w-0">
                 {/* Nom avec highlight */}
-                <div className="text-sm text-gray-900 truncate">
+                <div className="text-sm text-foreground truncate">
                   {nameSegments.map((seg, i) =>
                     seg.isMatch ? (
                       <mark
                         key={i}
-                        className="bg-yellow-200 text-gray-900 rounded px-0.5"
+                        className="bg-warning/25 text-foreground rounded px-0.5"
                       >
                         {seg.text}
                       </mark>
@@ -170,13 +170,13 @@ export default function SearchResultsView(): JSX.Element {
                 </div>
 
                 {/* Path parent + indicateurs match secondaire (files only) */}
-                <div className="text-xs text-gray-500 truncate flex items-center gap-1 mt-0.5">
+                <div className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
                   <FolderOpen className="w-3 h-3 inline shrink-0" aria-hidden />
                   <span>{displayRelativePath(result.parentPath)}</span>
 
                   {!isFolder && hasDescMatch && (
                     <span
-                      className="ml-2 text-[10px] text-gray-400 italic"
+                      className="ml-2 text-[10px] text-muted-foreground italic"
                       title={result.meta?.description ?? ''}
                     >
                       · match dans la description
@@ -184,7 +184,7 @@ export default function SearchResultsView(): JSX.Element {
                   )}
                   {!isFolder && hasSenderMatch && (
                     <span
-                      className="ml-2 text-[10px] text-gray-400 italic"
+                      className="ml-2 text-[10px] text-muted-foreground italic"
                       title={`Uploadé par ${result.meta?.uploadedBy}`}
                     >
                       · match dans l&apos;expéditeur
@@ -195,7 +195,7 @@ export default function SearchResultsView(): JSX.Element {
 
               {/* Taille au survol (files only — les folders n'ont pas de taille) */}
               {!isFolder && result.size !== undefined && (
-                <div className="shrink-0 text-xs text-gray-400 mt-0.5">
+                <div className="shrink-0 text-xs text-muted-foreground mt-0.5">
                   {formatBytes(result.size)}
                 </div>
               )}

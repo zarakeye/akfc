@@ -51,7 +51,7 @@ export default function SearchInput({
 
   return (
     <div className="relative">
-      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <input
         type="text"
         value={localValue}
@@ -60,7 +60,7 @@ export default function SearchInput({
         className="
           pl-8 pr-8 py-1.5 text-sm border rounded
           w-64
-          focus:outline-none focus:ring-2 focus:ring-blue-400
+          focus:outline-none focus:ring-2 focus:ring-ring
         "
       />
       {localValue && (
@@ -70,7 +70,7 @@ export default function SearchInput({
             setLocalValue('');
             onChange('');
           }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           aria-label="Effacer la recherche"
         >
           <X className="h-4 w-4" />

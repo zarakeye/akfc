@@ -46,7 +46,7 @@ export default function TrashEntryTableRow({
       }
       className={`
         cursor-pointer
-        ${selected ? 'bg-blue-50' : 'hover:bg-gray-50'}
+        ${selected ? 'bg-info-muted' : 'hover:bg-muted'}
       `}
     >
       <td className="px-3 py-2 w-8">
@@ -61,34 +61,34 @@ export default function TrashEntryTableRow({
       </td>
       <td className="px-3 py-2 w-8">
         <Icon
-          className={`h-4 w-4 ${isFolder ? 'text-blue-500' : 'text-gray-500'}`}
+          className={`h-4 w-4 ${isFolder ? 'text-info' : 'text-muted-foreground'}`}
           strokeWidth={1.5}
         />
       </td>
-      <td className="px-3 py-2 text-sm font-medium text-gray-900">
+      <td className="px-3 py-2 text-sm font-medium text-foreground">
         <div className="truncate max-w-[200px]" title={entry.displayName}>
           {entry.displayName}
         </div>
       </td>
-      <td className="px-3 py-2 text-sm text-gray-500">
+      <td className="px-3 py-2 text-sm text-muted-foreground">
         <div className="truncate max-w-[300px]" title={entry.previousPath}>
           {entry.previousPathShort}
         </div>
       </td>
-      <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+      <td className="px-3 py-2 text-sm text-muted-foreground whitespace-nowrap">
         {formatDate(entry.trashedAt)}
       </td>
-      <td className="px-3 py-2 text-sm text-gray-500">
+      <td className="px-3 py-2 text-sm text-muted-foreground">
         <div className="truncate max-w-[160px]">{entry.trashedByName ?? '—'}</div>
       </td>
       <td
         className={`px-3 py-2 text-sm whitespace-nowrap ${
-          purgeIsSoon(entry.purgeAt) ? 'font-medium text-red-600' : 'text-gray-500'
+          purgeIsSoon(entry.purgeAt) ? 'font-medium text-destructive' : 'text-muted-foreground'
         }`}
       >
         {formatDay(entry.purgeAt)}
       </td>
-      <td className="px-3 py-2 text-sm text-gray-500 text-right whitespace-nowrap">
+      <td className="px-3 py-2 text-sm text-muted-foreground text-right whitespace-nowrap">
         {entry.sizeBytes !== undefined ? formatBytes(entry.sizeBytes) : '—'}
       </td>
     </tr>

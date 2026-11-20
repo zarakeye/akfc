@@ -41,11 +41,11 @@ export default function EmptyBinButton({ totalCount, hasMore = false }: Props): 
         disabled={disabled}
         className="
           flex items-center gap-1.5 px-3 py-1.5 rounded text-sm
-          bg-white border border-red-300 text-red-700
-          hover:bg-red-50
-          disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white
+          bg-card border border-destructive/40 text-destructive
+          hover:bg-destructive-muted
+          disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-card
           transition-colors
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive
         "
         title={
           totalCount === 0

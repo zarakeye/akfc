@@ -78,11 +78,11 @@ function SliderField({
     if (!Number.isNaN(n)) ctrl.set(Math.min(max, Math.max(min, n)));
     setDraft(null);
   };
-  const lbl = dark ? "text-zinc-400" : "text-gray-500";
+  const lbl = dark ? "text-muted-foreground" : "text-muted-foreground";
   const fld = dark
-    ? "border-zinc-700 bg-zinc-800 text-zinc-100 focus:border-emerald-500"
-    : "border-gray-300 bg-white text-gray-800 focus:border-emerald-500";
-  const btn = dark ? "text-zinc-400 hover:bg-zinc-800" : "text-gray-500 hover:bg-gray-100";
+    ? "border-zinc-700 bg-zinc-800 text-zinc-100 focus:border-brand"
+    : "border-border bg-card text-foreground focus:border-brand";
+  const btn = dark ? "text-muted-foreground hover:bg-zinc-800" : "text-muted-foreground hover:bg-muted";
   const range = (
     <input
       type="range" min={min} max={max} step={step} value={ctrl.value}
@@ -105,7 +105,7 @@ function SliderField({
         onKeyDown={(e) => { if (e.key === "Enter") commitText((e.target as HTMLInputElement).value); }}
         className={`w-16 rounded-md border px-1.5 py-1 text-center text-xs outline-none ${fld}`}
       />
-      {unit && <span className={`text-xs ${dark ? "text-zinc-500" : "text-gray-400"}`}>{unit}</span>}
+      {unit && <span className={`text-xs ${dark ? "text-muted-foreground" : "text-muted-foreground"}`}>{unit}</span>}
     </div>
   );
   const actions = (
@@ -275,20 +275,20 @@ export default function Cropper({
 
   // ---- thème ----
   const overlayCls = dark ? "bg-black/80" : "bg-black/70";
-  const panelCls = dark ? "bg-zinc-900 text-zinc-100" : "bg-white";
-  const muted = dark ? "text-zinc-500" : "text-gray-500";
-  const surface = dark ? "bg-zinc-900" : "bg-white";
-  const border = dark ? "border-zinc-700" : "border-gray-300";
-  const cancelCls = dark ? "text-zinc-300 hover:bg-zinc-800" : "text-gray-700 hover:bg-gray-100";
+  const panelCls = dark ? "bg-zinc-900 text-zinc-100" : "bg-card";
+  const muted = dark ? "text-muted-foreground" : "text-muted-foreground";
+  const surface = dark ? "bg-zinc-900" : "bg-card";
+  const border = dark ? "border-zinc-700" : "border-border";
+  const cancelCls = dark ? "text-zinc-300 hover:bg-zinc-800" : "text-foreground hover:bg-muted";
   const rounded = shape === "circle" ? "rounded-full" : "";
 
   const tbBtn = (active: boolean) =>
     `inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
       active
-        ? "border-emerald-500 bg-emerald-500/15 text-emerald-500"
+        ? "border-brand bg-brand/15 text-success"
         : dark
-          ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
-          : "border-gray-300 text-gray-500 hover:bg-gray-100"
+          ? "border-zinc-700 text-muted-foreground hover:bg-zinc-800"
+          : "border-border text-muted-foreground hover:bg-muted"
     }`;
 
   const previewBox = (
@@ -368,30 +368,30 @@ export default function Cropper({
         {!responsive && (
           <div className="flex flex-wrap gap-4 mt-4">
             <div className="flex items-center gap-2">
-              <span className="w-14 shrink-0 text-xs font-medium text-gray-500">Zoom</span>
+              <span className="w-14 shrink-0 text-xs font-medium text-muted-foreground">Zoom</span>
               <input type="range" min={0.1} max={3} step={0.01} value={zoom.value}
                 onPointerDown={zoom.startInteraction} onPointerUp={zoom.endInteraction}
                 onChange={(e) => zoom.set(Number(e.target.value))}
                 className="h-1.5 w-36 cursor-pointer accent-emerald-600" />
-              <button type="button" onClick={zoom.undo} className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100">Défaire</button>
-              <button type="button" onClick={zoom.reset} className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100">Réinit.</button>
+              <button type="button" onClick={zoom.undo} className="rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted">Défaire</button>
+              <button type="button" onClick={zoom.reset} className="rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted">Réinit.</button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-14 shrink-0 text-xs font-medium text-gray-500">Rotation</span>
+              <span className="w-14 shrink-0 text-xs font-medium text-muted-foreground">Rotation</span>
               <input type="range" min={-180} max={180} step={1} value={rotation.value}
                 onPointerDown={rotation.startInteraction} onPointerUp={rotation.endInteraction}
                 onChange={(e) => rotation.set(Number(e.target.value))}
                 className="h-1.5 w-36 cursor-pointer accent-emerald-600" />
-              <button type="button" onClick={rotation.undo} className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100">Défaire</button>
-              <button type="button" onClick={rotation.reset} className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100">Réinit.</button>
+              <button type="button" onClick={rotation.undo} className="rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted">Défaire</button>
+              <button type="button" onClick={rotation.reset} className="rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted">Réinit.</button>
             </div>
-            <button type="button" onClick={resetAll} className="rounded-full px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50">Tout réinitialiser</button>
+            <button type="button" onClick={resetAll} className="rounded-full px-3 py-1.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive-muted">Tout réinitialiser</button>
           </div>
         )}
 
         <div className="flex justify-end gap-2 mt-4">
           <button type="button" onClick={onCancel} className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${cancelCls}`}>Annuler</button>
-          <button type="button" onClick={() => void handleCrop()} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700">Recadrer</button>
+          <button type="button" onClick={() => void handleCrop()} className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90">Recadrer</button>
         </div>
       </div>
     </div>

@@ -50,20 +50,20 @@ export default function TrashToolbar(): JSX.Element | null {
     <>
       <div className="
         flex items-center gap-3 px-3 py-2
-        bg-blue-50 border-b border-blue-200
+        bg-info-muted border-b border-info/40
         text-sm
       ">
         <button
           type="button"
           onClick={clearSelection}
-          className="text-blue-600 hover:text-blue-800 transition-colors"
+          className="text-info hover:text-info transition-colors"
           aria-label="Effacer la sélection"
           title="Effacer la sélection"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <span className="font-medium text-blue-900">
+        <span className="font-medium text-info">
           {count} {count > 1 ? 'éléments sélectionnés' : 'élément sélectionné'}
         </span>
 
@@ -76,7 +76,7 @@ export default function TrashToolbar(): JSX.Element | null {
           data-tour="bin.restore"
           className="
             flex items-center gap-1.5 px-3 py-1 rounded text-sm
-            bg-white border hover:bg-gray-50
+            bg-card border hover:bg-muted
             disabled:opacity-50 disabled:cursor-not-allowed
             transition-colors
           "
@@ -91,7 +91,7 @@ export default function TrashToolbar(): JSX.Element | null {
           disabled={isDeleting}
           className="
             flex items-center gap-1.5 px-3 py-1 rounded text-sm
-            bg-red-600 text-white hover:bg-red-700
+            bg-destructive text-destructive-foreground hover:bg-destructive/90
             disabled:opacity-50 disabled:cursor-not-allowed
             transition-colors
           "

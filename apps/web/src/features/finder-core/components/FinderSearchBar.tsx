@@ -93,13 +93,13 @@ export default function FinderSearchBar({
         relative flex items-center gap-1 shrink-0
         h-7 px-2
         ${fullWidth ? 'w-full' : 'w-[280px]'}
-        bg-white border border-gray-300 rounded
-        focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500
+        bg-card border border-border rounded
+        focus-within:border-ring focus-within:ring-1 focus-within:ring-ring
         transition-colors
       `}
     >
       {/* Icône loupe (ou spinner pendant le fetch) */}
-      <div className="shrink-0 w-3.5 h-3.5 flex items-center justify-center text-gray-400">
+      <div className="shrink-0 w-3.5 h-3.5 flex items-center justify-center text-muted-foreground">
         {loading ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" aria-label="Recherche en cours" />
         ) : (
@@ -117,7 +117,7 @@ export default function FinderSearchBar({
         placeholder="Rechercher dans ce dossier…"
         className="
           flex-1 min-w-0 bg-transparent border-none outline-none text-xs
-          placeholder:text-gray-400
+          placeholder:text-muted-foreground
         "
         aria-label="Rechercher des fichiers"
       />
@@ -128,7 +128,7 @@ export default function FinderSearchBar({
         <button
           type="button"
           onClick={clearSearch}
-          className="shrink-0 p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
+          className="shrink-0 p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
           title="Effacer la recherche"
           aria-label="Effacer la recherche"
         >
@@ -137,7 +137,7 @@ export default function FinderSearchBar({
       )}
 
       {/* Toggles VS Code-style */}
-      <div className="shrink-0 flex items-center gap-0.5 border-l border-gray-200 pl-1 ml-0.5">
+      <div className="shrink-0 flex items-center gap-0.5 border-l border-border pl-1 ml-0.5">
         <FlagToggle
           flag="caseSensitive"
           active={flags.caseSensitive}
@@ -192,8 +192,8 @@ function FlagToggle({
         'shrink-0 w-5 h-5 flex items-center justify-center text-[10px] font-mono font-bold rounded',
         'transition-colors',
         active
-          ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
-          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
+          ? 'bg-info-muted text-info ring-1 ring-ring'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
     >
       {label}

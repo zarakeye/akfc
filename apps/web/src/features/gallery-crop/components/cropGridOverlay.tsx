@@ -57,7 +57,7 @@ export default function CropGridOverlay({ grid, setGrid, workspaceRef, shape = '
     >
       <div className="w-full h-full grid grid-cols-3 grid-rows-3">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="border border-gray-300/60" />
+          <div key={i} className="border border-border/60" />
         ))}
       </div>
     </div>

@@ -70,13 +70,13 @@ export default function TrashEntryGrid({
           : undefined
       }
       className={`
-        relative aspect-square rounded-lg border bg-white overflow-hidden
+        relative aspect-square rounded-lg border bg-card overflow-hidden
         cursor-pointer select-none p-2
         flex flex-col items-center justify-center gap-2
         transition-shadow
         ${selected
-          ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200'
-          : 'hover:shadow-md hover:border-gray-300'}
+          ? 'border-ring bg-info-muted ring-1 ring-ring'
+          : 'hover:shadow-md hover:border-border'}
       `}
       title={trashTooltip(entry)}
       role="button"
@@ -97,14 +97,14 @@ export default function TrashEntryGrid({
         />
       ) : (
         <Icon
-          className={`h-12 w-12 ${isFolder ? 'text-blue-400' : 'text-gray-400'}`}
+          className={`h-12 w-12 ${isFolder ? 'text-info' : 'text-muted-foreground'}`}
           strokeWidth={1.5}
         />
       )}
       <div className="text-xs text-center truncate w-full px-1" title={entry.displayName}>
         {entry.displayName}
       </div>
-      <div className="text-[10px] text-gray-400 truncate w-full text-center px-1">
+      <div className="text-[10px] text-muted-foreground truncate w-full text-center px-1">
         {entry.previousPathShort}
       </div>
     </div>

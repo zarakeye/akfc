@@ -45,23 +45,23 @@ export default function TrashEntryCompactRow({
       className={`
         cursor-pointer select-none
         flex items-center gap-3 px-3 py-1.5
-        border-b border-gray-100 last:border-b-0
-        ${selected ? 'bg-blue-50' : 'hover:bg-gray-50'}
+        border-b border-border last:border-b-0
+        ${selected ? 'bg-info-muted' : 'hover:bg-muted'}
       `}
       role="button"
       aria-pressed={selected}
     >
       <Icon
-        className={`h-4 w-4 shrink-0 ${isFolder ? 'text-blue-500' : 'text-gray-500'}`}
+        className={`h-4 w-4 shrink-0 ${isFolder ? 'text-info' : 'text-muted-foreground'}`}
         strokeWidth={1.5}
       />
-      <span className="text-sm font-medium text-gray-900 truncate min-w-0 max-w-[40%]" title={entry.displayName}>
+      <span className="text-sm font-medium text-foreground truncate min-w-0 max-w-[40%]" title={entry.displayName}>
         {entry.displayName}
       </span>
-      <span className="text-xs text-gray-400 truncate flex-1 min-w-0" title={trashTooltip(entry)}>
+      <span className="text-xs text-muted-foreground truncate flex-1 min-w-0" title={trashTooltip(entry)}>
         {entry.previousPathShort}
       </span>
-      <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap">
+      <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
         {formatRelativeDate(entry.trashedAt)}
       </span>
     </div>

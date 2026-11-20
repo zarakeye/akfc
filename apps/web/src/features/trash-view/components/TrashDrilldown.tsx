@@ -72,9 +72,9 @@ export default function TrashDrilldown({ drilldown }: Props): JSX.Element {
           type="button"
           onClick={exitDrilldown}
           className="
-            flex items-center gap-1 px-2 py-1 rounded text-gray-600
-            hover:bg-gray-100 hover:text-gray-900
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
+            flex items-center gap-1 px-2 py-1 rounded text-muted-foreground
+            hover:bg-muted hover:text-foreground
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
             transition-colors
           "
           aria-label="Retour à la corbeille"
@@ -83,7 +83,7 @@ export default function TrashDrilldown({ drilldown }: Props): JSX.Element {
           <span className="text-xs">Corbeille</span>
         </button>
 
-        <ChevronRight className="h-3.5 w-3.5 text-gray-400 shrink-0" aria-hidden />
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
 
         <button
           type="button"
@@ -92,8 +92,8 @@ export default function TrashDrilldown({ drilldown }: Props): JSX.Element {
             truncate max-w-[200px] px-1 rounded
             hover:underline transition-colors
             ${segments.length === 0
-              ? 'font-medium text-gray-900'
-              : 'text-gray-600 hover:text-gray-900'}
+              ? 'font-medium text-foreground'
+              : 'text-muted-foreground hover:text-foreground'}
           `}
           disabled={segments.length === 0}
           title={drilldown.displayName}
@@ -105,16 +105,16 @@ export default function TrashDrilldown({ drilldown }: Props): JSX.Element {
           const isLast = i === segments.length - 1;
           return (
             <span key={i} className="flex items-center gap-2">
-              <ChevronRight className="h-3.5 w-3.5 text-gray-400 shrink-0" aria-hidden />
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
               {isLast ? (
-                <span className="font-medium text-gray-900 truncate max-w-[200px]" title={seg}>
+                <span className="font-medium text-foreground truncate max-w-[200px]" title={seg}>
                   {seg}
                 </span>
               ) : (
                 <button
                   type="button"
                   onClick={() => handleBreadcrumbClick(i)}
-                  className="text-gray-600 hover:text-gray-900 hover:underline truncate max-w-[200px] px-1 rounded transition-colors"
+                  className="text-muted-foreground hover:text-foreground hover:underline truncate max-w-[200px] px-1 rounded transition-colors"
                   title={seg}
                 >
                   {seg}
@@ -128,20 +128,20 @@ export default function TrashDrilldown({ drilldown }: Props): JSX.Element {
       {/* ─── Contenu ─── */}
       <div className="flex-1 overflow-auto p-4">
         {isLoading && (
-          <div className="flex items-center justify-center text-gray-400 gap-2 py-8">
+          <div className="flex items-center justify-center text-muted-foreground gap-2 py-8">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span className="text-sm">Chargement...</span>
           </div>
         )}
 
         {isError && !isLoading && (
-          <div className="text-sm text-red-600 py-4">
+          <div className="text-sm text-destructive py-4">
             Erreur de chargement du contenu de cette entrée.
           </div>
         )}
 
         {!isLoading && !isError && children.length === 0 && (
-          <div className="text-sm text-gray-400 text-center py-8">
+          <div className="text-sm text-muted-foreground text-center py-8">
             Ce dossier est vide.
           </div>
         )}
@@ -184,15 +184,15 @@ function DrilldownItem({
     <div
       onDoubleClick={onDoubleClick}
       className={`
-        relative aspect-square rounded-lg border bg-white overflow-hidden p-2
+        relative aspect-square rounded-lg border bg-card overflow-hidden p-2
         flex flex-col items-center justify-center gap-2
-        ${isFolder ? 'cursor-pointer hover:shadow-md hover:border-gray-300' : 'cursor-default'}
+        ${isFolder ? 'cursor-pointer hover:shadow-md hover:border-border' : 'cursor-default'}
         transition-shadow
       `}
       title={child.fullPath}
     >
       <Icon
-        className={`h-12 w-12 ${isFolder ? 'text-blue-400' : 'text-gray-400'}`}
+        className={`h-12 w-12 ${isFolder ? 'text-info' : 'text-muted-foreground'}`}
         strokeWidth={1.5}
       />
       <div className="text-xs text-center truncate w-full px-1" title={child.name}>

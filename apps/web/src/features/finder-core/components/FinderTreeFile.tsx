@@ -217,7 +217,7 @@ export default function FinderTreeFile({
           // Indentation : alignée sur les sous-dossiers. En multi-select OU
           // en pickMode, l'espace gauche est occupé par la checkbox / coche.
           !multiSelectActive && !pickMode && 'pl-[1.625rem]',
-          pinned && 'bg-emerald-50',
+          pinned && 'bg-success-muted',
           isActive && !pinned && 'bg-accent text-accent-foreground font-medium',
           !isActive && !pinned && 'hover:bg-accent/40',
         )}
@@ -231,7 +231,7 @@ export default function FinderTreeFile({
           <span
             className={clsx(
               'flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
-              pinned ? 'bg-emerald-500 text-white' : 'border border-gray-300',
+              pinned ? 'bg-brand text-brand-foreground' : 'border border-border',
             )}
             aria-hidden
           >
@@ -373,12 +373,12 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
     // eslint-disable-next-line @next/next/no-img-element
     inner = <img src="/icons/pdf.svg" alt="PDF" className="h-5 w-5 shrink-0" />;
   } else if (isAudioFile(extension)) {
-    inner = <Music className="h-5 w-5 shrink-0 text-gray-400" strokeWidth={1.5} />;
+    inner = <Music className="h-5 w-5 shrink-0 text-muted-foreground" strokeWidth={1.5} />;
   } else if (isTextFile(extension)) {
     // Texte : simple icône (16px trop petit pour un aperçu de contenu).
-    inner = <FileText className="h-5 w-5 shrink-0 text-gray-400" strokeWidth={1.5} />;
+    inner = <FileText className="h-5 w-5 shrink-0 text-muted-foreground" strokeWidth={1.5} />;
   } else {
-    inner = <File className="h-5 w-5 shrink-0 text-gray-400" strokeWidth={1.5} />;
+    inner = <File className="h-5 w-5 shrink-0 text-muted-foreground" strokeWidth={1.5} />;
   }
 
   // Statut inconnu (ou corbeille) : pas de pastille, rendu nu.
@@ -394,7 +394,7 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
       <span
         className={clsx(
           'absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-white',
-          isPending ? 'bg-orange-400' : 'bg-emerald-500',
+          isPending ? 'bg-orange-400' : 'bg-brand',
         )}
         aria-label={isPending ? 'En attente' : 'Validé'}
       />

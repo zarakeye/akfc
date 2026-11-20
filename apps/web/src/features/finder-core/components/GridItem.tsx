@@ -292,13 +292,13 @@ export default function GridItem({
           onDragStart(e);
         }}
       className={clsx(
-        'relative aspect-square rounded-lg border bg-white overflow-hidden cursor-pointer select-none',
+        'relative aspect-square rounded-lg border bg-card overflow-hidden cursor-pointer select-none',
         'transition-shadow hover:shadow-md',
         pinned
-          ? 'ring-2 ring-emerald-500 border-emerald-300'
+          ? 'ring-2 ring-ring border-success/40'
           : isSelected
-          ? 'ring-2 ring-blue-400 border-blue-300'
-          : 'border-gray-200',
+          ? 'ring-2 ring-ring border-info/40'
+          : 'border-border',
       )}
       title={node.name}
     >
@@ -363,7 +363,7 @@ export default function GridItem({
           'absolute bottom-0 left-0 right-0 px-2 py-1.5 text-xs truncate',
           hasVisualThumb
             ? 'bg-gradient-to-t from-black/70 to-black/0 text-white'
-            : 'bg-white border-t border-gray-100 text-gray-700',
+            : 'bg-card border-t border-border text-foreground',
         )}
       >
         {isRenaming ? (
@@ -423,8 +423,8 @@ export default function GridItem({
             className={clsx(
               'absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wide',
               hasVisualThumb
-                ? 'bg-white/85 backdrop-blur-sm text-gray-700 shadow-sm'
-                : 'bg-gray-100 text-gray-600 border border-gray-200',
+                ? 'bg-white/85 backdrop-blur-sm text-foreground shadow-sm'
+                : 'bg-muted text-muted-foreground border border-border',
             )}
           >
             {extension}
@@ -442,7 +442,7 @@ export default function GridItem({
             extension && !isFolder ? 'top-7' : 'top-1.5',
             hasVisualThumb
               ? 'bg-amber-500/90 text-white shadow-sm backdrop-blur-sm'
-              : 'bg-amber-100 text-amber-800 border border-amber-200',
+              : 'bg-warning-muted text-warning border border-warning/40',
           )}
         >
           En attente
@@ -472,7 +472,7 @@ export default function GridItem({
           TOUJOURS visible (pas au hover) et cible large : utilisable au
           tactile. Overlay vert distinct du bleu de multi-select. */}
       {pickMode && !isFolder && isInCart && (
-        <div className="absolute top-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow">
+        <div className="absolute top-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand text-brand-foreground shadow">
           <Check className="h-4 w-4" aria-label="Dans la sélection" />
         </div>
       )}
@@ -589,21 +589,21 @@ function GridTextPreview({ url }: { url: string }): JSX.Element {
 
   if (loading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-50">
-        <div className="text-[10px] text-gray-400">…</div>
+      <div className="w-full h-full flex items-center justify-center bg-muted">
+        <div className="text-[10px] text-muted-foreground">…</div>
       </div>
     );
   }
   if (!content) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-50">
-        <FileText className="h-8 w-8 text-gray-300" strokeWidth={1.5} />
+      <div className="w-full h-full flex items-center justify-center bg-muted">
+        <FileText className="h-8 w-8 text-muted-foreground/60" strokeWidth={1.5} />
       </div>
     );
   }
   return (
-    <div className="w-full h-full overflow-hidden bg-gray-50 p-2">
-      <pre className="text-[7px] leading-[1.3] text-gray-600 whitespace-pre-wrap break-words font-mono">
+    <div className="w-full h-full overflow-hidden bg-muted p-2">
+      <pre className="text-[7px] leading-[1.3] text-muted-foreground whitespace-pre-wrap break-words font-mono">
         {content}
       </pre>
     </div>
@@ -623,7 +623,7 @@ function GridPdfPreview({
   name: string;
 }): JSX.Element {
   return (
-    <div className="w-full h-full overflow-hidden bg-white pointer-events-none">
+    <div className="w-full h-full overflow-hidden bg-card pointer-events-none">
       <iframe
         src={`${url}#toolbar=0&navpanes=0&view=FitH`}
         title={name}

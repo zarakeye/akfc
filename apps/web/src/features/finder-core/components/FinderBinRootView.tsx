@@ -103,7 +103,7 @@ export default function FinderBinRootView(): JSX.Element {
       {/* Header local : titre + viewmodes + vider */}
       <div className="px-3 py-2 border-b flex items-center gap-3 flex-wrap text-sm">
         <div className="flex items-center gap-2 font-medium">
-          <Trash2 className="h-4 w-4 text-gray-500" />
+          <Trash2 className="h-4 w-4 text-muted-foreground" />
           Corbeille
         </div>
         <div className="flex-1" />
@@ -123,7 +123,7 @@ export default function FinderBinRootView(): JSX.Element {
               type="button"
               onClick={() => void fetchNextPage()}
               disabled={isFetchingNextPage}
-              className="rounded-md border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-md border px-3 py-1.5 text-sm text-foreground hover:bg-muted disabled:opacity-50"
             >
               {isFetchingNextPage ? 'Chargement…' : 'Afficher plus'}
             </button>
@@ -138,7 +138,7 @@ export default function FinderBinRootView(): JSX.Element {
   function renderContent(): JSX.Element {
     if (isLoading && entries.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-gray-400 gap-2">
+        <div className="h-full flex items-center justify-center text-muted-foreground gap-2">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span className="text-sm">Chargement de la corbeille...</span>
         </div>
@@ -147,7 +147,7 @@ export default function FinderBinRootView(): JSX.Element {
 
     if (isError) {
       return (
-        <div className="h-full flex items-center justify-center text-red-600 text-sm">
+        <div className="h-full flex items-center justify-center text-destructive text-sm">
           Erreur lors du chargement de la corbeille.
         </div>
       );
@@ -155,7 +155,7 @@ export default function FinderBinRootView(): JSX.Element {
 
     if (entries.length === 0) {
       return (
-        <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2 text-center px-6">
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 text-center px-6">
           <Trash2 className="h-10 w-10 opacity-50" aria-hidden />
           <div className="text-sm">La corbeille est vide.</div>
         </div>
@@ -183,7 +183,7 @@ export default function FinderBinRootView(): JSX.Element {
         <div className="overflow-auto">
           <table className="w-full text-sm border-collapse">
             <TrashTableHead />
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {entries.map((entry) => (
                 <TrashEntryTableRow
                   key={entry.id}
@@ -201,7 +201,7 @@ export default function FinderBinRootView(): JSX.Element {
 
     // compact
     return (
-      <div className="bg-white">
+      <div className="bg-card">
         {entries.map((entry) => (
           <TrashEntryCompactRow
             key={entry.id}

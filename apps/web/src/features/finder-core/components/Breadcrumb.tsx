@@ -304,10 +304,10 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
                 // alors que le drop fonctionne effectivement.
                 data-finder-drop-path={segment.path}
                 className={clsx(
-                  'font-medium text-gray-900 truncate max-w-[110px] sm:max-w-[200px]',
+                  'font-medium text-foreground truncate max-w-[110px] sm:max-w-[200px]',
                   'rounded px-1 py-0.5',
                   // Highlight au dragover (sur la feuille aussi)
-                  isCurrentDragOver && 'bg-blue-100 text-blue-700 ring-2 ring-blue-400',
+                  isCurrentDragOver && 'bg-info-muted text-info ring-2 ring-ring',
                 )}
                 title={segment.name}
                 aria-current="page"
@@ -326,12 +326,12 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
                 // calcul du badge ghost allowed/forbidden.
                 data-finder-drop-path={segment.path}
                 className={clsx(
-                  'text-gray-600 hover:text-gray-900 hover:underline',
+                  'text-muted-foreground hover:text-foreground hover:underline',
                   'truncate max-w-[110px] sm:max-w-[200px]',
                   'rounded px-1 py-0.5',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   'transition-colors',
-                  isCurrentDragOver && 'bg-blue-100 text-blue-700 ring-2 ring-blue-400',
+                  isCurrentDragOver && 'bg-info-muted text-info ring-2 ring-ring',
                 )}
                 title={segment.name}
               >
@@ -341,7 +341,7 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
 
             {!isLast && (
               <ChevronRight
-                className="h-3.5 w-3.5 text-gray-400 shrink-0"
+                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
                 aria-hidden
               />
             )}
@@ -358,16 +358,16 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
                   aria-expanded={showHidden}
                   aria-label={`Afficher les ${hiddenSegments.length} niveaux intermédiaires`}
                   className={clsx(
-                    'rounded px-1 py-0.5 text-gray-500',
-                    'hover:bg-gray-100 hover:text-gray-900',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
+                    'rounded px-1 py-0.5 text-muted-foreground',
+                    'hover:bg-muted hover:text-foreground',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   )}
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
 
                 {showHidden && (
-                  <div className="absolute left-0 top-full z-30 mt-1 min-w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+                  <div className="absolute left-0 top-full z-30 mt-1 min-w-48 rounded-md border border-border bg-card py-1 shadow-lg">
                     {hiddenSegments.map((hidden) => (
                       <button
                         key={hidden.path}
@@ -376,7 +376,7 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
                           setShowHidden(false);
                           setPath(hidden.path);
                         }}
-                        className="block w-full truncate px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+                        className="block w-full truncate px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
                         title={hidden.name}
                       >
                         {hidden.name}
@@ -386,7 +386,7 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
                 )}
 
                 <ChevronRight
-                  className="h-3.5 w-3.5 shrink-0 text-gray-400"
+                  className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
                   aria-hidden
                 />
               </span>

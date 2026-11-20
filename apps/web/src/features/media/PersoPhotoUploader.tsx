@@ -275,9 +275,9 @@ export default function PersoPhotoUploader(): JSX.Element {
       {/* Barre de quota */}
       <div>
         {quotaQuery.isLoading ? (
-          <p className="text-sm text-gray-500">Chargement du quota…</p>
+          <p className="text-sm text-muted-foreground">Chargement du quota…</p>
         ) : quotaQuery.isError || !quota ? (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-destructive">
             Impossible de charger le quota photos.
           </p>
         ) : (
@@ -286,19 +286,19 @@ export default function PersoPhotoUploader(): JSX.Element {
               <span className="font-semibold text-sm">
                 {quota.total} / {quota.quota} photos
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 {quota.remaining} restante(s)
               </span>
             </div>
-            <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+            <div className="h-2 w-full rounded bg-secondary overflow-hidden">
               <div
                 className={`h-full rounded ${
-                  atCapacity ? 'bg-red-500' : 'bg-green-600'
+                  atCapacity ? 'bg-destructive' : 'bg-brand'
                 }`}
                 style={{ width: `${quotaPct}%` }}
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {quota.pending} en attente · {quota.published} validée(s)
             </p>
           </>
@@ -310,23 +310,23 @@ export default function PersoPhotoUploader(): JSX.Element {
         {...getRootProps()}
         className={`border-2 border-dashed p-6 rounded-md text-center ${
           atCapacity
-            ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+            ? 'border-border bg-muted opacity-60 cursor-not-allowed'
             : isDragActive
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 cursor-pointer'
+              ? 'border-ring bg-info-muted'
+              : 'border-border cursor-pointer'
         }`}
       >
         <input {...getInputProps()} />
         {atCapacity ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Quota atteint. Pour libérer de la place, adressez-vous au club.
           </p>
         ) : isDragActive ? (
-          <p className="text-sm text-blue-600">Déposez les photos ici…</p>
+          <p className="text-sm text-info">Déposez les photos ici…</p>
         ) : (
           <>
             <p className="text-sm">Glissez vos photos ici, ou cliquez pour les choisir</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Images uniquement · {MAX_FILE_SIZE_MB} Mo max · {remaining}{' '}
               restante(s)
             </p>
@@ -339,10 +339,10 @@ export default function PersoPhotoUploader(): JSX.Element {
         <p
           className={`text-sm ${
             banner.kind === 'error'
-              ? 'text-red-600'
+              ? 'text-destructive'
               : banner.kind === 'success'
-                ? 'text-green-700'
-                : 'text-gray-600'
+                ? 'text-success'
+                : 'text-muted-foreground'
           }`}
         >
           {banner.text}
@@ -355,7 +355,7 @@ export default function PersoPhotoUploader(): JSX.Element {
           {items.map((it) => (
             <div
               key={it.id}
-              className="relative w-28 h-28 border rounded overflow-hidden group bg-gray-50"
+              className="relative w-28 h-28 border rounded overflow-hidden group bg-muted"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -366,13 +366,13 @@ export default function PersoPhotoUploader(): JSX.Element {
               <span
                 className={`absolute bottom-0 left-0 right-0 text-xs text-white text-center py-0.5 ${
                   it.status === 'uploading'
-                    ? 'bg-blue-600/80'
+                    ? 'bg-brand/80'
                     : it.status === 'done'
-                      ? 'bg-green-600/80'
+                      ? 'bg-brand/80'
                       : it.status === 'skipped'
                         ? 'bg-gray-600/80'
                         : it.status === 'error'
-                          ? 'bg-red-600/80'
+                          ? 'bg-destructive/80'
                           : 'bg-black/40'
                 }`}
               >
@@ -386,7 +386,7 @@ export default function PersoPhotoUploader(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => removeItem(it.id)}
-                  className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded z-10"
+                  className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-xs px-1 rounded z-10"
                   aria-label={`Retirer ${it.file.name}`}
                 >
                   ✕
@@ -403,7 +403,7 @@ export default function PersoPhotoUploader(): JSX.Element {
           type="button"
           onClick={upload}
           disabled={isUploading || pendingCount === 0}
-          className="bg-blue-600 text-white text-sm px-3 py-1.5 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-brand text-brand-foreground text-sm px-3 py-1.5 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isUploading ? 'Envoi…' : `Envoyer ${pendingCount || ''} photo(s)`}
         </button>
@@ -414,7 +414,7 @@ export default function PersoPhotoUploader(): JSX.Element {
             type="button"
             onClick={clearFinished}
             disabled={isUploading}
-            className="text-sm px-3 py-1.5 rounded border border-gray-300 disabled:opacity-50"
+            className="text-sm px-3 py-1.5 rounded border border-border disabled:opacity-50"
           >
             Nettoyer
           </button>

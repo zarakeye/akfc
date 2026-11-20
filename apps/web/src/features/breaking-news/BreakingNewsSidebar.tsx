@@ -50,7 +50,7 @@ function AnnouncementCard({
   return (
     <article
       id={`announcement-${news.id}`}
-      className={`rounded-lg border bg-white p-4 shadow-sm transition-shadow ${
+      className={`rounded-lg border bg-card p-4 shadow-sm transition-shadow ${
         highlighted
           ? "border-brand ring-2 ring-ring"
           : "border-border"

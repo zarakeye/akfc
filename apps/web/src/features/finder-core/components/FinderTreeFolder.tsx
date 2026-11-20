@@ -407,7 +407,7 @@ export default function FinderTreeFolder({
             !isDragOver &&
             "bg-accent text-accent-foreground font-medium",
           !isActive && !isDragOver && "hover:bg-accent/40",
-          isDragOver && "bg-blue-100 ring-1 ring-blue-300",
+          isDragOver && "bg-info-muted ring-1 ring-ring",
         )}
         title={node.path}
       >
