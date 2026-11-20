@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, BIRTH_DATE, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
+import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, BIRTH_DATE, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, COMMENT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -165,6 +165,14 @@ await prisma.memberDocument.create({
     audience: "SPECIFIC",
     publishedById: USERS.admin.id,
     recipients: { create: { userId: USERS.membreA.id } },
+  },
+});
+
+// Une actualité où l'on ajoute un commentaire avec un lien.
+await prisma.post.create({
+  data: {
+    id: COMMENT_POST.id, title: COMMENT_POST.title, authorId: USERS.admin.id,
+    content: { version: 1, blocks: [] }, publicationDate: new Date("2026-01-01T00:00:00Z"),
   },
 });
 

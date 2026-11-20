@@ -60,6 +60,8 @@ export const DIX_HUIT = {
 
 /** L'actualité publiée que commente le membre partant, et le fichier qu'il a envoyé. */
 export const PARTANT_POST = { id: 900001, title: "Actualité du membre partant (e2e)" };
+// Une actualité publiée réservée au test des liens dans les commentaires.
+export const COMMENT_POST = { id: 900002, title: "Actualité à commenter (e2e)" };
 export const PARTANT_MEDIA = { id: "e2e-media-partant", key: "AKFC/e2e/partant.png" };
 
 /** Le média sur lequel on tague des personnes. */

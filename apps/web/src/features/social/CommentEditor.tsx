@@ -105,7 +105,9 @@ export function CommentEditor({
 
   // Étendu si : pas compact, ou focus, ou contenu déjà saisi (on ne
   // replie jamais un brouillon en cours).
-  const expanded = !compact || focused || !state.isEmpty;
+  // Adresse du lien en cours de saisie (null : champ fermé).
+  const [linkDraft, setLinkDraft] = useState<string | null>(null);
+  const expanded = !compact || focused || !state.isEmpty || linkDraft !== null;
 
   const handleLink = useCallback(() => {
     if (!editor) return;
@@ -113,17 +115,25 @@ export function CommentEditor({
       editor.chain().focus().unsetLink().run();
       return;
     }
-    const url = window.prompt("URL du lien :", "https://");
-    if (url === null) return; // saisie annulée
-    const trimmed = url.trim();
-    if (trimmed === "") return;
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange("link")
-      .setLink({ href: trimmed })
-      .run();
+    // Un champ s'ouvre sous la barre d'outils ; la sélection du texte reste mémorisée par l'éditeur.
+    setLinkDraft("https://");
   }, [editor]);
+
+  const applyLink = (): void => {
+    const trimmed = (linkDraft ?? "").trim();
+    setLinkDraft(null);
+    if (!editor) return;
+    if (trimmed === "" || trimmed === "https://") {
+      editor.commands.focus();
+      return;
+    }
+    editor.chain().focus().extendMarkRange("link").setLink({ href: trimmed }).run();
+  };
+
+  const cancelLink = (): void => {
+    setLinkDraft(null);
+    editor?.commands.focus();
+  };
 
   const handleSubmit = async () => {
     if (!editor || editor.isEmpty) return;
@@ -197,6 +207,42 @@ export function CommentEditor({
               "italic",
             )}
             {toolbarButton(state.link, "Lien", "Insérer un lien", handleLink)}
+          </div>
+        )}
+        {linkDraft !== null && (
+          <div className="flex items-center gap-2 border-b border-input/50 px-2 py-1">
+            <input
+              type="url"
+              autoFocus
+              value={linkDraft}
+              onChange={(e) => setLinkDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  applyLink();
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  cancelLink();
+                }
+              }}
+              aria-label="Adresse du lien"
+              placeholder="https://…"
+              className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-0.5 text-xs"
+            />
+            <button
+              type="button"
+              onClick={applyLink}
+              className="rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Ajouter le lien
+            </button>
+            <button
+              type="button"
+              onClick={cancelLink}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Annuler
+            </button>
           </div>
         )}
         <EditorContent editor={editor} />
