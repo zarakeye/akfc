@@ -165,7 +165,7 @@ Un mineur dont la date est connue n’a pas besoin qu’on pense à lui le jour 
 
 Dès son anniversaire, `effectiveLegalAge` le traite en majeur, partout où la majorité compte : sa page de droit à l’image, son profil, la liste des utilisateurs. La nuit venue, la tâche de 3 h enregistre le passage et efface les coordonnées du parent, qui n’a plus de rôle (chapitre « Le consentement en ligne »). Seule une date **vérifiée** (saisie par le club, ou confirmée par le parent) a ce pouvoir : une date tapée par le membre lui-même ne le fait pas changer de statut.
 
-Reste le jeune qui a 18 ans sans que le site le sache : pas de date, ou une fausse. Il montre sa pièce d’identité à un administrateur, qui le passe majeur sur la fiche (**Passer majeur (justificatif vu)**, `user.markAdultWithProof`). Le site n’enregistre rien de la pièce : ni copie, ni numéro, ni même la date de naissance, effacée puisque c’est elle qui le disait mineur. Le club n’a besoin que du fait.
+Reste le jeune qui a 18 ans sans que le site le sache : pas de date, ou une fausse. Il montre sa pièce d’identité à un administrateur, qui le passe majeur sur la fiche (**Passer majeur (justificatif vu)**, `user.markAdultWithProof`). Le site n’enregistre rien de la pièce : ni copie, ni numéro, ni même la date de naissance, effacée puisque c’est elle qui le disait mineur. Le club n’a besoin que du fait. La fenêtre de confirmation le rappelle à l’administrateur, et dit aussi ce qui reste : les autorisations de droit à l’image signées par le parent valent jusqu’à ce que le jeune confirme les siennes (`makeAdult`).
 
 ## Les comptes d’avant
 

@@ -9,7 +9,7 @@ import TrashEntryGrid from './TrashEntryGrid';
 import TrashEntryTableRow from './TrashEntryTableRow';
 import TrashTableHead from './TrashTableHead';
 import TrashEntryCompactRow from './TrashEntryCompactRow';
-import ConfirmDialog from './ConfirmDialog';
+import ConfirmDialog from "#components/ui/ConfirmDialog.tsx";
 import ContextMenu, {
   type ContextMenuItem,
 } from '#features/finder-core/components/ContextMenu.tsx';

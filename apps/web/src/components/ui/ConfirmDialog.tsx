@@ -1,13 +1,13 @@
 'use client';
 
-import { JSX, useEffect, useState } from 'react';
+import { JSX, ReactNode, useEffect, useId, useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 
 type ConfirmDialogProps = {
   open: boolean;
   title: string;
-  /** Description courte affichée sous le titre */
-  description: string;
+  /** Description affichée sous le titre : une phrase, ou un bloc (paragraphes, liste). */
+  description: ReactNode;
   /** Texte du bouton de confirmation */
   confirmLabel?: string;
   /** Texte du bouton d'annulation */
@@ -48,6 +48,9 @@ export default function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps): JSX.Element | null {
   const [typedValue, setTypedValue] = useState('');
+  // Identifiants uniques : deux modales sur une même page ne se confondent pas.
+  const titleId = useId();
+  const descId = useId();
 
   // Reset l'input à chaque ouverture. Pattern « adjust state during render »
   // (comparaison à l'état précédent) plutôt qu'un useEffect + setState.
@@ -83,15 +86,16 @@ export default function ConfirmDialog({
         className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
-        aria-labelledby="confirm-title"
-        aria-describedby="confirm-desc"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             {destructive && (
               <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" aria-hidden />
             )}
-            <h2 id="confirm-title" className="text-lg font-semibold">
+            <h2 id={titleId} className="text-lg font-semibold">
               {title}
             </h2>
           </div>
@@ -105,9 +109,9 @@ export default function ConfirmDialog({
           </button>
         </div>
 
-        <p id="confirm-desc" className="text-sm text-gray-600">
+        <div id={descId} className="space-y-2 text-sm text-gray-600">
           {description}
-        </p>
+        </div>
 
         {requireTypedConfirmation && (
           <div className="space-y-2">

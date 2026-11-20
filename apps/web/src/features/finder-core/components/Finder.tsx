@@ -39,7 +39,7 @@ import StatusFilterBar from "#features/finder-core/components/StatusFilterBar.ts
 // Le dialogue de `trash-view`, celui dont `EmptyBinButton` se sert déjà.
 // En écrire un second serait la troisième façon de poser une question
 // dans ce projet.
-import ConfirmDialog from "#features/trash-view/components/ConfirmDialog.tsx";
+import ConfirmDialog from "#components/ui/ConfirmDialog.tsx";
 import { statusOf } from "#features/finder-core/utils/statusFolders.ts";
 import ContextMenu, {
   type ContextMenuItem,

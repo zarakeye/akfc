@@ -4,7 +4,7 @@ import { JSX, useState } from 'react';
 import { RotateCcw, Trash2, X } from 'lucide-react';
 import { useTrashStore } from '../state/useTrashStore';
 import { useTrashActions } from '../hooks/useTrashActions';
-import ConfirmDialog from './ConfirmDialog';
+import ConfirmDialog from "#components/ui/ConfirmDialog.tsx";
 
 /**
  * Toolbar contextuelle visible uniquement quand `selectedIds` n'est pas vide.

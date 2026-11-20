@@ -76,8 +76,11 @@ test.describe("Date de naissance demandée au parent", () => {
     await page.goto(`/dashboard/users/${USERS.mineurDate.id}`);
     const majorite = page.getByRole("region", { name: "Majorité" });
     await expect(majorite).toContainText("Mineur");
-    page.once("dialog", (d) => void d.accept());
     await majorite.getByRole("button", { name: "Passer majeur (justificatif vu)" }).click();
+    const confirmation = page.getByRole("dialog", { name: "Passer ce membre en majeur ?" });
+    await expect(confirmation).toContainText("pièce d'identité");
+    await expect(confirmation).toContainText("restent valables");
+    await confirmation.getByRole("button", { name: "Passer majeur", exact: true }).click();
     await expect(majorite.getByRole("button", { name: "Passer majeur (justificatif vu)" })).toHaveCount(0);
     await expect(majorite.getByRole("radio", { name: "Majeur" })).toBeChecked();
     await expect(majorite).not.toContainText("renseignée ✓");

@@ -3,7 +3,7 @@
 import { JSX, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useTrashActions } from '../hooks/useTrashActions';
-import ConfirmDialog from './ConfirmDialog';
+import ConfirmDialog from "#components/ui/ConfirmDialog.tsx";
 
 type Props = {
   /** Nombre d'items actuellement dans la corbeille (pour message + désactivation si 0) */

@@ -3,6 +3,7 @@
 import { useState, type JSX } from "react";
 import { useRouter } from "next/navigation";
 
+import ConfirmDialog from "#components/ui/ConfirmDialog.tsx";
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { LEGAL_AGE_LABEL, type LegalAgeValue } from "@akfc/contracts/legal/imageConsent.ts";
 import { GUARDIAN_RELATIONS } from "@akfc/contracts/legal/creationLegal.ts";
@@ -41,6 +42,7 @@ export function LegalStatusControl({
   const utils = trpc.useUtils();
   const [choice, setChoice] = useState<LegalAgeValue>(initial.legalAge);
   const [newBirthDate, setNewBirthDate] = useState<string | null>(null);
+  const [confirmProof, setConfirmProof] = useState(false);
   const [g, setG] = useState({
     name: initial.guardianName,
     relation: initial.guardianRelation,
@@ -188,21 +190,40 @@ export function LegalStatusControl({
           <button
             type="button"
             disabled={proof.isPending}
-            onClick={() => {
-              if (
-                window.confirm(
-                  "Passer ce compte en majeur sur justificatif ? Sa date de naissance enregistrée (s'il y en a une) et les coordonnées de son parent seront effacées ; il recevra un e-mail.",
-                )
-              ) {
-                proof.mutate({ userId });
-              }
-            }}
+            onClick={() => setConfirmProof(true)}
             className="rounded-md border border-gray-300 px-3 py-1.5 font-medium hover:bg-gray-50 disabled:opacity-50"
           >
             {proof.isPending ? "Enregistrement…" : "Passer majeur (justificatif vu)"}
           </button>
         )}
       </div>
+      <ConfirmDialog
+        open={confirmProof}
+        title="Passer ce membre en majeur ?"
+        description={
+          <>
+            <p>Vous confirmez avoir vu une pièce d&apos;identité qui prouve qu&apos;il a 18 ans.</p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>Sa date de naissance enregistrée, s&apos;il y en a une, est effacée.</li>
+              <li>
+                Les coordonnées de son parent et les demandes encore ouvertes envoyées au parent sont effacées. Elles ne
+                pourront pas être retrouvées.
+              </li>
+              <li>
+                Les autorisations de droit à l&apos;image données par son parent restent valables jusqu&apos;à ce
+                qu&apos;il confirme ou modifie les siennes.
+              </li>
+              <li>Il reçoit un e-mail qui l&apos;invite à le faire.</li>
+            </ul>
+          </>
+        }
+        confirmLabel="Passer majeur"
+        onConfirm={() => {
+          setConfirmProof(false);
+          proof.mutate({ userId });
+        }}
+        onCancel={() => setConfirmProof(false)}
+      />
       {proof.error && <p className="mt-2 text-red-600">{proof.error.message}</p>}
       {save.isSuccess && <p className="mt-2 text-emerald-700">Enregistré.</p>}
       {save.error && <p className="mt-2 text-red-600">{save.error.message}</p>}
