@@ -1,6 +1,6 @@
 ---
 title: "Un composant, des adaptateurs"
-description: "Pourquoi le finder ne sait rien du stockage : le contrat FileAdapter (une méthode obligatoire, des capacités facultatives), l’adaptateur de la bibliothèque qui parle au router storage, le store Zustand qui tient la navigation, la sélection et les préférences, et l’enrichissement par la base qui arrive après coup."
+description: "Pourquoi le finder ne sait rien du stockage : quatre écrans pour un seul explorateur, le motif adaptateur, le contrat FileAdapter (une méthode obligatoire, des capacités facultatives), le FinderNode comme langue commune, l’adaptateur de la bibliothèque, un list suivi du clic jusqu’au serveur et retour, et la base qui complète les fiches après coup."
 section: "Le finder"
 order: 1
 entities:
@@ -26,12 +26,24 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** La partie « Stockage et médias » a montré le serveur : un stockage plat qui ne connaît que des clés, une base qui sait ce que valent les fichiers, et `storage.getTree`, qui fabrique à chaque ouverture l’arbre d’un dossier. Elle s’arrêtait au `FinderNode`, le nœud que le serveur rend au navigateur.
 
-Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s’ajoute au paquet qui l’importe :
 
 <Installer paquets="zustand" dans="finder-core" />
 <Installer paquets="zustand" dans="web" />
 
-Ouvrons maintenant le navigateur. Le **finder** est l’explorateur de fichiers du site : un arbre à gauche, une grille au centre, un aperçu à droite, une barre d’outils au-dessus. Il pèse un peu plus de dix mille lignes, dans `apps/web/src/features/finder-core`. Cette partie le parcourt en quatre chapitres : ici, ce qui le nourrit ; ensuite, ce qu’il affiche ; puis ce qu’on y fait ; enfin, les trois finders qu’il sait être.
+Ouvrons maintenant le navigateur. Le **finder** est l’explorateur de fichiers du site : un arbre à gauche, une grille au centre, un aperçu à droite, une barre d’outils au-dessus. Il pèse un peu moins de dix mille lignes, dans `apps/web/src/features/finder-core`, et c’est le plus gros composant du projet.
+
+Un composant de cette taille ne se lit pas de haut en bas. Il se lit par les questions qu’il résout. Cette partie en pose sept, une par chapitre :
+
+1. D’où viennent les données ? (ce chapitre)
+2. Où le finder garde-t-il ce qu’il sait ?
+3. Comment l’arbre se charge-t-il sans tout charger ?
+4. Comment la grille trie, filtre et cherche-t-elle ?
+5. Comment agit-on sur un fichier ?
+6. Comment déplace-t-on par glisser-déposer ?
+7. Comment un même finder sert-il trois usages ?
+
+Commençons par la première, parce que tout le reste en dépend : avant d’afficher un dossier, il faut savoir **à qui le demander**.
 
 ## Les parcours du chapitre
 
@@ -43,11 +55,62 @@ Le même composant `Finder` sert à quatre endroits du site :
 
 <DocsTable columnsJson='["Où", "Qui", "Ce qu’on y fait"]' rowsJson='[["La bibliothèque (/dashboard/library)", "Un administrateur", "Tout : naviguer, prévisualiser, renommer, déplacer, jeter, publier."], ["Le sélecteur de médias", "Un administrateur, depuis un formulaire", "Piocher des images dans plusieurs dossiers, puis les ajouter d’un coup."], ["Mes espaces (/mes-espaces)", "Un membre d’un groupe collaboratif", "Naviguer et lire ses espaces, déposer un document s’il en a le droit."], ["Les bancs d’essai (/test-finder, /test-picker)", "Le développeur, en local", "Essayer le composant seul."]]' />
 
-Quatre usages, et des données qui ne viennent pas toujours du même endroit : la bibliothèque montre l’arborescence réelle du stockage ; « Mes espaces » montre une racine qui n’existe pas (les groupes du membre, rangés sous une racine inventée). Si le finder appelait lui-même `storage.getTree`, chaque usage le ferait bifurquer avec des `if`. Le projet a pris l’autre chemin : **le finder ne connaît pas le stockage**. Il parle à un adaptateur.
+Quatre usages, et des données qui ne viennent pas toujours du même endroit. La bibliothèque montre l’arborescence réelle du stockage. « Mes espaces » montre une racine **qui n’existe pas** : les groupes du membre, rangés sous un dossier inventé pour l’occasion. Le sélecteur de médias lit la même arborescence que la bibliothèque, mais n’a pas le droit d’y déplacer quoi que ce soit.
+
+### Le finder qui saurait tout
+
+La première idée qui vient, c’est de laisser le finder aller chercher ses données lui-même, et de lui dire dans quel écran il se trouve :
+
+<CodeSnippet
+  language="tsx"
+  title="Ce que le projet n’a pas fait : un finder qui sait où il est"
+  filename="finder-qui-sait-tout.tsx"
+  kind="anti-pattern"
+  codeJson='"// ❌ le finder appelle lui-même le serveur, et bifurque selon l’écran\nasync function loadFolder(path: string, mode: \"library\" | \"picker\" | \"member\") {\n  if (mode === \"member\") {\n    if (path === \"/\") return buildVirtualRootFromGroups(await trpcClient.group.mine.query())\n    return trpcClient.storage.getTree.query({ path: toRealPath(path), depth: 1 })\n  }\n  return trpcClient.storage.getTree.query({ path, depth: 1 })\n}\n\n// … et plus loin, dans le menu, la barre d’outils, le glisser-déposer :\nif (mode !== \"picker\" && mode !== \"member\") showMoveButton()"'
+/>
+
+Sur un exemple aussi court, cela paraît raisonnable. Mais suivons ce que ce choix entraîne :
+
+- chaque nouvel usage ajoute une valeur à `mode`, et une branche dans **chaque** fonction qui touche aux données ;
+- les composants du finder (l’arbre, la grille, le fil d’Ariane, l’aperçu) doivent tous connaître `mode`, donc tous connaître les usages ;
+- la règle « dans Mes espaces, la racine est inventée » se retrouve copiée partout où l’on lit un dossier ;
+- tester le finder seul devient impossible sans le serveur : il l’appelle de l’intérieur.
+
+👉 le finder deviendrait le seul endroit où se croisent tous les usages
+👉 et chaque usage nouveau le rendrait plus fragile
+
+Le projet a pris l’autre chemin : **le finder ne connaît pas le stockage**. Il parle à un intermédiaire, qu’on lui donne de l’extérieur.
+
+## Le motif adaptateur
+
+Un **adaptateur** (*adapter*, en anglais) est un objet qui se tient entre deux pièces qui ne parlent pas la même langue. D’un côté, il offre une forme fixe, connue à l’avance ; de l’autre, il fait le travail réel, à sa façon. L’image la plus juste est celle de l’adaptateur de prise en voyage : l’appareil ne change pas, la prise murale non plus ; seul l’objet du milieu sait comment relier les deux.
+
+Pour le finder, cela donne une règle simple :
+
+- le finder **demande** : « donne-moi le contenu de ce dossier », « déplace ces fichiers ici » ;
+- l’adaptateur **répond** : il sait, lui, s’il faut appeler `storage.getTree`, inventer une racine, ou refuser.
+
+Et chaque écran choisit son adaptateur au moment d’afficher le finder. La page de la bibliothèque tient en une ligne :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(admin)/dashboard/library/page.tsx"
+  filename="page.tsx"
+  snippetStart="<Finder adapter={finderStorageAdapter}"
+  snippetLines="1"
+  snippetTitle="La bibliothèque donne au finder l’adaptateur du stockage"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+« Mes espaces » écrit la même ligne avec `memberFinderAdapter` ; le chapitre 7 l’ouvrira. Le finder, lui, ne voit jamais la différence.
+
+<Callout type="concept">
+Le finder dépend d’une **forme**, pas d’une **implémentation**. C’est ce qu’on appelle l’inversion de dépendance : au lieu que le composant aille chercher ce dont il a besoin, on le lui fournit, et il n’exige qu’une chose, que ce qu’on lui fournit respecte le contrat.
+</Callout>
 
 ## Ce que l’adaptateur promet
 
-Le contrat vit dans `packages/contracts`, parce qu’il ne dépend ni de React ni du backend :
+Ce contrat, c’est une interface TypeScript, `FileAdapter`. Elle vit dans `packages/contracts`, et ce n’est pas un hasard : elle ne dépend ni de React ni du backend. Le finder l’importe pour savoir quoi appeler ; chaque adaptateur l’importe pour savoir quoi fournir ; aucun des deux n’a besoin de connaître l’autre.
 
 <CodeExample
   language="ts"
@@ -60,96 +123,166 @@ Le contrat vit dans `packages/contracts`, parce qu’il ne dépend ni de React n
   fullFileTitle="Voir le fichier complet"
 />
 
-Une seule méthode est **obligatoire** : `list`, le contenu d’un dossier. Toutes les autres sont des **capacités**, que l’adaptateur offre ou non, et le finder adapte son interface à ce qu’il trouve :
+Une seule méthode est **obligatoire** : `list`, le contenu d’un dossier. Toutes les autres portent un point d’interrogation après leur nom (`getTree?`, `moveItems?`…). En TypeScript, ce `?` sur une méthode veut dire : « cet objet peut l’avoir, ou ne pas l’avoir ». Un adaptateur qui l’omet reste un `FileAdapter` valide.
 
-<DocsTable columnsJson='["Capacité", "Ce qu’elle permet", "Sans elle"]' rowsJson='[["getTree", "L’arbre de gauche, plusieurs niveaux d’un coup.", "L’arbre affiche un message : l’adaptateur ne sait pas fournir d’arborescence."], ["getNode", "Retrouver un nœud précis (la racine virtuelle de Mes espaces).", "Rien ne l’exige dans la bibliothèque."], ["getMetadata", "La taille, les dates, le format, dans l’aperçu.", "L’aperçu se contente de ce que porte le nœud."], ["moveItems", "Le glisser-déposer et la boîte « Déplacer ».", "Un dépôt est ignoré : un adaptateur en lecture seule n’a pas à le refuser."], ["delete", "Prévu par le contrat.", "Inutilisé : la suppression passe par la corbeille, qui a ses propres procédures."]]' />
+On appelle ces méthodes facultatives des **capacités**. Le finder ne suppose jamais qu’une capacité existe : il regarde, et il adapte son interface à ce qu’il trouve.
 
-Les chemins que l’adaptateur reçoit et rend sont **logiques** : ce sont eux que le finder range, compare et met dans l’URL. L’adaptateur est libre de les traduire en clés de stockage, ou, comme celui des membres, de les inventer.
+<DocsTable columnsJson='["Capacité", "Ce qu’elle permet", "Sans elle"]' rowsJson='[["getTree", "L’arbre de gauche, plusieurs niveaux d’un coup.", "L’arbre affiche un message : l’adaptateur ne sait pas fournir d’arborescence."], ["getNode", "Retrouver un nœud précis (la racine virtuelle de Mes espaces).", "Rien ne l’exige dans la bibliothèque."], ["getMetadata", "La taille, les dates, le format, dans l’aperçu.", "L’aperçu se contente de ce que porte le nœud."], ["moveItems", "Le glisser-déposer et la boîte « Déplacer ».", "Un dépôt est ignoré : un adaptateur en lecture seule ne déplace rien."], ["delete", "Supprimer depuis l’adaptateur.", "La bibliothèque ne s’en sert pas : jeter passe par la corbeille, qui a son propre router."]]' />
+
+### Regarder avant d’appeler
+
+Comment le finder « regarde-t-il » ? De la façon la plus directe qui soit : il teste si la méthode est là. L’arbre de gauche le fait avant même de se dessiner :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTree.tsx"
+  filename="FinderTree.tsx"
+  snippetStart="  const supportsTree = typeof adapter.getTree === 'function';"
+  snippetLines="1"
+  snippetTitle="L’arbre vérifie la capacité avant de s’afficher"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Plus bas dans le même composant, si `supportsTree` est faux, l’arbre rend un message à la place des dossiers, au lieu de planter sur un appel à une fonction absente. L’aperçu fait de même pour les métadonnées, directement dans son rendu :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/PreviewPanel.tsx"
+  filename="PreviewPanel.tsx"
+  snippetStart="      {adapter.getMetadata && ("
+  snippetLines="8"
+  snippetHighlight="1"
+  snippetTitle="Pas de capacité, pas de bloc : l’aperçu se tait"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Et le glisser-déposer, au moment du dépôt, vérifie `adapter.moveItems` avant d’appeler quoi que ce soit (chapitre 6).
+
+👉 une capacité absente ne casse rien : elle retire un morceau d’interface
+👉 c’est le finder qui s’adapte, jamais l’adaptateur qui fait semblant
 
 <Callout type="insight">
 Un contrat à une méthode obligatoire et à capacités facultatives rend chaque nouvel usage bon marché : un adaptateur en lecture seule n’implémente que `list` et `getTree`, et le finder retire de lui-même ce qui ne peut pas marcher.
 </Callout>
 
+## Le FinderNode, la langue commune
+
+Ce que l’adaptateur rend, ce sont des **nœuds** : un nœud par dossier ou par fichier. Leur forme est elle aussi fixée par le contrat, et c’est la seule chose que le finder sache des fichiers.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/finder/node.ts"
+  filename="node.ts"
+  snippetStart="export interface FinderNode {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,4,7,24,33"
+  snippetTitle="FinderNode"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Quatre champs portent l’essentiel.
+
+**`path`, le chemin logique.** C’est lui que le finder range, compare, met dans l’URL et renvoie à l’adaptateur. « Logique » veut dire qu’il n’est pas forcément une vraie clé de stockage : l’adaptateur de la bibliothèque s’en sert tel quel, celui de « Mes espaces » invente les siens et les traduit.
+
+**`id`, l’identité.** Pour la bibliothèque, il vaut le chemin. Le contrat ne l’impose pas : un autre adaptateur pourrait donner un identifiant de base. Le finder s’en sert pour la sélection et les clés React, jamais pour appeler le serveur.
+
+**`hasChildren` et `children`, deux façons de parler des enfants.** C’est la convention la plus subtile du contrat, et l’arbre en dépend entièrement (chapitre 3) :
+
+- `children` vaut `undefined` : les enfants **n’ont pas été chargés** ;
+- `children` vaut `[]` : le dossier est **vide pour de vrai** ;
+- `children` est rempli : les enfants sont là.
+
+`hasChildren` complète le premier cas : il dit « il y a quelque chose dessous » sans l’avoir chargé, ce qui permet d’afficher la flèche de dépliage d’un dossier sans aller lire son contenu.
+
+**`meta`, la place laissée au reste.** L’adresse de la vignette, le format, le statut, l’auteur de l’envoi : tout ce qui sert à l’affichage d’un média tient dans `meta`, que le cœur du finder ne lit pas toujours et qu’un autre adaptateur peut remplir autrement.
+
+👉 un `undefined` et un tableau vide ne disent pas la même chose
+👉 confondre les deux, c’est afficher « dossier vide » sur un dossier qu’on n’a simplement pas encore ouvert
+
 ## L’adaptateur de la bibliothèque
 
-L’adaptateur réel du site, `finderStorageAdapter`, est un objet simple qui traduit chaque méthode en un appel au router `storage` :
+L’adaptateur réel du site, `finderStorageAdapter`, est un objet simple qui traduit chaque méthode du contrat en un appel au router `storage`. Lisons-le méthode par méthode :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/finder-adapters/storage/finderStorage.adapter.ts"
+  filename="finderStorage.adapter.ts"
+  snippetStart="export const finderStorageAdapter: FileAdapter = {"
+  snippetEnd="(fin du bloc)"
+  title="finderStorageAdapter"
+  stepsJson='[{"title": "list : un arbre d’un seul niveau", "body": "Le serveur n’a qu’une procédure de lecture. Lister un dossier, c’est lui demander son arbre sur une profondeur de 1, puis séparer dossiers et fichiers.", "scope": "2-15", "focus": "4-7"}, {"title": "La traduction vers les nœuds du finder", "body": "Le serveur rend des nœuds de stockage, sans adresse d’image ni type d’affichage. Le mapper les transforme en FinderNode, et calcule ces champs côté navigateur.", "scope": "2-15", "focus": "9-9"}, {"title": "getTree : plusieurs niveaux, pour l’arbre", "body": "Même procédure, profondeur demandée par l’arbre. Le mapper, cette fois, descend dans les enfants.", "scope": "18-25", "focus": "19-22"}, {"title": "getMetadata : un passe-plat assumé", "body": "Le contrat du stockage et celui du finder ont la même forme : on rend tel quel. Le commentaire dit où ajouter un mapping le jour où ils divergeront.", "scope": "27-37", "focus": "36-36"}, {"title": "moveItems : traduire l’intention", "body": "Un seul élément devient une source simple ; plusieurs deviennent une sélection. Le serveur reçoit une intention de déplacement, pas une liste d’opérations.", "scope": "39-47", "focus": "40-41"}]'
+/>
+
+Trois choix s’y lisent.
+
+**`list` est un `getTree` de profondeur 1.** Une seule porte de lecture côté serveur, donc un seul endroit où vérifier les droits, filtrer la corbeille, ajouter les espaces vides. Si `list` avait sa propre procédure, chaque règle devrait être écrite deux fois, et l’une finirait par manquer.
+
+**Il utilise `trpcClient`, pas les hooks `trpc.….useQuery`.** Un hook React ne s’appelle que dans le corps d’un composant (ou d’un autre hook), et toujours dans le même ordre. Or un adaptateur est un objet ordinaire : on l’appelle depuis des effets, des gestionnaires de clic, la fin d’un glisser-déposer. Le **client impératif** de tRPC, `trpcClient`, donne exactement les mêmes types, sans cette contrainte, et sans le cache de React Query. Ce cache, le finder le tient lui-même, dans son store (chapitre 2). C’est pourquoi, après une modification, on ne s’en remet pas à un `invalidate` de React Query mais à `reloadFolderContent()`.
+
+**Un déplacement ne publie pas.** Le commentaire de `moveItems` le rappelle : depuis que le statut d’un fichier est une métadonnée et non un dossier, glisser un fichier ne change que son emplacement. Publier, c’est `media.setStatus`, une autre action (chapitre 5).
+
+### Les mappers : du stockage à l’écran
+
+Entre ce que rend le serveur et ce que reçoit le finder, il y a une traduction. Le serveur parle de **nœuds de stockage** : un chemin, un nom, des métadonnées brutes. Le finder veut des **nœuds d’affichage** : une adresse de vignette, un type (image, vidéo, document) pour choisir l’icône et le lecteur. La traduction d’un fichier tient en une fonction :
 
 <CodeExample
   language="ts"
   filepath="apps/web/src/features/finder-adapters/storage/finderStorage.adapter.ts"
   filename="finderStorage.adapter.ts"
-  snippetStart="export const finderStorageAdapter: FileAdapter = {"
-  snippetLead="12"
+  snippetStart="function mapFileToFinderNode("
   snippetEnd="(fin du bloc)"
-  snippetHighlight="16,18,30,40,56"
-  snippetTitle="finderStorageAdapter"
+  snippetHighlight="10,19"
+  snippetTitle="Un fichier du stockage devient un nœud du finder"
   fullFileTitle="Voir le fichier complet"
 />
 
-Trois choix s’y lisent.
+L’adresse de la vignette est calculée **dans le navigateur** (`getMediaUrl`), à partir du chemin, qui est aussi la clé de stockage. Le serveur n’a pas à la fabriquer pour chaque fichier listé ; et si le format des adresses change un jour, un seul fichier bouge.
 
-**`list` est un `getTree` de profondeur 1.** Le serveur n’a qu’une procédure de lecture ; lister un dossier, c’est demander son arbre sur un seul niveau, puis séparer dossiers et fichiers. Une seule porte de lecture, donc un seul endroit où vérifier les droits.
-
-**Il utilise `trpcClient`, pas les hooks `trpc.….useQuery`.** Un adaptateur est un objet, appelé depuis des effets, des gestionnaires de clic, des dépôts de glisser-déposer : il n’est pas un composant et ne peut pas appeler de hook. Le client impératif de tRPC donne les mêmes types, sans le cache de React Query. Ce cache, le finder le tient lui-même (chapitre « Lire l’arbre » de la partie Stockage) ; c’est pourquoi, après une modification, on ne s’en remet pas à un `invalidate` de React Query mais à `reloadFolderContent()`.
-
-**Un déplacement ne publie pas.** Le commentaire de `moveItems` le rappelle : depuis que le statut d’un fichier est une métadonnée et non un dossier, glisser un fichier ne change que son emplacement.
-
-## Un store pour tout le finder
-
-Tout ce que le finder affiche sort d’un store Zustand, `useFinderStore`. Sa forme dit ce que le finder sait :
-
-<CodeExample
-  language="ts"
-  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
-  filename="useFinderStore.ts"
-  snippetStart="type FinderState = {"
-  snippetEnd="(fin du bloc)"
-  snippetHighlight="2,5,7,10,20,32,48,51,57"
-  snippetTitle="L’état du finder"
-  fullFileTitle="Voir le fichier complet"
-/>
-
-Pourquoi un store plutôt que l’état de `Finder` passé en props ? Parce que les acteurs sont nombreux et éloignés : un dossier de l’arbre (cinq niveaux plus bas) doit pouvoir dire « je suis le dossier courant », le fil d’Ariane doit naviguer, la barre de dépôt de « Mes espaces », posée **à côté** du finder, doit savoir où il en est. Un store se lit de partout, et chaque composant ne s’abonne qu’à la tranche qui l’intéresse (`useFinderStore((s) => s.reloadKey)`) : il ne se redessine pas quand le reste change.
-
-Naviguer est l’action centrale, et elle fait plus que changer de dossier :
-
-<CodeExample
-  language="ts"
-  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
-  filename="useFinderStore.ts"
-  snippetStart="setPath: (path) =>"
-  snippetEnd="    }),"
-  snippetHighlight="3,6,7,8,9,12"
-  snippetTitle="setPath"
-  fullFileTitle="Voir le fichier complet"
-/>
-
-Le contenu est restitué depuis le cache s’il existe (pas de clignotement), la sélection est vidée (des identifiants d’un autre dossier n’y auraient plus de sens), et la recherche s’arrête : elle portait sur le dossier qu’on vient de quitter.
-
-<Callout type="warning">
-Le store est **global** : un seul finder par page. C’est le cas partout, et c’est pourquoi la page « Mes espaces » doit, en arrivant, replacer le dossier courant sur sa propre racine (le store démarre sur celle de la bibliothèque). Deux finders sur une même page partageraient leur dossier courant.
+<Callout type="tip">
+Les mappers sont des fonctions pures : un nœud en entrée, un nœud en sortie, rien d’autre. C’est ce qui permet de les lire isolément, et de les tester sans serveur ni navigateur.
 </Callout>
 
-### Des préférences qui survivent au rechargement
+## Suivre un `list` jusqu’au bout
 
-Trois réglages relèvent du goût de l’utilisateur plus que de la navigation : la vue (grille, tableau, liste compacte), le tri, et le filtre de statut. Le store les relit au démarrage et les écrit à chaque changement, dans `localStorage` :
+Nous avons vu les pièces une à une. Suivons maintenant un geste réel, du clic jusqu’à l’écran : un administrateur ouvre, dans la bibliothèque, le dossier `AKFC/courses`.
+
+<ArchitectureDiagram steps="Clic sur le dossier | Le store change de dossier courant | useFinderData : le dossier est-il en cache ? | adapter.list({ path }) | trpcClient → storage.getTree (profondeur 1) | Le serveur vérifie, lit, complète | Le mapper fabrique les FinderNode | setContent : le store reçoit dossiers et fichiers | La grille se redessine" />
+
+1. **Le clic** change le dossier courant dans le store du finder. Le store et son action de navigation sont l’objet du chapitre suivant ; retenons qu’à ce moment, une valeur `currentPath` vaut `AKFC/courses`.
+2. **Le hook `useFinderData`**, posé dans `Finder`, observe `currentPath`. Il commence par regarder si ce dossier a déjà été lu pendant la session. Si oui, son contenu est déjà affiché : rien à demander.
+3. **Sinon, il appelle `adapter.list`.** C’est le seul endroit du finder qui lit un dossier, et il ne sait pas ce que fait l’adaptateur.
+4. **L’adaptateur appelle `storage.getTree`**, profondeur 1, par `trpcClient`. La requête part vers `/api/trpc`, regroupée avec les autres requêtes du moment.
+5. **Le serveur** vérifie que l’utilisateur a le droit de lire ce chemin, lit l’arbre dans le stockage, retire la corbeille et les avatars, ajoute le statut de chaque fichier depuis la base, et fait apparaître les espaces de groupe même vides. Tout cela est détaillé dans le chapitre « Lire l’arbre » de la partie Stockage.
+6. **Le mapper** transforme la réponse en deux listes de `FinderNode`, dossiers et fichiers.
+7. **`setContent`** range ces listes dans le store, et dans le cache du dossier.
+8. **La grille**, abonnée au store, se redessine.
+
+Le hook qui orchestre les étapes 2, 3 et 7 est court, mais chaque ligne y compte :
 
 <CodeExample
   language="ts"
-  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
-  filename="useFinderStore.ts"
-  snippetStart="function loadViewMode(): FinderViewMode {"
-  snippetEnd="function saveViewMode(mode: FinderViewMode): void {"
-  snippetHighlight="2,4,6"
-  snippetTitle="Lire une préférence sans jamais planter"
+  filepath="apps/web/src/features/finder-core/hooks/useFinderData.ts"
+  filename="useFinderData.ts"
+  snippetStart="  useEffect(() => {"
+  snippetEnd="  }, [currentPath, adapter, setContent, reloadKey]);"
+  snippetHighlight="6,16,20,21,36"
+  snippetTitle="useFinderData : lire un dossier, sauf s’il est déjà connu"
   fullFileTitle="Voir le fichier complet"
 />
 
-Deux gardes, et elles comptent : `typeof window === "undefined"` (le module est aussi évalué au rendu serveur, où il n’y a pas de navigateur), et un `try` (certains navigateurs refusent `localStorage` en navigation privée). Une valeur inconnue retombe sur le défaut : une ancienne version du site, ou une main maladroite dans les outils de développement, ne casse rien.
+Deux détails méritent qu’on s’y arrête.
+
+**Le drapeau `cancelled`.** Imaginons un administrateur qui clique vite : `courses`, puis aussitôt `seminars`. Deux lectures partent. Si la première revient **après** la seconde, elle écraserait l’affichage de `seminars` avec le contenu de `courses`. C’est ce qu’on appelle une **condition de course** (*race condition*) : le résultat dépend de l’ordre d’arrivée, que personne ne contrôle. La fonction de nettoyage de l’effet (`return () => { cancelled = true }`) s’exécute dès que `currentPath` change : la réponse de `courses`, quand elle arrive, trouve `cancelled` à vrai et ne touche à rien.
+
+**La lecture du cache par `getState()`.** L’effet lit le cache directement (`useFinderStore.getState()`), au lieu de s’y abonner. S’il s’y abonnait, chaque `setContent` modifierait le cache, relancerait l’effet, qui relirait… Le commentaire du hook le dit : une lecture ponctuelle suffit, puisqu’un nouveau dossier courant relancera de toute façon l’effet.
+
+<Callout type="warning">
+Tout effet qui lance une requête asynchrone et écrit son résultat dans un état doit se demander : « et si la réponse arrive trop tard ? ». Le drapeau d’annulation est la réponse la plus simple, et elle suffit tant que la requête elle-même n’a pas besoin d’être interrompue.
+</Callout>
 
 ## La base complète après coup
 
-Le stockage dit **ce qui existe** ; la base dit **ce que c’est** : qui l’a envoyé, quand, en quelles dimensions. Le finder affiche d’abord la grille avec ce que rend l’adaptateur, puis un hook séparé demande à la base les fiches des fichiers affichés et les fusionne dans les nœuds :
+Le stockage dit **ce qui existe** ; la base dit **ce que c’est** : qui l’a envoyé, quand, en quelles dimensions, avec quelle description. Le finder affiche d’abord la grille avec ce que rend l’adaptateur, puis un hook séparé demande à la base les fiches des fichiers affichés, et les fusionne dans les nœuds :
 
 <CodeExample
   language="ts"
@@ -164,18 +297,38 @@ Le stockage dit **ce qui existe** ; la base dit **ce que c’est** : qui l’a e
 
 Pourquoi deux requêtes plutôt qu’une ? Parce qu’un réseau lent ou une base indisponible ne doit pas laisser la grille vide : elle s’affiche avec les noms, et l’enrichissement arrive en silence. Un tri par date posé avant son arrivée montre d’abord l’ordre par nom, puis se réajuste. Moins spectaculaire qu’un indicateur de chargement, mais jamais bloquant.
 
+Ce hook-ci, contrairement à l’adaptateur, utilise bien un hook tRPC (`trpc.media.getByPaths.useQuery`). Ce n’est pas une contradiction : il **est** un hook, appelé dans le corps de `Finder`, et il profite ainsi du cache de React Query. Une fiche lue il y a moins d’une minute (`staleTime: 60_000`) n’est pas redemandée quand on revient sur le dossier.
+
+Deux précautions évitent un travail inutile :
+
+- **la clé `filePathsKey`** : la liste des chemins est jointe en une chaîne. Un tableau recréé à chaque rendu aurait une identité nouvelle à chaque fois, et relancerait l’effet pour rien ; une chaîne identique, non ;
+- **le test `hasNewData`** : si aucune fiche n’apporte de nouveauté (même date de création, même statut), le store n’est pas touché, et rien ne se redessine.
+
 <Callout type="concept">
 L’ordre des sources est le même côté navigateur que côté serveur : le stockage d’abord, parce qu’il fait foi de l’existence ; la base ensuite, parce qu’elle ajoute du sens. Un fichier sans fiche s’affiche ; une fiche sans fichier, jamais.
 </Callout>
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi un adaptateur ?", "Pour que le même finder serve la bibliothèque, le sélecteur de médias et Mes espaces, sans un if par usage."], ["Que doit faire un adaptateur ?", "list, au minimum ; getTree, getMetadata, moveItems sont des capacités, et le finder s’y adapte."], ["Pourquoi trpcClient dans l’adaptateur ?", "Un adaptateur n’est pas un composant : il ne peut pas appeler de hook."], ["Où vit l’état ?", "Dans un store Zustand global : un seul finder par page."], ["Que garde le navigateur d’une visite à l’autre ?", "La vue, le tri, le filtre de statut (localStorage, avec repli sur le défaut)."], ["Et les fiches de la base ?", "Fusionnées après coup par useMediaAssetEnrichment, sans bloquer la grille."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi un adaptateur ?", "Pour que le même finder serve la bibliothèque, le sélecteur de médias et Mes espaces, sans un if par usage."], ["Que doit faire un adaptateur ?", "list, au minimum ; getTree, getMetadata, moveItems sont des capacités, et le finder s’y adapte."], ["Comment le finder sait-il ce qu’un adaptateur sait faire ?", "Il teste la présence de la méthode avant de s’en servir, et retire le morceau d’interface qui en dépend."], ["Que veut dire children: undefined ?", "Non chargé. Un tableau vide veut dire : vide pour de vrai."], ["Pourquoi trpcClient dans l’adaptateur ?", "Un adaptateur n’est pas un composant : il ne peut pas appeler de hook."], ["Que protège le drapeau cancelled ?", "L’affichage, contre une réponse arrivée après qu’on a changé de dossier."], ["Pourquoi les fiches arrivent-elles après la grille ?", "Pour que la grille ne dépende jamais de la base : le stockage fait foi, la base ajoute du sens."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer au store, nous devrions pouvoir expliquer :
+
+- pourquoi le finder ne connaît pas le stockage ;
+- ce qu’est un adaptateur, et ce qu’on gagne à l’injecter de l’extérieur ;
+- la différence entre la méthode obligatoire et les capacités ;
+- comment le finder réagit à une capacité absente ;
+- ce que disent `children: undefined`, `children: []` et `hasChildren` ;
+- pourquoi `list` passe par `getTree` ;
+- pourquoi l’adaptateur utilise `trpcClient` et l’enrichissement un hook ;
+- ce qu’est une condition de course, et comment `useFinderData` l’évite.
 
 ## À suivre
 
-Le finder sait où trouver ses données et où les garder. Reste à les montrer : un arbre qui ne charge que ce qu’on ouvre, une grille qui se trie et se filtre, une recherche, un fil d’Ariane, un aperçu.
+Les données arrivent. Mais où vont-elles ? Le dossier courant, le contenu affiché, la sélection, le cache des dossiers déjà visités, les préférences de vue : tout cela doit vivre quelque part, et être lisible depuis l’arbre comme depuis la barre d’outils, cinq niveaux de composants plus loin.
 
 <Callout type="tip">
-**Chapitre suivant : l’arbre et la grille.** Le chargement par paliers de l’arbre, ce que l’arbre apprend à la grille, les trois vues, la recherche récursive, le fil d’Ariane et l’aperçu.
+**Chapitre suivant : le store du finder.** Zustand depuis zéro, la forme du store, `navigateTo` suivi pas à pas, le cache des dossiers visités, les préférences qui survivent au rechargement, et le piège d’un store global.
 </Callout>

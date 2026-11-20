@@ -1,0 +1,72 @@
+---
+title: "Le store du finder"
+description: "Où le finder garde ce qu’il sait : un store Zustand lu de partout, la navigation qui restitue un dossier déjà vu, les préférences de vue gardées dans le navigateur, et le piège d’un store global."
+section: "Le finder"
+order: 2
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Le finder ne connaît pas le stockage : il parle à un adaptateur, qui ne promet que `list` et offre le reste en capacités. Les données arrivent sous forme de `FinderNode`, d’abord depuis le stockage, puis complétées par la base.
+
+## Un store pour tout le finder
+
+Tout ce que le finder affiche sort d’un store Zustand, `useFinderStore`. Sa forme dit ce que le finder sait :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetStart="type FinderState = {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,5,7,10,20,32,48,51,57"
+  snippetTitle="L’état du finder"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pourquoi un store plutôt que l’état de `Finder` passé en props ? Parce que les acteurs sont nombreux et éloignés : un dossier de l’arbre (cinq niveaux plus bas) doit pouvoir dire « je suis le dossier courant », le fil d’Ariane doit naviguer, la barre de dépôt de « Mes espaces », posée **à côté** du finder, doit savoir où il en est. Un store se lit de partout, et chaque composant ne s’abonne qu’à la tranche qui l’intéresse (`useFinderStore((s) => s.reloadKey)`) : il ne se redessine pas quand le reste change.
+
+Naviguer est l’action centrale, et elle fait plus que changer de dossier :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetStart="setPath: (path) =>"
+  snippetEnd="    }),"
+  snippetHighlight="3,6,7,8,9,12"
+  snippetTitle="setPath"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le contenu est restitué depuis le cache s’il existe (pas de clignotement), la sélection est vidée (des identifiants d’un autre dossier n’y auraient plus de sens), et la recherche s’arrête : elle portait sur le dossier qu’on vient de quitter.
+
+<Callout type="warning">
+Le store est **global** : un seul finder par page. C’est le cas partout, et c’est pourquoi la page « Mes espaces » doit, en arrivant, replacer le dossier courant sur sa propre racine (le store démarre sur celle de la bibliothèque). Deux finders sur une même page partageraient leur dossier courant.
+</Callout>
+
+### Des préférences qui survivent au rechargement
+
+Trois réglages relèvent du goût de l’utilisateur plus que de la navigation : la vue (grille, tableau, liste compacte), le tri, et le filtre de statut. Le store les relit au démarrage et les écrit à chaque changement, dans `localStorage` :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetStart="function loadViewMode(): FinderViewMode {"
+  snippetEnd="function saveViewMode(mode: FinderViewMode): void {"
+  snippetHighlight="2,4,6"
+  snippetTitle="Lire une préférence sans jamais planter"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Deux gardes, et elles comptent : `typeof window === "undefined"` (le module est aussi évalué au rendu serveur, où il n’y a pas de navigateur), et un `try` (certains navigateurs refusent `localStorage` en navigation privée). Une valeur inconnue retombe sur le défaut : une ancienne version du site, ou une main maladroite dans les outils de développement, ne casse rien.
+
+## À suivre
+
+Le finder sait où trouver ses données et où les garder. Reste à les montrer : un arbre qui ne charge que ce qu’on ouvre, une grille qui se trie et se filtre, une recherche, un fil d’Ariane, un aperçu.
+
+<Callout type="tip">
+**Chapitre suivant : l’arbre et la grille.** Le chargement par paliers de l’arbre, ce que l’arbre apprend à la grille, les trois vues, la recherche récursive, le fil d’Ariane et l’aperçu.
+</Callout>
