@@ -41,7 +41,7 @@ export function Glossaire({ space = "dev" }: { space?: GlossarySpace }) {
                 const deeper = entry.approfondiEn ? docTarget(entry.approfondiEn.vers, entry.approfondiEn.section) : null
                 const cited = citations.get(entry.id) ?? []
                 return (
-                  <div key={entry.id} id={`g-${entry.id}`} className="scroll-mt-24 rounded-md p-3 target:bg-amber-50 dark:target:bg-amber-950/30">
+                  <div key={entry.id} id={`g-${entry.id}`} className="scroll-mt-24 rounded-md p-3 target:bg-warning-muted">
                     <dt className="text-lg font-semibold">{entry.terme}</dt>
                     <dd className="mt-1 space-y-2">
                       <p className="leading-relaxed"><InlineMd text={entry.definition} /></p>

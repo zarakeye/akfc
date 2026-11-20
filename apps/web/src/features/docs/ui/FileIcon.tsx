@@ -14,7 +14,7 @@ export function FileIcon({ language, filepath }: FileIconProps) {
     case "ts":
     case "tsx":
     case "js":
-      return <FileCode2 size={14} className="text-blue-400" />
+      return <FileCode2 size={14} className="text-info" />
 
     case "json":
       return <FileJson size={14} className="text-yellow-400" />
@@ -24,7 +24,7 @@ export function FileIcon({ language, filepath }: FileIconProps) {
 
     case "bash":
     case "sh":
-      return <Terminal size={14} className="text-gray-400" />
+      return <Terminal size={14} className="text-muted-foreground" />
 
     default:
       return <FileCode2 size={14} className="text-white/60" />

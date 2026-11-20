@@ -31,9 +31,9 @@ export default async function DocsHomePage() {
             <Link
               key={s.id}
               href={`/docs/${s.id}`}
-              className="group flex flex-col gap-3 rounded-xl border border-border p-5 transition-colors hover:border-emerald-400 hover:bg-emerald-50/40"
+              className="group flex flex-col gap-3 rounded-xl border border-border p-5 transition-colors hover:border-success/40 hover:bg-success-muted/40"
             >
-              <Icon className="h-7 w-7 text-emerald-600" />
+              <Icon className="h-7 w-7 text-success" />
               <span className="text-lg font-semibold group-hover:underline">{s.title}</span>
               <span className="text-sm text-muted-foreground">{s.description}</span>
             </Link>

@@ -30,12 +30,12 @@ export function Promesse({ vers, section, children }: PromesseProps) {
   return (
     // Mode sombre : bg-slate-50 est réorienté vers le thème (styles/dark-legacy.css, hors couche,
     // il l'emporte sur dark:bg-…). Le texte suit donc le thème lui aussi, sans couleur forcée.
-    <aside className="my-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-7 text-foreground">
+    <aside className="my-6 rounded-lg border border-dashed border-border bg-muted p-4 text-sm leading-7 text-foreground">
       <div className="flex gap-2">
-        <span aria-hidden="true" className="select-none text-slate-500">↪</span>
+        <span aria-hidden="true" className="select-none text-muted-foreground">↪</span>
         <div className="min-w-0">{children}</div>
       </div>
-      <p className="mt-2 pl-6 text-xs text-slate-600">
+      <p className="mt-2 pl-6 text-xs text-muted-foreground">
         {target ? (
           <>
             Approfondi en{" "}
@@ -49,7 +49,7 @@ export function Promesse({ vers, section, children }: PromesseProps) {
             </Link>
           </>
         ) : (
-          <span className="font-semibold text-rose-700">⚠ Promesse vers un chapitre introuvable : {vers}</span>
+          <span className="font-semibold text-destructive">⚠ Promesse vers un chapitre introuvable : {vers}</span>
         )}
       </p>
     </aside>

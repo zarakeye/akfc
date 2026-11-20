@@ -25,7 +25,7 @@ export default async function ResetPasswordPage({
         <h1 className="text-2xl font-semibold">
           {isWelcome ? "Bienvenue ! Choisis ton mot de passe" : "Réinitialiser le mot de passe"}
         </h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           {isWelcome
             ? `Il te servira à te connecter au site, avec ton adresse e-mail. Il doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`
             : `Choisis un nouveau mot de passe. Il doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`}

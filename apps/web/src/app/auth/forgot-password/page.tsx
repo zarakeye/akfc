@@ -13,7 +13,7 @@ export default function ForgotPasswordPage(): JSX.Element {
     <main className="mx-auto max-w-md p-6 space-y-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Mot de passe oublié</h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           Saisis ton email. Si un compte existe, tu recevras un lien de réinitialisation.
         </p>
       </header>

@@ -12,7 +12,7 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
         // >
         <code
           key={index}
-          className="rounded bg-blue-500/15 px-1.5 py-0.5 font-mono text-[0.85em] text-foreground"
+          className="rounded bg-brand/15 px-1.5 py-0.5 font-mono text-[0.85em] text-foreground"
         >
           {part.slice(1, -1)}
         </code>

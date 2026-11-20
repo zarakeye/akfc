@@ -68,7 +68,7 @@ function Ligne({ prefixe, noeud }: { prefixe: string; noeud: Noeud }) {
       <span aria-hidden="true" className="text-muted-foreground/60">{prefixe}</span>
       <Icone
         aria-hidden="true"
-        className={`h-3.5 w-3.5 shrink-0 ${noeud.dossier ? "text-amber-600 dark:text-amber-400" : "text-sky-600 dark:text-sky-400"}`}
+        className={`h-3.5 w-3.5 shrink-0 ${noeud.dossier ? "text-warning" : "text-info"}`}
       />
       <span className="font-medium text-foreground">{noeud.nom}</span>
       {noeud.commentaire && (
@@ -105,7 +105,7 @@ export function Arbre({ texte, racine }: { texte?: string; racine?: string }) {
     >
       {racine && (
         <div className="flex items-center gap-1.5 leading-6">
-          <Folder aria-hidden="true" className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+          <Folder aria-hidden="true" className="h-3.5 w-3.5 text-warning" />
           <span className="font-semibold text-foreground">{racine.replace(/\/$/, "")}</span>
         </div>
       )}

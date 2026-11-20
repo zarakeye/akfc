@@ -124,7 +124,7 @@ export function OsTabs({ children }: { children?: ReactNode }) {
             onKeyDown={(e) => onKey(e, i)}
             className={`rounded-md px-3 py-1 text-sm transition-colors ${
               os === active
-                ? "bg-emerald-600 font-medium text-white"
+                ? "bg-brand font-medium text-brand-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >

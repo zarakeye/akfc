@@ -214,7 +214,7 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
 
       {hole && (
         <div
-          className="pointer-events-none fixed z-[10001] rounded-lg ring-2 ring-emerald-400 ring-offset-2 ring-offset-transparent transition-all duration-200"
+          className="pointer-events-none fixed z-[10001] rounded-lg ring-2 ring-ring ring-offset-2 ring-offset-transparent transition-all duration-200"
           style={hole}
         />
       )}
@@ -224,19 +224,19 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
         tabIndex={-1}
         role="dialog"
         aria-label={`${tour.title} — étape ${index + 1} sur ${total}`}
-        className="fixed z-[10002] rounded-xl bg-white p-4 text-slate-800 shadow-2xl outline-none"
+        className="fixed z-[10002] rounded-xl bg-card p-4 text-foreground shadow-2xl outline-none"
         style={bubbleStyle}
       >
         <div className="mb-2 flex items-center gap-2">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-brand-foreground">
             {index + 1}
           </span>
-          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Étape {index + 1} sur {total} · {tour.title}
           </span>
         </div>
         <p className="mb-1 font-semibold">{lost ? "Élément introuvable" : step.title}</p>
-        <p className="text-sm leading-relaxed text-slate-600">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           {lost
             ? "L'élément de cette étape n'apparaît pas sur la page. Le tuto ne peut pas continuer ici."
             : waiting
@@ -247,7 +247,7 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
           <button
             type="button"
             onClick={() => tourStore.stop()}
-            className="rounded-md px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             Quitter
           </button>
@@ -256,13 +256,13 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
               type="button"
               disabled={!canNext}
               onClick={() => (isLast ? tourStore.stop() : tourStore.next(index))}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-brand-foreground hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isLast ? "Terminer" : "Suivant"}
             </button>
           )}
           {(advance.kind === "click" || advance.kind === "route") && !lost && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-muted-foreground">
               {advance.kind === "click" || step.target
                 ? "Cliquez sur l'élément en surbrillance"
                 : "En attente de la page suivante…"}

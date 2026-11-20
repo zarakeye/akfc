@@ -28,7 +28,7 @@ export function Terme({
       id={anchor}
       href={glossary.href(id)}
       data-glossaire={id}
-      className="scroll-mt-24 rounded-sm text-inherit underline decoration-muted-foreground/60 decoration-dotted decoration-1 underline-offset-[3px] hover:decoration-foreground target:bg-amber-100 dark:target:bg-amber-900/40"
+      className="scroll-mt-24 rounded-sm text-inherit underline decoration-muted-foreground/60 decoration-dotted decoration-1 underline-offset-[3px] hover:decoration-foreground target:bg-warning-muted"
     >
       {children}
     </a>

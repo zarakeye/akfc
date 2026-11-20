@@ -21,7 +21,7 @@ export function TourStartButton({ id }: { id: string }): JSX.Element {
 
   if (!tour) {
     return (
-      <p className="my-4 rounded-md border border-dashed border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+      <p className="my-4 rounded-md border border-dashed border-warning/40 bg-warning-muted p-3 text-sm text-warning">
         Tuto « {id} » introuvable.
       </p>
     );
@@ -30,11 +30,11 @@ export function TourStartButton({ id }: { id: string }): JSX.Element {
   const allowed = canFollow(tour.audience, { loggedIn: !!user, isAdmin: !!user?.isAdmin });
 
   return (
-    <div className="not-prose my-6 flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-      <PlayCircle className="h-8 w-8 shrink-0 text-emerald-600" />
+    <div className="not-prose my-6 flex items-center gap-4 rounded-xl border border-success/40 bg-success-muted p-4">
+      <PlayCircle className="h-8 w-8 shrink-0 text-success" />
       <div className="min-w-0 flex-1 text-left">
-        <p className="font-semibold text-emerald-900">Tuto interactif : {tour.title}</p>
-        <p className="text-sm text-emerald-800">
+        <p className="font-semibold text-success">Tuto interactif : {tour.title}</p>
+        <p className="text-sm text-success">
           {allowed
             ? `${tour.description} ${tour.steps.length} étapes, guidées sur la vraie page.`
             : unavailableReason(tour.audience)}
@@ -47,7 +47,7 @@ export function TourStartButton({ id }: { id: string }): JSX.Element {
           tourStore.start(tour.id);
           router.push(tour.startRoute);
         }}
-        className="shrink-0 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+        className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Lancer le tuto
       </button>

@@ -48,8 +48,8 @@ function scrollToSection(sectionId: string): void {
   const el = document.getElementById(sectionId);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "start" });
-  el.classList.add("bg-emerald-500/15");
-  window.setTimeout(() => el.classList.remove("bg-emerald-500/15"), 1800);
+  el.classList.add("bg-brand/15");
+  window.setTimeout(() => el.classList.remove("bg-brand/15"), 1800);
 }
 
 const ExplorerContext = createContext<ExplorerApi | null>(null);
@@ -116,7 +116,7 @@ export function EntityExplorer({
           onClick={() => setOpen(true)}
           className={`order-1 ${PILL}`}
         >
-          <Atom className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+          <Atom className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
           <span className={PILL_LABEL}>Entités</span>
         </button>
       </DocsAction>
@@ -137,10 +137,10 @@ export function EntityExplorer({
 }
 
 const OP_CHIP: Record<EffectOp, string> = {
-  create: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200",
-  update: "bg-amber-400/25 text-amber-900 dark:text-amber-200",
-  read: "bg-sky-400/15 text-sky-800 dark:text-sky-200",
-  delete: "bg-red-500/15 text-red-800 dark:text-red-200",
+  create: "bg-brand/15 text-success",
+  update: "bg-amber-400/25 text-warning",
+  read: "bg-sky-400/15 text-info",
+  delete: "bg-destructive/15 text-destructive",
 };
 
 /**
@@ -181,7 +181,7 @@ export function StoryTabs(): JSX.Element | null {
             onClick={() => setActive(i)}
             onKeyDown={onKey}
             className={`rounded-md px-3 py-1.5 text-left text-sm ${
-              i === active ? "bg-emerald-600 font-semibold text-white" : "text-muted-foreground hover:bg-muted"
+              i === active ? "bg-brand font-semibold text-brand-foreground" : "text-muted-foreground hover:bg-muted"
             }`}
           >
             {s.title}
@@ -200,7 +200,7 @@ export function StoryTabs(): JSX.Element | null {
             const reads = st.effects.filter((e) => e.op === "read");
             return (
               <li key={i} className="flex gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-brand-foreground">
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1 space-y-1.5 text-sm">
@@ -233,7 +233,7 @@ export function StoryTabs(): JSX.Element | null {
                       <button
                         type="button"
                         onClick={() => scrollToSection(st.sectionId!)}
-                        className="inline-flex items-center gap-1 text-emerald-700 hover:underline dark:text-emerald-300"
+                        className="inline-flex items-center gap-1 text-success hover:underline"
                       >
                         <BookOpen className="h-4 w-4" aria-hidden="true" /> Lire l&apos;explication
                       </button>
@@ -241,7 +241,7 @@ export function StoryTabs(): JSX.Element | null {
                     <button
                       type="button"
                       onClick={() => api.openStory(story.id, i)}
-                      className="inline-flex items-center gap-1 text-emerald-700 hover:underline dark:text-emerald-300"
+                      className="inline-flex items-center gap-1 text-success hover:underline"
                     >
                       <Atom className="h-4 w-4" aria-hidden="true" /> Voir sur la carte
                     </button>
@@ -273,7 +273,7 @@ export function EntityCode(props: { className?: string; children?: ReactNode }):
       title={target.field ? `${target.model}.${target.field} : voir sur la carte des entités` : `${target.model} : voir sur la carte des entités`}
       className="cursor-pointer border-0 bg-transparent p-0 align-baseline"
     >
-      <code className={`${base} underline decoration-emerald-500 decoration-dotted underline-offset-4 hover:bg-emerald-500/15`}>
+      <code className={`${base} underline decoration-emerald-500 decoration-dotted underline-offset-4 hover:bg-brand/90`}>
         {props.children}
       </code>
     </button>
@@ -415,11 +415,11 @@ function EntityPanel({
             ) : (
               <>
                 <Legend className="fill-emerald-500/20 stroke-emerald-600" label="Entité du chapitre" />
-                <Legend className="fill-muted stroke-gray-400" label="Entité qui les relie" />
+                <Legend className="fill-muted stroke-muted-foreground" label="Entité qui les relie" />
               </>
             )}
             <span className="inline-flex items-center gap-1.5">
-              <svg width="26" height="8" aria-hidden="true"><line x1="0" y1="4" x2="26" y2="4" className="stroke-gray-500" strokeWidth="1.5" strokeDasharray="4 3" /></svg>
+              <svg width="26" height="8" aria-hidden="true"><line x1="0" y1="4" x2="26" y2="4" className="stroke-muted-foreground" strokeWidth="1.5" strokeDasharray="4 3" /></svg>
               lien facultatif
             </span>
             {neighborCount > 0 && (
@@ -706,7 +706,7 @@ function CodeTrail({ step }: { step: StoryStep }): JSX.Element | null {
   if (step.effects.every((e) => e.trails.length === 0)) return null;
   return (
     <details className="rounded-md border bg-muted/30 text-xs">
-      <summary className="flex cursor-pointer items-center gap-1.5 px-2 py-1.5 font-medium text-emerald-700 dark:text-emerald-300">
+      <summary className="flex cursor-pointer items-center gap-1.5 px-2 py-1.5 font-medium text-success">
         <Route className="h-3.5 w-3.5" aria-hidden="true" />
         Le chemin dans le code
       </summary>
@@ -808,7 +808,7 @@ function StepCard({
               <button
                 type="button"
                 onClick={() => onSelect({ kind: "model", name: e.model })}
-                className="font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-300"
+                className="font-semibold text-success underline underline-offset-2"
               >
                 {e.model}
               </button>
@@ -833,7 +833,7 @@ function StepCard({
         <button
           type="button"
           onClick={() => onReadSection(step.sectionId!)}
-          className="inline-flex items-center gap-1.5 text-emerald-700 hover:underline dark:text-emerald-300"
+          className="inline-flex items-center gap-1.5 text-success hover:underline"
         >
           <BookOpen className="h-4 w-4" aria-hidden="true" />
           Lire cette étape dans le chapitre
@@ -1099,7 +1099,7 @@ function LinkPath({
       <path d={d} className="hit fill-none stroke-transparent" strokeWidth="14" />
       <path
         d={d}
-        className={`fill-none ${selected ? "stroke-emerald-600" : "stroke-gray-500"}`}
+        className={`fill-none ${selected ? "stroke-emerald-600" : "stroke-muted-foreground"}`}
         strokeWidth={selected ? 2.5 : 1.5}
         strokeDasharray={link.required ? undefined : "5 4"}
       />
@@ -1155,12 +1155,12 @@ function ModelCard({
       </h3>
       {model.doc && <DocText text={model.doc} className="mt-1 text-sm text-muted-foreground" />}
       {model.focusFields.length > 0 && (
-        <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-300">
+        <p className="mt-2 text-xs text-success">
           En vert : les propriétés dont parle ce chapitre.
         </p>
       )}
       {stepEffect && stepEffect.length > 0 && (
-        <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+        <p className="mt-1 text-xs text-warning">
           Étape en cours : {stepEffect.map((e) => OP_LABEL[e.op]).join(", ")}
           {written.size > 0 && " ; propriétés écrites marquées « écrite »"}.
         </p>
@@ -1174,18 +1174,18 @@ function ModelCard({
             <li
               key={f.name}
               data-field={f.name}
-              className={`py-2 ${inChapter ? "-mx-2 rounded bg-emerald-500/10 px-2" : ""} ${flash ? "ring-2 ring-emerald-500" : ""}`}
+              className={`py-2 ${inChapter ? "-mx-2 rounded bg-brand/10 px-2" : ""} ${flash ? "ring-2 ring-ring" : ""}`}
             >
               <div className="flex flex-wrap items-baseline gap-x-2">
                 <code className="font-semibold">{f.name}</code>
                 {written.has(f.name) && (
-                  <span className="rounded-full bg-amber-400/30 px-1.5 text-[11px] text-amber-900 dark:text-amber-200">écrite</span>
+                  <span className="rounded-full bg-amber-400/30 px-1.5 text-[11px] text-warning">écrite</span>
                 )}
                 {f.kind === "relation" && known.has(f.type) ? (
                   <button
                     type="button"
                     onClick={() => onSelect({ kind: "model", name: f.type })}
-                    className="text-xs text-emerald-700 underline underline-offset-2 dark:text-emerald-300"
+                    className="text-xs text-success underline underline-offset-2"
                   >
                     {typeLabel(f)}
                   </button>
@@ -1245,7 +1245,7 @@ function LinkCard({
         ? `un ${link.from} ↔ un ${link.to} au plus`
         : `plusieurs ${link.from} → un ${link.to}`;
   const go = (name: string) => (
-    <button type="button" onClick={() => onSelect({ kind: "model", name })} className="font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-300">
+    <button type="button" onClick={() => onSelect({ kind: "model", name })} className="font-semibold text-success underline underline-offset-2">
       {name}
     </button>
   );

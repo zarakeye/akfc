@@ -16,7 +16,7 @@ export function PortraitHint() {
   return (
     <div
       role="note"
-      className="hidden shrink-0 items-center gap-2 border-b bg-emerald-50 px-3 py-2 text-sm text-emerald-900 phone-portrait:flex dark:bg-emerald-950 dark:text-emerald-100"
+      className="hidden shrink-0 items-center gap-2 border-b bg-success-muted px-3 py-2 text-sm text-success phone-portrait:flex"
     >
       <RotateCw className="h-4 w-4 shrink-0" aria-hidden="true" />
       <p className="flex-1">Cette documentation se lit en mode paysage : tournez votre téléphone.</p>
@@ -24,7 +24,7 @@ export function PortraitHint() {
         type="button"
         onClick={() => setDismissed(true)}
         aria-label="Fermer le bandeau"
-        className="rounded p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900"
+        className="rounded p-1 hover:bg-success-muted"
       >
         <X className="h-4 w-4" />
       </button>

@@ -52,7 +52,7 @@ export function ArchitectureDiagram(props: ArchitectureDiagramProps) {
 
   if (!steps.length) {
     return (
-      <div className="my-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+      <div className="my-6 rounded-2xl border border-warning/30 bg-amber-500/10 p-4 text-sm text-amber-200">
         No diagram steps provided.
       </div>
     )
@@ -68,7 +68,7 @@ export function ArchitectureDiagram(props: ArchitectureDiagramProps) {
         <div className="flex min-w-max items-center gap-3 pb-1">
           {steps.map((step, index) => (
             <div key={`${step}-${index}`} className="flex items-center gap-3">
-              <div className="whitespace-nowrap rounded-xl bg-white px-4 py-2 text-sm font-medium text-black shadow-sm">
+              <div className="whitespace-nowrap rounded-xl bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm">
                 {step}
               </div>
 

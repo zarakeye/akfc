@@ -66,7 +66,7 @@ export default function DocsTable({
 
   if (columnsError || rowsError || !parsedColumns || !parsedRows) {
     return (
-      <div className="my-6 rounded-md border border-red-500 bg-red-950/40 p-4 text-sm text-red-200">
+      <div className="my-6 rounded-md border border-destructive/40 bg-destructive/40 p-4 text-sm text-red-200">
         <p className="font-semibold">DocsTable: invalid input</p>
         {columnsError ? (
           <p className="mt-2 opacity-80">{columnsError}</p>

@@ -94,7 +94,7 @@ export function DocsSidebar({
         onClick={closeIfOverlay}
         title="Retour au site"
         aria-label="Retour au site"
-        className={`flex shrink-0 items-center gap-2 border-b px-5 py-2.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-muted dark:text-emerald-400 ${
+        className={`flex shrink-0 items-center gap-2 border-b px-5 py-2.5 text-sm font-medium text-success transition-colors hover:bg-muted ${
           open ? "" : "justify-center px-0"
         }`}
       >

@@ -15,7 +15,7 @@ import TrashView from '#features/trash-view/components/TrashView.tsx';
  */
 export default function CorbeillePage(): JSX.Element {
   return (
-    <main className="h-screen p-4 bg-gray-50">
+    <main className="h-screen p-4 bg-muted">
       <TrashView />
     </main>
   );

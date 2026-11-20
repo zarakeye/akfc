@@ -112,11 +112,11 @@ export async function CodeSnippetWalkthrough({
   const steps = parseStepsJson(stepsJson)
 
   if (!code.trim()) {
-    return <div className="text-red-500">CodeSnippetWalkthrough: empty code</div>
+    return <div className="text-destructive">CodeSnippetWalkthrough: empty code</div>
   }
 
   if (!steps.length) {
-    return <div className="text-red-500">CodeSnippetWalkthrough: empty steps</div>
+    return <div className="text-destructive">CodeSnippetWalkthrough: empty steps</div>
   }
 
   // Rendu une fois, avec les lignes de la première étape ; le navigateur pose celles des autres.

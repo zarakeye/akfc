@@ -17,7 +17,7 @@ import { DOCS_ACTIONS_ID } from "#features/docs/lib/docsActionsSlot.ts";
  * clavier. Le libellé reste dans le bouton : c'est son nom pour un lecteur d'écran.
  */
 export const PILL =
-  "group inline-flex h-10 min-w-10 items-center justify-center rounded-full border bg-background px-3 text-sm shadow-lg transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500";
+  "group inline-flex h-10 min-w-10 items-center justify-center rounded-full border bg-background px-3 text-sm shadow-lg transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring";
 export const PILL_LABEL =
   "max-w-0 overflow-hidden whitespace-nowrap transition-[max-width,margin] duration-200 group-hover:ml-2 group-hover:max-w-40 group-focus-visible:ml-2 group-focus-visible:max-w-40";
 
