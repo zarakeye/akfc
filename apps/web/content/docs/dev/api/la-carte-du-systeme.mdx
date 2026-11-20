@@ -15,6 +15,17 @@ Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune 
 <Installer paquets="@trpc/server superjson" dans="backend" />
 <Installer paquets="@trpc/server @trpc/client @trpc/react-query @tanstack/react-query @tanstack/react-query-devtools superjson" dans="web" />
 
+Chaque paquet a un rôle précis :
+
+- `@trpc/server` → définir les routeurs, côté backend ;
+- `@trpc/client` → le client bas niveau, qui sait envoyer un appel ;
+- `@trpc/react-query` → l’intégration à React, qui fabrique les hooks ;
+- `@tanstack/react-query` → la gestion du cycle de vie des données lues ;
+- `@tanstack/react-query-devtools` → un panneau qui montre ce cache en développement (branché dans `providers.tsx`) ;
+- `superjson` → le transformateur, présenté plus loin dans ce chapitre.
+
+Le quatrième n’est pas un accessoire : nous verrons, quand le circuit atteindra le navigateur, pourquoi tRPC seul ne suffirait pas.
+
 Nous avons posé le problème, identifié la fracture et fait émerger une contrainte simple :
 
 👉 **la donnée ne doit plus être traduite en JSON pour circuler**

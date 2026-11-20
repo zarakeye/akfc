@@ -193,6 +193,33 @@ Ce lien était écrit deux fois, une par client, à l’identique ; une différe
 
 ### Lire, écrire, rafraîchir
 
+tRPC résout un problème central : 👉 **le contrat client ↔ serveur**. Mais il ne gère pas, à lui seul, ce qu’une vraie application doit décider à chaque lecture :
+
+- quand la donnée est lue ;
+- quand elle doit être rechargée ;
+- quand elle peut être gardée en cache ;
+- comment plusieurs composants partagent une même lecture ;
+- quoi invalider après une écriture.
+
+Sans outil dédié, chaque composant porte lui-même cette plomberie :
+
+<CodeSnippet
+  language="tsx"
+  title="Sans TanStack Query, puis avec tRPC + TanStack Query"
+  filename="lecture-manuelle-vs-hook.tsx"
+  kind="educational"
+  codeJson='"// ❌ gestion manuelle\nconst [data, setData] = useState(null)\nconst [loading, setLoading] = useState(false)\n\nuseEffect(() => {\n  setLoading(true)\n  fetch(\"/api/disciplines\")\n    .then((res) => res.json())\n    .then((result) => setData(result))\n    .finally(() => setLoading(false))\n}, [])\n\n// ✅ hook tRPC branché sur TanStack Query\nconst { data, isLoading } = trpc.discipline.getAll.useQuery()"'
+/>
+
+Même dans cet exemple minuscule, la version manuelle ne sait ni garder le résultat en cache, ni le partager avec un autre composant, ni le recharger après une écriture. Le hook, lui, délègue tout cela à TanStack Query (on dit aussi React Query), et le composant se recentre sur l’interface.
+
+<Callout type="info">
+tRPC définit **comment appeler le serveur**. TanStack Query gère **la vie des données**.
+
+👉 les deux sont complémentaires  
+👉 ensemble, ils forment la vraie couche d’accès aux données côté navigateur
+</Callout>
+
 Une lecture passe par `useQuery`, qui met le résultat en cache sous une clé dérivée de la procédure et de son entrée. Une écriture passe par `useMutation`. Après une écriture, le composant **invalide** les lectures concernées :
 
 <CodeExample
@@ -215,6 +242,29 @@ Une invalidation oubliée ne casse rien de visible tout de suite : la liste rest
 Les composants serveur n’appellent pas tRPC : ils lisent la base directement avec Prisma (partie « Fondations front »), ce qui évite une requête HTTP vers soi-même. Les server actions non plus (partie « Formulaires »). tRPC est l’API **du navigateur**.
 
 Un test qui doit passer par les procédures, avec leurs gardes et leurs validations, les appelle sans HTTP : `appRouter.createCaller(contexte)` rend un objet qui expose chaque procédure comme une fonction. C’est ainsi qu’ont été vérifiées les corrections racontées dans cette partie : un contexte d’administrateur, un appel à `user.delete` avec son propre identifiant, et la réponse `FORBIDDEN` attendue.
+
+## ⚠️ Ce que tRPC ne doit pas devenir
+
+Il faut aussi être lucide : tRPC peut être très bien utilisé, mais il peut aussi être mal utilisé. Quatre mauvais usages reviennent souvent :
+
+1. **Faire de chaque procédure un mini-backend autonome.** Résultat : logique dispersée, duplication, routeurs énormes, services absents.
+2. **Croire que le typage remplace la sécurité.** Le typage aide le développeur ; il ne protège pas, à lui seul, le système.
+3. **Mettre la logique d’accès dans les composants.** Le bon endroit reste la session, le contexte, les middlewares, les procédures protégées et les services.
+4. **Confondre tRPC avec une alternative magique à toute architecture.** Il n’exonère ni de découper les responsabilités, ni d’organiser les services, ni de penser les contrats, ni de traiter l’authentification et les droits.
+
+Ces mauvais usages ne restent pas théoriques : ils se voient dans le code, par quatre symptômes.
+
+- **Des procédures énormes.** Quand une mutation contient validation, contrôle d’accès, normalisation, logique métier, persistance, traduction des erreurs et branches conditionnelles, le routeur a absorbé trop de responsabilités. C’est le « routeur trop intelligent » du chapitre sur le routeur métier, et la raison d’être des services.
+- **Des middlewares trop intelligents.** Un middleware protège et prépare ; il ne doit pas devenir une usine métier cachée, sinon la lecture devient trompeuse et le débogage pénible. Dans le projet, `isAdmin` ne fait que vérifier : il laisse passer, ou il refuse.
+- **Des types brillants sur une architecture floue.** On peut avoir un typage très propre, des entrées Zod solides, un client bien configuré, et malgré tout des responsabilités mélangées. 👉 le typage n’excuse jamais une mauvaise séparation des couches.
+- **Le frontend qui se croit la vérité.** Une belle API typée ne doit jamais faire croire que la sécurité est côté client, que la validation locale suffit, ou que l’interface sait déjà ce qui est autorisé. Cacher un lien d’administration n’est pas une protection : c’est la garde du serveur qui refuse. 👉 la vérité reste côté serveur, même quand le confort côté client devient très grand.
+
+<Callout type="warning">
+tRPC améliore fortement l’architecture d’accès aux données. Mais il ne remplace ni la logique métier, ni la sécurité, ni une bonne séparation des couches.
+
+👉 il amplifie une bonne architecture  
+👉 il n’en crée pas une à lui seul
+</Callout>
 
 ---
 
@@ -294,14 +344,59 @@ Maintenant :
 de fonctionnel  
 → en **robuste, maintenable et compréhensible**
 
+### Ce que nous perdrions en revenant à REST
+
+Si nous remplacions tRPC par REST, nous ne perdrions pas la capacité à faire des requêtes. Nous pourrions toujours construire une API propre, valider avec Zod, appeler des services, et consommer les routes avec `fetch`.
+
+Ce que nous perdrions, c’est autre chose :
+
+- la propagation directe du type `AppRouter` jusqu’au point d’appel ;
+- les hooks fabriqués à partir de l’API réelle ;
+- un seul système TypeScript continu, où le contexte, les middlewares et les procédures protégées se tiennent, au lieu d’être reliés à la main par un contrat HTTP.
+
+Nous gagnerions en revanche un découplage plus classique, plus universel, ouvert à des clients qui ne parlent pas TypeScript. Et le projet le sait : à côté de `/api/trpc`, il garde **onze routes HTTP classiques** (`app/api/…/route.ts`), justement là où le client n’est pas notre code. Un agenda qui importe le fichier `.ics` d’un stage, une balise `<img>` qui charge un avatar, un lien « Télécharger mes données » : aucun d’eux ne sait appeler une procédure.
+
+👉 tRPC pour notre propre code, HTTP classique là où le client ne parle pas TypeScript : il n’y a pas une bonne réponse absolue, il y a une bonne réponse pour chaque client.
+
+Si nous ne devions garder qu’une idée de cette partie, ce serait celle-ci :
+
+> tRPC n’a pas été choisi ici pour éviter d’écrire `fetch`.
+
+Il a été choisi pour :
+
+- stabiliser la frontière client / serveur ;
+- faire remonter le typage jusqu’au point d’appel ;
+- organiser les modules métier autour de procédures ;
+- centraliser les gardes ;
+- mieux articuler routeurs, services et contrats.
+
+👉 autrement dit : pour rendre l’architecture cohérente avec le monorepo TypeScript déjà en place.
+
 
 ## Récapitulatif
 
 <DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Comment le front connaît-il les types de l’API ?","import type { AppRouter } : les types sont inférés du backend, sans code embarqué."],["Où déclarer une nouvelle procédure ?","Dans le routeur de son domaine (modules/<domaine>/router.ts), assemblé dans modules/index.ts."],["D’où vient ctx ?","De createTRPCContext, appelé par la route /api/trpc à chaque requête ; jamais de la procédure."],["Comment protéger une procédure ?","Dans sa chaîne : publicProcedure, protectedProcedure, ou protectedProcedure.use(isAdmin)."],["Où vit une règle comme « pas soi-même » ?","Dans la procédure, qui connaît l’entrée ; jamais seulement dans l’interface."],["Où vit un schéma Zod ?","Dans le routeur, ou dans packages/contracts s’il est partagé avec un formulaire — et alors importé des deux côtés."],["Quand descendre une logique dans un service ?","Dès qu’elle sert à deux endroits (assertDisciplineReferences)."],["Résultat ou erreur ?","Un résultat si l’appelant sait quoi en faire (INVALID_CREDENTIALS), une TRPCError sinon."],["Que voit le navigateur d’une erreur interne ?","En production, un message neutre (errorFormatter) ; le détail est journalisé (onError)."],["Que renvoyer ?","Ce qui est listé (select), projeté vers un contrat (satisfies), jamais une ligne complète."],["Comment rafraîchir une liste après une écriture ?","utils.<domaine>.<lecture>.invalidate()."],["Pourquoi superjson ?","Pour que les dates (et autres types non JSON) arrivent intactes."]]' />
 
+## Ce que nous devons savoir expliquer avant de passer à l’authentification
+
+Avant d’ouvrir la partie suivante, nous devrions être capables d’expliquer :
+
+- pourquoi tRPC est cohérent dans un monorepo TypeScript ;
+- pourquoi un routeur ne doit pas absorber tout le métier ;
+- pourquoi les services restent essentiels ;
+- pourquoi le contexte tRPC est central ;
+- pourquoi les middlewares valent mieux que des gardes dispersées ;
+- pourquoi l’authentification nourrit tRPC sans s’y réduire ;
+- pourquoi queries et mutations ne sont pas le même problème ;
+- pourquoi le transport HTTP existe encore, mais n’est plus la surface dominante.
+
 ## À suivre
 
 Chaque procédure s’appuie sur `ctx.sessionClient` pour savoir qui l’appelle, et sur `isAdmin` pour décider s’il a le droit. Ces deux informations, nous les avons utilisées sans les ouvrir.
+
+<Callout type="info">
+Cette partie nous a appris à penser la structure des échanges. La suivante nous apprendra à penser la structure de la confiance.
+</Callout>
 
 <Callout type="tip">
 **Partie suivante : l’authentification et les droits.** Ce que contient le cookie de session, pourquoi un jeton signé désigne une ligne en base, comment se passent la connexion et la réinitialisation du mot de passe, et comment les groupes décident de ce que chacun peut faire.
