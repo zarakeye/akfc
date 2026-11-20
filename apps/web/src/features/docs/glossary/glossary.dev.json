@@ -287,7 +287,7 @@
   },
   "approfondiEn": {
    "vers": "dev/donnees/les-relations",
-   "section": "4.5 — Nullable ou obligatoire : une décision silencieuse mais critique"
+   "section": "4.6 — Nullable ou obligatoire : une décision silencieuse mais critique"
   }
  },
  {
@@ -346,7 +346,7 @@
   },
   "approfondiEn": {
    "vers": "dev/donnees/les-relations",
-   "section": "4.3 — One-to-many : structurer sans rigidifier"
+   "section": "4.4 — One-to-many : structurer sans rigidifier"
   }
  },
  {
@@ -363,7 +363,7 @@
   },
   "approfondiEn": {
    "vers": "dev/donnees/les-relations",
-   "section": "4.4 — Many-to-many : introduire de la flexibilité… avec un coût"
+   "section": "4.5 — Many-to-many : introduire de la flexibilité… avec un coût"
   }
  },
  {

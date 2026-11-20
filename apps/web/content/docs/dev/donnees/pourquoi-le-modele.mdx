@@ -202,6 +202,15 @@ Dans les versions récentes de Prisma, la configuration ne vit plus seulement da
 
 Ce fichier casse une idée fausse : Prisma ne se résume pas à un schéma, il a besoin d’un ancrage dans l’environnement réel du projet.
 
+Autrement dit, avant même d’ouvrir le schéma, il faut comprendre pourquoi il est là : `prisma/schema.prisma` n’est pas « un fichier de config de plus ». C’est le point où la donnée quitte le monde implicite de la base pour devenir une structure lisible dans le code, là où le système commence à se décrire lui-même.
+
+<Callout type="info">
+`prisma.config.ts` dit à Prisma où il vit, où se trouve son schéma, et quelles connexions utiliser.
+
+👉 ce n’est pas de la plomberie secondaire  
+👉 c’est ce qui relie le modèle de données au vrai projet
+</Callout>
+
 ### 1.4 — Le client Prisma : brancher le schéma au backend réel
 
 Une fois Prisma installé et configuré, encore faut-il éviter un piège très classique : créer le client n’importe où, n’importe comment. Dans une application qui recharge souvent en développement, ou dans un backend structuré en plusieurs modules, ce genre d’improvisation finit vite par produire de l’instabilité.
