@@ -1,6 +1,6 @@
 ---
 title: "Les pièges du modèle hybride"
-description: "Là où le modèle casse sans bruit : la validation client prise pour une barrière, useActionState détourné en gestionnaire d’état, le FormData converti trop vite, l’interface qui ment après un enregistrement, la double validation et l’excès d’application ; chaque piège confronté au code du projet."
+description: "Là où le modèle casse sans bruit : la validation client prise pour une barrière, useActionState détourné en gestionnaire d’état, le FormData converti trop vite, l’interface qui ment après un enregistrement, la règle écrite deux fois, l’excès d’application, l’état en mémoire chargé deux fois ; chaque piège confronté au code du projet."
 section: "Formulaires"
 order: 6
 ---
@@ -24,6 +24,16 @@ Voici les deux étapes que nous allons traverser :
 ## 7 — Là où le modèle casse : les pièges réels du modèle hybride
 
 Jusqu’ici, tout tenait, et c’est justement ce qui est dangereux. Le modèle hybride ne casse pas immédiatement : il fonctionne, il donne confiance, il donne même une sensation de maîtrise. C’est exactement là que les erreurs commencent.
+
+Les erreurs les plus fréquentes tiennent en quatre phrases :
+
+- faire confiance à la validation du client ;
+- croire que `useActionState` remplace tout ;
+- oublier que le serveur est la seule source de vérité ;
+- traiter `FormData` comme un objet déjà fiable.
+
+👉 aucune ne casse le code immédiatement  
+👉 toutes le rendent fragile, incohérent et difficile à faire évoluer
 
 Changeons donc de posture : au lieu de construire, observons **comment ça casse dans la vraie vie**. Pas en théorie : dans des situations qui arrivent réellement, chacune confrontée au code du projet.
 
@@ -211,19 +221,28 @@ Le profil est relu (`refetch`), mais aussi la **session** gardée dans le naviga
 
 ### 7.5 — La duplication inévitable (et saine)
 
-Oui, nous validons deux fois, et non, ce n’est pas un problème. Le problème serait de croire que ces deux validations doivent être identiques. Elles ont la même forme et la même intention, mais pas le même rôle :
+Oui, nous validons deux fois, et non, ce n’est pas un problème. Les deux validations appliquent la même règle, mais elles n’ont pas le même rôle :
 
 - la validation du client sert l’expérience de saisie ;
 - la validation du serveur garantit la vérité.
 
-Le piège est de vouloir « une seule validation ». Le résultat est alors l’un ou l’autre :
+Le piège est ailleurs, et il a deux visages.
+
+Le premier : vouloir « une seule validation ». Le résultat est alors l’un ou l’autre :
 
 - soit l’expérience se dégrade (toutes les erreurs n’apparaissent qu’après un aller-retour au serveur) ;
 - soit la sécurité devient fragile (la seule validation est celle du client, que l’on peut contourner).
 
+Le second, plus sournois : **écrire** la règle deux fois. Une version pour React Hook Form, une autre pour le serveur, presque identiques. Un jour, l’une change et pas l’autre : le client accepte, le serveur refuse, et l’utilisateur ne comprend pas ce qu’on lui reproche. Le chapitre précédent en a raconté un exemple réel, la règle de connexion recopiée jusque dans le formulaire.
+
+👉 valider deux fois est sain  
+👉 écrire la règle deux fois ne l’est pas
+
+La réponse du projet : la règle est écrite une seule fois, dans un schéma de `packages/contracts`, et exécutée deux fois, par le résolveur de React Hook Form puis par l’action. Les messages sont les mêmes des deux côtés, puisque ce sont les mêmes lignes.
+
 #### Dans le projet : deux validations, deux rôles
 
-Le formulaire de changement de mot de passe montre une validation client **plus riche** que celle du serveur, sans contradiction :
+Le formulaire de changement de mot de passe montre un formulaire qui vérifie **plus** que le service, sans contradiction :
 
 <CodeExample
   language="tsx"
@@ -278,13 +297,38 @@ Nous découvrons un modèle puissant, alors nous voulons tout faire avec. Nous c
 
 C’est une erreur. Ce modèle est optimisé pour **une action ponctuelle** (un envoi, une réponse), pas pour **un flux continu** de données. Chaque outil a son terrain ; le chapitre suivant trace ces frontières.
 
-### 7.7 — Le vrai piège (le plus subtil)
+### 7.7 — Le piège des deux entrées : un état chargé deux fois
+
+Le chapitre précédent a montré une logique à deux entrées : la server action du formulaire et la procédure tRPC, qui appellent le même service. Les règles du service sont partagées. Son état en mémoire, lui, ne l’est pas forcément.
+
+Next compile à part la route `/api/trpc` et les server actions : un même module y est chargé deux fois, avec deux copies de ses variables. Prenons le compteur qui limite les essais de mot de passe : une simple `Map` dans un module. Elle existe alors en double. Cinq essais par la procédure, cinq de plus par le formulaire : rien ne casse, aucune erreur ne s’affiche, la limite est simplement deux fois moins stricte que prévu.
+
+Le projet range ces compteurs sur `globalThis`, l’objet global, unique pour tout le processus, sous un nom par limiteur :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/lib/security/throttle.ts"
+  filename="throttle.ts"
+  snippetStart="const registry = ("
+  snippetLines="7"
+  snippetHighlight="1,2,6,7"
+  snippetTitle="Un registre unique, quelle que soit l’entrée"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un test de bout en bout le vérifie : cinq faux mots de passe par la procédure, et le formulaire de la page profil refuse le sixième.
+
+👉 partager une règle ne suffit pas  
+👉 l’état qui la fait respecter doit être partagé aussi
+
+### 7.8 — Le vrai piège (le plus subtil)
 
 Ce modèle ne casse pas quand nous faisons une erreur : il casse quand nous faisons quelque chose qui **semble correct**, par exemple :
 
 - mettre à jour un état local après un envoi ;
 - faire confiance à la validation de React Hook Form ;
-- convertir un `FormData` directement.
+- convertir un `FormData` directement ;
+- garder un compteur dans une variable de module.
 
 Tout fonctionne, jusqu’au jour où ça ne fonctionne plus. Et ce jour-là, le bug est difficile à comprendre, parce qu’il ne vient pas d’une ligne fausse, mais d’une **hypothèse fausse**.
 
