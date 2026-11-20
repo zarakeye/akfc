@@ -17,7 +17,7 @@ export function MemberContactSection(): JSX.Element | null {
   if (user) {
     return (
       <section className="mt-10 rounded-lg border border-border p-6" aria-labelledby="member-contact-title">
-        <p id="member-contact-title" className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+        <p id="member-contact-title" className="text-xs font-medium uppercase tracking-wide text-success">
           Espace membres
         </p>
         <p className="mb-6 mt-1 text-sm text-muted-foreground">

@@ -9,7 +9,7 @@ import { telHref, whatsappHref, type SitePhone } from "@akfc/contracts/siteConta
  */
 export type ClubContact = { email: string | null; phones: SitePhone[]; address: string | null };
 
-const linkClass = "text-emerald-700 hover:underline dark:text-emerald-400";
+const linkClass = "text-success hover:underline";
 
 export function ClubContactCard({ contact }: { contact: ClubContact }): JSX.Element | null {
   const addressLines = (contact.address ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
@@ -47,7 +47,7 @@ export function ClubContactCard({ contact }: { contact: ClubContact }): JSX.Elem
                     href={whatsappHref(p.number)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-full border border-emerald-600/40 px-2 py-0.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                    className="inline-flex items-center gap-1 rounded-full border border-success/40 px-2 py-0.5 text-xs font-medium text-success hover:bg-success-muted"
                   >
                     <MessageCircle className="h-3.5 w-3.5" aria-hidden /> WhatsApp
                   </a>

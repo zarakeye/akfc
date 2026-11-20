@@ -35,7 +35,7 @@ export default async function InscriptionPage(): Promise<JSX.Element> {
 
   return (
     <div className="akfc-page py-12">
-      <Link href="/" className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
+      <Link href="/" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Accueil
       </Link>
       <h1 className="mb-8 text-2xl font-bold">{page?.title ?? "S'inscrire"}</h1>
@@ -79,7 +79,7 @@ export default async function InscriptionPage(): Promise<JSX.Element> {
 
 function ExternalAnchor({ href, children }: { href: string; children: React.ReactNode }): JSX.Element {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-emerald-700 hover:underline dark:text-emerald-400">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-success hover:underline">
       {children}
       <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
       <span className="sr-only">(nouvel onglet)</span>

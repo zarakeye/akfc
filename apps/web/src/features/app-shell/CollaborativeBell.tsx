@@ -58,12 +58,12 @@ export function CollaborativeBell(): JSX.Element | null {
             ? `${total} nouveau${plural} document${total > 1 ? "s" : ""} — mes espaces`
             : "Mes espaces collaboratifs"
         }
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         {total > 0 ? (
           <>
             <Bell className="akfc-collab-bell-shaking h-5 w-5" aria-hidden />
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
               {total}
             </span>
           </>
@@ -74,14 +74,14 @@ export function CollaborativeBell(): JSX.Element | null {
 
       {/* Menu déroulant au survol */}
       <div className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block group-focus-within:block">
-        <div className="w-80 max-w-[90vw] overflow-hidden rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+        <div className="w-80 max-w-[90vw] overflow-hidden rounded-md border border-border bg-card py-1 shadow-lg">
           {total === 0 ? (
-            <div className="px-3 py-2 text-sm text-gray-500">
+            <div className="px-3 py-2 text-sm text-muted-foreground">
               Aucun nouveau document.
             </div>
           ) : (
             <>
-              <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {total} nouveau{plural} document{total > 1 ? "s" : ""}
               </div>
               {items.map((it) => (
@@ -89,18 +89,18 @@ export function CollaborativeBell(): JSX.Element | null {
                   key={it.id}
                   // Ouvre le document : son ouverture le marque lu, et la cloche se vide.
                   href={`/documents?doc=${encodeURIComponent(it.id)}`}
-                  className="block px-3 py-2 hover:bg-gray-100"
+                  className="block px-3 py-2 hover:bg-muted"
                 >
-                  <span className="block truncate text-sm font-medium text-gray-900">
+                  <span className="block truncate text-sm font-medium text-foreground">
                     {it.title}
                   </span>
                   {it.newVersion && (
-                    <span className="block text-xs font-medium text-emerald-700">
+                    <span className="block text-xs font-medium text-success">
                       Nouvelle version
                     </span>
                   )}
                   {it.groupName && (
-                    <span className="block truncate text-xs text-gray-500">
+                    <span className="block truncate text-xs text-muted-foreground">
                       {it.groupName}
                     </span>
                   )}
@@ -108,7 +108,7 @@ export function CollaborativeBell(): JSX.Element | null {
               ))}
               <Link
                 href="/mes-espaces"
-                className="block border-t border-gray-100 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-gray-50"
+                className="block border-t border-border px-3 py-2 text-xs font-medium text-info hover:bg-muted"
               >
                 Ouvrir mes espaces →
               </Link>

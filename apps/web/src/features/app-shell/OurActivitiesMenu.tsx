@@ -23,8 +23,8 @@ import { compareFamilies, compareNames } from "#features/app-shell/disciplineOrd
  *
  * Calqué sur les menus de la barre du Header : survol et clavier (useDisclosure :
  * le titre est un bouton), texte blanc + halo emerald au survol,
- * chevron `chevron-white.svg` qui pivote, panneau `bg-gray-300` à liens
- * `text-gray-800 hover:bg-gray-100`.
+ * chevron `chevron-white.svg` qui pivote, panneau `bg-secondary` à liens
+ * `text-foreground hover:bg-muted`.
  */
 export default function OurActivitiesMenu({
   variant = "bar",
@@ -106,7 +106,7 @@ export default function OurActivitiesMenu({
             </Link> */}
             {groups.map((family) => (
               <div key={family.id} className="mt-2">
-                <p className="text-sm font-bold uppercase tracking-wide text-gray-400">
+                <p className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
                   {family.name}
                 </p>
                 {family.disciplines.map((d) => (
@@ -134,7 +134,7 @@ export default function OurActivitiesMenu({
     >
       <button
         {...bar.buttonProps}
-        className="flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+        className="flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         <span className={`text-lg font-bold ${onDisciplines ? NAV_ACTIVE : ""}`}>Nos disciplines</span>
         <Image
@@ -148,17 +148,17 @@ export default function OurActivitiesMenu({
       </button>
       <div
         {...bar.menuProps}
-        className={`${bar.open ? "block" : "hidden"} absolute z-20 top-full left-1/2 transform -translate-x-1/2 min-w-[18rem] bg-gray-300 border-4 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300`}
+        className={`${bar.open ? "block" : "hidden"} absolute z-20 top-full left-1/2 transform -translate-x-1/2 min-w-[18rem] bg-secondary border-4 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300`}
       >
         {/* Accès direct à l'agenda.
             « Tous les stages » et « Tous les évènements » ont fusionné ici :
             deux liens vers la même chose, séparés par une distinction que le
             visiteur ne fait pas, valaient moins qu'un seul. */}
-        {/* <ul className="border-b border-gray-400">
+        {/* <ul className="border-b border-border">
           <li>
             <Link
               href="/agenda"
-              className="block px-4 py-2 font-semibold text-gray-800 hover:bg-gray-100"
+              className="block px-4 py-2 font-semibold text-foreground hover:bg-muted"
             >
               Agenda — stages et évènements
             </Link>
@@ -167,12 +167,12 @@ export default function OurActivitiesMenu({
 
         {/* Disciplines par famille */}
         {groups.length === 0 ? (
-          <p className="px-4 py-2 text-gray-800">Bientôt disponible.</p>
+          <p className="px-4 py-2 text-foreground">Bientôt disponible.</p>
         ) : (
           <div className="grid gap-2 p-2 sm:grid-cols-2">
             {groups.map((family) => (
               <div key={family.id}>
-                <p className="px-6 pt-2 text-sm font-bold uppercase underline tracking-wide text-gray-600">
+                <p className="px-6 pt-2 text-sm font-bold uppercase underline tracking-wide text-muted-foreground">
                   {family.name}
                 </p>
                 <ul>

@@ -34,7 +34,7 @@ export function SiteLogoImage({ src, alt }: { src: string; alt: string }): JSX.E
   return (
     <div
       className={`flex items-center justify-center rounded-md p-[10%] ${
-        backdrop === "dark" ? "bg-neutral-900" : "bg-white ring-1 ring-border"
+        backdrop === "dark" ? "bg-neutral-900" : "bg-card ring-1 ring-border"
       }`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

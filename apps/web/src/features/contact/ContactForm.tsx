@@ -79,7 +79,7 @@ export function ContactForm(): JSX.Element | null {
   if (state.status === "success" && state !== dismissed) {
     const sent = state.data;
     return (
-      <div className="rounded-lg border border-emerald-600/40 bg-emerald-50 p-6 text-sm dark:bg-emerald-950/30" role="status">
+      <div className="rounded-lg border border-success/40 bg-success-muted p-6 text-sm" role="status">
         <p className="text-base font-semibold">Message envoyé, merci !</p>
         {sent?.ref && (
           <p className="mt-2">
@@ -95,7 +95,7 @@ export function ContactForm(): JSX.Element | null {
         <button
           type="button"
           onClick={() => setDismissed(state)}
-          className="mt-4 text-emerald-700 hover:underline dark:text-emerald-400"
+          className="mt-4 text-success hover:underline"
         >
           Écrire un autre message
         </button>
@@ -105,7 +105,7 @@ export function ContactForm(): JSX.Element | null {
 
   if (!user) return null;
 
-  const field = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600";
+  const field = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
   const userName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
   const errors = formState.errors;
   const otherError = state.status === "error" && !state.fieldErrors ? state.error : null;
@@ -132,7 +132,7 @@ export function ContactForm(): JSX.Element | null {
       {onlyKey && <input type="hidden" name="categoryKey" value={onlyKey} />}
       {categories && categories.length > 1 && (
         <fieldset className="flex flex-col gap-2 text-sm" data-tour="contact.form.category">
-          <legend className="mb-1">Votre message concerne <span className="text-red-600">*</span></legend>
+          <legend className="mb-1">Votre message concerne <span className="text-destructive">*</span></legend>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {categories.map((c) => (
               <label key={c.key} className="inline-flex items-center gap-2">
@@ -141,20 +141,20 @@ export function ContactForm(): JSX.Element | null {
               </label>
             ))}
           </div>
-          {errors.categoryKey && <span className="text-sm text-red-600">{errors.categoryKey.message}</span>}
+          {errors.categoryKey && <span className="text-sm text-destructive">{errors.categoryKey.message}</span>}
         </fieldset>
       )}
 
       <label className="flex flex-col gap-1 text-sm" data-tour="contact.form.subject">
-        <span>Objet <span className="text-red-600">*</span></span>
+        <span>Objet <span className="text-destructive">*</span></span>
         <input className={field} maxLength={TICKET_SUBJECT_MAX} {...register("subject")} />
-        {errors.subject && <span className="text-sm text-red-600">{errors.subject.message}</span>}
+        {errors.subject && <span className="text-sm text-destructive">{errors.subject.message}</span>}
       </label>
 
       <label className="flex flex-col gap-1 text-sm" data-tour="contact.form.body">
-        <span>Message <span className="text-red-600">*</span></span>
+        <span>Message <span className="text-destructive">*</span></span>
         <textarea className={`${field} min-h-40 resize-y`} maxLength={TICKET_BODY_MAX} {...register("body")} />
-        {errors.body && <span className="text-sm text-red-600">{errors.body.message}</span>}
+        {errors.body && <span className="text-sm text-destructive">{errors.body.message}</span>}
       </label>
 
       {/* Piège à robots : hors écran, ignoré des lecteurs d'écran et du clavier. */}
@@ -166,7 +166,7 @@ export function ContactForm(): JSX.Element | null {
       </div>
 
       {otherError && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {otherError}
         </p>
       )}
@@ -175,7 +175,7 @@ export function ContactForm(): JSX.Element | null {
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-md bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-brand-foreground hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? "Envoi…" : "Envoyer"}
         </button>

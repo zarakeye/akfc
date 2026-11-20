@@ -73,7 +73,7 @@ export function ForgotPasswordForm(): JSX.Element {
             {...register("email")}
           />
           {emailError && (
-            <span id="forgot-email-error" className="text-sm text-red-600">
+            <span id="forgot-email-error" className="text-sm text-destructive">
               {emailError}
             </span>
           )}
@@ -89,13 +89,13 @@ export function ForgotPasswordForm(): JSX.Element {
         </button>
 
         {/* Jamais d'erreur « adresse inconnue » (anti-énumération) : seulement une panne technique. */}
-        {otherError && <div className="text-sm text-red-600">{otherError}</div>}
+        {otherError && <div className="text-sm text-destructive">{otherError}</div>}
       </form>
 
       {state.status === "success" && (
         <div className="rounded border p-4 text-sm">
           <p className="font-medium">Si un compte existe pour cet email, un lien a été envoyé.</p>
-          <p className="text-slate-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             Pense à vérifier tes spams. Le lien expire au bout d’un certain temps.
           </p>
         </div>

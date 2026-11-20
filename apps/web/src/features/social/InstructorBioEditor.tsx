@@ -87,7 +87,7 @@ export function InstructorBioEditor(): JSX.Element | null {
         </div>
         <div className="flex shrink-0 items-center gap-3">
           {dirty && (
-            <span className="text-xs font-medium text-amber-600">
+            <span className="text-xs font-medium text-warning">
               Modifications non enregistrées
             </span>
           )}
@@ -104,7 +104,7 @@ export function InstructorBioEditor(): JSX.Element | null {
                 { onSuccess: () => setSavedSnapshot(snapshot) },
               );
             }}
-            className="shrink-0 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+            className="shrink-0 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
           >
             {save.isPending ? "Enregistrement…" : "Enregistrer"}
           </button>

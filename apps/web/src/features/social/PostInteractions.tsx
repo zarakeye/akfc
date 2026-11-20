@@ -35,7 +35,7 @@ export function PostInteractions({
   const [count, setCount] = useState(initialCommentCount);
 
   return (
-    <div className="mt-4 border-t border-gray-200 pt-3">
+    <div className="mt-4 border-t border-border pt-3">
       <div className="flex items-center justify-between gap-4">
         <ReactionsBar
           targetType="POST"

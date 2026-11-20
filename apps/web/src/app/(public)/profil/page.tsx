@@ -37,7 +37,7 @@ export default function ProfilePage(): JSX.Element {
   }
   if (error || !data || !displayUser) {
     return (
-      <div className="akfc-page py-12 text-red-600">
+      <div className="akfc-page py-12 text-destructive">
         Impossible de charger votre profil.
       </div>
     );
@@ -58,12 +58,12 @@ export default function ProfilePage(): JSX.Element {
             <h1 className="text-2xl font-bold">
               {formatUserName(displayUser)}
             </h1>
-            <p className="text-sm text-gray-500">{data.email}</p>
+            <p className="text-sm text-muted-foreground">{data.email}</p>
           </div>
           <Link
             href="/profil/edit?from=profil"
             data-tour="profil.edit"
-            className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90"
           >
             <Pencil className="h-4 w-4" />
             Éditer
@@ -84,10 +84,10 @@ export default function ProfilePage(): JSX.Element {
         {/* Droit d'accès et de portabilité (RGPD) : export JSON de ses propres données. */}
         <div className="mt-10 rounded-lg border border-border p-4 text-sm" data-tour="profil.export">
           <p className="font-semibold">Vos données</p>
-          <p className="mt-1 text-gray-600">
+          <p className="mt-1 text-muted-foreground">
             Téléchargez tout ce que le site conserve à votre sujet (compte, groupes, demandes, contributions,
             documents). Pour faire corriger ou supprimer vos données, écrivez-nous ; voir la{" "}
-            <Link href="/infos/confidentialite" className="text-emerald-700 hover:underline">
+            <Link href="/infos/confidentialite" className="text-success hover:underline">
               politique de confidentialité
             </Link>
             .
@@ -95,7 +95,7 @@ export default function ProfilePage(): JSX.Element {
           <a
             href="/api/me/export"
             download
-            className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 font-medium hover:bg-gray-50"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 font-medium hover:bg-muted"
           >
             Télécharger mes données
           </a>
@@ -106,7 +106,7 @@ export default function ProfilePage(): JSX.Element {
           <ImageConsentSummary />
           <Link
             href="/profil/ou-j-apparais"
-            className="mt-3 inline-block text-sm font-medium text-emerald-700 hover:underline"
+            className="mt-3 inline-block text-sm font-medium text-success hover:underline"
           >
             Où j&apos;apparais : les photos et vidéos où le club m&apos;a identifié(e) →
           </Link>
@@ -129,9 +129,9 @@ function Field({
 }): JSX.Element {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wide text-gray-400">{label}</dt>
-      <dd className="mt-0.5 text-sm text-gray-800">
-        {value?.trim() ? value : <span className="text-gray-400">—</span>}
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 text-sm text-foreground">
+        {value?.trim() ? value : <span className="text-muted-foreground">—</span>}
       </dd>
     </div>
   );

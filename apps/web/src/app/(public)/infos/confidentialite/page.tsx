@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 export const dynamic = "force-dynamic";
 
-const link = "text-emerald-700 hover:underline dark:text-emerald-400";
+const link = "text-success hover:underline";
 
 export default async function ConfidentialitePage(): Promise<JSX.Element> {
   const [info, complement] = await Promise.all([getLegalInfo(), getLegalComplement("confidentialite")]);

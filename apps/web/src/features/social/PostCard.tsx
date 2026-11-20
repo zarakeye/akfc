@@ -55,7 +55,7 @@ export function PostCard({
   return (
     <article
       id={`post-${post.id}`}
-      className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+      className="rounded-lg border border-border bg-card p-6 shadow-sm"
     >
       <header className="mb-4 flex items-center gap-3">
         {post.author && <UserPortrait user={post.author} size="md" />}
@@ -64,7 +64,7 @@ export function PostCard({
             <p className="text-sm font-medium">{formatUserName(post.author)}</p>
           )}
           {post.publicationDate && (
-            <time className="text-xs text-gray-500">
+            <time className="text-xs text-muted-foreground">
               {formatPostDate(post.publicationDate)}
             </time>
           )}
@@ -75,7 +75,7 @@ export function PostCard({
 
       <ExpandableContent>
         <Suspense
-          fallback={<div className="h-24 animate-pulse rounded bg-gray-100" />}
+          fallback={<div className="h-24 animate-pulse rounded bg-muted" />}
         >
           <PageRenderer content={content} />
         </Suspense>

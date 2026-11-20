@@ -52,17 +52,17 @@ function AnnouncementCard({
       id={`announcement-${news.id}`}
       className={`rounded-lg border bg-white p-4 shadow-sm transition-shadow ${
         highlighted
-          ? "border-emerald-500 ring-2 ring-emerald-200"
-          : "border-gray-200"
+          ? "border-brand ring-2 ring-ring"
+          : "border-border"
       }`}
     >
       <h3 className="text-sm font-semibold">{news.title}</h3>
       {news.publicationDate && (
-        <time className="text-xs text-gray-500">
+        <time className="text-xs text-muted-foreground">
           {formatDate(news.publicationDate)}
         </time>
       )}
-      <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+      <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
         {news.body}
       </p>
       {news.href && (
@@ -70,7 +70,7 @@ function AnnouncementCard({
           href={news.href}
           target={external ? "_blank" : undefined}
           rel={external ? "noopener noreferrer" : undefined}
-          className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:text-emerald-700"
+          className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-success hover:text-success"
         >
           En savoir plus
           {external && <ExternalLink className="h-3.5 w-3.5" />}
@@ -131,7 +131,7 @@ export function BreakingNewsSidebar({
         onClick={onToggle}
         aria-expanded={open}
         aria-label={open ? "Fermer les flashs info" : "Ouvrir les flashs info"}
-        className="absolute -left-10 top-1/2 flex h-24 w-10 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-l-lg bg-gray-50 text-gray-500 shadow-[-3px_0_8px_rgba(0,0,0,0.08)] transition-colors hover:text-gray-800"
+        className="absolute -left-10 top-1/2 flex h-24 w-10 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-l-lg bg-muted text-muted-foreground shadow-[-3px_0_8px_rgba(0,0,0,0.08)] transition-colors hover:text-foreground"
       >
         <span aria-hidden className="akfc-tab-fillet akfc-tab-fillet-top" />
         <span aria-hidden className="akfc-tab-fillet akfc-tab-fillet-bottom" />
@@ -142,7 +142,7 @@ export function BreakingNewsSidebar({
         )}
         <Megaphone className="h-4 w-4" />
         {!open && unseenCount > 0 && (
-          <span className="absolute -left-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-bold">
+          <span className="absolute -left-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold">
             {unseenCount}
           </span>
         )}
@@ -150,11 +150,11 @@ export function BreakingNewsSidebar({
 
       <div
         ref={panelRef}
-        className="flex max-h-[70dvh] w-80 flex-col gap-3 overflow-y-auto rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 p-4 shadow-xl"
+        className="flex max-h-[70dvh] w-80 flex-col gap-3 overflow-y-auto rounded-l-lg border border-r-0 border-border bg-muted p-4 shadow-xl"
       >
         <h2 className="text-base font-bold">Flash info</h2>
         {news.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Aucun flash info en ce moment.
           </p>
         ) : (

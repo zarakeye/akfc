@@ -56,8 +56,8 @@ export function ResetPasswordForm({ token, isWelcome }: { token: string; isWelco
     <>
       {!token && (
         <div className="rounded border p-4 text-sm">
-          <p className="font-medium text-red-700">Lien invalide</p>
-          <p className="text-slate-600 mt-1">
+          <p className="font-medium text-destructive">Lien invalide</p>
+          <p className="text-muted-foreground mt-1">
             Il manque le token dans l’URL. Reviens sur “Mot de passe oublié” et redemande un lien.
           </p>
         </div>
@@ -103,13 +103,13 @@ export function ResetPasswordForm({ token, isWelcome }: { token: string; isWelco
           {isPending ? "Validation..." : isWelcome ? "Enregistrer mon mot de passe" : "Réinitialiser"}
         </button>
 
-        {linkError && <div className="text-sm text-red-600">{linkError}</div>}
+        {linkError && <div className="text-sm text-destructive">{linkError}</div>}
       </form>
 
       {done && (
         <div className="rounded border p-4 text-sm">
           <p className="font-medium">Mot de passe mis à jour ✅</p>
-          <p className="text-slate-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             Tu peux maintenant te connecter avec ton adresse e-mail et ce mot de passe.
           </p>
 

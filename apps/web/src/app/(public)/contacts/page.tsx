@@ -66,13 +66,13 @@ export default async function ContactsPage(): Promise<JSX.Element> {
 
         <Link
           href="/inscription"
-          className="flex flex-col gap-2 rounded-lg border border-emerald-600/40 bg-emerald-50 p-6 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/30"
+          className="flex flex-col gap-2 rounded-lg border border-success/40 bg-success-muted p-6 transition-colors hover:bg-success-muted"
         >
           <span className="font-semibold">Vous souhaitez vous inscrire&nbsp;?</span>
           <span className="text-sm text-muted-foreground">
             Les cours ont lieu à la MJC de Chambéry : on s&apos;y inscrit en ligne ou à son accueil.
           </span>
-          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Comment s&apos;inscrire →</span>
+          <span className="text-sm font-medium text-success">Comment s&apos;inscrire →</span>
         </Link>
       </div>
 

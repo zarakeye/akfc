@@ -58,7 +58,7 @@ export function BreakingNewsTicker({
   return (
     <div
       aria-label="Flash info du club"
-      className="akfc-ticker overflow-hidden bg-emerald-700 py-1.5 text-sm text-white"
+      className="akfc-ticker overflow-hidden bg-brand py-1.5 text-sm text-brand-foreground"
     >
       <style>{`
         @keyframes akfc-ticker-scroll {

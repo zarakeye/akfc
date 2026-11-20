@@ -37,7 +37,7 @@ function DocList({
   showGroups?: boolean;
 }) {
   return (
-    <ul className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
       {items.map((d) => {
         const unread = d.readAt == null;
         return (
@@ -46,14 +46,14 @@ function DocList({
               type="button"
               onClick={() => onSelect(d.id)}
               data-tour="documents.item"
-              className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+              className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-muted"
             >
-              <FileText className="h-5 w-5 shrink-0 text-emerald-600" />
+              <FileText className="h-5 w-5 shrink-0 text-success" />
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-gray-900">
+                <span className="block truncate font-medium text-foreground">
                   {d.title}
                 </span>
-                <span className="block text-xs text-gray-500">
+                <span className="block text-xs text-muted-foreground">
                   {new Date(d.publishedAt).toLocaleDateString("fr-FR")}
                   {d.versionedAt
                     ? ` · nouvelle version du ${new Date(d.versionedAt).toLocaleDateString("fr-FR")}`
@@ -64,7 +64,7 @@ function DocList({
                 </span>
               </span>
               {unread && (
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success-muted px-2 py-0.5 text-xs font-medium text-success">
                   <CircleDot className="h-3 w-3" />
                   {d.versionedAt ? "Nouvelle version" : "Nouveau"}
                 </span>
@@ -86,7 +86,7 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </h2>
       {children}
@@ -132,11 +132,11 @@ function DocumentsPage() {
     return (
       <main className="akfc-page py-16 text-center">
         <h1 className="mb-4 text-2xl font-bold">Documents</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Cette page est réservée aux membres.{" "}
           <Link
             href="/"
-            className="font-medium text-emerald-700 hover:underline"
+            className="font-medium text-success hover:underline"
           >
             Retour à l&apos;accueil
           </Link>
@@ -148,15 +148,15 @@ function DocumentsPage() {
   return (
     <main className="akfc-page py-10">
       <h1 className="mb-2 text-2xl font-bold">Documents</h1>
-      <p className="mb-8 text-sm text-gray-600">
+      <p className="mb-8 text-sm text-muted-foreground">
         Les documents mis à votre disposition par le club.
       </p>
 
       <div data-tour="documents.list">
         {listQuery.isLoading ? (
-          <p className="text-gray-500">Chargement…</p>
+          <p className="text-muted-foreground">Chargement…</p>
         ) : docs.length === 0 ? (
-          <p className="text-gray-500">Aucun document pour le moment.</p>
+          <p className="text-muted-foreground">Aucun document pour le moment.</p>
         ) : (
           <div className="space-y-8">
             {club.length > 0 && (

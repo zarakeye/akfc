@@ -20,7 +20,7 @@ export function SkipLink({ targetId }: { targetId: string }): JSX.Element {
         e.preventDefault();
         target.focus({ preventScroll: true });
       }}
-      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-black focus:shadow-lg"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-card focus:px-4 focus:py-2 focus:font-semibold focus:text-foreground focus:shadow-lg"
     >
       Aller au contenu
     </a>

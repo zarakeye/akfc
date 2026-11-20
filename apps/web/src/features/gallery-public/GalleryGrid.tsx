@@ -32,7 +32,7 @@ export function GalleryGrid({
           key={item.mediaAssetId}
           type="button"
           onClick={() => onItemClick(i)}
-          className="group relative aspect-square rounded-md bg-gray-100 shadow-sm transition-all duration-300 ease-out hover:z-10 hover:scale-125 hover:shadow-[0_25px_50px_-5px_rgba(0,0,0,0.5)]"
+          className="group relative aspect-square rounded-md bg-muted shadow-sm transition-all duration-300 ease-out hover:z-10 hover:scale-125 hover:shadow-[0_25px_50px_-5px_rgba(0,0,0,0.5)]"
           aria-label={`Ouvrir ${item.fileName} dans la visionneuse`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- URLs proxy signées */}

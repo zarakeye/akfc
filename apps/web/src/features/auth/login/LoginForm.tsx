@@ -95,7 +95,7 @@ export default function LoginForm(): JSX.Element {
           placeholder="Adresse e-mail"
           autoComplete="email"
           aria-invalid={!!formState.errors.email}
-          className="border rounded bg-white px-2 py-1"
+          className="border rounded bg-card px-2 py-1"
           {...register("email")}
         />
 
@@ -105,7 +105,7 @@ export default function LoginForm(): JSX.Element {
             placeholder="Mot de passe"
             autoComplete="current-password"
             aria-invalid={!!formState.errors.password}
-            className="border rounded bg-white px-2 py-1 pr-9"
+            className="border rounded bg-card px-2 py-1 pr-9"
             {...register("password")}
           />
           <button
@@ -114,7 +114,7 @@ export default function LoginForm(): JSX.Element {
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
             aria-pressed={showPassword}
-            className="absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 transition-colors hover:text-gray-700"
+            className="absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground transition-colors hover:text-foreground"
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -124,14 +124,14 @@ export default function LoginForm(): JSX.Element {
       <button
         type="submit"
         disabled={isPending || state.status === "success"}
-        className="px-4 py-2 rounded bg-blue-500 text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        className="px-4 py-2 rounded bg-brand text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? "Connexion…" : "Se connecter"}
       </button>
 
-      {message && <p className="text-red-500">{message}</p>}
+      {message && <p className="text-destructive">{message}</p>}
 
-      <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:underline">
+      <Link href="/auth/forgot-password" className="text-sm text-info hover:underline">
         Mot de passe oublié ?
       </Link>
     </form>

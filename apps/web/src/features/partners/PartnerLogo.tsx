@@ -34,7 +34,7 @@ export function PartnerLogo({
       target="_blank"
       rel="noopener noreferrer"
       title={`${name} (nouvel onglet)`}
-      className="inline-flex rounded-md transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-emerald-500"
+      className="inline-flex rounded-md transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-ring"
     >
       {inner}
     </a>

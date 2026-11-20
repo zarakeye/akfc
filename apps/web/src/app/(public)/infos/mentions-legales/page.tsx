@@ -39,7 +39,7 @@ export default async function MentionsLegalesPage(): Promise<JSX.Element> {
             <li>Siège : {info.addressLines.length > 0 ? info.addressLines.join(", ") : <Val v={null} />}</li>
             <li>Téléphone : <Val v={info.phone} /></li>
             <li>
-              E-mail : {info.email ? <a className="text-emerald-700 hover:underline dark:text-emerald-400" href={`mailto:${info.email}`}>{info.email}</a> : <Val v={null} />}
+              E-mail : {info.email ? <a className="text-success hover:underline" href={`mailto:${info.email}`}>{info.email}</a> : <Val v={null} />}
             </li>
           </ul>
         </LegalSection>
@@ -60,7 +60,7 @@ export default async function MentionsLegalesPage(): Promise<JSX.Element> {
             {info.host.url && (
               <>
                 {" "}—{" "}
-                <a className="text-emerald-700 hover:underline dark:text-emerald-400" href={info.host.url} target="_blank" rel="noopener noreferrer">
+                <a className="text-success hover:underline" href={info.host.url} target="_blank" rel="noopener noreferrer">
                   {info.host.url.replace(/^https?:\/\//, "")}
                 </a>
               </>
@@ -97,7 +97,7 @@ export default async function MentionsLegalesPage(): Promise<JSX.Element> {
         <LegalSection title="Données personnelles et cookies">
           <p>
             L&apos;utilisation de vos données est décrite dans la{" "}
-            <Link className="text-emerald-700 hover:underline dark:text-emerald-400" href="/infos/confidentialite">
+            <Link className="text-success hover:underline" href="/infos/confidentialite">
               politique de confidentialité
             </Link>
             . Le site n&apos;utilise ni publicité ni mesure d&apos;audience.
@@ -107,7 +107,7 @@ export default async function MentionsLegalesPage(): Promise<JSX.Element> {
         <LegalSection title="Signaler un contenu">
           <p>
             Pour signaler un contenu qui vous semble illicite ou qui vous concerne, écrivez à{" "}
-            {info.email ? <a className="text-emerald-700 hover:underline dark:text-emerald-400" href={`mailto:${info.email}`}>{info.email}</a> : "l'association"}.
+            {info.email ? <a className="text-success hover:underline" href={`mailto:${info.email}`}>{info.email}</a> : "l'association"}.
           </p>
         </LegalSection>
       </div>

@@ -80,7 +80,7 @@ export default function PublicGalleryPage(): JSX.Element {
       {/* Filtre origine */}
       {origins.length > 0 && (
         <div className="mb-6 flex items-center gap-2">
-          <label htmlFor="origin-filter" className="text-sm text-gray-600">
+          <label htmlFor="origin-filter" className="text-sm text-muted-foreground">
             Origine :
           </label>
           <select
@@ -91,7 +91,7 @@ export default function PublicGalleryPage(): JSX.Element {
                 e.target.value === "all" ? "all" : Number(e.target.value),
               )
             }
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+            className="rounded-md border border-border px-3 py-1.5 text-sm"
           >
             <option value="all">Toutes</option>
             {origins.map((o) => (
@@ -104,7 +104,7 @@ export default function PublicGalleryPage(): JSX.Element {
       )}
 
       {galleries === null ? (
-        <p className="text-gray-500">Chargement…</p>
+        <p className="text-muted-foreground">Chargement…</p>
       ) : (
         <GalleryGroupedView
           galleries={visible}

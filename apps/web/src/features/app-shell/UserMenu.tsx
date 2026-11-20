@@ -47,7 +47,7 @@ export default function UserMenu(): JSX.Element | null {
     >
       <button
         {...menu.buttonProps}
-        className="flex items-center gap-2 cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+        className="flex items-center gap-2 cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         <UserPortrait
           user={{
@@ -65,18 +65,18 @@ export default function UserMenu(): JSX.Element | null {
       </button>
 
       {open && (
-        <div {...menu.menuProps} className="absolute left-0 top-10 w-60 max-w-[calc(100vw-1rem)] origin-top-left xl:left-auto xl:right-0 xl:origin-top-right bg-white border rounded shadow-md z-50">
-          <p className="px-4 py-2 text-sm text-gray-700">{user.email}</p>
+        <div {...menu.menuProps} className="absolute left-0 top-10 w-60 max-w-[calc(100vw-1rem)] origin-top-left xl:left-auto xl:right-0 xl:origin-top-right bg-card border rounded shadow-md z-50">
+          <p className="px-4 py-2 text-sm text-foreground">{user.email}</p>
           <Link
             href="/profil"
-            className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+            className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted"
             onClick={menu.close}
           >
             Mon profil
           </Link>
           <Link
             href="/profil/droit-a-l-image"
-            className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+            className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted"
             onClick={menu.close}
           >
             Mon droit à l&apos;image
@@ -84,7 +84,7 @@ export default function UserMenu(): JSX.Element | null {
           {!isAdmin && (
             <Link
               href="/deposer"
-              className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+              className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted"
               onClick={menu.close}
             >
               Déposer un ou plusieurs fichiers
@@ -93,7 +93,7 @@ export default function UserMenu(): JSX.Element | null {
           {isAdmin && (
             <Link
               href="/dashboard"
-              className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+              className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted"
               onClick={menu.close}
             >
               Dashboard
@@ -102,34 +102,34 @@ export default function UserMenu(): JSX.Element | null {
           {ticketAccess.data?.canHandle && (
             <Link
               href="/dashboard/tickets"
-              className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+              className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-foreground hover:bg-muted"
               onClick={menu.close}
             >
               Demandes reçues
               {ticketAccess.data.open > 0 && (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
                   {ticketAccess.data.open}
                 </span>
               )}
             </Link>
           )}
-          <div className="px-4 py-2 hover:bg-gray-100">
+          <div className="px-4 py-2 hover:bg-muted">
             <DocumentsNavLink
               href="/documents"
               label="Mes documents"
               withTooltip={false}
-              className="text-sm text-gray-700"
+              className="text-sm text-foreground"
             />
           </div>
           <Link
             href="/profil/ou-j-apparais"
-            className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+            className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted"
             onClick={menu.close}
           >
             Où j&apos;apparais
           </Link>
           <button
-            className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
+            className="block w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
             onClick={handleLogout}
           >
             Déconnexion

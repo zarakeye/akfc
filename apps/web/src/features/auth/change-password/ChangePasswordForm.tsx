@@ -66,12 +66,12 @@ export default function ChangePasswordForm(): JSX.Element {
       className="max-w-xl space-y-4"
     >
       {okMsg && (
-        <div className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+        <div className="rounded border border-success/40 bg-success-muted p-3 text-sm text-success">
           {okMsg}
         </div>
       )}
       {errMsg && (
-        <div className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded border border-destructive/40 bg-destructive-muted p-3 text-sm text-destructive">
           {errMsg}
         </div>
       )}
@@ -100,7 +100,7 @@ export default function ChangePasswordForm(): JSX.Element {
       <button
         type="submit"
         disabled={isPending}
-        className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
       >
         {isPending ? "Modification…" : "Changer le mot de passe"}
       </button>

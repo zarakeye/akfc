@@ -319,7 +319,7 @@ function BarMenu({
   const { open, rootProps, buttonProps, menuProps } = useDisclosure();
   return (
     <div {...rootProps} className={`relative flex items-center whitespace-nowrap 2xl:text-[20px] ${NAV_GLOW}`}>
-      <button {...buttonProps} className="flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400">
+      <button {...buttonProps} className="flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
         <span className={`whitespace-nowrap text-lg font-bold ${active ? NAV_ACTIVE : ""}`}>{entry.label}</span>
         <Image
           src="/chevron-white.svg"
@@ -332,7 +332,7 @@ function BarMenu({
       </button>
       <div
         {...menuProps}
-        className={`${open ? "block" : "hidden"} absolute left-1/2 top-full z-20 w-44 -translate-x-1/2 transform rounded border-4 bg-gray-300 opacity-90 shadow-md transition-opacity duration-300 hover:opacity-100`}
+        className={`${open ? "block" : "hidden"} absolute left-1/2 top-full z-20 w-44 -translate-x-1/2 transform rounded border-4 bg-secondary opacity-90 shadow-md transition-opacity duration-300 hover:opacity-100`}
       >
         {entry.children.map((child) => (
           <Link

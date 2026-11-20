@@ -156,14 +156,14 @@ export function GalleryGroupedView({
 
   if (groups.length === 0) {
     return (
-      <p className="text-gray-500">Aucune galerie ne correspond à ce filtre.</p>
+      <p className="text-muted-foreground">Aucune galerie ne correspond à ce filtre.</p>
     );
   }
 
   const renderGallery = (g: GroupedGallery): JSX.Element => {
     const open = !closedGallery.has(g.id);
     return (
-      <div key={g.id} className="border-l-2 border-gray-100 pl-3">
+      <div key={g.id} className="border-l-2 border-border pl-3">
         <button
           type="button"
           onClick={() => toggle(closedGallery, setClosedGallery, g.id)}
@@ -174,11 +174,11 @@ export function GalleryGroupedView({
               open ? "rotate-90" : ""
             }`}
           />
-          <span className="font-medium text-gray-800">{g.title}</span>
+          <span className="font-medium text-foreground">{g.title}</span>
           {g.visibility === "MEMBERS" && (
             <Lock className="h-3.5 w-3.5 text-amber-500" />
           )}
-          <span className="ml-auto text-xs text-gray-400">
+          <span className="ml-auto text-xs text-muted-foreground">
             {g.items.length} média{g.items.length > 1 ? "s" : ""}
           </span>
         </button>
@@ -211,7 +211,7 @@ export function GalleryGroupedView({
                   discOpen ? "rotate-90" : ""
                 }`}
               />
-              <span className="text-lg font-semibold text-gray-900">
+              <span className="text-lg font-semibold text-foreground">
                 {disc.label}
               </span>
             </button>
@@ -238,10 +238,10 @@ export function GalleryGroupedView({
                                 catOpen ? "rotate-90" : ""
                               }`}
                             />
-                            <span className="font-semibold uppercase tracking-wide text-gray-600 text-sm">
+                            <span className="font-semibold uppercase tracking-wide text-muted-foreground text-sm">
                               {cat.label}
                             </span>
-                            <span className="ml-auto text-xs text-gray-400">
+                            <span className="ml-auto text-xs text-muted-foreground">
                               {cat.galleries.length}
                             </span>
                           </button>

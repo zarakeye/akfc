@@ -502,7 +502,7 @@ export default function HomeCarousel(): JSX.Element | null {
                 aria-current={i === activeIndex}
                 className={`h-2.5 w-2.5 rounded-full transition-colors ${
                   i === activeIndex
-                    ? "bg-emerald-500"
+                    ? "bg-brand"
                     : "bg-gray-800 hover:bg-gray-600 dark:bg-gray-300 dark:hover:bg-gray-100"
                 }`}
               />
@@ -519,8 +519,8 @@ export default function HomeCarousel(): JSX.Element | null {
                 aria-pressed={autoMode === "continu"}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${
                   autoMode === "continu"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-white/70 text-gray-700 hover:bg-white dark:bg-white/10"
+                    ? "bg-brand text-brand-foreground"
+                    : "bg-white/70 text-foreground hover:bg-card dark:bg-white/10"
                 }`}
               >
                 <InfinityIcon className="h-4 w-4" /> Continu
@@ -532,8 +532,8 @@ export default function HomeCarousel(): JSX.Element | null {
                 aria-pressed={autoMode === "diapo"}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${
                   autoMode === "diapo"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-white/70 text-gray-700 hover:bg-white dark:bg-white/10"
+                    ? "bg-brand text-brand-foreground"
+                    : "bg-white/70 text-foreground hover:bg-card dark:bg-white/10"
                 }`}
               >
                 <GalleryHorizontalEnd className="h-4 w-4" /> Diapo
@@ -544,7 +544,7 @@ export default function HomeCarousel(): JSX.Element | null {
               type="button"
               onClick={() => setPlayChoice(!playing)}
               aria-label={playing ? "Mettre en pause" : "Reprendre le défilement"}
-              className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-sm text-gray-700 backdrop-blur transition-colors hover:bg-white dark:border-white/20 dark:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-sm text-foreground backdrop-blur transition-colors hover:bg-card dark:border-white/20 dark:bg-white/10"
             >
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               {playing ? "Pause" : "Lecture"}

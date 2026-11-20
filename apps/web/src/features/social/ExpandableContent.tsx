@@ -89,7 +89,7 @@ export function ExpandableContent({
         <button
           type="button"
           onClick={toggle}
-          className="mt-1 text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700"
+          className="mt-1 text-sm font-medium text-success transition-colors hover:text-success"
         >
           {expanded ? collapseLabel : expandLabel}
         </button>

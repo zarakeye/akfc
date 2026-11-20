@@ -24,10 +24,10 @@ export default function MyImageConsentPage(): JSX.Element {
       </div>
       <MyImageConsent />
       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium">
-        <Link href="/profil/ou-j-apparais" className="text-emerald-700 hover:underline">
+        <Link href="/profil/ou-j-apparais" className="text-success hover:underline">
           Où j&apos;apparais : les photos et vidéos où le club m&apos;a identifié(e) →
         </Link>
-        <Link href="/profil" className="text-emerald-700 hover:underline">
+        <Link href="/profil" className="text-success hover:underline">
           Retour au profil
         </Link>
       </div>

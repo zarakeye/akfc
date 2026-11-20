@@ -36,12 +36,12 @@ export const PasswordField = forwardRef<HTMLInputElement, Props>(
             onClick={() => setShow((s) => !s)}
             aria-label={show ? "Masquer le mot de passe" : "Afficher le mot de passe"}
             aria-pressed={show}
-            className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 transition-colors hover:text-gray-700"
+            className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground transition-colors hover:text-foreground"
           >
             {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        {error && <span className="text-xs text-red-600">{error}</span>}
+        {error && <span className="text-xs text-destructive">{error}</span>}
       </label>
     );
   },

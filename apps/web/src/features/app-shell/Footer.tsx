@@ -147,7 +147,7 @@ export default async function Footer(): Promise<JSX.Element> {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="rounded-md border border-white/20 p-2 text-white/80 transition-colors hover:border-emerald-500 hover:text-emerald-400"
+                    className="rounded-md border border-white/20 p-2 text-white/80 transition-colors hover:border-brand hover:text-emerald-400"
                   >
                     <Icon className="h-4 w-4" />
                   </a>

@@ -213,7 +213,7 @@ export default async function HomePage(): Promise<JSX.Element> {
         <h1 className="mb-4 text-4xl font-bold">
           {homeHero?.title ?? "Bienvenue à l'AKFC"}
         </h1>
-        <p className="mb-8 whitespace-pre-line text-lg text-gray-600">
+        <p className="mb-8 whitespace-pre-line text-lg text-muted-foreground">
           {homeHero?.body ??
             "Un club dédié à la pratique et à la transmission des arts martiaux et de leur culture, pour tous les âges et tous les niveaux. Découvrez nos disciplines, nos stages et la vie du club."}
         </p>
@@ -228,7 +228,7 @@ export default async function HomePage(): Promise<JSX.Element> {
         <div className="flex flex-wrap justify-center gap-4">
           <Link
             href="/contacts"
-            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-5 py-3 font-medium text-white transition-colors hover:bg-emerald-700"
+            className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-3 font-medium text-brand-foreground transition-colors hover:bg-brand/90"
           >
             Nous contacter
             <ArrowRight className="h-4 w-4" />
@@ -269,21 +269,21 @@ export default async function HomePage(): Promise<JSX.Element> {
         <h2 className="mb-3 text-2xl font-bold">
           Envie de nous rejoindre&nbsp;?
         </h2>
-        <p className="mb-6 text-gray-600">
+        <p className="mb-6 text-muted-foreground">
           Les cours ont lieu à la MJC de Chambéry, où se font l&apos;inscription
           et le paiement. Une question&nbsp;? On y répond volontiers.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link
             href="/inscription"
-            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-5 py-3 font-medium text-white transition-colors hover:bg-emerald-700"
+            className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-3 font-medium text-brand-foreground transition-colors hover:bg-brand/90"
           >
             Comment s&apos;inscrire
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             href="/contacts"
-            className="inline-flex items-center gap-2 rounded-md border border-emerald-600 px-5 py-3 font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
+            className="inline-flex items-center gap-2 rounded-md border border-brand px-5 py-3 font-medium text-success transition-colors hover:bg-success-muted"
           >
             Nous contacter
           </Link>

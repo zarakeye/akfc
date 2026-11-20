@@ -87,7 +87,7 @@ function MemberDepositBar(): JSX.Element | null {
         type="button"
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
       >
         {uploading ? "Dépôt en cours…" : `Déposer dans « ${space.name} »`}
       </button>
@@ -99,22 +99,22 @@ function MemberDepositBar(): JSX.Element | null {
         onChange={onFileChosen}
       />
       {uploadError && (
-        <span className="text-sm text-red-600">{uploadError}</span>
+        <span className="text-sm text-destructive">{uploadError}</span>
       )}
       {toReplace && (
-        <span className="flex flex-wrap items-center gap-2 text-sm text-gray-700" role="alert">
+        <span className="flex flex-wrap items-center gap-2 text-sm text-foreground" role="alert">
           « {toReplace.name} » existe déjà. Le remplacer ? L&apos;actuel restera dans ses versions.
           <button
             type="button"
             onClick={() => void send(toReplace, true)}
-            className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700"
+            className="rounded-md bg-brand px-2 py-1 text-xs font-medium text-brand-foreground hover:bg-brand/90"
           >
             Remplacer
           </button>
           <button
             type="button"
             onClick={() => setToReplace(null)}
-            className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium hover:bg-gray-50"
+            className="rounded-md border border-border px-2 py-1 text-xs font-medium hover:bg-muted"
           >
             Annuler
           </button>
