@@ -16,8 +16,8 @@ export function PartnerLogo({
   size?: "md" | "lg";
 }): JSX.Element {
   const box = size === "lg" ? "h-24 w-36" : "h-16 w-28";
-  // Pastille blanche dans les deux thèmes : `bg-[#fff]` et pas bg-white : réorienté vers un fond
-  // sombre en mode sombre par styles/dark-legacy.css, il rendrait les logos (texte sombre) illisibles.
+  // Pastille blanche dans les deux thèmes (`bg-[#fff]`, valeur fixe) : un logo de partenaire est
+  // dessiné pour un fond blanc, un fond de thème sombre le rendrait illisible.
   const inner = (
     <span className={`flex ${box} items-center justify-center rounded-md bg-[#fff] p-2 shadow-sm ring-1 ring-black/5`}>
       {logoUrl ? (

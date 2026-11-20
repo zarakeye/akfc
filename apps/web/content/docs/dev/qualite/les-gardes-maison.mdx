@@ -1,6 +1,6 @@
 ---
 title: "Les gardes maison"
-description: "Cinq scripts courts que lance pnpm check, chacun pour une erreur que ni TypeScript ni ESLint ne peuvent voir : un fichier de Next posé où Next ne le lit pas, un tutoriel qui vise un élément disparu, une carte des procédures périmée, une documentation qui cite ce qui n’existe plus, un extrait de code qui montre les mauvaises lignes. Comment chacun travaille, et comment en écrire un sixième."
+description: "Les scripts courts que lance pnpm check, chacun pour une erreur que ni TypeScript ni ESLint ne peuvent voir : un fichier de Next posé où Next ne le lit pas, un tutoriel qui vise un élément disparu, une carte des procédures périmée, une documentation qui cite ce qui n’existe plus, un extrait de code qui montre les mauvaises lignes, une couleur qui ne suit pas le mode sombre. Comment chacun travaille, et comment en écrire un de plus."
 section: "Qualité (2) : gardes maison et tests de bout en bout"
 order: 1
 ---
@@ -12,7 +12,7 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 Certaines erreurs n’appartiennent qu’à ce projet. Elles ont un point commun : **rien ne les signale**. Le code compile, le lint ne dit rien, la page s’affiche — et pourtant quelque chose ne fonctionne plus, ou la documentation ment. Pour chacune, le projet a écrit une garde : un script de quelques dizaines de lignes, lancé au début de `pnpm check`, qui cherche cette erreur-là et l’explique en français quand il la trouve.
 
-<DocsTable columnsJson='["Garde", "Erreur silencieuse qu’elle cherche"]' rowsJson='[["check-next-conventions.mjs", "Un fichier de convention de Next (proxy, instrumentation) posé là où Next ne le lit pas : il est ignoré sans avertissement."], ["check-tour-targets.mjs", "Une étape de tutoriel interactif qui vise un élément renommé ou supprimé, un tuto absent du registre, un bouton de fiche ou un parcours qui désigne un tuto inconnu, un tuto sans fiche : le tutoriel se bloque, ou n’apparaît pas."], ["build-procedure-map.mjs", "Une carte des procédures qui ne correspond plus au backend : les parcours de la doc décrivent un code disparu."], ["check-doc-entities.mjs", "Une doc qui cite une entité, une propriété, une procédure ou une section qui n’existe plus."], ["check-doc-snippets.mjs", "Un extrait de code de la documentation dont l’ancre a disparu ou est devenue ambiguë : il montrerait le code d’à côté."], ["check-doc-components.mjs", "Une promesse vers un chapitre ou une section qui n’existe plus, un encadré d’un type inconnu, un terme du glossaire sans définition ou revendiqué deux fois."], ["check-doc-mdx.mjs", "Une page de la doc qui ne se compile plus (balise mal fermée, accolade de trop) : elle ne casse ni le typecheck ni le lint, et ne se voit qu’à son ouverture, en erreur 500."], ["check-doc-installs.mjs", "Une dépendance déclarée dans un package.json sans sa commande d’installation dans la doc, ou installée deux fois ; une installation qui ne correspond à aucune déclaration."], ["check-next-unique.mjs", "Deux copies de Next.js dans le lockfile : le backend lirait la requête dans une autre copie que celle du serveur, et n’y trouverait ni cookies ni session."]]' />
+<DocsTable columnsJson='["Garde", "Erreur silencieuse qu’elle cherche"]' rowsJson='[["check-next-conventions.mjs", "Un fichier de convention de Next (proxy, instrumentation) posé là où Next ne le lit pas : il est ignoré sans avertissement."], ["check-tour-targets.mjs", "Une étape de tutoriel interactif qui vise un élément renommé ou supprimé, un tuto absent du registre, un bouton de fiche ou un parcours qui désigne un tuto inconnu, un tuto sans fiche : le tutoriel se bloque, ou n’apparaît pas."], ["build-procedure-map.mjs", "Une carte des procédures qui ne correspond plus au backend : les parcours de la doc décrivent un code disparu."], ["check-doc-entities.mjs", "Une doc qui cite une entité, une propriété, une procédure ou une section qui n’existe plus."], ["check-doc-snippets.mjs", "Un extrait de code de la documentation dont l’ancre a disparu ou est devenue ambiguë : il montrerait le code d’à côté."], ["check-doc-components.mjs", "Une promesse vers un chapitre ou une section qui n’existe plus, un encadré d’un type inconnu, un terme du glossaire sans définition ou revendiqué deux fois."], ["check-doc-mdx.mjs", "Une page de la doc qui ne se compile plus (balise mal fermée, accolade de trop) : elle ne casse ni le typecheck ni le lint, et ne se voit qu’à son ouverture, en erreur 500."], ["check-theme-colors.mjs", "Une couleur écrite en dur (bg-white, text-gray-600) : correcte en clair, elle reste claire sur le fond sombre, et seul un œil en mode sombre la verrait."], ["check-doc-installs.mjs", "Une dépendance déclarée dans un package.json sans sa commande d’installation dans la doc, ou installée deux fois ; une installation qui ne correspond à aucune déclaration."], ["check-next-unique.mjs", "Deux copies de Next.js dans le lockfile : le backend lirait la requête dans une autre copie que celle du serveur, et n’y trouverait ni cookies ni session."]]' />
 
 ## Les fichiers que Next lit en silence 🧭
 
@@ -164,6 +164,23 @@ pnpm n'installe pas toujours un paquet une seule fois. Quand un paquet a des **d
 Deux paquets du dépôt importent `next` : `@akfc/web`, évidemment, et `@akfc/backend`, qui lit les cookies et les en-têtes par `next/headers`. S'ils ne voient pas les mêmes pairs, chacun reçoit **sa** copie. Tout compile. Mais `next/headers` lit la requête en cours dans un stockage propre à **sa** copie de Next : le backend, lancé par la copie du site, interroge l'autre, vide, et la session disparaît.
 
 C'est arrivé lors de la mise à jour vers Next 16.4 : `@akfc/web` ne déclarait pas `@types/node`, pnpm lui en a choisi une version récente, différente de celle de la racine, et le lockfile a eu deux copies de `next`. Le correctif tient en une ligne : `@akfc/web` déclare le même `@types/node` que la racine. La garde `check-next-unique.mjs` compte les copies de `next` dans la partie `snapshots:` du lockfile, et échoue s'il y en a plus d'une.
+
+## Les couleurs qui suivent le thème
+
+Le mode sombre repose sur les rôles de couleur du thème : un composant écrit `bg-card` ou `text-muted-foreground`, et la valeur bascule sous `.dark`. Une seule classe écrite en dur, `bg-white` par exemple, suffit à faire une carte blanche sur fond sombre — et rien ne la signale, ni le typecheck, ni le lint, ni un test qui tourne en thème clair.
+
+`check-theme-colors.mjs` lit chaque fichier de `apps/web/src` ligne à ligne et repère les classes de la palette Tailwind (`bg-`, `text-`, `border-`, `ring-`… suivis d’une couleur). Il laisse passer le blanc et le noir translucides (`bg-black/50`, des voiles sur une image) et les valeurs arbitraires (`bg-[#fff]`, une couleur fixe voulue). Le reste doit venir d’un fichier de sa liste d’exceptions, chacun avec sa raison écrite. Et la liste ne vieillit pas en silence : une exception qui n’a plus de couleur fixe est signalée à son tour.
+
+<CodeExample
+  language="javascript"
+  filepath="scripts/check-theme-colors.mjs"
+  filename="check-theme-colors.mjs"
+  snippetStart="const problems = [];"
+  snippetLines="21"
+  snippetHighlight="11,13"
+  snippetTitle="Translucide permis, exception justifiée, sinon refus"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 ## Écrire une garde
 

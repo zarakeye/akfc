@@ -134,34 +134,69 @@ Le composant `ThemeToggle` ne garde pas l'état du thème dans un `useState`. Il
 
 `<html>` reste ainsi la seule source de vérité. Le header et la documentation affichent chacun un interrupteur, et les deux restent d'accord sans état partagé à synchroniser. Le troisième argument est la valeur utilisée pendant l'hydratation : React rend d'abord l'icône du thème clair, puis relit `<html>` et corrige l'icône au premier rendu client, sans erreur d'hydratation.
 
-## Les couleurs codées en dur
+## Les couleurs d'état et de marque
 
-Les composants les plus anciens fixent encore leurs couleurs : `bg-white`, `text-gray-700`, `border-gray-200`. Le dépôt en compte plusieurs centaines, à peu près autant que de classes de thème. En mode sombre, elles donneraient une carte blanche sur fond sombre, ou un texte gris foncé sur ce même fond.
+Les rôles hérités du modèle de départ ne disent pas tout. Rien n'y signifie qu'une action a réussi, qu'il faut faire attention, ou qu'une information est à lire ; rien non plus ne désigne l'émeraude du club, la couleur des boutons d'action. Sans rôle, ces couleurs s'écriraient telles quelles (`text-emerald-700`, `bg-amber-50`), et resteraient claires sur le fond sombre. Le thème leur donne donc des rôles à elles :
 
-Plutôt que de modifier tous ces composants d'un coup, un fichier les réoriente vers les variables du thème, **en mode sombre seulement** :
+- `brand` → l'émeraude du club, pour les boutons d'action principaux (`bg-brand text-brand-foreground`) ;
+- `success` → ce qui a réussi (« Enregistré. ») ;
+- `warning` → ce qui demande de l'attention ;
+- `info` → ce qui renseigne ;
+- `destructive` → l'erreur et la suppression, qui existait déjà.
+
+Chaque rôle d'état existe en deux tons : le rôle seul pour le texte ou la bordure (`text-warning`, `border-warning/40`), et sa version `-muted` pour le fond d'un encadré (`bg-warning-muted`). En clair, un texte soutenu sur un fond pastel ; en sombre, un texte clair sur un fond sourd.
 
 <CodeExample
   language="css"
-  filepath="apps/web/src/styles/dark-legacy.css"
-  filename="dark-legacy.css"
-  snippetStart="/* Fonds clairs → surfaces du thème */"
-  snippetLines="22"
-  snippetHighlight="2,11"
-  snippetTitle="Les couleurs en dur, réorientées en mode sombre"
+  filepath="apps/web/src/app/globals.css"
+  filename="globals.css"
+  snippetStart="/* L'émeraude du club"
+  snippetLines="10"
+  snippetHighlight="2,5,6"
+  snippetTitle="Les rôles d'état et de marque, thème clair"
   fullFileTitle="Voir le fichier complet"
 />
 
-Ce fichier est importé par le layout racine **hors de toute couche** (`@layer`). C'est ce qui lui donne la priorité : Tailwind range ses utilitaires dans `@layer utilities`, et une règle sans couche l'emporte sur toute règle en couche, quelle que soit sa spécificité. Aucun `!important` n'est nécessaire.
+## Les couleurs fixes, et la garde qui les surveille
 
-Le même fichier traite la classe `prose`. Le plugin de typographie fixe ses couleurs pour un fond clair. En mode sombre, ses variables `--tw-prose-*` sont remplacées par les valeurs « inversées » que le plugin fournit, avec le corps du texte sur `--foreground`.
+Une couleur Tailwind écrite en dur (`bg-white`, `text-gray-600`) ne suit pas le thème : en mode sombre, elle donne une carte blanche sur fond sombre, ou un texte gris foncé sur ce même fond. Le code n'en contient donc plus, et une garde de `pnpm check`, `scripts/check-theme-colors.mjs`, refuse toute nouvelle couleur de ce genre dans `apps/web/src`.
+
+Deux écritures restent permises partout, parce qu'elles disent exactement ce qu'elles veulent :
+
+- le blanc et le noir **translucides** (`bg-black/50`, `text-white/70`) : un voile posé sur une photo ou une vidéo, pas sur la page ;
+- une **valeur arbitraire** (`bg-[#fff]`) : une couleur qui ne doit pas suivre le thème. La pastille blanche des logos de partenaires en est l'exemple : un logo est dessiné pour un fond blanc, en clair comme en sombre.
+
+Le reste passe par une **liste d'exceptions**, un fichier par ligne avec sa raison : l'en-tête et le pied de page, noirs dans les deux thèmes ; la barre latérale du centre de contrôle ; la caméra, dont le flash blanc éclaire réellement le visage ; les badges de statut ; les encadrés et les blocs de code de la doc, qui ont leur propre palette. Une exception qui n'a plus de couleur fixe doit sortir de la liste, et la garde le signale aussi.
+
+<CodeExample
+  language="javascript"
+  filepath="scripts/check-theme-colors.mjs"
+  filename="check-theme-colors.mjs"
+  snippetStart="const EXCEPTIONS = {"
+  snippetLines="10"
+  snippetHighlight="3"
+  snippetTitle="Une exception, c'est un fichier et une raison"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Les tableaux de l'administration viennent d'une bibliothèque, `react-ts-tab-lib`, qui a ses propres couleurs par défaut, pensées pour un fond sombre fixe (en-tête gris foncé, texte blanc, champ de recherche blanc). Tailwind ne lit pas `node_modules` : une partie de ces classes n'est même pas générée. Chaque tableau reçoit donc un habillage commun, écrit dans notre code et sur les rôles du thème.
+
+<CodeExample
+  language="typescript"
+  filepath="apps/web/src/components/ui/tableStyles.ts"
+  filename="tableStyles.ts"
+  snippetStart="export const TABLE_STYLES"
+  snippetLines="12"
+  snippetHighlight="5,6"
+  snippetTitle="Les tableaux de la bibliothèque, sur les rôles du thème"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le mode sombre garde une feuille à lui, `styles/dark.css`, pour ce qui ne passe pas par un rôle : la déclaration `color-scheme: dark` (barres de défilement et champs natifs du navigateur), et la classe `prose`. Le plugin de typographie fixe ses couleurs pour un fond clair ; en mode sombre, ses variables `--tw-prose-*` sont remplacées par les valeurs « inversées » qu'il fournit, avec le corps du texte sur `--foreground`.
 
 <Callout type="tip">
-La règle pour le code neuf : les **rôles du thème** pour les surfaces, les textes et les bordures (`bg-card`, `text-muted-foreground`, `border-border`). La variante `dark:` est réservée aux exceptions, comme les chevrons du carrousel posés sur une photo. Chaque composant qui passe aux rôles du thème rend une règle de `dark-legacy.css` inutile.
+La règle pour le code neuf : un **rôle du thème** pour chaque couleur (`bg-card`, `text-muted-foreground`, `border-border`, `bg-brand`, `text-success`). La variante `dark:` n'a plus de raison d'être dans un composant qui suit le thème ; elle reste réservée aux exceptions.
 </Callout>
-
-### Les couleurs d'état
-
-Le thème n'a pas de rôle pour dire qu'une action a réussi, qu'il faut faire attention, ou qu'une erreur est survenue. Ces couleurs-là sont écrites telles quelles : le vert (`text-emerald-700`, `bg-emerald-50`), l'orange (`bg-amber-50`, `text-amber-900`), le rouge (`text-red-600`). Elles vont **par paires** (un fond clair et un texte foncé de la même teinte), ce qui les garde lisibles dans les deux thèmes ; certaines ajoutent une variante `dark:` (`dark:text-emerald-400`). `dark-legacy.css` ne les touche pas : en mode sombre, un encadré d'alerte reste clair sur le fond sombre. C'est voulu pour l'instant, et c'est la limite de l'approche : donner au thème des rôles d'état (succès, alerte, erreur) les ferait basculer comme le reste.
 
 ## Le rendu des pages : les variables `--akfc-*`
 
@@ -317,7 +352,7 @@ Trois niveaux, une seule priorité : les valeurs de repli de `globals.css` (`:ro
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où se configure Tailwind ?","Dans globals.css : @import, @plugin, @custom-variant, @theme. Aucun fichier de configuration JavaScript."],["Comment une couleur suit-elle le thème ?","Elle est désignée par son rôle (bg-card, text-foreground) ; le rôle est une variable redéfinie sous .dark."],["Et les couleurs d’état (succès, alerte, erreur) ?","Écrites telles quelles, par paires lisibles dans les deux thèmes ; le thème n’a pas encore de rôle pour elles."],["Où vit le choix du visiteur ?","Dans un cookie lu par le layout racine : la classe dark est posée dès le HTML serveur."],["Et les couleurs codées en dur ?","dark-legacy.css les réoriente vers les variables du thème, en mode sombre, hors couche CSS. Le code neuf utilise les rôles du thème."],["Qu’est-ce qui règle la typographie des pages ?","Les variables --akfc-*, déclarées sur :root ; leurs compositions sur la classe qui les utilise."],["Comment un administrateur règle-t-il le style ?","Au laboratoire de rendu : aperçu en style inline, enregistrement dans SiteStyle (procédure réservée aux administrateurs, noms et valeurs filtrés), injection par le layout en html:root."]]' />
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où se configure Tailwind ?","Dans globals.css : @import, @plugin, @custom-variant, @theme. Aucun fichier de configuration JavaScript."],["Comment une couleur suit-elle le thème ?","Elle est désignée par son rôle (bg-card, text-foreground) ; le rôle est une variable redéfinie sous .dark."],["Et les couleurs d’état (succès, alerte, information) ?","Des rôles à elles (success, warning, info, chacun avec sa version -muted pour les fonds), plus brand pour l’émeraude des boutons d’action."],["Où vit le choix du visiteur ?","Dans un cookie lu par le layout racine : la classe dark est posée dès le HTML serveur."],["Et les couleurs codées en dur ?","Refusées par check-theme-colors.mjs, sauf voiles translucides, valeurs arbitraires (bg-[#fff]) et exceptions justifiées fichier par fichier."],["Qu’est-ce qui règle la typographie des pages ?","Les variables --akfc-*, déclarées sur :root ; leurs compositions sur la classe qui les utilise."],["Comment un administrateur règle-t-il le style ?","Au laboratoire de rendu : aperçu en style inline, enregistrement dans SiteStyle (procédure réservée aux administrateurs, noms et valeurs filtrés), injection par le layout en html:root."]]' />
 
 ## À suivre
 

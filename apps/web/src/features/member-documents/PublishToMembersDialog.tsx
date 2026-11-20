@@ -149,7 +149,7 @@ export function PublishToMembersDialog({
                       name="audience"
                       checked={audience === "ALL_MEMBERS"}
                       onChange={() => setAudience("ALL_MEMBERS")}
-                      className="accent-emerald-600"
+                      className="accent-brand"
                     />
                     Tous les membres
                   </label>
@@ -159,7 +159,7 @@ export function PublishToMembersDialog({
                       name="audience"
                       checked={audience === "SPECIFIC"}
                       onChange={() => setAudience("SPECIFIC")}
-                      className="accent-emerald-600"
+                      className="accent-brand"
                     />
                     Des membres précis
                   </label>
@@ -191,7 +191,7 @@ export function PublishToMembersDialog({
                               type="checkbox"
                               checked={groupIds.includes(g.id)}
                               onChange={() => toggleGroup(g.id)}
-                              className="accent-emerald-600"
+                              className="accent-brand"
                             />
                             {g.name}
                           </label>
@@ -222,7 +222,7 @@ export function PublishToMembersDialog({
                               type="checkbox"
                               checked={recipientIds.includes(m.id)}
                               onChange={() => toggleRecipient(m.id)}
-                              className="accent-emerald-600"
+                              className="accent-brand"
                             />
                             {m.name}
                           </label>

@@ -337,7 +337,7 @@ export default function DocsSearch({
                       }`}
                     >
                       <div
-                        className="text-sm font-medium [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-0.5 dark:[&_mark]:bg-yellow-500/30"
+                        className="text-sm font-medium [&_mark]:rounded [&_mark]:bg-warning/25 [&_mark]:px-0.5"
                         dangerouslySetInnerHTML={{
                           __html: highlightTitle(result.title, query),
                         }}
@@ -349,7 +349,7 @@ export default function DocsSearch({
 
                       {snippet ? (
                         <p
-                          className="mt-1 text-sm text-muted-foreground [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-0.5 [&_mark]:text-foreground dark:[&_mark]:bg-yellow-500/30"
+                          className="mt-1 text-sm text-muted-foreground [&_mark]:rounded [&_mark]:bg-warning/25 [&_mark]:px-0.5 [&_mark]:text-foreground"
                           dangerouslySetInnerHTML={{
                             __html: highlightedSnippet,
                           }}

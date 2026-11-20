@@ -1,6 +1,7 @@
 'use client';
 
 import { Table, type Column } from 'react-ts-tab-lib';
+import { TABLE_STYLES } from "#components/ui/tableStyles.ts";
 
 interface DocsTableProps {
   /**
@@ -66,7 +67,7 @@ export default function DocsTable({
 
   if (columnsError || rowsError || !parsedColumns || !parsedRows) {
     return (
-      <div className="my-6 rounded-md border border-destructive/40 bg-destructive/40 p-4 text-sm text-red-200">
+      <div className="my-6 rounded-md border border-destructive/40 bg-destructive-muted p-4 text-sm text-destructive">
         <p className="font-semibold">DocsTable: invalid input</p>
         {columnsError ? (
           <p className="mt-2 opacity-80">{columnsError}</p>
@@ -114,7 +115,7 @@ export default function DocsTable({
           defaultOrder={{ property: "__order", order: "asc" }}
           // Une table de doc s'affiche en entier : pas de pagination au-delà de 10 lignes.
           rangeLengthOptions={[Math.max(10, rows.length)]}
-          styleClassNames={{ cells: "whitespace-normal align-top pr-4" }}
+          styleClassNames={{ ...TABLE_STYLES, cells: "whitespace-normal align-top pr-4" }}
         />
       </div>
     </div>

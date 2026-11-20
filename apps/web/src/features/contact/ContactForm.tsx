@@ -136,7 +136,7 @@ export function ContactForm(): JSX.Element | null {
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {categories.map((c) => (
               <label key={c.key} className="inline-flex items-center gap-2">
-                <input type="radio" value={c.key} className="accent-emerald-600" {...register("categoryKey")} />
+                <input type="radio" value={c.key} className="accent-brand" {...register("categoryKey")} />
                 {c.label}
               </label>
             ))}

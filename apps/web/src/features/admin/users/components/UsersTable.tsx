@@ -3,6 +3,7 @@
 import { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Table, type Column } from "react-ts-tab-lib";
+import { TABLE_STYLES } from "#components/ui/tableStyles.ts";
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { DemoAccountsToggle, DemoBadge } from "#features/admin/common/DemoAccounts.tsx";
 import {
@@ -160,6 +161,7 @@ export default function UsersTable(): JSX.Element {
       />
       <DemoAccountsToggle count={demoCount} shown={showDemo} onToggle={() => setShowDemo((v) => !v)} />
       <Table
+        styleClassNames={TABLE_STYLES}
         columns={columns}
         rows={rows}
         onRowClick={(row: UserRow | null) => {

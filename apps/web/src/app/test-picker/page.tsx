@@ -11,7 +11,7 @@ export default function TestPickerPage() {
     <div className="p-6">
       <button
         onClick={() => setOpen(true)}
-        className="px-4 py-2 bg-black text-white rounded"
+        className="px-4 py-2 bg-primary text-primary-foreground rounded"
       >
         Ouvrir Media Picker
       </button>

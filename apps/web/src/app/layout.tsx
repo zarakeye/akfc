@@ -4,7 +4,7 @@ import { SITE_URL } from "#config/siteUrl.ts";
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css";
 import "#styles/tiptap-variables.css";
-import "#styles/dark-legacy.css";
+import "#styles/dark.css";
 import { cookies } from "next/headers";
 import { THEME_COOKIE } from "#features/theme/theme.ts";
 import { prisma } from "@akfc/backend/prisma.ts"

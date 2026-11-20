@@ -97,7 +97,7 @@ export function ResetPasswordForm({ token, isWelcome }: { token: string; isWelco
 
         <button
           type="submit"
-          className="rounded bg-black text-white px-4 py-2 disabled:opacity-50"
+          className="rounded bg-primary text-primary-foreground px-4 py-2 disabled:opacity-50"
           disabled={disabled}
         >
           {isPending ? "Validation..." : isWelcome ? "Enregistrer mon mot de passe" : "Réinitialiser"}

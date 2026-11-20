@@ -21,7 +21,7 @@ export const USAGE_SHORT_LABEL: Record<ImageUsageValue, string> = {
 const TONE: Record<UsageVerdict, { cls: string; sign: string }> = {
   OK: { cls: "bg-success-muted text-success ring-ring", sign: "✓" },
   REFUSED: { cls: "bg-destructive-muted text-destructive ring-destructive", sign: "✕" },
-  MISSING: { cls: "bg-warning-muted text-warning ring-amber-300", sign: "?" },
+  MISSING: { cls: "bg-warning-muted text-warning ring-warning/40", sign: "?" },
   UNTAGGED: { cls: "bg-muted text-muted-foreground ring-ring", sign: "–" },
 };
 

@@ -52,7 +52,7 @@ export function ArchitectureDiagram(props: ArchitectureDiagramProps) {
 
   if (!steps.length) {
     return (
-      <div className="my-6 rounded-2xl border border-warning/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+      <div className="my-6 rounded-2xl border border-warning/30 bg-warning-muted p-4 text-sm text-warning">
         No diagram steps provided.
       </div>
     )

@@ -28,8 +28,7 @@ export function Promesse({ vers, section, children }: PromesseProps) {
   const target = space ? getNumberedDoc(generateDocsIndex(space.id).pages, slug) : null
 
   return (
-    // Mode sombre : bg-slate-50 est réorienté vers le thème (styles/dark-legacy.css, hors couche,
-    // il l'emporte sur dark:bg-…). Le texte suit donc le thème lui aussi, sans couleur forcée.
+    // Fond et texte suivent les rôles du thème : lisibles en clair comme en sombre.
     <aside className="my-6 rounded-lg border border-dashed border-border bg-muted p-4 text-sm leading-7 text-foreground">
       <div className="flex gap-2">
         <span aria-hidden="true" className="select-none text-muted-foreground">↪</span>

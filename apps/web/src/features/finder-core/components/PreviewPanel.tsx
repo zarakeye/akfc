@@ -117,7 +117,7 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
 
   if (!file) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-red-400 gap-3 p-6 text-center">
+      <div className="h-full flex flex-col items-center justify-center text-destructive gap-3 p-6 text-center">
         <FileWarning className="h-10 w-10 opacity-60" aria-hidden />
         <div className="text-sm">Aperçu indisponible</div>
       </div>

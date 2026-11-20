@@ -111,11 +111,11 @@ function ContactSettingsForm(props: {
                 aria-label={`Numéro ${i + 1}`}
               />
               <label className="inline-flex items-center gap-1.5 text-sm">
-                <input type="checkbox" className="accent-emerald-600" checked={p.call} onChange={(e) => setPhone(i, { call: e.target.checked })} />
+                <input type="checkbox" className="accent-brand" checked={p.call} onChange={(e) => setPhone(i, { call: e.target.checked })} />
                 Appel
               </label>
               <label className="inline-flex items-center gap-1.5 text-sm">
-                <input type="checkbox" className="accent-emerald-600" checked={p.whatsapp} onChange={(e) => setPhone(i, { whatsapp: e.target.checked })} />
+                <input type="checkbox" className="accent-brand" checked={p.whatsapp} onChange={(e) => setPhone(i, { whatsapp: e.target.checked })} />
                 WhatsApp
               </label>
               <button

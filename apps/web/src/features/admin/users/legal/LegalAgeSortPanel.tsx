@@ -70,7 +70,7 @@ export function LegalAgeSortPanel({ comptes }: { comptes: Compte[] }): JSX.Eleme
         <button
           type="button"
           onClick={() => setOuvert(true)}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 font-medium text-white hover:bg-amber-700"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-warning px-3 py-1.5 font-medium text-warning-muted hover:bg-warning/90"
         >
           <UserCheck aria-hidden="true" className="h-4 w-4" />
           Trier la majorité

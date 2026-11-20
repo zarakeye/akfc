@@ -50,7 +50,7 @@ function Carte({ service }: { service: Service }) {
   return (
     <li className="rounded-lg border border-border bg-card p-3 text-sm">
       <div className="flex items-center gap-1.5">
-        <Box aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
+        <Box aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-info" />
         <span className="font-mono font-semibold text-foreground">{service.nom}</span>
       </div>
       <p className="mt-1 leading-6 text-foreground">{service.role}</p>

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { Table, type Column } from "react-ts-tab-lib";
+import { TABLE_STYLES } from "#components/ui/tableStyles.ts";
 import { CATEGORY_KEYS, CATEGORY_KEY_LABELS } from "@akfc/contracts/categories/categoryKey.ts";
 import { deleteColumn } from "#features/admin/common/delete/index.ts";
 
@@ -82,6 +83,7 @@ function CategoriesTable(): JSX.Element {
 
   return (
     <Table
+      styleClassNames={TABLE_STYLES}
       columns={columns}
       rows={rows}
       onRowClick={(row: CategoryRow | null) => {

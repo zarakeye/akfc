@@ -3,6 +3,7 @@
 import { JSX } from "react";
 import { useRouter } from "next/navigation";
 import { Table, type Column } from "react-ts-tab-lib";
+import { TABLE_STYLES } from "#components/ui/tableStyles.ts";
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { deleteColumn } from "#features/admin/common/delete/index.ts";
 
@@ -43,6 +44,7 @@ export default function OriginsTable(): JSX.Element {
 
   return (
     <Table
+      styleClassNames={TABLE_STYLES}
       columns={columns}
       rows={rows}
       onRowClick={(row: OriginRow | null) => {

@@ -151,7 +151,7 @@ export function MediaTagsDialog({
                   checked={noRecognizable}
                   disabled={!tags || setNoRecognizable.isPending}
                   onChange={(e) => setNoRecognizable.mutate({ mediaAssetId, value: e.target.checked })}
-                  className="accent-emerald-600"
+                  className="accent-brand"
                 />
                 Aucune personne reconnaissable (salle, matériel, de dos…)
               </label>
@@ -228,7 +228,7 @@ export function MediaTagsDialog({
                       type="checkbox"
                       checked={selected.includes(c.id)}
                       onChange={() => toggle(c.id)}
-                      className="accent-emerald-600"
+                      className="accent-brand"
                     />
                     <span className="min-w-40 flex-1">
                       {c.name}

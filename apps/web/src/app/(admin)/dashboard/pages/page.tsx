@@ -83,7 +83,7 @@ export default function EditorialPagesHub(): JSX.Element {
                     className={
                       "rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 " +
                       (pub
-                        ? "bg-warning-muted text-warning hover:bg-amber-200"
+                        ? "bg-warning-muted text-warning hover:bg-warning/20"
                         : "bg-brand text-brand-foreground hover:bg-brand/90")
                     }
                   >

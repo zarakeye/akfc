@@ -190,9 +190,8 @@ export default function ControlPanelSidebar(): JSX.Element {
                       <li key={item.href}>
                         <div
                           className={`flex items-stretch rounded-r-full rounded-l-full ${
-                            // Couleurs en valeurs fixes (pas bg-white / text-gray-900) : la barre reste
-                            // sombre dans les deux thèmes, l'élément actif doit donc rester blanc sur
-                            // texte foncé, sans être réorienté par styles/dark-legacy.css.
+                            // Couleurs en valeurs fixes, pas les rôles du thème : la barre reste sombre
+                            // dans les deux thèmes, l'élément actif reste donc blanc sur texte foncé.
                             active ? "bg-[#ffffff] text-[#111827]" : ""
                           }`}
                         >

@@ -276,7 +276,7 @@ function PartnerCard({
           </fieldset>
 
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="accent-emerald-600" />
+            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="accent-brand" />
             Affiché sur le site
           </label>
 

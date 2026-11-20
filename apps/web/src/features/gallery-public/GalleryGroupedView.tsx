@@ -176,7 +176,7 @@ export function GalleryGroupedView({
           />
           <span className="font-medium text-foreground">{g.title}</span>
           {g.visibility === "MEMBERS" && (
-            <Lock className="h-3.5 w-3.5 text-amber-500" />
+            <Lock className="h-3.5 w-3.5 text-warning" />
           )}
           <span className="ml-auto text-xs text-muted-foreground">
             {g.items.length} média{g.items.length > 1 ? "s" : ""}
