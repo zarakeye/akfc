@@ -60,11 +60,25 @@ export async function measureLogoLuminance(url: string): Promise<number | null> 
   }
 }
 
-/** Aperçu du logo des réglages, sur un fond choisi d'après la couleur du logo. */
-export function LogoPreview({ src, alt = "Logo du site" }: { src: string; alt?: string }): JSX.Element {
-  const [backdrop, setBackdrop] = useState<LogoBackdrop>("dark");
+/**
+ * Aperçu d'un logo des réglages. Sans `backdrop`, le fond est choisi d'après la couleur du logo
+ * (logo du site). Avec `backdrop="light"`, il est blanc quel que soit le thème : c'est le fond des
+ * logos de partenaires sur le site public (`PartnerLogo`).
+ */
+export function LogoPreview({
+  src,
+  alt = "Logo du site",
+  backdrop: fixedBackdrop,
+}: {
+  src: string;
+  alt?: string;
+  backdrop?: LogoBackdrop;
+}): JSX.Element {
+  const [measured, setBackdrop] = useState<LogoBackdrop>("dark");
+  const backdrop = fixedBackdrop ?? measured;
 
   useEffect(() => {
+    if (fixedBackdrop) return;
     let cancelled = false;
     void measureLogoLuminance(sameOriginLogoUrl(src)).then((lum) => {
       if (!cancelled) setBackdrop(backdropFor(lum));
@@ -72,14 +86,20 @@ export function LogoPreview({ src, alt = "Logo du site" }: { src: string; alt?: 
     return () => {
       cancelled = true;
     };
-  }, [src]);
+  }, [src, fixedBackdrop]);
 
   return (
     <div
       className={`flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md border p-2 ${
-        backdrop === "dark" ? "border-gray-700 bg-neutral-900" : "border-gray-300 bg-white"
+        backdrop === "dark" ? "border-gray-700 bg-neutral-900" : "border-border bg-[#fff]"
       }`}
-      title={backdrop === "dark" ? "Logo clair : aperçu sur fond sombre" : "Logo sombre : aperçu sur fond clair"}
+      title={
+        fixedBackdrop
+          ? "Aperçu sur fond blanc, comme sur le site"
+          : backdrop === "dark"
+            ? "Logo clair : aperçu sur fond sombre"
+            : "Logo sombre : aperçu sur fond clair"
+      }
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={alt} className="h-full w-full object-contain" />

@@ -116,17 +116,17 @@ export function MediaTagsDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-white shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-card shadow-2xl"
       >
-        <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-          <h2 id={titleId} className="text-base font-semibold text-gray-900">
+        <header className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 id={titleId} className="text-base font-semibold text-foreground">
             Personnes sur ce média — {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-100"
+            className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted"
           >
             <X className="h-5 w-5" />
           </button>
@@ -134,18 +134,18 @@ export function MediaTagsDialog({
 
         <div className="space-y-4 overflow-y-auto px-4 py-4">
           <div className="flex gap-4">
-            <div className="h-28 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+            <div className="h-28 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
               {previewUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={previewUrl} alt="" className="h-full w-full object-cover" />
               )}
             </div>
             <div className="space-y-2 text-sm">
-              <p className="font-medium text-gray-700">
+              <p className="font-medium text-foreground">
                 {dirty ? "Verdict après enregistrement" : "Verdict"}
               </p>
               <VerdictBadges verdicts={preview} labeled />
-              <label className="flex items-center gap-2 text-gray-700">
+              <label className="flex items-center gap-2 text-foreground">
                 <input
                   type="checkbox"
                   checked={noRecognizable}
@@ -160,15 +160,15 @@ export function MediaTagsDialog({
 
           {tags && tags.people.length > 0 && (
             <section>
-              <h3 className="mb-2 text-sm font-medium text-gray-700">Déjà taguées</h3>
-              <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+              <h3 className="mb-2 text-sm font-medium text-foreground">Déjà taguées</h3>
+              <ul className="divide-y divide-border rounded-lg border border-border">
                 {tags.people.map((p) => (
                   <li key={p.userId} className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
-                    <span className="min-w-40 flex-1 text-gray-800">
+                    <span className="min-w-40 flex-1 text-foreground">
                       {p.name}
-                      {p.legalAge === "MINOR" && <span className="ml-1 text-xs text-gray-500">(mineur)</span>}
+                      {p.legalAge === "MINOR" && <span className="ml-1 text-xs text-muted-foreground">(mineur)</span>}
                       {p.refusedThisMedia && (
-                        <span className="ml-2 rounded bg-red-50 px-1.5 py-0.5 text-xs text-red-800">
+                        <span className="ml-2 rounded bg-destructive-muted px-1.5 py-0.5 text-xs text-destructive">
                           a refusé cette photo
                         </span>
                       )}
@@ -183,12 +183,12 @@ export function MediaTagsDialog({
                           remind.mutate({ userId: p.userId });
                         }}
                         disabled={remind.isPending}
-                        className="rounded-full border border-amber-400 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+                        className="rounded-full border border-warning/40 px-3 py-1 text-xs font-medium text-warning hover:bg-warning-muted disabled:opacity-50"
                       >
                         Relancer
                       </button>
                     ) : p.remindedAt ? (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         Relancé le {new Date(p.remindedAt).toLocaleDateString("fr-FR")}
                       </span>
                     ) : null}
@@ -200,8 +200,8 @@ export function MediaTagsDialog({
 
           <section>
             <div className="mb-2 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-medium text-gray-700">
-                Membres <span className="font-normal text-gray-500">({selected.length} coché{selected.length > 1 ? "s" : ""})</span>
+              <h3 className="text-sm font-medium text-foreground">
+                Membres <span className="font-normal text-muted-foreground">({selected.length} coché{selected.length > 1 ? "s" : ""})</span>
               </h3>
               <input
                 type="search"
@@ -209,20 +209,20 @@ export function MediaTagsDialog({
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Rechercher un membre"
                 aria-label="Rechercher un membre"
-                className="w-56 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none"
+                className="w-56 rounded-lg border border-border px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
               />
             </div>
-            <p className="mb-1 text-xs text-gray-500">{USAGE_ORDER_HINT} Survole une pastille pour le détail.</p>
-            <div className="max-h-72 overflow-y-auto rounded-lg border border-gray-200">
+            <p className="mb-1 text-xs text-muted-foreground">{USAGE_ORDER_HINT} Survole une pastille pour le détail.</p>
+            <div className="max-h-72 overflow-y-auto rounded-lg border border-border">
               {candidatesQuery.isLoading ? (
-                <p className="px-3 py-2 text-sm text-gray-500">Chargement…</p>
+                <p className="px-3 py-2 text-sm text-muted-foreground">Chargement…</p>
               ) : ordered.length === 0 ? (
-                <p className="px-3 py-2 text-sm text-gray-500">Aucun membre ne correspond.</p>
+                <p className="px-3 py-2 text-sm text-muted-foreground">Aucun membre ne correspond.</p>
               ) : (
                 ordered.map((c) => (
                   <label
                     key={c.id}
-                    className="flex cursor-pointer flex-wrap items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                    className="flex cursor-pointer flex-wrap items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-muted"
                   >
                     <input
                       type="checkbox"
@@ -232,7 +232,7 @@ export function MediaTagsDialog({
                     />
                     <span className="min-w-40 flex-1">
                       {c.name}
-                      {c.legalAge === "MINOR" && <span className="ml-1 text-xs text-gray-500">(mineur)</span>}
+                      {c.legalAge === "MINOR" && <span className="ml-1 text-xs text-muted-foreground">(mineur)</span>}
                     </span>
                     <VerdictBadges verdicts={c.states} />
                   </label>
@@ -241,15 +241,15 @@ export function MediaTagsDialog({
             </div>
           </section>
 
-          {notice && <p className="text-sm text-emerald-700">{notice}</p>}
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {notice && <p className="text-sm text-success">{notice}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
 
-        <footer className="flex justify-end gap-2 border-t border-gray-200 px-4 py-3">
+        <footer className="flex justify-end gap-2 border-t border-border px-4 py-3">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+            className="rounded-full px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
           >
             Annuler
           </button>
@@ -260,7 +260,7 @@ export function MediaTagsDialog({
               setTags.mutate({ mediaAssetId, userIds: selected });
             }}
             disabled={!tags || !dirty || setTags.isPending}
-            className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+            className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
           >
             {setTags.isPending ? "Enregistrement…" : "Enregistrer les tags"}
           </button>

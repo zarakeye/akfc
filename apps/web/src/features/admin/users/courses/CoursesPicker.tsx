@@ -65,7 +65,7 @@ export function CoursesPicker({
           />
           <span>{courseLabel(c)}</span>
           {isMinorAudience(c.audience) && (
-            <span className="rounded-full bg-sky-100 px-1.5 text-[10px] font-semibold text-sky-900 dark:bg-sky-900 dark:text-sky-100">
+            <span className="rounded-full bg-info-muted px-1.5 text-[10px] font-semibold text-info">
               mineurs
             </span>
           )}

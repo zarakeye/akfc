@@ -32,7 +32,7 @@ export default function UserCard({
   if (!user) return <div>Membre introuvable.</div>;
 
   return (
-    <div className="p-4 rounded shadow-md bg-white">
+    <div className="p-4 rounded shadow-md bg-card">
       <div className="flex gap-5">
         <div>
           {user?.avatar ? (
@@ -59,18 +59,18 @@ export default function UserCard({
         </h2>
       </div>
 
-      <div className="flex text-gray-600 mb-1">
+      <div className="flex text-muted-foreground mb-1">
         <Image src="/email.svg" alt="email" width={20} height={20} className="dark:invert" />:{" "}
         {user?.email}
       </div>
       {user?.phone && (
-        <div className="flex text-gray-600 mb-1">
+        <div className="flex text-muted-foreground mb-1">
           <Image src="/mobilePhone.svg" alt="phone" width={20} height={20} className="dark:invert" /> :{" "}
           <span>{user.phone}</span>
         </div>
       )}
       {user?.birthDate && (
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Date de naissance: {new Date(user.birthDate).toLocaleDateString()}
         </p>
       )}

@@ -24,7 +24,7 @@ export default function DashboardHome(): JSX.Element {
           <h2 className="text-2xl font-bold">Mes informations</h2>
           <Link
             href="/profil/edit?from=dashboard"
-            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90"
           >
             <Pencil className="h-4 w-4" />
             Éditer

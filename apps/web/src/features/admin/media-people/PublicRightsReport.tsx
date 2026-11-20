@@ -19,19 +19,19 @@ const SECTIONS: ReadonlyArray<{
     key: "REFUSED",
     label: "Masqués : à retirer",
     help: "Une personne taguée a refusé le site public : le média est déjà masqué en ligne. Retire-le du contenu, ou retire le tag si la personne n'y est pas.",
-    tone: "border-red-300 bg-red-50 text-red-800",
+    tone: "border-destructive/40 bg-destructive-muted text-destructive",
   },
   {
     key: "MISSING",
     label: "En attente d'autorisation",
     help: "Une personne taguée n'a pas encore répondu. Le média reste en ligne ; relance-la depuis la fenêtre des tags.",
-    tone: "border-amber-300 bg-amber-50 text-amber-900",
+    tone: "border-warning/40 bg-warning-muted text-warning",
   },
   {
     key: "UNTAGGED",
     label: "À taguer",
     help: "Personne n'est tagué : le droit à l'image n'agit pas encore. Indique qui y apparaît, ou « aucune personne reconnaissable ».",
-    tone: "border-gray-300 bg-gray-50 text-gray-700",
+    tone: "border-border bg-muted text-foreground",
   },
 ];
 
@@ -64,7 +64,7 @@ export function PublicRightsReport(): JSX.Element {
         <h1 className="text-2xl font-bold">
           Droit à l&apos;image des médias en ligne
         </h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           Galeries publiques, carrousel d&apos;accueil, contenus des pages et
           images des cartes : ce qui demande une action. Les médias en règle
           n&apos;apparaissent pas.
@@ -87,7 +87,7 @@ export function PublicRightsReport(): JSX.Element {
             className={`rounded-full border px-3 py-1.5 text-sm ${
               s.key === section
                 ? s.tone + " font-semibold"
-                : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                : "border-border text-muted-foreground hover:bg-muted"
             }`}
           >
             {s.label} ({report.data ? count(s.key) : "…"})
@@ -104,15 +104,15 @@ export function PublicRightsReport(): JSX.Element {
 
       <div data-tour="droit-image.list">
         {report.isLoading ? (
-          <p className="text-sm text-gray-500">Chargement…</p>
+          <p className="text-sm text-muted-foreground">Chargement…</p>
         ) : shown.length === 0 ? (
-          <p className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+          <p className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             Rien dans cette liste.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs text-gray-600">
+              <thead className="bg-muted text-xs text-muted-foreground">
                 <tr>
                   <th className="px-3 py-2 text-left">Média</th>
                   <th className="px-3 py-2 text-left">Fichier</th>
@@ -124,7 +124,7 @@ export function PublicRightsReport(): JSX.Element {
                 {shown.map((r) => (
                   <tr
                     key={r.mediaAssetId}
-                    className="border-t border-gray-100 align-top"
+                    className="border-t border-border align-top"
                   >
                     <td className="px-3 py-2">
                       <button
@@ -137,7 +137,7 @@ export function PublicRightsReport(): JSX.Element {
                           })
                         }
                         aria-label={`Taguer les personnes de ${r.fileName}`}
-                        className="h-14 w-14 overflow-hidden rounded-md bg-gray-100 ring-emerald-500 hover:ring-2"
+                        className="h-14 w-14 overflow-hidden rounded-md bg-muted ring-ring hover:ring-2"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -147,10 +147,10 @@ export function PublicRightsReport(): JSX.Element {
                         />
                       </button>
                     </td>
-                    <td className="px-3 py-2 break-all text-gray-800">
+                    <td className="px-3 py-2 break-all text-foreground">
                       {r.fileName}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-gray-700">
+                    <td className="px-3 py-2 whitespace-nowrap text-foreground">
                       {r.people === 0
                         ? "—"
                         : `${r.people} taguée${r.people > 1 ? "s" : ""}`}
@@ -161,7 +161,7 @@ export function PublicRightsReport(): JSX.Element {
                           <li key={u.href + u.label}>
                             <Link
                               href={u.href}
-                              className="text-emerald-700 hover:underline"
+                              className="text-success hover:underline"
                             >
                               {u.label}
                             </Link>

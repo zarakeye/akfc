@@ -63,7 +63,7 @@ export function ImageRightsSection({
                       <th scope="row" className="py-1 pr-3 font-normal">
                         {IMAGE_USAGE_LABEL[u]}
                       </th>
-                      <td className={`py-1 font-medium ${oui ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
+                      <td className={`py-1 font-medium ${oui ? "text-success" : "text-destructive"}`}>
                         <span className="inline-flex items-center gap-1">
                           {oui ? <Check aria-hidden="true" className="h-4 w-4" /> : <X aria-hidden="true" className="h-4 w-4" />}
                           {oui ? "Oui" : "Non"}

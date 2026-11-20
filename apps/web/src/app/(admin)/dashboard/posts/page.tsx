@@ -21,8 +21,8 @@ function publicationStatus(
   }
   const isPublished = new Date(publicationDate).getTime() <= now;
   return isPublished
-    ? { label: "Publié", className: "bg-green-100 text-green-800" }
-    : { label: "Programmé", className: "bg-blue-100 text-blue-800" };
+    ? { label: "Publié", className: "bg-success-muted text-success" }
+    : { label: "Programmé", className: "bg-info-muted text-info" };
 }
 
 export default function PostsListPage(): JSX.Element {
@@ -51,7 +51,7 @@ export default function PostsListPage(): JSX.Element {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : isError ? (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-destructive">
           Erreur lors du chargement des articles.
         </p>
       ) : (posts ?? []).length === 0 ? (

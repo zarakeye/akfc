@@ -40,7 +40,7 @@ export default function EditCoursePage({
 
   if (isLoading) return <div>Chargement du cours…</div>;
   if (isError || !course) {
-    return <div className="text-red-600">Cours introuvable.</div>;
+    return <div className="text-destructive">Cours introuvable.</div>;
   }
 
   const handleSubmit = async (input: CourseFormInput): Promise<void> => {

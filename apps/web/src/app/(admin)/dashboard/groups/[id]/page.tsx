@@ -136,7 +136,7 @@ export default function GroupDetailPage(): JSX.Element {
               parentGroupId: e.target.value || null,
             })
           }
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-md border border-border px-3 py-2 text-sm"
         >
           {/* « Sans parent » n'existe pas : le serveur rattache alors à Administrateurs. */}
           {(groupsQuery.data ?? [])
@@ -149,7 +149,7 @@ export default function GroupDetailPage(): JSX.Element {
         </select>
         )}
         {setParent.error && (
-          <p className="text-xs text-red-600">{setParent.error.message}</p>
+          <p className="text-xs text-destructive">{setParent.error.message}</p>
         )}
       </div>
 
@@ -196,7 +196,7 @@ export default function GroupDetailPage(): JSX.Element {
                         onClick={() =>
                           removeMember.mutate({ groupId: group.id, userId: m.id })
                         }
-                        className="text-xs text-red-600 hover:underline"
+                        className="text-xs text-destructive hover:underline"
                       >
                         Retirer
                       </button>
@@ -207,7 +207,7 @@ export default function GroupDetailPage(): JSX.Element {
             </ul>
           )}
           {removeMember.error && (
-            <p className="mt-2 text-xs text-red-600">{removeMember.error.message}</p>
+            <p className="mt-2 text-xs text-destructive">{removeMember.error.message}</p>
           )}
         </div>
 
@@ -235,7 +235,7 @@ export default function GroupDetailPage(): JSX.Element {
                     onClick={() =>
                       addMember.mutate({ groupId: group.id, userId: m.id })
                     }
-                    className="text-xs text-emerald-700 hover:underline"
+                    className="text-xs text-success hover:underline"
                   >
                     Ajouter
                   </button>
@@ -244,12 +244,12 @@ export default function GroupDetailPage(): JSX.Element {
             </ul>
           )}
           {addMember.error && (
-            <p role="alert" className="mt-2 text-xs text-red-600">{addMember.error.message}</p>
+            <p role="alert" className="mt-2 text-xs text-destructive">{addMember.error.message}</p>
           )}
         </div>
       </div>
-      <div className="mt-8 border-t border-red-200 pt-4">
-        <p className="mb-2 text-sm font-medium text-red-700">Zone dangereuse</p>
+      <div className="mt-8 border-t border-destructive/40 pt-4">
+        <p className="mb-2 text-sm font-medium text-destructive">Zone dangereuse</p>
         {group.isAdminGroup ? (
           <p className="text-sm text-muted-foreground">
             Le groupe Administrateurs ne peut pas être supprimé.
@@ -263,7 +263,7 @@ export default function GroupDetailPage(): JSX.Element {
           <button
             type="button"
             onClick={() => setConfirmingDelete(true)}
-            className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+            className="rounded-md bg-destructive px-3 py-1.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
           >
             Supprimer le groupe
           </button>
@@ -278,7 +278,7 @@ export default function GroupDetailPage(): JSX.Element {
                 type="button"
                 disabled={del.isPending}
                 onClick={() => del.mutate({ id: group.id })}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                className="rounded-md bg-destructive px-3 py-1.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
               >
                 Confirmer la suppression
               </button>
@@ -293,7 +293,7 @@ export default function GroupDetailPage(): JSX.Element {
           </div>
         )}
         {del.error && (
-          <p className="mt-2 text-sm text-red-600">{del.error.message}</p>
+          <p className="mt-2 text-sm text-destructive">{del.error.message}</p>
         )}
       </div>
     </div>

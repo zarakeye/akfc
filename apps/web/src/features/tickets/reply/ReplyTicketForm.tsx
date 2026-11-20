@@ -94,7 +94,7 @@ export function ReplyTicketForm({
       </label>
       <textarea
         id="ticket-reply"
-        className="min-h-44 w-full resize-y rounded-md border border-border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
+        className="min-h-44 w-full resize-y rounded-md border border-border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         {...register("body")}
       />
       <p className="mt-1 text-xs text-muted-foreground">
@@ -103,13 +103,13 @@ export function ReplyTicketForm({
           ? "S'il répond à cet e-mail, sa réponse s'ajoutera ici."
           : `S'il répond, sa réponse arrivera à ${replyTo}.`}
       </p>
-      {formState.errors.body && <p className="mt-2 text-sm text-red-600">{formState.errors.body.message}</p>}
-      {errMsg && <p className="mt-2 text-sm text-red-600">{errMsg}</p>}
-      {notice && <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">{notice}</p>}
+      {formState.errors.body && <p className="mt-2 text-sm text-destructive">{formState.errors.body.message}</p>}
+      {errMsg && <p className="mt-2 text-sm text-destructive">{errMsg}</p>}
+      {notice && <p className="mt-2 text-sm text-success">{notice}</p>}
       <button
         type="submit"
         disabled={isPending}
-        className="mt-3 rounded-md bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-3 rounded-md bg-brand px-5 py-2 text-sm font-medium text-brand-foreground hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? "Envoi…" : "Envoyer la réponse"}
       </button>

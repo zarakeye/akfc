@@ -103,10 +103,10 @@ export function LegalStatusControl({
         <span>Date de naissance :</span>
         {newBirthDate === null ? (
           <>
-            <span className={initial.hasBirthDate ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}>
+            <span className={initial.hasBirthDate ? "text-success" : "text-muted-foreground"}>
               {initial.hasBirthDate ? "renseignée ✓" : "non renseignée"}
             </span>
-            <button type="button" onClick={() => setNewBirthDate("")} className="text-emerald-700 hover:underline">
+            <button type="button" onClick={() => setNewBirthDate("")} className="text-success hover:underline">
               {initial.hasBirthDate ? "Remplacer" : "Ajouter"}
             </button>
           </>
@@ -191,7 +191,7 @@ export function LegalStatusControl({
             type="button"
             disabled={proof.isPending}
             onClick={() => setConfirmProof(true)}
-            className="rounded-md border border-gray-300 px-3 py-1.5 font-medium hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-md border border-border px-3 py-1.5 font-medium hover:bg-muted disabled:opacity-50"
           >
             {proof.isPending ? "Enregistrement…" : "Passer majeur (justificatif vu)"}
           </button>
@@ -224,9 +224,9 @@ export function LegalStatusControl({
         }}
         onCancel={() => setConfirmProof(false)}
       />
-      {proof.error && <p className="mt-2 text-red-600">{proof.error.message}</p>}
-      {save.isSuccess && <p className="mt-2 text-emerald-700">Enregistré.</p>}
-      {save.error && <p className="mt-2 text-red-600">{save.error.message}</p>}
+      {proof.error && <p className="mt-2 text-destructive">{proof.error.message}</p>}
+      {save.isSuccess && <p className="mt-2 text-success">Enregistré.</p>}
+      {save.error && <p className="mt-2 text-destructive">{save.error.message}</p>}
     </section>
   );
 }

@@ -42,7 +42,7 @@ export default function EditStagePage({
 
   if (isLoading) return <div>Chargement du stage…</div>;
   if (isError || !stage) {
-    return <div className="text-red-600">Stage introuvable.</div>;
+    return <div className="text-destructive">Stage introuvable.</div>;
   }
 
   const handleSubmit = async (input: SeminarFormInput): Promise<void> => {
@@ -100,7 +100,7 @@ export default function EditStagePage({
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="inline-flex items-center gap-1 rounded-md border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-md border border-destructive/40 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive-muted disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" />
               {deleting ? "Suppression…" : "Supprimer le stage"}

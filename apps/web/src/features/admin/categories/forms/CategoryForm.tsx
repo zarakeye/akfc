@@ -163,7 +163,7 @@ export function CategoryForm({ initial }: { initial?: Category }): JSX.Element {
           )}
         />
 
-        {state.error && <p className="text-red-500">{state.error}</p>}
+        {state.error && <p className="text-destructive">{state.error}</p>}
 
         <div className="flex justify-end" data-tour="categories.form.submit">
           <Button type="submit" disabled={isPending}>

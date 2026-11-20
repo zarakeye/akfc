@@ -23,7 +23,7 @@ const LOGO_TYPES: Record<string, "image/svg+xml" | "image/png" | "image/webp" | 
 };
 
 const inputClass =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none";
+  "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none";
 
 type Partner = {
   id: string;
@@ -65,30 +65,30 @@ export function PartnersSettings(): JSX.Element {
   };
 
   return (
-    <section className="mt-12 border-t border-gray-200 pt-8" data-tour="settings.partners">
+    <section className="mt-12 border-t border-border pt-8" data-tour="settings.partners">
       <h2 className="mb-1 text-xl font-semibold">Partenaires du club</h2>
-      <p className="mb-6 text-sm text-gray-600">
+      <p className="mb-6 text-sm text-muted-foreground">
         Structures liées au club (la MJC qui l&apos;accueille, la fédération…). Leurs logos s&apos;affichent dans
         le pied de page et sur la page «&nbsp;S&apos;inscrire&nbsp;», avec leurs liens utiles.
       </p>
 
       {list.error && (
-        <p className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+        <p className="mb-4 rounded-md bg-destructive-muted p-3 text-sm text-destructive">
           Impossible de charger les partenaires : {list.error.message}
         </p>
       )}
       {list.isLoading ? (
-        <p className="text-sm text-gray-500">Chargement…</p>
+        <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : (
         <ul className="flex flex-col gap-6">
           {partners.map((p, i) => (
             <li
               key={p.id}
               id={`partner-${p.id}`}
-              className={p.id === createdId ? "rounded-lg ring-2 ring-emerald-500 ring-offset-2" : undefined}
+              className={p.id === createdId ? "rounded-lg ring-2 ring-ring ring-offset-2" : undefined}
             >
               {p.id === createdId && (
-                <p className="mb-2 text-sm text-emerald-700">
+                <p className="mb-2 text-sm text-success">
                   Partenaire ajouté : complétez sa fiche, enregistrez, puis cochez « Affiché sur le site ».
                 </p>
               )}
@@ -107,11 +107,11 @@ export function PartnersSettings(): JSX.Element {
         type="button"
         onClick={() => create.mutate({ name: "Nouveau partenaire", role: "OTHER", isActive: false, links: [] })}
         disabled={create.isPending}
-        className="mt-6 inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-100 disabled:opacity-50"
+        className="mt-6 inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
       >
         <Plus className="h-4 w-4" /> {create.isPending ? "Ajout…" : "Ajouter un partenaire"}
       </button>
-      {create.error && <p className="mt-2 text-sm text-red-600">Ajout impossible : {create.error.message}</p>}
+      {create.error && <p className="mt-2 text-sm text-destructive">Ajout impossible : {create.error.message}</p>}
     </section>
   );
 }
@@ -174,13 +174,13 @@ function PartnerCard({
   };
 
   return (
-    <div className={`rounded-lg border p-4 ${isActive ? "border-gray-200" : "border-dashed border-gray-300 bg-gray-50"}`}>
+    <div className={`rounded-lg border p-4 ${isActive ? "border-border" : "border-dashed border-border bg-muted"}`}>
       <div className="flex flex-wrap items-start gap-4">
         <div className="flex flex-col items-center gap-2">
           {partner.logoUrl ? (
-            <LogoPreview src={partner.logoUrl} alt={partner.name} />
+            <LogoPreview src={partner.logoUrl} alt={partner.name} backdrop="light" />
           ) : (
-            <div className="flex h-24 w-24 items-center justify-center rounded-md border border-dashed border-gray-300 text-center text-xs text-gray-400">
+            <div className="flex h-24 w-24 items-center justify-center rounded-md border border-dashed border-border text-center text-xs text-muted-foreground">
               pas de logo
             </div>
           )}
@@ -188,7 +188,7 @@ function PartnerCard({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={setLogo.isPending}
-            className="rounded-md border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100 disabled:opacity-50"
+            className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
           >
             {setLogo.isPending ? "Envoi…" : partner.logoUrl ? "Remplacer" : "Importer un logo"}
           </button>
@@ -197,7 +197,7 @@ function PartnerCard({
             <button
               type="button"
               onClick={() => clearLogo.mutate({ id: partner.id })}
-              className="text-xs text-gray-500 hover:text-red-600"
+              className="text-xs text-muted-foreground hover:text-destructive"
             >
               Retirer le logo
             </button>
@@ -223,20 +223,20 @@ function PartnerCard({
           </div>
           <label className="block text-sm">
             <span className="mb-1 block font-medium">
-              Présentation <span className="text-gray-400">(une phrase, facultative)</span>
+              Présentation <span className="text-muted-foreground">(une phrase, facultative)</span>
             </span>
             <input className={inputClass} value={description} maxLength={300} onChange={(e) => setDescription(e.target.value)} />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium">
-              Site web <span className="text-gray-400">(le logo y mène)</span>
+              Site web <span className="text-muted-foreground">(le logo y mène)</span>
             </span>
             <input className={inputClass} value={websiteUrl} placeholder="https://…" onChange={(e) => setWebsiteUrl(e.target.value)} />
           </label>
 
           <fieldset className="text-sm">
             <legend className="mb-1 font-medium">
-              Liens utiles <span className="font-normal text-gray-400">(ex. inscription et tarifs, activités du club)</span>
+              Liens utiles <span className="font-normal text-muted-foreground">(ex. inscription et tarifs, activités du club)</span>
             </legend>
             <div className="flex flex-col gap-2">
               {links.map((l, i) => (
@@ -257,7 +257,7 @@ function PartnerCard({
                     type="button"
                     aria-label="Retirer ce lien"
                     onClick={() => setLinks((prev) => prev.filter((_, j) => j !== i))}
-                    className="self-start rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+                    className="self-start rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -267,7 +267,7 @@ function PartnerCard({
                 <button
                   type="button"
                   onClick={() => setLinks((prev) => [...prev, { label: "", url: "" }])}
-                  className="self-start text-xs text-emerald-700 hover:underline"
+                  className="self-start text-xs text-success hover:underline"
                 >
                   + Ajouter un lien
                 </button>
@@ -281,24 +281,24 @@ function PartnerCard({
           </label>
 
           {(logoError || setLogo.error || save.error || remove.error) && (
-            <p className="text-xs text-red-600">{logoError ?? setLogo.error?.message ?? save.error?.message ?? remove.error?.message}</p>
+            <p className="text-xs text-destructive">{logoError ?? setLogo.error?.message ?? save.error?.message ?? remove.error?.message}</p>
           )}
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
+          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
             <button
               type="button"
               onClick={onSave}
               disabled={save.isPending || name.trim() === ""}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
             >
               {save.isPending ? "Enregistrement…" : "Enregistrer"}
             </button>
-            {save.isSuccess && !save.isPending && <span className="text-xs text-emerald-700">Enregistré.</span>}
+            {save.isSuccess && !save.isPending && <span className="text-xs text-success">Enregistré.</span>}
             <span className="flex-1" />
-            <button type="button" aria-label="Monter" disabled={!onUp} onClick={onUp} className="rounded-md p-1.5 hover:bg-gray-100 disabled:opacity-30">
+            <button type="button" aria-label="Monter" disabled={!onUp} onClick={onUp} className="rounded-md p-1.5 hover:bg-muted disabled:opacity-30">
               <ArrowUp className="h-4 w-4" />
             </button>
-            <button type="button" aria-label="Descendre" disabled={!onDown} onClick={onDown} className="rounded-md p-1.5 hover:bg-gray-100 disabled:opacity-30">
+            <button type="button" aria-label="Descendre" disabled={!onDown} onClick={onDown} className="rounded-md p-1.5 hover:bg-muted disabled:opacity-30">
               <ArrowDown className="h-4 w-4" />
             </button>
             {confirmDelete ? (
@@ -306,16 +306,16 @@ function PartnerCard({
                 <button
                   type="button"
                   onClick={() => remove.mutate({ id: partner.id })}
-                  className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+                  className="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/90"
                 >
                   Confirmer la suppression
                 </button>
-                <button type="button" onClick={() => setConfirmDelete(false)} className="text-xs text-gray-500">
+                <button type="button" onClick={() => setConfirmDelete(false)} className="text-xs text-muted-foreground">
                   Annuler
                 </button>
               </>
             ) : (
-              <button type="button" onClick={() => setConfirmDelete(true)} className="text-xs text-gray-500 hover:text-red-600">
+              <button type="button" onClick={() => setConfirmDelete(true)} className="text-xs text-muted-foreground hover:text-destructive">
                 Supprimer
               </button>
             )}

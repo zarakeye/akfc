@@ -145,7 +145,7 @@ export function SummaryFieldset({
           overLimit
             ? "mt-2 text-right text-xs font-medium text-destructive"
             : chars > effectiveMax * 0.85
-              ? "mt-2 text-right text-xs font-medium text-amber-600"
+              ? "mt-2 text-right text-xs font-medium text-warning"
               : "mt-2 text-right text-xs text-muted-foreground"
         }
       >

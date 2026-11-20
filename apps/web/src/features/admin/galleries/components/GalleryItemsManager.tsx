@@ -56,12 +56,12 @@ export function GalleryItemsManager({
           type="button"
           onClick={() => void handleSave()}
           disabled={setItemsMutation.isPending}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
         >
           {setItemsMutation.isPending ? 'Enregistrement…' : 'Enregistrer les images'}
         </button>
-        {saved && <span className="text-sm text-emerald-600">Enregistré.</span>}
-        {error && <span className="text-sm text-red-600">{error}</span>}
+        {saved && <span className="text-sm text-success">Enregistré.</span>}
+        {error && <span className="text-sm text-destructive">{error}</span>}
       </div>
     </div>
   );

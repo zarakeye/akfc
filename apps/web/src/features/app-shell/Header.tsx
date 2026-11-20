@@ -339,7 +339,7 @@ function BarMenu({
             key={child.href}
             href={child.href}
             aria-current={pathname === child.href ? "page" : undefined}
-            className={`block px-4 py-2 ${pathname === child.href ? NAV_SUB_ACTIVE_BAR : "text-gray-800 hover:bg-gray-100"}`}
+            className={`block px-4 py-2 ${pathname === child.href ? NAV_SUB_ACTIVE_BAR : "text-foreground hover:bg-muted"}`}
           >
             {child.label}
           </Link>

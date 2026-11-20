@@ -96,7 +96,7 @@ export function SitePageEditor({
 
         <div className="flex items-center gap-3">
           {dirty && (
-            <span className="text-xs font-medium text-amber-600">
+            <span className="text-xs font-medium text-warning">
               Modifications non enregistrées
             </span>
           )}
@@ -104,8 +104,8 @@ export function SitePageEditor({
             className={
               "shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold " +
               (published
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-amber-100 text-amber-700")
+                ? "bg-success-muted text-success"
+                : "bg-warning-muted text-warning")
             }
           >
             {published ? "Publiée" : "Brouillon"}
@@ -114,7 +114,7 @@ export function SitePageEditor({
             type="button"
             disabled={save.isPending || setPublished.isPending || title.trim() === ""}
             onClick={() => void persist(false)}
-            className="shrink-0 rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 disabled:opacity-50"
+            className="shrink-0 rounded-md bg-secondary px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
           >
             Enregistrer en brouillon
           </button>
@@ -122,7 +122,7 @@ export function SitePageEditor({
             type="button"
             disabled={save.isPending || setPublished.isPending || title.trim() === ""}
             onClick={() => void persist(true)}
-            className="shrink-0 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+            className="shrink-0 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
           >
             {save.isPending || setPublished.isPending ? "…" : "Publier"}
           </button>

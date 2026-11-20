@@ -11,7 +11,7 @@ export const DEMO_EXPLANATION =
 export function DemoBadge(): JSX.Element {
   return (
     <span
-      className="rounded-full border border-amber-300 bg-amber-100 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-amber-800"
+      className="rounded-full border border-warning/40 bg-warning-muted px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-warning"
       title={DEMO_EXPLANATION}
     >
       Démo
@@ -31,7 +31,7 @@ export function MemberLabel({
 }): JSX.Element {
   return (
     <span className="flex min-w-0 flex-col">
-      <span className={`flex items-center gap-1.5 ${isDemo ? "text-amber-800" : ""}`}>
+      <span className={`flex items-center gap-1.5 ${isDemo ? "text-warning" : ""}`}>
         {name}
         {isDemo && <DemoBadge />}
       </span>
@@ -61,14 +61,14 @@ export function DemoAccountsToggle({
       <button
         type="button"
         onClick={onToggle}
-        className="text-xs font-medium text-amber-800 underline-offset-2 hover:underline"
+        className="text-xs font-medium text-warning underline-offset-2 hover:underline"
       >
         {shown
           ? `Masquer les comptes de démonstration (${count})`
           : `Afficher les comptes de démonstration (${count})`}
       </button>
       {shown && (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <p className="rounded-md border border-warning/40 bg-warning-muted px-3 py-2 text-xs text-warning">
           {DEMO_EXPLANATION}
         </p>
       )}

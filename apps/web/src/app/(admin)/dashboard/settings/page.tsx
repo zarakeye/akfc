@@ -98,16 +98,16 @@ export default function SiteSettingsPage(): JSX.Element {
   };
 
   if (settings.isLoading) {
-    return <p className="p-6 text-sm text-gray-500">Chargement…</p>;
+    return <p className="p-6 text-sm text-muted-foreground">Chargement…</p>;
   }
 
   const inputClass =
-    "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none";
+    "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none";
 
   return (
     <div className="mx-auto max-w-3xl p-6">
       <h1 className="mb-1 text-2xl font-semibold">Réglages du site</h1>
-      <p className="mb-6 text-sm text-gray-600">
+      <p className="mb-6 text-sm text-muted-foreground">
         Identité affichée du site (titres, logo, coordonnées de support, langue).
         Modifiable sans toucher au code. Les réglages techniques (stockage, URL
         de déploiement, e-mail serveur) restent gérés par le développeur.
@@ -122,7 +122,7 @@ export default function SiteSettingsPage(): JSX.Element {
             onChange={(e) => setShortTitle(e.target.value)}
             placeholder="AKFC"
           />
-          <span className="mt-1 block text-xs text-gray-400">
+          <span className="mt-1 block text-xs text-muted-foreground">
             Affiché dans le header, l&apos;onglet du navigateur et les e-mails.
           </span>
         </label>
@@ -139,7 +139,7 @@ export default function SiteSettingsPage(): JSX.Element {
 
         <label className="block">
           <span className="mb-1 block text-sm font-medium">
-            Accroche <span className="text-gray-400">(optionnelle)</span>
+            Accroche <span className="text-muted-foreground">(optionnelle)</span>
           </span>
           <input
             className={inputClass}
@@ -147,7 +147,7 @@ export default function SiteSettingsPage(): JSX.Element {
             onChange={(e) => setTagline(e.target.value)}
             placeholder="Une phrase de présentation courte"
           />
-          <span className="mt-1 block text-xs text-gray-400">
+          <span className="mt-1 block text-xs text-muted-foreground">
             Affichée dans le pied de page, et utilisée comme description du site
             par les moteurs de recherche et les aperçus de liens.
           </span>
@@ -155,7 +155,7 @@ export default function SiteSettingsPage(): JSX.Element {
 
         <label className="block">
           <span className="mb-1 block text-sm font-medium">
-            E-mail cité dans l&apos;e-mail de bienvenue <span className="text-gray-400">(optionnel)</span>
+            E-mail cité dans l&apos;e-mail de bienvenue <span className="text-muted-foreground">(optionnel)</span>
           </span>
           <input
             type="email"
@@ -177,7 +177,7 @@ export default function SiteSettingsPage(): JSX.Element {
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploadLogo.isPending}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm transition-colors hover:bg-gray-100 disabled:opacity-50"
+                className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-muted disabled:opacity-50"
               >
                 {uploadLogo.isPending
                   ? "Envoi…"
@@ -197,19 +197,19 @@ export default function SiteSettingsPage(): JSX.Element {
                   type="button"
                   onClick={() => clearLogo.mutate()}
                   disabled={clearLogo.isPending}
-                  className="text-left text-xs text-gray-500 hover:text-red-600 disabled:opacity-50"
+                  className="text-left text-xs text-muted-foreground hover:text-destructive disabled:opacity-50"
                 >
                   {clearLogo.isPending ? "…" : "Rétablir le logo embarqué"}
                 </button>
               )}
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 Fichier SVG, 512 Ko max. Stocké hors bibliothèque média.
               </span>
               {logoError && (
-                <span className="text-xs text-red-600">{logoError}</span>
+                <span className="text-xs text-destructive">{logoError}</span>
               )}
               {uploadLogo.error && (
-                <span className="text-xs text-red-600">
+                <span className="text-xs text-destructive">
                   {uploadLogo.error.message}
                 </span>
               )}
@@ -217,20 +217,20 @@ export default function SiteSettingsPage(): JSX.Element {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 border-t border-gray-100 pt-4" data-tour="settings.save">
+        <div className="flex items-center gap-3 border-t border-border pt-4" data-tour="settings.save">
           <button
             type="button"
             disabled={!canSave}
             onClick={onSave}
-            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
           >
             {save.isPending ? "Enregistrement…" : "Enregistrer"}
           </button>
           {save.isSuccess && !save.isPending && (
-            <span className="text-sm text-emerald-700">Enregistré.</span>
+            <span className="text-sm text-success">Enregistré.</span>
           )}
           {save.error && (
-            <span className="text-sm text-red-600">{save.error.message}</span>
+            <span className="text-sm text-destructive">{save.error.message}</span>
           )}
         </div>
       </div>

@@ -87,7 +87,7 @@ export function ConfirmDeleteDialog({
         className="w-full max-w-md rounded-xl bg-background p-5 text-foreground shadow-2xl"
       >
         <div className="mb-3 flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive-muted text-destructive">
             <AlertTriangle className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
@@ -112,7 +112,7 @@ export function ConfirmDeleteDialog({
 
         <label className="block text-sm">
           Pour confirmer, tapez{" "}
-          <code className="select-none rounded bg-muted px-1.5 py-0.5 font-mono text-[13px] text-red-700">{phrase}</code>
+          <code className="select-none rounded bg-muted px-1.5 py-0.5 font-mono text-[13px] text-destructive">{phrase}</code>
           <input
             ref={inputRef}
             type="text"
@@ -132,12 +132,12 @@ export function ConfirmDeleteDialog({
               if (e.key === "Enter") void confirm();
             }}
             disabled={busy}
-            className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200"
+            className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm outline-none focus:border-destructive/40 focus:ring-2 focus:ring-destructive"
           />
         </label>
-        {pasteRefused && <p className="mt-1 text-xs text-amber-700">Le collage est désactivé : tapez la phrase.</p>}
+        {pasteRefused && <p className="mt-1 text-xs text-warning">Le collage est désactivé : tapez la phrase.</p>}
         {error && (
-          <p className="mt-3 whitespace-pre-wrap rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">{error}</p>
+          <p className="mt-3 whitespace-pre-wrap rounded-md border border-destructive/40 bg-destructive-muted p-2 text-sm text-destructive">{error}</p>
         )}
 
         <div className="mt-5 flex justify-end gap-2">
@@ -153,7 +153,7 @@ export function ConfirmDeleteDialog({
             type="button"
             onClick={() => void confirm()}
             disabled={!matches || busy}
-            className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-md bg-destructive px-3 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {busy ? "Suppression…" : "Supprimer définitivement"}
           </button>

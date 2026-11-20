@@ -30,7 +30,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
 
   if (ticket.isLoading) return <p className="p-6">Chargement…</p>;
   if (ticket.error || !ticket.data) {
-    return <p className="p-6 text-red-600">{ticket.error?.message ?? "Demande introuvable."}</p>;
+    return <p className="p-6 text-destructive">{ticket.error?.message ?? "Demande introuvable."}</p>;
   }
   const t = ticket.data;
   const closed = t.status === "CLOSED";
@@ -38,7 +38,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="mx-auto max-w-4xl p-4 sm:p-6">
-      <Link href="/dashboard/tickets" className="mb-4 inline-flex items-center gap-1 text-sm text-emerald-700 hover:underline dark:text-emerald-400">
+      <Link href="/dashboard/tickets" className="mb-4 inline-flex items-center gap-1 text-sm text-success hover:underline">
         <ArrowLeft className="h-4 w-4" /> Toutes les demandes
       </Link>
 
@@ -68,7 +68,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
           </div>
           <div>
             <dt className="inline text-muted-foreground">Première réponse : </dt>
-            <dd className={`inline ${t.overdue ? "font-semibold text-red-600" : ""}`}>
+            <dd className={`inline ${t.overdue ? "font-semibold text-destructive" : ""}`}>
               {t.firstResponseAt ? dateTime(t.firstResponseAt) : `attendue ${dueLabel(t.dueAt, now)} (${dateTime(t.dueAt)})`}
             </dd>
           </div>
@@ -79,7 +79,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
             <button
               onClick={() => take.mutate({ id })}
               disabled={take.isPending}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="rounded-md bg-brand px-3 py-1.5 text-sm text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
             >
               Prendre en charge
             </button>
@@ -103,7 +103,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
             </button>
           )}
         </div>
-        {actionError && <p className="mt-2 text-sm text-red-600">{actionError.message}</p>}
+        {actionError && <p className="mt-2 text-sm text-destructive">{actionError.message}</p>}
       </header>
 
       <ol className="mb-6 flex flex-col gap-4">
@@ -112,7 +112,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
             key={m.id}
             className={`max-w-[92%] rounded-lg border p-4 sm:max-w-[80%] ${
               m.direction === "OUT"
-                ? "self-end border-emerald-600/40 bg-emerald-50 dark:bg-emerald-950/30"
+                ? "self-end border-success/40 bg-success-muted"
                 : "self-start border-border bg-background"
             }`}
           >

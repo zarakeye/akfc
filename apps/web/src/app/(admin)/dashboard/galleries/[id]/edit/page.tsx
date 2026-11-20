@@ -40,7 +40,7 @@ export default function EditGalleryPage({
 
   if (isLoading) return <div>Chargement de la galerie…</div>;
   if (isError || !gallery) {
-    return <div className="text-red-600">Galerie introuvable.</div>;
+    return <div className="text-destructive">Galerie introuvable.</div>;
   }
 
   return (

@@ -352,7 +352,7 @@ export function UpdateGalleryForm({ gallery }: UpdateGalleryFormProps): JSX.Elem
         {facetField("originId", "Origine", origins, (o) => o.name)}
 
         {state.error && !form.formState.isValid && (
-          <p className="text-red-500">{state.error}</p>
+          <p className="text-destructive">{state.error}</p>
         )}
 
         <div className="flex gap-3.5 justify-end">

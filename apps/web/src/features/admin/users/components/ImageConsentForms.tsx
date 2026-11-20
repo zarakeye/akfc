@@ -90,7 +90,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
               <button
                 type="button"
                 onClick={() => setOpen(f)}
-                className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-2 py-1 hover:bg-gray-50"
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 hover:bg-muted"
               >
                 <Eye className="h-4 w-4" /> Voir
               </button>
@@ -99,7 +99,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
                 onClick={() => void del(f.id)}
                 disabled={remove.isPending}
                 aria-label="Supprimer ce formulaire"
-                className="rounded-md border border-gray-300 px-2 py-1 text-red-600 hover:bg-red-50"
+                className="rounded-md border border-border px-2 py-1 text-destructive hover:bg-destructive-muted"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -109,14 +109,14 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
       ) : (
         <p className="mb-4 text-muted-foreground">
           Aucun formulaire : l&apos;autorisation se donne en ligne.{" "}
-          <button type="button" onClick={() => setBlankOpen(true)} className="text-emerald-700 hover:underline">
+          <button type="button" onClick={() => setBlankOpen(true)} className="text-success hover:underline">
             Voir le formulaire vierge
           </button>
           .
         </p>
       )}
 
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       <ImageConsentFormViewer form={open} onClose={() => setOpen(null)} />
       {blankOpen && <BlankConsentFormPreview onClose={() => setBlankOpen(false)} />}
@@ -136,7 +136,7 @@ function ParentChanges({
   return changes.length === 0 ? (
     <p className="text-muted-foreground">Le parent a gardé tous les souhaits du membre.</p>
   ) : (
-    <div className="mt-1 text-amber-900">
+    <div className="mt-1 text-warning">
       <p>Changements du parent par rapport aux souhaits du membre :</p>
       <ul className="list-disc pl-5">
         {changes.map((c) => (

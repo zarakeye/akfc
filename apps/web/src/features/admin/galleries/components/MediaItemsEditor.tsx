@@ -70,7 +70,7 @@ function SortableRow({
     <tr
       ref={setNodeRef}
       style={style}
-      className={`border-b border-gray-100 ${blocked ? 'bg-red-50' : 'bg-white'} ${isDragging ? 'relative z-10 opacity-80 shadow-lg' : ''}`}
+      className={`border-b border-border ${blocked ? 'bg-destructive-muted' : 'bg-card'} ${isDragging ? 'relative z-10 opacity-80 shadow-lg' : ''}`}
     >
       <td className="px-2 py-2">
         <button
@@ -78,18 +78,18 @@ function SortableRow({
           {...attributes}
           {...listeners}
           aria-label="Déplacer"
-          className="cursor-grab rounded p-1 text-gray-500 hover:bg-gray-100 active:cursor-grabbing"
+          className="cursor-grab rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing"
         >
           <GripVertical className="h-4 w-4" />
         </button>
       </td>
-      <td className="px-2 py-2 font-mono text-xs text-gray-500">{index + 1}</td>
+      <td className="px-2 py-2 font-mono text-xs text-muted-foreground">{index + 1}</td>
       <td className="px-2 py-2">
         <button
           type="button"
           onClick={onTag}
           aria-label={`Taguer les personnes du ${label.toLowerCase()}`}
-          className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-md bg-gray-50 ring-emerald-500 hover:ring-2"
+          className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-md bg-muted ring-ring hover:ring-2"
         >
           {media ? (
             <>
@@ -104,7 +104,7 @@ function SortableRow({
               )}
             </>
           ) : (
-            <span className="px-1 text-center text-[10px] text-gray-400">
+            <span className="px-1 text-center text-[10px] text-muted-foreground">
               {loading ? 'Chargement…' : 'Indisponible'}
             </span>
           )}
@@ -114,7 +114,7 @@ function SortableRow({
         <button
           type="button"
           onClick={onTag}
-          className="whitespace-nowrap rounded-full border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
+          className="whitespace-nowrap rounded-full border border-border px-3 py-1 text-xs text-foreground hover:bg-muted"
         >
           {!rights
             ? '…'
@@ -138,7 +138,7 @@ function SortableRow({
           type="button"
           onClick={onRemove}
           aria-label="Retirer"
-          className="rounded p-1 text-red-600 hover:bg-red-50"
+          className="rounded p-1 text-destructive hover:bg-destructive-muted"
         >
           <X className="h-4 w-4" />
         </button>
@@ -239,7 +239,7 @@ export function MediaItemsEditor({
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="inline-flex items-center gap-1 rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+          className="inline-flex items-center gap-1 rounded bg-brand px-3 py-1.5 text-sm text-brand-foreground hover:bg-brand/90"
         >
           <Plus className="h-4 w-4" />
           Ajouter des médias
@@ -247,7 +247,7 @@ export function MediaItemsEditor({
       </div>
 
       {value.length === 0 ? (
-        <p className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+        <p className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
           Aucune image. Clique sur « Ajouter des médias » pour en piocher dans
           la bibliothèque.
         </p>
@@ -260,9 +260,9 @@ export function MediaItemsEditor({
           {destinations.length > 0 && rightsQuery.data && (
             <RightsCheckBanner ids={value} destinations={destinations} check={check} />
           )}
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs text-gray-600">
+              <thead className="bg-muted text-xs text-muted-foreground">
                 <tr>
                   <th className="w-8 px-2 py-2"><span className="sr-only">Ordre</span></th>
                   <th className="w-8 px-2 py-2 text-left">N°</th>
@@ -275,9 +275,9 @@ export function MediaItemsEditor({
                       title={IMAGE_USAGE_LABEL[u]}
                       className={`px-2 py-2 text-center font-medium ${
                         destinations.includes(u)
-                          ? 'bg-emerald-50 text-emerald-900'
+                          ? 'bg-success-muted text-success'
                           : destinations.length > 0
-                            ? 'text-gray-400'
+                            ? 'text-muted-foreground'
                             : ''
                       }`}
                     >
@@ -307,7 +307,7 @@ export function MediaItemsEditor({
               </SortableContext>
             </table>
           </div>
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-muted-foreground">
             Droit à l&apos;image : ✓ accord · ✕ refus · ? pas encore d&apos;autorisation · – à taguer.
             Clique sur un média pour indiquer qui y apparaît.
           </p>

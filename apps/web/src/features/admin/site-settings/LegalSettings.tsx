@@ -20,7 +20,7 @@ import {
  */
 
 const inputClass =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none";
+  "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none";
 
 type Settings = Record<string, unknown> | null | undefined;
 const str = (s: Settings, k: string): string => (typeof s?.[k] === "string" ? (s[k] as string) : "");
@@ -53,15 +53,15 @@ function initialOf(s: Settings): SaveLegalSettingsInput {
 export function LegalSettings(): JSX.Element {
   const settings = trpc.siteSettings.get.useQuery();
   return (
-    <section className="mt-12 border-t border-gray-200 pt-8" data-tour="settings.legal">
+    <section className="mt-12 border-t border-border pt-8" data-tour="settings.legal">
       <h2 className="mb-1 text-xl font-semibold">Informations légales</h2>
-      <p className="mb-6 text-sm text-gray-600">
+      <p className="mb-6 text-sm text-muted-foreground">
         Les pages{" "}
-        <Link href="/infos/mentions-legales" className="text-emerald-700 hover:underline" target="_blank">
+        <Link href="/infos/mentions-legales" className="text-success hover:underline" target="_blank">
           Mentions légales
         </Link>{" "}
         et{" "}
-        <Link href="/infos/confidentialite" className="text-emerald-700 hover:underline" target="_blank">
+        <Link href="/infos/confidentialite" className="text-success hover:underline" target="_blank">
           Politique de confidentialité
         </Link>{" "}
         sont générées à partir de ces seuls champs. Les coordonnées publiques («&nbsp;Nous contacter&nbsp;»)
@@ -70,7 +70,7 @@ export function LegalSettings(): JSX.Element {
         pages «&nbsp;mentions-legales&nbsp;» et «&nbsp;confidentialite&nbsp;».
       </p>
       {settings.isPending ? (
-        <p className="text-sm text-gray-500">Chargement…</p>
+        <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : (
         <LegalSettingsForm initial={initialOf(settings.data as Settings)} />
       )}
@@ -93,7 +93,7 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
     <label className="block">
       <span className="mb-1 block text-sm font-medium">{label}</span>
       <input className={inputClass} value={v[k]} placeholder={placeholder} onChange={(e) => set(k, e.target.value)} />
-      {hint && <span className="mt-1 block text-xs text-gray-400">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>}
     </label>
   );
   const monthsField = (k: "accountRetentionMonths" | "ticketRetentionMonths", label: string, hint: string): JSX.Element => (
@@ -101,16 +101,16 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
       <span className="mb-1 block text-sm font-medium">{label}</span>
       <span className="flex items-center gap-2">
         <input type="number" min={1} max={120} className={`${inputClass} max-w-24`} value={v[k]} onChange={(e) => set(k, Number(e.target.value))} />
-        <span className="text-sm text-gray-600">mois</span>
+        <span className="text-sm text-muted-foreground">mois</span>
       </span>
-      <span className="mt-1 block text-xs text-gray-400">{hint}</span>
+      <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>
     </label>
   );
 
   return (
     <div className="space-y-8">
       <fieldset className="space-y-4">
-        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Éditeur</legend>
+        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Éditeur</legend>
         {field("legalName", "Dénomination exacte", "Telle qu'écrite dans les statuts.")}
         <div className="grid gap-4 sm:grid-cols-2">
           {field("legalRna", "Numéro RNA", "W suivi de 9 chiffres (récépissé de déclaration).", "W731234567")}
@@ -125,7 +125,7 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
             placeholder={"3 rue de la Trésorerie\n73000 Chambéry"}
             onChange={(e) => set("legalAddress", e.target.value)}
           />
-          <span className="mt-1 block text-xs text-gray-400">
+          <span className="mt-1 block text-xs text-muted-foreground">
             Celui des statuts, pas forcément le lieu des cours. Une ligne par élément.
           </span>
         </label>
@@ -145,7 +145,7 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Hébergeur</legend>
+        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Hébergeur</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           {field("hostName", "Nom")}
           {field("hostPhone", "Téléphone")}
@@ -162,12 +162,12 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
               </option>
             ))}
           </select>
-          <span className="mt-1 block text-xs text-gray-400">Visible dans le tableau de bord Cloudflare, réglages du bucket.</span>
+          <span className="mt-1 block text-xs text-muted-foreground">Visible dans le tableau de bord Cloudflare, réglages du bucket.</span>
         </label>
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Durées de conservation</legend>
+        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Durées de conservation</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           {monthsField("accountRetentionMonths", "Comptes des anciens membres", "Après la fin de la dernière adhésion.")}
           {monthsField("ticketRetentionMonths", "Demandes et messages", "Après le dernier échange ; les demandes closes sont ensuite supprimées.")}
@@ -183,9 +183,9 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
               value={v.trashRetentionDays ?? 90}
               onChange={(e) => set("trashRetentionDays", Number(e.target.value))}
             />
-            <span className="text-sm text-gray-600">jours</span>
+            <span className="text-sm text-muted-foreground">jours</span>
           </span>
-          <span className="mt-1 block text-xs text-gray-400">
+          <span className="mt-1 block text-xs text-muted-foreground">
             Un élément jeté est effacé définitivement après ce délai, la nuit ; la cloche prévient 7 jours avant.
           </span>
         </label>
@@ -200,32 +200,32 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
               value={v.backupRetentionDays ?? ""}
               onChange={(e) => set("backupRetentionDays", e.target.value === "" ? null : Number(e.target.value))}
             />
-            <span className="text-sm text-gray-600">jours</span>
+            <span className="text-sm text-muted-foreground">jours</span>
           </span>
-          <span className="mt-1 block text-xs text-gray-400">Durée pendant laquelle une sauvegarde nocturne est gardée.</span>
+          <span className="mt-1 block text-xs text-muted-foreground">Durée pendant laquelle une sauvegarde nocturne est gardée.</span>
         </label>
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Crédits</legend>
+        <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Crédits</legend>
         <label className="block">
           <span className="mb-1 block text-sm font-medium">Conception et réalisation (facultatif)</span>
           <textarea className={`${inputClass} min-h-16 resize-y`} value={v.credits} maxLength={500} onChange={(e) => set("credits", e.target.value)} />
         </label>
       </fieldset>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4">
+      <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
         <button
           type="button"
           disabled={problem !== null || save.isPending}
           onClick={() => check.success && save.mutate(check.data)}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
         >
           {save.isPending ? "Enregistrement…" : "Enregistrer les informations légales"}
         </button>
-        {problem && <span className="text-sm text-amber-700">{problem}</span>}
-        {save.isSuccess && <span className="text-sm text-emerald-700">Enregistré : les pages légales sont à jour.</span>}
-        {save.error && <span className="text-sm text-red-600">{save.error.message}</span>}
+        {problem && <span className="text-sm text-warning">{problem}</span>}
+        {save.isSuccess && <span className="text-sm text-success">Enregistré : les pages légales sont à jour.</span>}
+        {save.error && <span className="text-sm text-destructive">{save.error.message}</span>}
       </div>
     </div>
   );

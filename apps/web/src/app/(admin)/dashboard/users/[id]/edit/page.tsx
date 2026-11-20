@@ -36,7 +36,7 @@ export default function EditUserPage({
 
   if (isLoading) return <div>Chargement…</div>;
   if (isError || !user) {
-    return <div className="text-red-600">Utilisateur introuvable.</div>;
+    return <div className="text-destructive">Utilisateur introuvable.</div>;
   }
 
   const isSelf = sessionUserId === user.id;

@@ -51,22 +51,22 @@ export default function HomeHeroEditorPage(): JSX.Element {
           className={
             "rounded-full px-2 py-0.5 text-xs font-semibold " +
             (published
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-amber-100 text-amber-700")
+              ? "bg-success-muted text-success"
+              : "bg-warning-muted text-warning")
           }
         >
           {published ? "Publiée" : "Brouillon"}
         </span>
       </div>
-      <p className="mb-6 text-sm text-gray-600">
+      <p className="mb-6 text-sm text-muted-foreground">
         Titre et texte d’introduction de la page d’accueil. Le reste de la page
         n’est pas affecté.{" "}
-        <Link href="/" className="text-blue-600 hover:underline">
+        <Link href="/" className="text-info hover:underline">
           Voir la page
         </Link>
       </p>
 
-      <label className="mb-1 block text-sm font-medium text-gray-800">
+      <label className="mb-1 block text-sm font-medium text-foreground">
         Titre
       </label>
       <input
@@ -74,11 +74,11 @@ export default function HomeHeroEditorPage(): JSX.Element {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         maxLength={120}
-        className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:outline-none"
+        className="mb-4 w-full rounded-md border border-border px-3 py-2 focus:border-brand focus:outline-none"
         placeholder="Bienvenue à l'AKFC"
       />
 
-      <label className="mb-1 block text-sm font-medium text-gray-800">
+      <label className="mb-1 block text-sm font-medium text-foreground">
         Corps
       </label>
       <textarea
@@ -86,7 +86,7 @@ export default function HomeHeroEditorPage(): JSX.Element {
         onChange={(e) => setBody(e.target.value)}
         maxLength={2000}
         rows={5}
-        className="mb-6 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:outline-none"
+        className="mb-6 w-full rounded-md border border-border px-3 py-2 focus:border-brand focus:outline-none"
         placeholder="Texte d'introduction…"
       />
 
@@ -95,7 +95,7 @@ export default function HomeHeroEditorPage(): JSX.Element {
           type="button"
           disabled={busy || !canSave}
           onClick={() => void persist(false)}
-          className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 disabled:opacity-50"
+          className="rounded-md bg-secondary px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
         >
           Enregistrer en brouillon
         </button>
@@ -103,7 +103,7 @@ export default function HomeHeroEditorPage(): JSX.Element {
           type="button"
           disabled={busy || !canSave}
           onClick={() => void persist(true)}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
         >
           Publier
         </button>

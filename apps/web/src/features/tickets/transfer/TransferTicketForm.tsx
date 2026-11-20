@@ -119,15 +119,15 @@ function TransferTicketForm({
           {...register("note")}
         />
       </div>
-      {formState.errors.toUserId && <p className="mt-1 text-sm text-red-600">{formState.errors.toUserId.message}</p>}
-      {formState.errors.note && <p className="mt-1 text-sm text-red-600">{formState.errors.note.message}</p>}
+      {formState.errors.toUserId && <p className="mt-1 text-sm text-destructive">{formState.errors.toUserId.message}</p>}
+      {formState.errors.note && <p className="mt-1 text-sm text-destructive">{formState.errors.note.message}</p>}
       <p className="mt-1 text-xs text-muted-foreground">Le délai de réponse promis au demandeur ne change pas.</p>
-      {errMsg && <p className="mt-1 text-sm text-red-600">{errMsg}</p>}
+      {errMsg && <p className="mt-1 text-sm text-destructive">{errMsg}</p>}
       <div className="mt-2 flex gap-2">
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-md bg-brand px-3 py-1.5 text-sm text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
         >
           Transférer
         </button>

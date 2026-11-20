@@ -39,14 +39,14 @@ export function SuccessRedirect({
   return (
     <div
       role="status"
-      className="flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4"
+      className="flex items-center gap-3 rounded-md border border-success/40 bg-success-muted p-4"
     >
-      <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
-      <span className="flex-1 text-sm text-emerald-800">{message}</span>
+      <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
+      <span className="flex-1 text-sm text-success">{message}</span>
       <button
         type="button"
         onClick={() => router.push(target)}
-        className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+        className="rounded bg-brand px-3 py-1.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90"
       >
         OK — {remaining}s
       </button>

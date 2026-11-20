@@ -528,7 +528,7 @@ export function DisciplineForm({
             summaryOverLimit
               ? "mt-2 text-right text-xs font-medium text-destructive"
               : summaryChars > maxChars * 0.85
-                ? "mt-2 text-right text-xs font-medium text-amber-600"
+                ? "mt-2 text-right text-xs font-medium text-warning"
                 : "mt-2 text-right text-xs text-muted-foreground"
           }
         >
@@ -588,7 +588,7 @@ export function DisciplineForm({
           type="button"
           onClick={() => handleSubmit(false)}
           disabled={isSubmitting}
-          className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 disabled:opacity-50"
+          className="rounded-md bg-secondary px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
         >
           {isSubmitting ? "Enregistrement…" : "Enregistrer en brouillon"}
         </button>

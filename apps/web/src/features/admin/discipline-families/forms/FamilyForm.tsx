@@ -177,7 +177,7 @@ export function FamilyForm({ initial }: { initial?: DisciplineFamily }): JSX.Ele
           )}
         />
 
-        {state.error && <p className="text-red-500">{state.error}</p>}
+        {state.error && <p className="text-destructive">{state.error}</p>}
 
         <div className="flex justify-end" data-tour="families.form.submit">
           <Button type="submit" disabled={isPending}>

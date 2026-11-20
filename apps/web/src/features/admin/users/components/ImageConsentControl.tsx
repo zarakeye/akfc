@@ -29,9 +29,9 @@ export function ImageConsentControl({
     },
   });
   const tone: Record<ImageConsentValue, string> = {
-    UNKNOWN: "border-gray-300 text-gray-700",
-    GRANTED: "border-emerald-600 bg-emerald-50 text-emerald-800",
-    REFUSED: "border-red-500 bg-red-50 text-red-700",
+    UNKNOWN: "border-border text-foreground",
+    GRANTED: "border-brand bg-success-muted text-success",
+    REFUSED: "border-destructive/40 bg-destructive-muted text-destructive",
   };
 
   return (
@@ -55,14 +55,14 @@ export function ImageConsentControl({
               setValue(v);
               save.mutate({ userId, consent: v });
             }}
-            className={`rounded-full border px-3 py-1.5 ${value === v ? tone[v] + " font-semibold" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+            className={`rounded-full border px-3 py-1.5 ${value === v ? tone[v] + " font-semibold" : "border-border text-muted-foreground hover:bg-muted"}`}
           >
             {IMAGE_CONSENT_LABEL[v]}
           </button>
         ))}
       </div>
-      {save.isSuccess && <p className="mt-2 text-emerald-700">Enregistré.</p>}
-      {save.error && <p className="mt-2 text-red-600">{save.error.message}</p>}
+      {save.isSuccess && <p className="mt-2 text-success">Enregistré.</p>}
+      {save.error && <p className="mt-2 text-destructive">{save.error.message}</p>}
     </fieldset>
   );
 }

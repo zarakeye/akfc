@@ -38,7 +38,7 @@ export default function CoursesListPage(): JSX.Element {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : isError ? (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-destructive">
           Erreur lors du chargement des cours.
         </p>
       ) : (courses ?? []).length === 0 ? (

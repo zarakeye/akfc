@@ -756,10 +756,10 @@ export default function DragNDropForm(): JSX.Element {
             )}
           />
           {disciplinesQuery.isLoading && (
-            <p className="text-sm text-gray-500 mt-1">Chargement…</p>
+            <p className="text-sm text-muted-foreground mt-1">Chargement…</p>
           )}
           {'disciplineId' in errors && errors.disciplineId && (
-            <p className="text-sm text-red-600 mt-1">
+            <p className="text-sm text-destructive mt-1">
               {errors.disciplineId.message}
             </p>
           )}
@@ -771,9 +771,9 @@ export default function DragNDropForm(): JSX.Element {
         <div>
           <label className="block font-semibold mb-1">Stage</label>
           {stagesQuery.isLoading ? (
-            <p className="text-sm text-gray-500">Chargement…</p>
+            <p className="text-sm text-muted-foreground">Chargement…</p>
           ) : stagesForUpload.length === 0 ? (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Aucun stage. Les stages sont créés par les admins.
             </p>
           ) : (
@@ -793,7 +793,7 @@ export default function DragNDropForm(): JSX.Element {
             </select>
           )}
           {'seminarId' in errors && errors.seminarId && (
-            <p className="text-sm text-red-600 mt-1">{errors.seminarId.message}</p>
+            <p className="text-sm text-destructive mt-1">{errors.seminarId.message}</p>
           )}
         </div>
       )}
@@ -804,9 +804,9 @@ export default function DragNDropForm(): JSX.Element {
           <div>
             <label className="block font-semibold mb-1">Évènement</label>
             {eventsQuery.isLoading ? (
-              <p className="text-sm text-gray-500">Chargement…</p>
+              <p className="text-sm text-muted-foreground">Chargement…</p>
             ) : eventsForUpload.length === 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Aucun évènement. Les évènements sont créés par les admins.
               </p>
             ) : (
@@ -826,7 +826,7 @@ export default function DragNDropForm(): JSX.Element {
               </select>
             )}
             {'eventId' in errors && errors.eventId && (
-              <p className="text-sm text-red-600 mt-1">
+              <p className="text-sm text-destructive mt-1">
                 {errors.eventId.message}
               </p>
             )}
@@ -836,7 +836,7 @@ export default function DragNDropForm(): JSX.Element {
               Disciplines présentées (optionnel)
             </label>
             {allDisciplines.length === 0 ? (
-              <p className="text-sm text-gray-500">Chargement…</p>
+              <p className="text-sm text-muted-foreground">Chargement…</p>
             ) : (
               <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto rounded border p-2">
                 {allDisciplines.map((d) => (
@@ -851,7 +851,7 @@ export default function DragNDropForm(): JSX.Element {
                 ))}
               </div>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Elles décrivent l&apos;ÉVÈNEMENT (pas chaque fichier) et
               s&apos;ajoutent aux disciplines déjà enregistrées sur lui.
             </p>
@@ -875,7 +875,7 @@ export default function DragNDropForm(): JSX.Element {
               <option key={folder} value={folder} />
             ))}
           </datalist>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Choisis un dossier existant, tape un nouveau nom, ou laisse vide.
           </p>
         </div>
@@ -885,7 +885,7 @@ export default function DragNDropForm(): JSX.Element {
       <div
         {...getRootProps()}
         className={`border-2 border-dashed p-6 rounded-md text-center mt-4 ${
-          isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+          isDragActive ? 'border-ring bg-info-muted' : 'border-border'
         }`}
       >
         <input {...getInputProps()} />
@@ -897,7 +897,7 @@ export default function DragNDropForm(): JSX.Element {
               Glisse des fichiers ou clique (max {MAX_FILES_PER_BATCH} fichiers
               par envoi)
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Images jusqu&apos;à {MAX_IMAGE_SIZE_MB} Mo · vidéos, audios, documents
               jusqu&apos;à {MAX_FILE_SIZE_MB} Mo
             </p>
@@ -906,7 +906,7 @@ export default function DragNDropForm(): JSX.Element {
       </div>
 
       {heicConverting > 0 && <p className="text-sm text-muted-foreground">{heicProgressMessage(heicConverting)}</p>}
-      {filesError && <p className="text-sm text-red-600">{filesError}</p>}
+      {filesError && <p className="text-sm text-destructive">{filesError}</p>}
 
       {/* Previews + statuts */}
       {items.length > 0 && (
@@ -916,7 +916,7 @@ export default function DragNDropForm(): JSX.Element {
             return (
               <div
                 key={it.id}
-                className="relative w-32 h-32 border rounded overflow-hidden group bg-gray-50"
+                className="relative w-32 h-32 border rounded overflow-hidden group bg-muted"
               >
                 {showsImagePreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -938,7 +938,7 @@ export default function DragNDropForm(): JSX.Element {
                       {iconForMime(it.file.type)}
                     </span>
                     <span
-                      className="text-xs text-gray-700 truncate w-full"
+                      className="text-xs text-foreground truncate w-full"
                       title={it.file.name}
                     >
                       {it.file.name}
@@ -950,10 +950,10 @@ export default function DragNDropForm(): JSX.Element {
                   <div
                     className={`absolute bottom-0 left-0 right-0 text-xs text-white text-center py-0.5 ${
                       it.status === 'uploading'
-                        ? 'bg-blue-600/80'
+                        ? 'bg-brand/80'
                         : it.status === 'done'
-                          ? 'bg-green-600/80'
-                          : 'bg-red-600/80'
+                          ? 'bg-brand/80'
+                          : 'bg-destructive/80'
                     }`}
                     title={it.errorMessage}
                   >
@@ -964,7 +964,7 @@ export default function DragNDropForm(): JSX.Element {
                 )}
 
                 {it.status === 'error' && it.errorMessage && (
-                  <div className="absolute -bottom-12 left-0 right-0 text-[10px] text-red-700 bg-red-50 border border-red-200 rounded p-1 break-words leading-tight z-20">
+                  <div className="absolute -bottom-12 left-0 right-0 text-[10px] text-destructive bg-destructive-muted border border-destructive/40 rounded p-1 break-words leading-tight z-20">
                     {it.errorMessage}
                   </div>
                 )}
@@ -982,7 +982,7 @@ export default function DragNDropForm(): JSX.Element {
                   <div className="flex flex-col gap-1 z-10">
                     <button
                       type="button"
-                      className="bg-red-500 text-white text-xs px-1 rounded"
+                      className="bg-destructive text-destructive-foreground text-xs px-1 rounded"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRemoveItem(it.id);
@@ -1013,7 +1013,7 @@ export default function DragNDropForm(): JSX.Element {
       {selectedIds.size > 0 && (
         <button
           type="button"
-          className="px-3 py-1 bg-red-600 text-white rounded mt-2"
+          className="px-3 py-1 bg-destructive text-destructive-foreground rounded mt-2"
           onClick={removeSelected}
         >
           Supprimer sélection ({selectedIds.size})
@@ -1031,14 +1031,14 @@ export default function DragNDropForm(): JSX.Element {
       {/* Dialogue de conflit — fichiers déjà présents */}
       {overwritePrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-80 rounded-lg bg-white p-4 shadow-xl">
+          <div className="w-80 rounded-lg bg-card p-4 shadow-xl">
             <h3 className="mb-2 font-semibold">Fichiers déjà présents</h3>
-            <p className="mb-2 text-sm text-gray-600">
+            <p className="mb-2 text-sm text-muted-foreground">
               {overwritePrompt.names.length} fichier(s) existent déjà dans la
               bibliothèque. Les remplacer garde leur contenu actuel dans leurs
               versions :
             </p>
-            <ul className="mb-3 max-h-32 overflow-auto rounded border border-gray-200 bg-gray-50 p-2 text-xs">
+            <ul className="mb-3 max-h-32 overflow-auto rounded border border-border bg-muted p-2 text-xs">
               {overwritePrompt.names.map((n) => (
                 <li key={n} className="truncate" title={n}>
                   {n}
@@ -1048,7 +1048,7 @@ export default function DragNDropForm(): JSX.Element {
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                className="rounded border px-3 py-1.5 text-sm hover:bg-gray-50"
+                className="rounded border px-3 py-1.5 text-sm hover:bg-muted"
                 onClick={() => {
                   overwritePrompt.resolve('cancel');
                   setOverwritePrompt(null);
@@ -1058,7 +1058,7 @@ export default function DragNDropForm(): JSX.Element {
               </button>
               <button
                 type="button"
-                className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+                className="rounded bg-brand px-3 py-1.5 text-sm text-brand-foreground hover:bg-brand/90"
                 onClick={() => {
                   overwritePrompt.resolve('overwrite');
                   setOverwritePrompt(null);
@@ -1072,8 +1072,8 @@ export default function DragNDropForm(): JSX.Element {
       )}
 
       {isAdmin && hasPdf && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-800">
+        <div className="rounded-lg border border-success/40 bg-success-muted/50 p-3">
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground">
             <input
               type="checkbox"
               checked={publishToMembers}
@@ -1084,7 +1084,7 @@ export default function DragNDropForm(): JSX.Element {
           </label>
           {publishToMembers && (
             <div className="mt-3 space-y-2">
-              <label className="flex items-center gap-2 text-sm text-gray-700">
+              <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="radio"
                   name="pubAudience"
@@ -1094,7 +1094,7 @@ export default function DragNDropForm(): JSX.Element {
                 />
                 Tous les membres
               </label>
-              <label className="flex items-center gap-2 text-sm text-gray-700">
+              <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="radio"
                   name="pubAudience"
@@ -1105,11 +1105,11 @@ export default function DragNDropForm(): JSX.Element {
                 Des membres précis
               </label>
               {publishAudience === 'SPECIFIC' && (
-                <div className="max-h-40 space-y-1 overflow-auto rounded border border-gray-200 bg-white p-2">
+                <div className="max-h-40 space-y-1 overflow-auto rounded border border-border bg-card p-2">
                   {(membersQuery.data ?? []).map((m) => (
                     <label
                       key={m.id}
-                      className="flex cursor-pointer items-center gap-2 text-sm text-gray-700"
+                      className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                     >
                       <input
                         type="checkbox"
@@ -1136,22 +1136,22 @@ export default function DragNDropForm(): JSX.Element {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed w-full mt-4"
+        className="px-4 py-2 bg-brand text-brand-foreground rounded disabled:bg-secondary disabled:cursor-not-allowed w-full mt-4"
       >
         {isSubmitting ? 'Envoi…' : 'Envoyer'}
       </button>
 
       {submitSuccess !== null && (
-        <p className="text-sm text-green-700">
+        <p className="text-sm text-success">
           ✅ {submitSuccess} fichier(s) enregistré(s) avec succès.
         </p>
       )}
       {skippedCount !== null && skippedCount > 0 && (
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           ⏭️ {skippedCount} fichier(s) déjà présent(s) ont été ignorés.
         </p>
       )}
-      {submitError && <p className="text-sm text-red-700">⚠️ {submitError}</p>}
+      {submitError && <p className="text-sm text-destructive">⚠️ {submitError}</p>}
     </form>
   );
 }

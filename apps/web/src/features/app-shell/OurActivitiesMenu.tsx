@@ -181,7 +181,7 @@ export default function OurActivitiesMenu({
                       <Link
                         href={`/disciplines/${d.slug}`}
                         aria-current={isCurrent(d.slug) ? "page" : undefined}
-                        className={`block px-4 py-2 ${isCurrent(d.slug) ? NAV_SUB_ACTIVE_BAR : "text-gray-800 hover:bg-gray-100"}`}
+                        className={`block px-4 py-2 ${isCurrent(d.slug) ? NAV_SUB_ACTIVE_BAR : "text-foreground hover:bg-muted"}`}
                       >
                         {d.name}
                       </Link>

@@ -32,19 +32,19 @@ export function GuardianLinkPanel({ userId }: { userId: string }): JSX.Element |
               attente du parent.
             </>
           ) : (
-            <span className="text-amber-800">Le lien envoyé le {formatDate(p.sentAt)} a expiré.</span>
+            <span className="text-warning">Le lien envoyé le {formatDate(p.sentAt)} a expiré.</span>
           )
         ) : (
-          <span className="text-amber-800">Aucun lien valable : l&apos;envoi a échoué.</span>
+          <span className="text-warning">Aucun lien valable : l&apos;envoi a échoué.</span>
         )}
       </p>
-      {resend.error && <p className="mt-2 text-red-600">{resend.error.message}</p>}
-      {resend.isSuccess && <p className="mt-2 text-emerald-700">Nouveau lien envoyé à {resend.data.sentToMasked}.</p>}
+      {resend.error && <p className="mt-2 text-destructive">{resend.error.message}</p>}
+      {resend.isSuccess && <p className="mt-2 text-success">Nouveau lien envoyé à {resend.data.sentToMasked}.</p>}
       <button
         type="button"
         onClick={() => resend.mutate({ userId })}
         disabled={resend.isPending}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 hover:bg-gray-50 disabled:opacity-50"
+        className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 hover:bg-muted disabled:opacity-50"
       >
         <Send className="h-4 w-4" />
         {resend.isPending ? "Envoi…" : "Renvoyer le lien au parent"}

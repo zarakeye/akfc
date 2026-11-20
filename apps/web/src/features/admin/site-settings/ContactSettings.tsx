@@ -18,21 +18,21 @@ import {
  */
 
 const inputClass =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none";
+  "w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none";
 
 export function ContactSettings(): JSX.Element {
   const settings = trpc.siteSettings.get.useQuery();
   return (
-    <section className="mt-12 border-t border-gray-200 pt-8" data-tour="settings.contact">
+    <section className="mt-12 border-t border-border pt-8" data-tour="settings.contact">
       <h2 className="mb-1 text-xl font-semibold">Coordonnées publiques</h2>
-      <p className="mb-6 text-sm text-gray-600">
+      <p className="mb-6 text-sm text-muted-foreground">
         Affichées à tous sur la page «&nbsp;Nous contacter&nbsp;» : c&apos;est ainsi que le public et les
         partenaires joignent l&apos;association. Le formulaire de demandes, lui, est réservé aux membres
         connectés. Un champ laissé vide n&apos;est pas affiché. Les mentions légales n&apos;utilisent pas ces
         coordonnées mais celles des «&nbsp;Informations légales&nbsp;», plus bas.
       </p>
       {settings.isPending ? (
-        <p className="text-sm text-gray-500">Chargement…</p>
+        <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : (
         <ContactSettingsForm
           initialEmail={settings.data?.contactEmail ?? ""}
@@ -86,14 +86,14 @@ function ContactSettingsForm(props: {
 
       <fieldset>
         <legend className="mb-1 text-sm font-medium">Téléphones</legend>
-        <p className="mb-3 text-xs text-gray-500">
+        <p className="mb-3 text-xs text-muted-foreground">
           Pour chaque numéro, indiquez s&apos;il répond aux appels, sur WhatsApp, ou les deux. Le libellé est
           facultatif (ex. «&nbsp;Bureau&nbsp;», «&nbsp;Président&nbsp;»). N&apos;indiquez que des numéros que
           leurs titulaires acceptent de rendre publics.
         </p>
         <ul className="space-y-3">
           {phones.map((p, i) => (
-            <li key={i} className="flex flex-wrap items-center gap-3 rounded-md border border-gray-200 p-3">
+            <li key={i} className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3">
               <input
                 className={`${inputClass} max-w-40`}
                 value={p.label}
@@ -126,7 +126,7 @@ function ContactSettingsForm(props: {
                   save.reset();
                   setPhones((list) => list.filter((_, j) => j !== i));
                 }}
-                className="ml-auto rounded p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600"
+                className="ml-auto rounded p-1.5 text-muted-foreground hover:bg-destructive-muted hover:text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -140,7 +140,7 @@ function ContactSettingsForm(props: {
               save.reset();
               setPhones((list) => [...list, { ...EMPTY_PHONE }]);
             }}
-            className="mt-3 inline-flex items-center gap-1 text-sm text-emerald-700 hover:underline"
+            className="mt-3 inline-flex items-center gap-1 text-sm text-success hover:underline"
           >
             <Plus className="h-4 w-4" /> Ajouter un numéro
           </button>
@@ -159,21 +159,21 @@ function ContactSettingsForm(props: {
           }}
           placeholder={"MJC de Chambéry\n311 Faubourg Montmélian\n73000 Chambéry"}
         />
-        <span className="mt-1 block text-xs text-gray-400">Une ligne par élément.</span>
+        <span className="mt-1 block text-xs text-muted-foreground">Une ligne par élément.</span>
       </label>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4">
+      <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
         <button
           type="button"
           disabled={problem !== null || save.isPending}
           onClick={() => check.success && save.mutate(check.data)}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
         >
           {save.isPending ? "Enregistrement…" : "Enregistrer les coordonnées"}
         </button>
-        {problem && <span className="text-sm text-amber-700">{problem}</span>}
-        {save.isSuccess && <span className="text-sm text-emerald-700">Enregistré.</span>}
-        {save.error && <span className="text-sm text-red-600">{save.error.message}</span>}
+        {problem && <span className="text-sm text-warning">{problem}</span>}
+        {save.isSuccess && <span className="text-sm text-success">Enregistré.</span>}
+        {save.error && <span className="text-sm text-destructive">{save.error.message}</span>}
       </div>
     </div>
   );

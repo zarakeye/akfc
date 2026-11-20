@@ -30,7 +30,7 @@ const PRINT_CSS = `@media print {
 export default async function RegisterPage(): Promise<JSX.Element> {
   const session = await getSessionFromRequest();
   if (!session?.user || !(await isAdminByGroup(prisma, session.user.id))) {
-    return <p className="p-6 text-sm text-gray-600">Réservé aux administrateurs.</p>;
+    return <p className="p-6 text-sm text-muted-foreground">Réservé aux administrateurs.</p>;
   }
   const [info, inactive] = await Promise.all([getLegalInfo(), listInactiveAccounts(prisma)]);
   const activities = processingActivities(info);
@@ -44,15 +44,15 @@ export default async function RegisterPage(): Promise<JSX.Element> {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Registre des activités de traitement</h1>
-          <p className="mt-1 text-gray-600">Article 30 du RGPD — état au {frenchDate(new Date())}</p>
+          <p className="mt-1 text-muted-foreground">Article 30 du RGPD — état au {frenchDate(new Date())}</p>
         </div>
         <PrintButton />
       </div>
 
       {/* Hors registre (non imprimé) : comptes à examiner au regard de la durée de conservation. */}
-      <section className="registre-noprint mt-6 rounded-lg border border-amber-300 bg-amber-50 p-4">
+      <section className="registre-noprint mt-6 rounded-lg border border-warning/40 bg-warning-muted p-4">
         <h2 className="mb-1 font-semibold">Comptes à examiner ({inactive.accounts.length})</h2>
-        <p className="text-gray-700">
+        <p className="text-foreground">
           Sans connexion depuis plus de {inactive.months} mois (réglage « Comptes des anciens membres »). Si la
           personne n&apos;est plus adhérente, supprimez son compte depuis Utilisateurs ; sinon, rien à faire. Les
           demandes closes, sessions et liens périmés sont, eux, purgés automatiquement chaque nuit.
@@ -61,10 +61,10 @@ export default async function RegisterPage(): Promise<JSX.Element> {
           <ul className="mt-3 flex list-none flex-col gap-1 p-0">
             {inactive.accounts.map((a) => (
               <li key={a.id}>
-                <Link href={`/dashboard/users/${a.id}`} className="text-emerald-700 hover:underline">
+                <Link href={`/dashboard/users/${a.id}`} className="text-success hover:underline">
                   {a.name}
                 </Link>{" "}
-                <span className="text-gray-500">
+                <span className="text-muted-foreground">
                   — {a.email} — {a.lastLoginAt ? `dernière connexion le ${frenchDate(a.lastLoginAt)}` : `jamais connecté (compte créé le ${frenchDate(a.createdAt)})`}
                 </span>
               </li>
@@ -73,7 +73,7 @@ export default async function RegisterPage(): Promise<JSX.Element> {
         )}
       </section>
 
-      <section className="mt-6 rounded-lg border border-gray-200 p-4">
+      <section className="mt-6 rounded-lg border border-border p-4">
         <h2 className="mb-2 font-semibold">Responsable du traitement</h2>
         <p>
           {responsible}
@@ -84,43 +84,43 @@ export default async function RegisterPage(): Promise<JSX.Element> {
           Représentant : {info.director ?? "(à renseigner)"}
           {info.director && info.directorTitle ? `, ${info.directorTitle}` : ""} — contact : {info.email ?? "(à renseigner)"}
         </p>
-        <p className="mt-1 text-gray-600">Pas de délégué à la protection des données (non obligatoire pour l&apos;association).</p>
+        <p className="mt-1 text-muted-foreground">Pas de délégué à la protection des données (non obligatoire pour l&apos;association).</p>
       </section>
 
-      <p className="registre-noprint mt-4 text-gray-600">
+      <p className="registre-noprint mt-4 text-muted-foreground">
         Ce registre est tenu à jour automatiquement : il reprend la politique de confidentialité et les réglages
         (identité, durées de conservation, région de stockage). Il est à présenter à la CNIL en cas de contrôle.
       </p>
 
       {activities.map((a, i) => (
-        <section key={a.id} className="mt-6 break-inside-avoid rounded-lg border border-gray-200 p-4">
+        <section key={a.id} className="mt-6 break-inside-avoid rounded-lg border border-border p-4">
           <h2 className="mb-3 font-semibold">
             {i + 1}. {a.name}
           </h2>
           <dl className="grid gap-x-4 gap-y-1.5 sm:grid-cols-[12rem_1fr]">
-            <dt className="text-gray-500">Finalité</dt>
+            <dt className="text-muted-foreground">Finalité</dt>
             <dd>{a.purpose}</dd>
-            <dt className="text-gray-500">Personnes concernées</dt>
+            <dt className="text-muted-foreground">Personnes concernées</dt>
             <dd>{a.people}</dd>
-            <dt className="text-gray-500">Données</dt>
+            <dt className="text-muted-foreground">Données</dt>
             <dd>{a.data}</dd>
-            <dt className="text-gray-500">Base légale</dt>
+            <dt className="text-muted-foreground">Base légale</dt>
             <dd>{a.legalBasis}</dd>
-            <dt className="text-gray-500">Destinataires internes</dt>
+            <dt className="text-muted-foreground">Destinataires internes</dt>
             <dd>{a.recipients}</dd>
-            <dt className="text-gray-500">Sous-traitants</dt>
+            <dt className="text-muted-foreground">Sous-traitants</dt>
             <dd>{a.processors.map((n) => `${n} (${byName.get(n)?.location ?? "?"})`).join(" ; ")}</dd>
-            <dt className="text-gray-500">Transferts hors UE</dt>
+            <dt className="text-muted-foreground">Transferts hors UE</dt>
             <dd>
               {a.processors.map((n) => byName.get(n)).filter((p) => p?.transfer).map((p) => `${p!.name} : ${p!.transfer}`).join(" ; ") || "Aucun"}
             </dd>
-            <dt className="text-gray-500">Durée de conservation</dt>
+            <dt className="text-muted-foreground">Durée de conservation</dt>
             <dd>{a.retention}</dd>
           </dl>
         </section>
       ))}
 
-      <section className="mt-6 break-inside-avoid rounded-lg border border-gray-200 p-4">
+      <section className="mt-6 break-inside-avoid rounded-lg border border-border p-4">
         <h2 className="mb-2 font-semibold">Mesures de sécurité (tous traitements)</h2>
         <ul className="list-disc pl-5">
           {SECURITY_MEASURES.map((m) => (
@@ -129,7 +129,7 @@ export default async function RegisterPage(): Promise<JSX.Element> {
         </ul>
       </section>
 
-      <section className="mt-6 break-inside-avoid rounded-lg border border-gray-200 p-4">
+      <section className="mt-6 break-inside-avoid rounded-lg border border-border p-4">
         <h2 className="mb-2 font-semibold">Procédures</h2>
         <ul className="list-disc space-y-1.5 pl-5">
           <li>

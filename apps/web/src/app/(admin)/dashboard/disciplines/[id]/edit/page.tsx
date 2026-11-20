@@ -51,7 +51,7 @@ export default function EditDisciplinePage({
 
   if (isLoading) return <div>Chargement de la discipline…</div>;
   if (isError || !discipline) {
-    return <div className="text-red-600">Discipline introuvable.</div>;
+    return <div className="text-destructive">Discipline introuvable.</div>;
   }
 
   const handleSubmit = async (input: DisciplineFormInput): Promise<void> => {
@@ -102,13 +102,13 @@ export default function EditDisciplinePage({
       )}
 
       {!done && (
-        <div className="mt-8 border-t border-red-200 pt-4">
-          <p className="mb-2 text-sm font-medium text-red-700">Zone dangereuse</p>
+        <div className="mt-8 border-t border-destructive/40 pt-4">
+          <p className="mb-2 text-sm font-medium text-destructive">Zone dangereuse</p>
           {!confirmingDelete ? (
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+              className="rounded-md bg-destructive px-3 py-1.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
             >
               Supprimer la discipline
             </button>
@@ -122,7 +122,7 @@ export default function EditDisciplinePage({
                   type="button"
                   disabled={del.isPending}
                   onClick={() => del.mutate({ id: disciplineId })}
-                  className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  className="rounded-md bg-destructive px-3 py-1.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
                 >
                   Confirmer la suppression
                 </button>
@@ -137,7 +137,7 @@ export default function EditDisciplinePage({
             </div>
           )}
           {del.error && (
-            <p className="mt-2 text-sm text-red-600">{del.error.message}</p>
+            <p className="mt-2 text-sm text-destructive">{del.error.message}</p>
           )}
         </div>
       )}

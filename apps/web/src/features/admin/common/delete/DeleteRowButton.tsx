@@ -44,7 +44,7 @@ export function DeleteRowButton({
           e.preventDefault();
           setOpen(true);
         }}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:opacity-40 disabled:hover:bg-transparent"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-destructive transition-colors hover:bg-destructive-muted hover:text-destructive disabled:cursor-not-allowed disabled:text-muted-foreground disabled:opacity-40 disabled:hover:bg-transparent"
       >
         <Trash2 className="h-4 w-4" />
       </button>

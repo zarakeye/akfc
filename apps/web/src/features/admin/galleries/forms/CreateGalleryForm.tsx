@@ -332,7 +332,7 @@ export function CreateGalleryForm(): JSX.Element {
           />
         </div>
 
-        {state.error && <p className="text-red-500">{state.error}</p>}
+        {state.error && <p className="text-destructive">{state.error}</p>}
 
         <div className="flex gap-3.5 justify-end" data-tour="galleries.form.submit">
           <Button

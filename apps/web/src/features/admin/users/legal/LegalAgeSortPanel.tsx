@@ -35,7 +35,7 @@ export function LegalAgeSortPanel({ comptes }: { comptes: Compte[] }): JSX.Eleme
 
   if (comptes.length === 0) {
     return resultat === null ? null : (
-      <p role="status" className="mb-3 text-sm text-emerald-800 dark:text-emerald-300">
+      <p role="status" className="mb-3 text-sm text-success">
         {resultat} compte(s) passé(s) en majeurs. Tous les comptes ont leur majorité renseignée.
       </p>
     );
@@ -53,17 +53,17 @@ export function LegalAgeSortPanel({ comptes }: { comptes: Compte[] }): JSX.Eleme
   return (
     <section
       aria-label="Majorité à renseigner"
-      className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-700 dark:bg-amber-950/40"
+      className="mb-4 rounded-lg border border-warning/40 bg-warning-muted p-4 text-sm"
     >
       {resultat !== null && (
-        <p role="status" className="mb-2 text-emerald-800 dark:text-emerald-300">
+        <p role="status" className="mb-2 text-success">
           {resultat} compte(s) passé(s) en majeurs.
         </p>
       )}
       <p className="font-semibold">
         {comptes.length} compte(s) sans majorité renseignée
       </p>
-      <p className="mt-1 text-amber-900 dark:text-amber-200">
+      <p className="mt-1 text-warning">
         Tant qu&apos;elle ne l&apos;est pas, le membre ne peut pas donner son droit à l&apos;image en ligne.
       </p>
       {!ouvert ? (
@@ -99,13 +99,13 @@ export function LegalAgeSortPanel({ comptes }: { comptes: Compte[] }): JSX.Eleme
               </li>
             ))}
           </ul>
-          {marquer.error && <p className="text-red-600">{marquer.error.message}</p>}
+          {marquer.error && <p className="text-destructive">{marquer.error.message}</p>}
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
               disabled={choisis.length === 0 || marquer.isPending}
               onClick={() => marquer.mutate({ userIds: choisis.map((c) => c.id) })}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="rounded-md bg-brand px-3 py-1.5 font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
             >
               {marquer.isPending ? "Enregistrement…" : `Marquer majeurs (${choisis.length})`}
             </button>

@@ -152,7 +152,7 @@ export default function UpdateMeForm(): JSX.Element {
     <section className="space-y-4">
       <Link
         href={back.href}
-        className="inline-flex items-center gap-1.5 text-sm text-slate-600 transition-colors hover:text-slate-900"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         {back.label}
@@ -160,13 +160,13 @@ export default function UpdateMeForm(): JSX.Element {
 
       <header className="space-y-1">
         <h2 className="text-lg font-semibold">Mon profil</h2>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           Mets à jour tes informations. Le rôle est géré par l’admin.
         </p>
       </header>
 
       {isFirstLogin && (
-        <div className="rounded border border-sky-300 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-100">
+        <div className="rounded border border-info/40 bg-info-muted p-3 text-sm text-info">
           <p className="font-medium">Bienvenue !</p>
           <p className="mt-1">
             Complète ton profil ci-dessous et enregistre-le : le site te ramène ici tant
@@ -178,19 +178,19 @@ export default function UpdateMeForm(): JSX.Element {
       {loading && <div>Chargement…</div>}
 
       {loadError && (
-        <div className="text-sm text-red-600">
+        <div className="text-sm text-destructive">
           Impossible de charger le profil : {loadError.message}
         </div>
       )}
 
       {state.status === "error" && state.error && (
-        <div className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded border border-destructive/40 bg-destructive-muted p-3 text-sm text-destructive">
           {state.error}
         </div>
       )}
 
       {state.status === "success" && state.message && (
-        <div className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+        <div className="rounded border border-success/40 bg-success-muted p-3 text-sm text-success">
           {state.message}
         </div>
       )}
@@ -204,7 +204,7 @@ export default function UpdateMeForm(): JSX.Element {
               {...register("firstName")}
             />
             {errors.firstName?.message && (
-              <span className="text-xs text-red-600">
+              <span className="text-xs text-destructive">
                 {errors.firstName.message}
               </span>
             )}
@@ -217,7 +217,7 @@ export default function UpdateMeForm(): JSX.Element {
               {...register("lastName")}
             />
             {errors.lastName?.message && (
-              <span className="text-xs text-red-600">
+              <span className="text-xs text-destructive">
                 {errors.lastName.message}
               </span>
             )}
@@ -230,7 +230,7 @@ export default function UpdateMeForm(): JSX.Element {
               {...register("pseudo")}
             />
             {errors.pseudo?.message && (
-              <span className="text-xs text-red-600">
+              <span className="text-xs text-destructive">
                 {errors.pseudo.message}
               </span>
             )}
@@ -243,7 +243,7 @@ export default function UpdateMeForm(): JSX.Element {
               {...register("phone")}
             />
             {errors.phone?.message && (
-              <span className="text-xs text-red-600">
+              <span className="text-xs text-destructive">
                 {errors.phone.message}
               </span>
             )}
@@ -253,17 +253,17 @@ export default function UpdateMeForm(): JSX.Element {
             <span className="text-sm">Date de naissance</span>
             <input
               type="date"
-              className="border rounded px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500"
+              className="border rounded px-3 py-2 disabled:bg-muted disabled:text-muted-foreground"
               disabled={birthDateLocked}
               {...register("birthDate")}
             />
             {birthDateLock === "CLUB" && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 Renseignée par le club : pour la corriger, adressez-vous à un instructeur.
               </span>
             )}
             {errors.birthDate?.message && (
-              <span className="text-xs text-red-600">
+              <span className="text-xs text-destructive">
                 {errors.birthDate.message}
               </span>
             )}
@@ -277,7 +277,7 @@ export default function UpdateMeForm(): JSX.Element {
               {...register("aboutMe")}
             />
             {errors.aboutMe?.message && (
-              <span className="text-xs text-red-600">
+              <span className="text-xs text-destructive">
                 {errors.aboutMe.message}
               </span>
             )}

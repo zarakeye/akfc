@@ -19,10 +19,10 @@ export const USAGE_SHORT_LABEL: Record<ImageUsageValue, string> = {
 };
 
 const TONE: Record<UsageVerdict, { cls: string; sign: string }> = {
-  OK: { cls: "bg-emerald-100 text-emerald-800 ring-emerald-300", sign: "✓" },
-  REFUSED: { cls: "bg-red-100 text-red-800 ring-red-300", sign: "✕" },
-  MISSING: { cls: "bg-amber-100 text-amber-800 ring-amber-300", sign: "?" },
-  UNTAGGED: { cls: "bg-gray-100 text-gray-500 ring-gray-300", sign: "–" },
+  OK: { cls: "bg-success-muted text-success ring-ring", sign: "✓" },
+  REFUSED: { cls: "bg-destructive-muted text-destructive ring-destructive", sign: "✕" },
+  MISSING: { cls: "bg-warning-muted text-warning ring-amber-300", sign: "?" },
+  UNTAGGED: { cls: "bg-muted text-muted-foreground ring-ring", sign: "–" },
 };
 
 /** Une pastille : verdict d'un média (ou état d'une personne) pour un usage. */
@@ -61,7 +61,7 @@ export function VerdictBadges({
         {IMAGE_USAGE_VALUES.map((u) => (
           <span key={u} className="flex flex-col items-center gap-0.5">
             <VerdictBadge usage={u} verdict={verdicts[u]} />
-            <span className="text-[10px] text-gray-500" aria-hidden>
+            <span className="text-[10px] text-muted-foreground" aria-hidden>
               {USAGE_SHORT_LABEL[u]}
             </span>
           </span>

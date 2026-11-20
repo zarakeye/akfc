@@ -202,7 +202,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                           >
                             {item.label}
                             {typeof item.badge === "number" && item.badge > 0 ? (
-                              <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                              <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
                                 {item.badge}
                               </span>
                             ) : null}

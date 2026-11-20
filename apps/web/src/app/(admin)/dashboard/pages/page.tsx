@@ -28,14 +28,14 @@ export default function EditorialPagesHub(): JSX.Element {
   return (
     <div className="mx-auto max-w-3xl p-6">
       <h1 className="mb-1 text-2xl font-semibold">Pages éditoriales</h1>
-      <p className="mb-6 text-sm text-gray-600">
+      <p className="mb-6 text-sm text-muted-foreground">
         Pages au contenu propre, non alimentées par un autre éditeur. Composez-les
         dans leur constructeur, puis publiez-les. Une page en brouillon n’est
         visible que des administrateurs.
       </p>
 
       {isLoading ? (
-        <p className="text-sm text-gray-500">Chargement…</p>
+        <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : (
         <ul className="space-y-2" data-tour="pages.list">
           {PAGE_REGISTRY.map((p) => {
@@ -43,7 +43,7 @@ export default function EditorialPagesHub(): JSX.Element {
             return (
               <li
                 key={p.key}
-                className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -52,14 +52,14 @@ export default function EditorialPagesHub(): JSX.Element {
                       className={
                         "rounded-full px-2 py-0.5 text-xs font-semibold " +
                         (pub
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700")
+                          ? "bg-success-muted text-success"
+                          : "bg-warning-muted text-warning")
                       }
                     >
                       {pub ? "Publiée" : "Brouillon"}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">{p.path}</span>
+                  <span className="text-xs text-muted-foreground">{p.path}</span>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
@@ -69,7 +69,7 @@ export default function EditorialPagesHub(): JSX.Element {
                     onClick={() =>
                       router.push(`/dashboard/site-pages/${p.key}`)
                     }
-                    className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200"
+                    className="rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                   >
                     Éditer
                   </button>
@@ -83,8 +83,8 @@ export default function EditorialPagesHub(): JSX.Element {
                     className={
                       "rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 " +
                       (pub
-                        ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                        : "bg-emerald-600 text-white hover:bg-emerald-700")
+                        ? "bg-warning-muted text-warning hover:bg-amber-200"
+                        : "bg-brand text-brand-foreground hover:bg-brand/90")
                     }
                   >
                     {pub ? "Repasser en brouillon" : "Publier"}

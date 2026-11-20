@@ -37,7 +37,7 @@ export default function TicketsPage(): JSX.Element {
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-bold">Demandes</h1>
         {access.data.overdue > 0 && (
-          <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
+          <span className="rounded-full bg-destructive px-3 py-1 text-xs font-semibold text-destructive-foreground">
             {access.data.overdue} sans réponse au-delà du délai
           </span>
         )}
@@ -51,7 +51,7 @@ export default function TicketsPage(): JSX.Element {
             aria-selected={scope === tab.key}
             onClick={() => setScope(tab.key)}
             className={`rounded-full px-4 py-1.5 text-sm ${
-              scope === tab.key ? "bg-emerald-600 text-white" : "border border-border hover:bg-muted"
+              scope === tab.key ? "bg-brand text-brand-foreground" : "border border-border hover:bg-muted"
             }`}
           >
             {tab.label}
@@ -65,7 +65,7 @@ export default function TicketsPage(): JSX.Element {
       {inbox.isLoading ? (
         <p>Chargement…</p>
       ) : inbox.error ? (
-        <p className="text-red-600">{inbox.error.message}</p>
+        <p className="text-destructive">{inbox.error.message}</p>
       ) : (inbox.data ?? []).length === 0 ? (
         <p className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
           Aucune demande ici.
@@ -94,7 +94,7 @@ export default function TicketsPage(): JSX.Element {
                   </span>
                   <span className="text-muted-foreground">{t.assignee?.name ?? "—"}</span>
                 </span>
-                <span className={`text-xs ${t.overdue ? "font-semibold text-red-600" : "text-muted-foreground"}`}>
+                <span className={`text-xs ${t.overdue ? "font-semibold text-destructive" : "text-muted-foreground"}`}>
                   {t.status === "CLOSED" && t.closedAt
                     ? `close le ${shortDate(t.closedAt)}`
                     : t.answered

@@ -70,7 +70,7 @@ export default function UsersTable(): JSX.Element {
                 key={n}
                 className={`rounded-full px-2 py-0.5 text-xs ${
                   adminGroupNames.has(n)
-                    ? "bg-amber-100 font-semibold text-amber-900"
+                    ? "bg-warning-muted font-semibold text-warning"
                     : "bg-muted text-foreground"
                 }`}
               >
@@ -90,9 +90,9 @@ export default function UsersTable(): JSX.Element {
         const v = String(value ?? "");
         const tone =
           v === LEGAL_AGE_LABEL.UNKNOWN
-            ? "bg-amber-100 text-amber-900"
+            ? "bg-warning-muted text-warning"
             : v === LEGAL_AGE_LABEL.MINOR
-              ? "bg-sky-100 text-sky-900"
+              ? "bg-info-muted text-info"
               : "bg-muted text-foreground";
         return <span className={`rounded-full px-2 py-0.5 text-xs ${tone}`}>{v}</span>;
       },
@@ -105,9 +105,9 @@ export default function UsersTable(): JSX.Element {
         const v = String(value ?? "");
         const tone =
           v === IMAGE_CONSENT_LABEL.GRANTED
-            ? "bg-emerald-100 text-emerald-900"
+            ? "bg-success-muted text-success"
             : v === IMAGE_CONSENT_LABEL.REFUSED
-              ? "bg-red-100 text-red-800"
+              ? "bg-destructive-muted text-destructive"
               : "bg-muted text-muted-foreground";
         return <span className={`rounded-full px-2 py-0.5 text-xs ${tone}`}>{v}</span>;
       },
@@ -123,8 +123,8 @@ export default function UsersTable(): JSX.Element {
           v === IMAGE_CONSENT_PROOF_LABEL.NONE
             ? "bg-muted text-muted-foreground"
             : v === IMAGE_CONSENT_PROOF_LABEL.PENDING_GUARDIAN
-              ? "bg-amber-100 text-amber-900"
-              : "bg-emerald-100 text-emerald-900";
+              ? "bg-warning-muted text-warning"
+              : "bg-success-muted text-success";
         return <span className={`rounded-full px-2 py-0.5 text-xs ${tone}`}>{v}</span>;
       },
     },

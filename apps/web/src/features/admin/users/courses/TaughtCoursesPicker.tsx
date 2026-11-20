@@ -49,7 +49,7 @@ export function TaughtCoursesPicker({
             <span>{courseLabel(c)}</span>
             {byDiscipline && <span className="text-xs text-muted-foreground">par sa discipline</span>}
             {other && (
-              <span className={`text-xs ${checked ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>
+              <span className={`text-xs ${checked ? "text-warning" : "text-muted-foreground"}`}>
                 {checked ? `remplace ${other}` : `actuellement : ${other}`}
               </span>
             )}

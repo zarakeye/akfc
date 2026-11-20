@@ -130,7 +130,7 @@ export function CreateUserForm(): JSX.Element {
       <label className="flex flex-col gap-1 text-sm" data-tour="users.form.email">
         <span className="font-medium">Email</span>
         <input type="email" className="rounded border border-input bg-background px-2 py-1" {...register("email")} />
-        {formState.errors.email && <span className="text-sm text-red-600">{formState.errors.email.message}</span>}
+        {formState.errors.email && <span className="text-sm text-destructive">{formState.errors.email.message}</span>}
       </label>
 
       <fieldset className="flex flex-col gap-1 text-sm" data-tour="users.form.groups">
@@ -207,7 +207,7 @@ export function CreateUserForm(): JSX.Element {
           <input key={id} type="hidden" name="courseIds" value={id} />
         ))}
         {minorCourses.length > 0 && !adultByStatus && (
-          <span role="note" className="text-xs text-sky-800 dark:text-sky-300">
+          <span role="note" className="text-xs text-info">
             {legalAge === "ADULT"
               ? `Attention : ${minorCourses.join(", ")} est un cours pour mineurs. Le membre est-il bien majeur ?`
               : `Mineur pré-coché : ${minorCourses.join(", ")} est un cours pour mineurs. Vérifiez la majorité ci-dessous.`}
@@ -225,11 +225,11 @@ export function CreateUserForm(): JSX.Element {
           <CreationLegalFields value={legal} onChange={(v) => setValue("legal", v, revalidate)} />
         )}
         {formState.errors.legal?.message && (
-          <span className="text-sm text-red-600">{formState.errors.legal.message}</span>
+          <span className="text-sm text-destructive">{formState.errors.legal.message}</span>
         )}
       </fieldset>
 
-      {errMsg && <p className="text-sm text-red-600">{errMsg}</p>}
+      {errMsg && <p className="text-sm text-destructive">{errMsg}</p>}
 
       <div className="flex justify-end" data-tour="users.form.submit">
         <button

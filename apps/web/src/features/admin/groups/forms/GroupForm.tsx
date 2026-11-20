@@ -87,7 +87,7 @@ export function GroupForm(): JSX.Element {
         </label>
         <Input id="name" type="text" placeholder="Bureau, Compétition…" {...register("name")} />
         {formState.errors.name && (
-          <p className="text-sm text-red-600">{formState.errors.name.message}</p>
+          <p className="text-sm text-destructive">{formState.errors.name.message}</p>
         )}
       </div>
 
@@ -97,7 +97,7 @@ export function GroupForm(): JSX.Element {
         </label>
         <select
           id="parent"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-md border border-border px-3 py-2 text-sm"
           {...register("parentGroupId")}
         >
           <option value="">Administrateurs (par défaut)</option>
@@ -107,7 +107,7 @@ export function GroupForm(): JSX.Element {
             </option>
           ))}
         </select>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Sans choix, le groupe est rattaché à « Administrateurs ».
         </p>
       </div>
@@ -117,7 +117,7 @@ export function GroupForm(): JSX.Element {
         Espace collaboratif (dossier dédié + droits éditeur/lecteur)
       </label>
 
-      {errMsg && <p className="text-red-500">{errMsg}</p>}
+      {errMsg && <p className="text-destructive">{errMsg}</p>}
 
       <div className="flex justify-end" data-tour="groups.form.submit">
         <Button type="submit" disabled={isPending || state.status === "success"}>

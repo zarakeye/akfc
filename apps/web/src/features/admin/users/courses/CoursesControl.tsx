@@ -55,7 +55,7 @@ function TaughtSection({ userId }: { userId: string }): JSX.Element {
           setDraft(ids);
         }}
       />
-      {save.error && <p className="text-red-600">{save.error.message}</p>}
+      {save.error && <p className="text-destructive">{save.error.message}</p>}
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -66,7 +66,7 @@ function TaughtSection({ userId }: { userId: string }): JSX.Element {
           {save.isPending ? "Enregistrement…" : "Enregistrer les cours donnés"}
         </button>
         {done && (
-          <span role="status" className="text-emerald-700 dark:text-emerald-400">
+          <span role="status" className="text-success">
             Cours donnés enregistrés.
           </span>
         )}
@@ -116,7 +116,7 @@ function FollowedSection({
           setDraft(ids);
         }}
       />
-      {save.error && <p className="text-red-600">{save.error.message}</p>}
+      {save.error && <p className="text-destructive">{save.error.message}</p>}
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -127,7 +127,7 @@ function FollowedSection({
           {save.isPending ? "Enregistrement…" : "Enregistrer les cours"}
         </button>
         {done && (
-          <span role="status" className="text-emerald-700 dark:text-emerald-400">
+          <span role="status" className="text-success">
             Cours enregistrés.
           </span>
         )}
