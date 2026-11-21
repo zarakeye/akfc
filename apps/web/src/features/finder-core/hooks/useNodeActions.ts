@@ -28,7 +28,10 @@ const BIN_PATH = `${APP_ROOT}/bin`;
  *   - Hors bin (pending, published, etc.) : "supprimer" = **mettre à la
  *     corbeille** (`trash.trashToBin`). Réversible.
  *   - Dans le bin : "supprimer" = **supprimer définitivement**
- *     (`trash.deleteForever`). Irréversible — nécessite confirmation.
+ *     (`trash.purge`). Irréversible.
+ *
+ * `deleteNodes` agit sans demander : la confirmation est posée avant, par
+ * `askDelete` du store, et Finder affiche la fenêtre (une seule pour tous les gestes).
  *
  * Plutôt que de dupliquer cette logique de dispatch dans chaque composant
  * (GridItem, FinderTreeFile, FinderTreeFolder, TrashEntryGrid, toolbars…),
@@ -205,10 +208,15 @@ export function useNodeActions(): {
           kind: n.type === 'folder' ? ('folder' as const) : ('file' as const),
           fullPath: n.path,
         }));
-        await trashToBinMutation.mutateAsync({
-          appRoot: APP_ROOT,
-          sources,
-        });
+        try {
+          await trashToBinMutation.mutateAsync({
+            appRoot: APP_ROOT,
+            sources,
+          });
+        } catch (err) {
+          setActionError(err instanceof Error ? err.message : "La mise à la corbeille a échoué.");
+          return;
+        }
         utils.storage.getAttentionCounts.invalidate();
       }
 

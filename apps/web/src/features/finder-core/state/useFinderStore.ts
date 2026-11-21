@@ -119,6 +119,15 @@ type FinderState = {
   excludeItem: (id: string) => void;
   clearSelection: () => void;
 
+  /**
+   * Éléments dont la suppression attend une confirmation. Tous les gestes « supprimer »
+   * (barre d'outils, menus de la grille, du tableau, de la liste, de l'arbre) passent par
+   * là : Finder affiche une seule fenêtre de confirmation, adaptée au geste.
+   */
+  pendingDelete: FinderNode[] | null;
+  askDelete: (nodes: FinderNode[]) => void;
+  clearPendingDelete: () => void;
+
   multiSelectActive: boolean;
   enterMultiSelect: (firstId: string) => void;
   exitMultiSelect: () => void;
@@ -374,6 +383,10 @@ export const useFinderStore = create<FinderState>((set, get) => ({
     })),
 
   multiSelectActive: false,
+
+  pendingDelete: null,
+  askDelete: (nodes): void => set(() => ({ pendingDelete: nodes.length > 0 ? nodes : null })),
+  clearPendingDelete: (): void => set(() => ({ pendingDelete: null })),
 
   enterMultiSelect: (firstId): void =>
     set(() => ({

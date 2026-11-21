@@ -17,6 +17,7 @@ import { isProtectedEntityFolder } from '#features/finder-core/utils/spaceFolder
 import { PublishToMembersDialog } from '#features/member-documents/PublishToMembersDialog.tsx';
 import { useSessionStore } from '#lib/stores/useSessionStore.ts';
 import { displayName, baseNameOf } from '#features/finder-core/utils/fileType.ts';
+import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
 
 type Props = {
   node: FinderNode;
@@ -60,7 +61,7 @@ export default function FinderCompactRow({
   const [publishTarget, setPublishTarget] = useState<FinderNode | null>(null);
   const isAdmin = useSessionStore((st) => (st.session?.user?.isAdmin ?? false));
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } =
+  const { effectiveNodesFor, deleteLabel, renameNode, moveNodes } =
     useNodeActions();
 
   // L'action porte sur la sélection effective quand le node visé en fait
@@ -97,7 +98,7 @@ export default function FinderCompactRow({
         label: deleteLabel(targetNodes.length, targetNodes),
         destructive: true,
         onClick: () => {
-          void deleteNodes(targetNodes);
+          useFinderStore.getState().askDelete(targetNodes);
         },
       },
     ];

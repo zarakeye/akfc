@@ -206,10 +206,11 @@ export default function Finder({
   const searchActive = useFinderStore((s) => s.search.query.trim().length > 0);
   const searchResults = useFinderStore((s) => s.search.results);
 
-  const { deleteNodes, deleteLabel, inBin } = useNodeActions();
+  const { deleteNodes, deleteLabel } = useNodeActions();
 
   // Le bouton « Supprimer » n'agit plus au premier clic.
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const pendingDelete = useFinderStore((s) => s.pendingDelete);
+  const clearPendingDelete = useFinderStore((s) => s.clearPendingDelete);
 
   const statusFilter = useFinderStore((s) => s.statusFilter);
 
@@ -723,7 +724,7 @@ export default function Finder({
               type="button"
               data-tour="finder.delete"
               disabled={!canDelete}
-              onClick={() => setDeleteConfirmOpen(true)}
+              onClick={() => useFinderStore.getState().askDelete(selectedNodes)}
               aria-label={deleteButtonLabel}
               title={
                 canDelete
@@ -749,30 +750,37 @@ export default function Finder({
             la même question dans les deux cas serait pire que rien — ça
             entraînerait à confirmer sans lire, et l'habitude serait déjà
             prise le jour où le geste est irréversible. */}
-        <ConfirmDialog
-          open={deleteConfirmOpen}
-          title={inBin ? "Supprimer définitivement" : "Envoyer à la corbeille"}
-          description={
-            inBin
-              ? `${selectedCount} élément${selectedCount > 1 ? "s" : ""} ${
-                  selectedCount > 1 ? "seront supprimés" : "sera supprimé"
-                } définitivement. Cette opération est irréversible.`
-              : `${selectedCount} élément${selectedCount > 1 ? "s" : ""} ${
-                  selectedCount > 1 ? "seront envoyés" : "sera envoyé"
-                } à la corbeille. Tu pourras ${
-                  selectedCount > 1 ? "les" : "le"
-                } restaurer ensuite.`
-          }
-          confirmLabel={
-            inBin ? "Supprimer définitivement" : "Envoyer à la corbeille"
-          }
-          destructive={inBin}
-          onConfirm={() => {
-            setDeleteConfirmOpen(false);
-            void deleteNodes(selectedNodes);
-          }}
-          onCancel={() => setDeleteConfirmOpen(false)}
-        />
+        {(() => {
+          // Le sens se lit sur les éléments visés (comme dans deleteNodes), pas sur le dossier
+          // affiché : un menu de l'arbre peut viser la corbeille pendant que la grille est ailleurs.
+          const targets = pendingDelete ?? [];
+          const count = targets.length;
+          const targetInBin =
+            count > 0 &&
+            (targets[0].path === `${APP_ROOT}/bin` || targets[0].path.startsWith(`${APP_ROOT}/bin/`));
+          return (
+            <ConfirmDialog
+              open={count > 0}
+              title={targetInBin ? "Supprimer définitivement" : "Envoyer à la corbeille"}
+              description={
+                targetInBin
+                  ? `${count} élément${count > 1 ? "s" : ""} ${
+                      count > 1 ? "seront supprimés" : "sera supprimé"
+                    } définitivement. Cette opération est irréversible.`
+                  : `${count} élément${count > 1 ? "s" : ""} ${
+                      count > 1 ? "seront envoyés" : "sera envoyé"
+                    } à la corbeille. Tu pourras ${count > 1 ? "les" : "le"} restaurer ensuite.`
+              }
+              confirmLabel={targetInBin ? "Supprimer définitivement" : "Envoyer à la corbeille"}
+              destructive={targetInBin}
+              onConfirm={() => {
+                clearPendingDelete();
+                void deleteNodes(targets);
+              }}
+              onCancel={clearPendingDelete}
+            />
+          );
+        })()}
 
         <button
           type="button"

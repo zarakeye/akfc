@@ -24,6 +24,7 @@ import { RenameInput } from '#features/finder-core/components/RenameInput.tsx';
 import { MoveDialog } from '#features/finder-core/components/MoveDialog.tsx';
 import { PublishToMembersDialog } from '#features/member-documents/PublishToMembersDialog.tsx';
 import { useSessionStore } from '#lib/stores/useSessionStore.ts';
+import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
 
 /* -------------------------------------------------------------------------- */
 /*                              FORMAT HELPERS                                */
@@ -157,7 +158,7 @@ export default function GridItem({
   const [publishTarget, setPublishTarget] = useState<FinderNode | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } = useNodeActions();
+  const { effectiveNodesFor, deleteLabel, renameNode, moveNodes } = useNodeActions();
   const isAdmin = useSessionStore((st) => (st.session?.user?.isAdmin ?? false));
   // Lecture seule (« Mes espaces ») : ni menu contextuel, ni glisser.
   const readOnly = useFinderReadOnly();
@@ -238,7 +239,7 @@ export default function GridItem({
               label: deleteLabel(targetNodes.length, targetNodes),
               destructive: true,
               onClick: () => {
-                void deleteNodes(targetNodes);
+                useFinderStore.getState().askDelete(targetNodes);
               },
             } as ContextMenuItem,
           ]),

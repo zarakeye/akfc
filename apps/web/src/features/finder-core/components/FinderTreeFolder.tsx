@@ -111,7 +111,7 @@ export default function FinderTreeFolder({
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [isRenamingFolder, setIsRenamingFolder] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
-  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode } =
+  const { effectiveNodesFor, deleteLabel, renameNode } =
     useNodeActions();
 
   function buildMenuItems(): ContextMenuItem[] {
@@ -144,7 +144,7 @@ export default function FinderTreeFolder({
               label: deleteLabel(targetNodes.length, targetNodes),
               destructive: true,
               onClick: () => {
-                void deleteNodes(targetNodes);
+                useFinderStore.getState().askDelete(targetNodes);
               },
             } as ContextMenuItem,
           ]),

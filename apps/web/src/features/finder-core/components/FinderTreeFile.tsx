@@ -103,7 +103,7 @@ export default function FinderTreeFile({
   const isAdmin = useSessionStore((st) => (st.session?.user?.isAdmin ?? false));
   const [renameError, setRenameError] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } =
+  const { effectiveNodesFor, deleteLabel, renameNode, moveNodes } =
     useNodeActions();
 
   const isActive =
@@ -174,7 +174,7 @@ export default function FinderTreeFile({
         label: deleteLabel(targetNodes.length, targetNodes),
         destructive: true,
         onClick: () => {
-          void deleteNodes(targetNodes);
+          useFinderStore.getState().askDelete(targetNodes);
         },
       },
     ];
