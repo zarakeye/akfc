@@ -1,33 +1,153 @@
 ---
 title: "Le store du finder"
-description: "Où le finder garde ce qu’il sait : un store Zustand lu de partout, la navigation qui restitue un dossier déjà vu, les préférences de vue gardées dans le navigateur, et le piège d’un store global."
+description: "Où le finder garde ce qu’il sait : pourquoi un store plutôt que des props ou un Context, Zustand depuis zéro, la forme de l’état, setPath suivi pas à pas, un cache de dossiers qu’on ne modifie jamais en place, reloadKey pour relire après une modification, les préférences gardées dans le navigateur, et un store global qui sert un finder après l’autre."
 section: "Le finder"
 order: 2
+entities:
+  Folder: [fullPath]
+  MediaAsset: [fullPath, originalFileName]
+stories:
+  - title: Un administrateur passe d’un dossier à l’autre
+    actor: Administrateur
+    steps:
+      - label: Il ouvre un dossier ; le store change de dossier courant, et le contenu est lu s’il n’est pas déjà en cache
+        call: storage.getTree
+        section: "Changer de dossier : `setPath`"
+      - label: Il renomme un fichier ; le cache est vidé, et le dossier relu
+        call: storage.rename
+        section: "Relire après une modification : `reloadKey`"
 ---
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
 import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
-> **Précédemment.** Le finder ne connaît pas le stockage : il parle à un adaptateur, qui ne promet que `list` et offre le reste en capacités. Les données arrivent sous forme de `FinderNode`, d’abord depuis le stockage, puis complétées par la base.
+> **Précédemment.** Le finder ne connaît pas le stockage : il parle à un adaptateur, qui ne promet que `list` et offre le reste en capacités. Les données arrivent sous forme de `FinderNode`, d’abord depuis le stockage, puis complétées par la base. Et à l’étape 7 du parcours d’un `list`, `setContent` rangeait le résultat « dans le store ». Ouvrons ce store.
 
-## Un store pour tout le finder
+Ce chapitre utilise une dépendance déjà installée au chapitre précédent : `zustand`.
 
-Tout ce que le finder affiche sort d’un store Zustand, `useFinderStore`. Sa forme dit ce que le finder sait :
+## Les parcours du chapitre
+
+<Parcours />
+
+## Le problème : un état que tout le monde lit
+
+Faisons la liste de ce que le finder doit savoir à tout instant :
+
+- le dossier courant ;
+- son contenu, dossiers et fichiers ;
+- les dossiers déjà visités, pour ne pas les relire ;
+- la sélection, et si l’on est en mode sélection ;
+- la vue choisie (grille, tableau, liste), le tri, le filtre de statut ;
+- la recherche en cours et ses résultats ;
+- la dernière erreur d’un glisser-déposer.
+
+Et maintenant la liste de ceux qui lisent ou modifient ces informations : la grille, l’arbre et chacun de ses dossiers, le fil d’Ariane, la barre d’outils, la barre de recherche, l’aperçu, le menu contextuel, et même, dans « Mes espaces », la barre de dépôt posée **à côté** du finder, en dehors de lui.
+
+### Ce que donneraient des props
+
+La réponse de base de React, c’est l’état dans le composant le plus haut (`Finder`), passé en props à ceux qui en ont besoin. Suivons le dossier courant jusqu’à un dossier de l’arbre, au cinquième niveau :
+
+<CodeSnippet
+  language="tsx"
+  title="Le dossier courant descendu de main en main"
+  filename="props-en-cascade.tsx"
+  kind="anti-pattern"
+  codeJson='"// ❌ chaque niveau reçoit currentPath et setPath… pour les passer au suivant\n<Finder>                                   // useState(currentPath)\n  <FinderTree currentPath={p} setPath={setP}>\n    <FinderTreeFolder currentPath={p} setPath={setP}>\n      <FinderTreeFolder currentPath={p} setPath={setP}>\n        <FinderTreeFolder currentPath={p} setPath={setP}>\n          {/* le seul qui s’en sert vraiment */}"'
+/>
+
+Les niveaux intermédiaires ne se servent pas de `currentPath` : ils le transportent. C’est ce qu’on appelle le *prop drilling*, le forage de props. Il a deux défauts. Chaque nouvelle information ajoute une prop à toute la chaîne. Et chaque changement redessine toute la chaîne, puisque chaque niveau reçoit une prop nouvelle. Pour la barre de dépôt de « Mes espaces », c’est pire : elle n’est pas dans l’arbre de `Finder`, aucune prop ne peut l’atteindre.
+
+### Et un Context ?
+
+React a une réponse à ce problème : le **Context**, un état qu’un composant fournit et que tous ses descendants lisent sans passer par les props. Il règle le transport, mais pas le second défaut : quand la valeur d’un Context change, **tous** ceux qui le lisent se redessinent, même s’ils n’en utilisaient qu’un champ. Un Context unique pour tout le finder redessinerait l’arbre entier à chaque lettre tapée dans la recherche. Il faudrait le découper en une dizaine de Contexts, et la barre de dépôt, hors de `Finder`, resterait toujours hors d’atteinte.
+
+👉 le problème n’est pas seulement de transporter l’état
+👉 c’est de laisser chacun lire **sa** part, sans être dérangé par le reste
+
+## Zustand, depuis zéro
+
+**Zustand** est une petite bibliothèque d’état (quelques centaines de lignes). Son idée tient en une phrase : l’état vit **hors de React**, dans un objet unique, et chaque composant s’y abonne en disant précisément ce qu’il veut lire.
+
+On crée un store avec `create`. On lui donne une fonction qui reçoit `set` (modifier l’état) et `get` (le lire), et qui rend l’état initial, actions comprises :
+
+<CodeSnippet
+  language="ts"
+  title="Le plus petit store possible"
+  filename="compteur.ts"
+  kind="educational"
+  codeJson='"import { create } from \"zustand\"\n\ntype CounterState = { count: number; increment: () => void }\n\nexport const useCounter = create<CounterState>((set) => ({\n  count: 0,\n  // set reçoit l’état actuel et rend ce qui change\n  increment: () => set((state) => ({ count: state.count + 1 })),\n}))"'
+/>
+
+`create` rend un **hook**. Un composant l’appelle avec un **sélecteur**, une fonction qui choisit ce qu’il lit :
+
+<CodeSnippet
+  language="tsx"
+  title="Lire sa part, et seulement elle"
+  filename="lecteur.tsx"
+  kind="educational"
+  codeJson='"const count = useCounter((s) => s.count)          // se redessine quand count change\nconst increment = useCounter((s) => s.increment)  // une fonction : ne change jamais"'
+/>
+
+Trois propriétés font tout l’intérêt de ce modèle.
+
+**L’abonnement est sélectif.** À chaque modification, Zustand relance le sélecteur de chaque abonné, et compare le résultat au précédent. Le composant ne se redessine que si **son** résultat a changé. Taper dans la recherche modifie `search` : seuls ceux qui lisent `search` se redessinent.
+
+**La comparaison se fait par référence.** Zustand compare avec `Object.is`, c’est-à-dire « est-ce le même objet ? », pas « ont-ils le même contenu ? ». C’est rapide, mais cela impose une discipline : pour signaler un changement, il faut **un nouvel objet**. Nous la retrouverons avec le cache.
+
+**Le store se lit aussi hors de React.** `useCounter.getState()` rend l’état du moment, sans abonnement. On s’en sert dans les effets, les gestionnaires d’évènements, ou une page qui n’est pas dans le finder.
+
+<Callout type="concept">
+Un store est un état partagé qui ne vit dans aucun composant. Chacun s’y abonne par un sélecteur, et ne se redessine que lorsque ce qu’il a sélectionné change.
+</Callout>
+
+### Lire plusieurs champs d’un coup
+
+Un piège guette celui qui veut lire plusieurs champs avec un seul sélecteur :
+
+<CodeSnippet
+  language="tsx"
+  title="Un objet neuf à chaque lecture"
+  filename="selecteur-objet.tsx"
+  kind="anti-pattern"
+  codeJson='"// ❌ le sélecteur fabrique un nouvel objet à chaque appel :\n// Object.is le trouve toujours « différent », le composant se redessine à chaque modification\nconst { selection, files } = useFinderStore((s) => ({ selection: s.selection, files: s.files }))"'
+/>
+
+L’objet rendu est neuf à chaque fois, même si `selection` et `files` n’ont pas bougé. Zustand fournit pour cela `useShallow` : il compare l’objet **champ par champ** (une comparaison dite « superficielle », d’où son nom), et ne signale un changement que si l’un des champs a changé. C’est ainsi que l’aperçu lit ses deux champs :
 
 <CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/PreviewPanel.tsx"
+  filename="PreviewPanel.tsx"
+  snippetStart="  const { selection, files } = useFinderStore("
+  snippetLines="1"
+  snippetTitle="Deux champs, comparés un à un"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`Finder`, le chef d’orchestre, en lit dix-huit de la même façon. Sans `useShallow`, il se redessinerait, et tout son contenu avec lui, à chaque modification du store, recherche comprise.
+
+👉 un sélecteur doit rendre la même chose quand rien n’a changé
+👉 un champ seul, une fonction, ou un objet passé par `useShallow`
+
+## La forme de l’état
+
+Voici le type complet du store. Il se lit comme un sommaire de ce que le finder sait :
+
+<CodeWalkthrough
   language="ts"
   filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
   filename="useFinderStore.ts"
   snippetStart="type FinderState = {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="2,5,7,10,20,32,48,51,57"
-  snippetTitle="L’état du finder"
-  fullFileTitle="Voir le fichier complet"
+  title="FinderState"
+  stepsJson='[{"title": "Où l’on est", "body": "Le dossier courant, et l’action qui en change. Tout le reste en dépend : le contenu affiché, la sélection, la recherche.", "scope": "1-3", "focus": "2-3"}, {"title": "Quel finder est servi", "body": "Le store est global : il sert la bibliothèque, puis peut-être Mes espaces, puis le sélecteur. Chaque Finder s’y déclare.", "scope": "5-11", "focus": "6-11"}, {"title": "Ce qu’on voit, et ce qu’on a déjà vu", "body": "Le contenu affiché, le cache des dossiers visités, et reloadKey pour forcer une relecture.", "scope": "13-19", "focus": "13-19"}, {"title": "Une erreur sans formulaire", "body": "Un glisser-déposer refusé n’a pas de formulaire où s’afficher : le bandeau du finder la montre.", "scope": "21-26", "focus": "25-26"}, {"title": "Ce qui est choisi", "body": "La sélection et le mode sélection. Le chapitre 5 explique pourquoi la sélection tient en deux ensembles.", "scope": "28-38", "focus": "28-28"}, {"title": "Comment on regarde", "body": "La vue, le filtre de statut, le tri : des préférences, gardées dans le navigateur.", "scope": "40-63", "focus": "56-59"}, {"title": "Ce qu’on cherche", "body": "La recherche récursive : sa requête, ses options, ses résultats (chapitre 4).", "scope": "65-70", "focus": "65-65"}]'
 />
 
-Pourquoi un store plutôt que l’état de `Finder` passé en props ? Parce que les acteurs sont nombreux et éloignés : un dossier de l’arbre (cinq niveaux plus bas) doit pouvoir dire « je suis le dossier courant », le fil d’Ariane doit naviguer, la barre de dépôt de « Mes espaces », posée **à côté** du finder, doit savoir où il en est. Un store se lit de partout, et chaque composant ne s’abonne qu’à la tranche qui l’intéresse (`useFinderStore((s) => s.reloadKey)`) : il ne se redessine pas quand le reste change.
+Remarquons la convention : chaque donnée vient avec les **actions** qui la modifient (`currentPath` et `setPath`, `selection` et `toggleSelect`…). Aucun composant n’écrit l’état directement ; il appelle une action, qui sait ce qu’un changement entraîne.
 
-Naviguer est l’action centrale, et elle fait plus que changer de dossier :
+## Changer de dossier : `setPath`
+
+Naviguer est l’action centrale du finder, et elle fait plus que changer une valeur :
 
 <CodeExample
   language="ts"
@@ -40,33 +160,170 @@ Naviguer est l’action centrale, et elle fait plus que changer de dossier :
   fullFileTitle="Voir le fichier complet"
 />
 
-Le contenu est restitué depuis le cache s’il existe (pas de clignotement), la sélection est vidée (des identifiants d’un autre dossier n’y auraient plus de sens), et la recherche s’arrête : elle portait sur le dossier qu’on vient de quitter.
+Suivons ce que fait un clic sur le dossier `courses`, dans l’ordre :
+
+1. **Le dossier courant change** : `currentPath` vaut le nouveau chemin.
+2. **Le contenu est restitué depuis le cache, s’il existe.** Un dossier déjà visité s’affiche aussitôt, sans clignoter. Sinon, la grille se vide le temps que `useFinderData` lise le dossier (chapitre 1).
+3. **La sélection est vidée.** Elle contenait des identifiants du dossier qu’on quitte : les garder ferait agir « Supprimer » sur des fichiers qu’on ne voit plus.
+4. **Le mode sélection se ferme**, pour la même raison.
+5. **La recherche s’arrête.** Elle portait sur le dossier qu’on vient de quitter ; ses résultats n’ont plus de sens ici.
+
+Tout cela se fait en **un seul `set`**. Les abonnés ne voient jamais un état intermédiaire, par exemple le nouveau dossier avec l’ancienne sélection : ils passent d’un état cohérent à un autre.
+
+👉 une action ne change pas une valeur : elle fait passer le finder d’un état cohérent à un autre
+
+## Un cache qu’on ne modifie jamais en place
+
+Le cache des dossiers visités est une `Map` : à chaque chemin, son contenu. Regardons comment `setContent` l’alimente :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetStart="setContent: ({ folders, files }) =>"
+  snippetEnd="    }),"
+  snippetHighlight="3,4,5"
+  snippetTitle="setContent : une nouvelle Map à chaque écriture"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pourquoi copier toute la `Map` (`new Map(state.contentCache)`) pour y ajouter une seule entrée, au lieu d’un simple `state.contentCache.set(...)` ? À cause de la comparaison par référence. Si l’on modifiait la `Map` en place, elle resterait **le même objet** : pour Zustand, rien n’aurait changé, et les composants abonnés au cache ne se redessineraient pas. La copie donne un nouvel objet, que la comparaison voit.
+
+C’est ce qu’on appelle l’**immutabilité** : on ne modifie jamais un objet de l’état, on le remplace par un nouvel objet qui contient le changement. Le coût d’une copie est négligeable ici (une entrée par dossier visité) ; le bénéfice, c’est que « a changé » et « est un autre objet » veulent toujours dire la même chose.
+
+Le cache a un second fournisseur : l’arbre. Quand il déplie un dossier, il en reçoit les enfants, et les range aussi dans le cache, par `cacheChildrenAt`. Ouvrir ensuite ce dossier dans la grille ne coûte plus aucune requête. Le chapitre 3 montre ce partage.
 
 <Callout type="warning">
-Le store est **global** : un seul finder par page, et un finder après l’autre d’une page à la suivante. Chaque `Finder` s’y déclare donc en arrivant (`bindFinder`) : un autre adaptateur vide le cache, un dossier courant hors de sa racine revient à la racine. Deux finders sur une même page partageraient malgré tout leur dossier courant.
+La règle vaut pour tout ce que contient le store : une `Map`, un `Set`, un tableau, un objet. On en construit un nouveau, on ne modifie pas l’ancien. Une modification en place ne se voit pas, et produit le bug le plus déroutant qui soit : l’état est juste, l’écran ne suit pas.
 </Callout>
 
-### Des préférences qui survivent au rechargement
+## Relire après une modification : `reloadKey`
 
-Trois réglages relèvent du goût de l’utilisateur plus que de la navigation : la vue (grille, tableau, liste compacte), le tri, et le filtre de statut. Le store les relit au démarrage et les écrit à chaque changement, dans `localStorage` :
+Un cache a un défaut naturel : il peut mentir. Après un envoi de fichier, un renommage, un déplacement, le contenu gardé pour ce dossier n’est plus vrai. Il faut le jeter, et relire.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetStart="reloadKey: 0,"
+  snippetEnd="})),"
+  snippetHighlight="8,9"
+  snippetTitle="reloadFolderContent"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`reloadFolderContent` fait deux choses : il vide le cache, et il augmente `reloadKey` d’un. Ce nombre ne veut rien dire en lui-même ; il sert de **signal**. `useFinderData` l’a dans ses dépendances (chapitre 1) : quand il change, son effet se relance, ne trouve plus rien en cache, et relit le dossier. L’arbre fait de même de son côté.
+
+C’est le mécanisme qu’appellent toutes les actions qui modifient des fichiers : la page « Mes espaces » après un dépôt, les actions du menu contextuel, le glisser-déposer. Seize appels dans le projet, tous identiques : `useFinderStore.getState().reloadFolderContent()`.
+
+<Callout type="tip">
+Pourquoi pas un `invalidate` de React Query, comme ailleurs dans le site ? Parce que le finder ne passe pas par les hooks de React Query : son adaptateur appelle `trpcClient` (chapitre 1), et son cache est celui du store. Chaque cache a son moyen d’être vidé ; celui-ci s’appelle `reloadFolderContent`.
+</Callout>
+
+## Des préférences qui survivent au rechargement
+
+Trois réglages relèvent du goût de l’utilisateur plus que de la navigation : la vue (grille, tableau, liste compacte), le tri, et le filtre de statut. Un administrateur qui trie ses photos en attente ne veut pas tout régler à nouveau à chaque visite. Le store les relit au démarrage et les écrit à chaque changement, dans `localStorage`, le petit stockage clé-valeur du navigateur :
 
 <CodeExample
   language="ts"
   filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
   filename="useFinderStore.ts"
   snippetStart="function loadViewMode(): FinderViewMode {"
-  snippetEnd="function saveViewMode(mode: FinderViewMode): void {"
-  snippetHighlight="2,4,6"
-  snippetTitle="Lire une préférence sans jamais planter"
+  snippetEnd="  return 'grid';"
+  snippetHighlight="2,3,5"
+  snippetTitle="La vue, relue au démarrage"
   fullFileTitle="Voir le fichier complet"
 />
 
-Deux gardes, et elles comptent : `typeof window === "undefined"` (le module est aussi évalué au rendu serveur, où il n’y a pas de navigateur), et un `try` (certains navigateurs refusent `localStorage` en navigation privée). Une valeur inconnue retombe sur le défaut : une ancienne version du site, ou une main maladroite dans les outils de développement, ne casse rien.
+Trois gardes, et chacune répond à une situation réelle :
+
+- **`typeof window === 'undefined'`** : le module du store est aussi évalué pendant le rendu serveur, où il n’y a pas de navigateur, donc pas de `localStorage`. Sans cette garde, la page planterait côté serveur.
+- **le `try`** : certains navigateurs refusent l’accès à `localStorage` (navigation privée, réglages stricts) en levant une exception. Le finder doit marcher quand même, avec ses réglages par défaut.
+- **la liste des valeurs admises** : une valeur inconnue, laissée par une ancienne version du site ou tapée à la main dans les outils de développement, retombe sur le défaut au lieu de casser l’affichage.
+
+Les quatre préférences du finder (vue, tri, filtre de statut, options de recherche) suivent le même modèle, avec les mêmes trois gardes.
+
+Et l’action qui change la vue écrit dans le navigateur **avant** de modifier l’état :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetStart="  setViewMode: (mode) => {"
+  snippetLines="4"
+  snippetTitle="setViewMode : retenir, puis afficher"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<Callout type="concept">
+L’état de navigation (le dossier courant, la sélection) vit le temps de la visite. Les préférences, elles, appartiennent à l’utilisateur : elles survivent au rechargement. Séparer les deux, c’est décider ce que le site doit retenir de lui.
+</Callout>
+
+## Un store global, un finder après l’autre
+
+Un store Zustand est créé **une fois**, au chargement du module, et vit tant que l’onglet reste ouvert. Dans une application Next, on change de page sans recharger le navigateur : le store, lui, reste là, avec ce qu’il savait.
+
+Or le même store sert trois finders : la bibliothèque, « Mes espaces », le sélecteur de médias. Imaginons un administrateur qui passe de « Mes espaces » à la bibliothèque par le menu, sans recharger. Le store se souvient du dossier courant de « Mes espaces », une racine inventée (`__mes-espaces__`) que l’adaptateur de la bibliothèque ne connaît pas, et d’un cache rempli par un autre adaptateur, qui ne montre au membre que ses espaces.
+
+D’où l’action `bindFinder`, que chaque `Finder` appelle en s’affichant :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetStart="  bindFinder: (adapter, rootPath) => {"
+  snippetEnd="  },"
+  snippetHighlight="2,5,8,12"
+  snippetTitle="bindFinder : se déclarer au store"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Deux règles, indépendantes :
+
+- **un autre adaptateur** : le cache a été écrit par le précédent, il est vidé, et `reloadKey` augmente pour que l’arbre relise lui aussi ;
+- **un dossier courant hors de la racine** : on revient à la racine, par `setPath`, avec tout ce que `setPath` remet en ordre.
+
+C’est la première chose que fait `Finder`, avant même de lire un dossier :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/Finder.tsx"
+  filename="Finder.tsx"
+  snippetStart="    useFinderStore.getState().bindFinder(adapter, rootPath);"
+  snippetLead="1"
+  snippetLines="3"
+  snippetHighlight="2"
+  snippetTitle="Finder se déclare, puis lit"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’ordre compte. Dans un composant, les effets s’exécutent dans l’ordre où ils sont écrits. Cet effet est placé avant `useFinderData` : quand celui-ci lit le dossier, le store est déjà recalé. Un test de bout en bout (`finder-un-store-pour-plusieurs.spec.ts`) refait exactement le trajet « Mes espaces, puis bibliothèque, sans recharger ».
+
+<Callout type="warning">
+Un store global garde ses données d’une page à l’autre : c’est sa force et son piège. Tout composant qui s’en sert dans plusieurs contextes doit dire au store dans quel contexte il arrive. Deux finders affichés **en même temps** sur une même page, en revanche, partageraient toujours leur dossier courant : le projet n’en affiche jamais deux.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi un store plutôt que des props ?", "Les lecteurs sont nombreux, éloignés, et certains hors du finder : les props devraient traverser toute la chaîne."], ["Pourquoi pas un Context ?", "Un changement redessinerait tous ses lecteurs ; un store laisse chacun lire sa part."], ["Comment un composant lit-il le store ?", "Par un sélecteur ; il ne se redessine que si le résultat change (comparaison par référence)."], ["Et pour lire plusieurs champs ?", "useShallow, qui compare l’objet champ par champ."], ["Que fait setPath ?", "Change de dossier, restitue le cache, vide la sélection, ferme le mode sélection, arrête la recherche, en un seul set."], ["Pourquoi copier la Map du cache ?", "Une modification en place garde le même objet : Zustand ne verrait aucun changement."], ["Comment relire après une modification ?", "reloadFolderContent : cache vidé, reloadKey augmenté, les effets relisent."], ["Que garde le navigateur ?", "La vue, le tri, le filtre de statut et les options de recherche, avec trois gardes."], ["Pourquoi bindFinder ?", "Le store survit au changement de page : chaque finder y déclare son adaptateur et sa racine."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer à l’arbre, nous devrions pouvoir expliquer :
+
+- ce que coûtent les props en cascade, et ce qu’un Context ne résout pas ;
+- ce qu’est un store Zustand, un sélecteur, et quand un composant se redessine ;
+- pourquoi un sélecteur qui rend un objet neuf pose problème, et ce que fait `useShallow` ;
+- tout ce que `setPath` remet en ordre, et pourquoi en un seul `set` ;
+- pourquoi le cache est copié à chaque écriture ;
+- à quoi sert `reloadKey`, qui n’a pas de valeur en soi ;
+- les trois gardes autour de `localStorage` ;
+- pourquoi un store global doit savoir quel finder il sert.
 
 ## À suivre
 
-Le finder sait où trouver ses données et où les garder. Reste à les montrer : un arbre qui ne charge que ce qu’on ouvre, une grille qui se trie et se filtre, une recherche, un fil d’Ariane, un aperçu.
+Le finder sait où trouver ses données et où les garder. Reste à les montrer, en commençant par la partie la plus délicate : un arbre qui affiche toute l’arborescence sans la charger d’un coup.
 
 <Callout type="tip">
-**Chapitre suivant : l’arbre et la grille.** Le chargement par paliers de l’arbre, ce que l’arbre apprend à la grille, les trois vues, la recherche récursive, le fil d’Ariane et l’aperçu.
+**Chapitre suivant : l’arbre chargé par paliers.** La profondeur qui grandit à mesure qu’on déplie, ce que l’arbre apprend au cache de la grille, le dossier qui se matérialise, et `FinderTreeFolder` lu en entier.
 </Callout>
