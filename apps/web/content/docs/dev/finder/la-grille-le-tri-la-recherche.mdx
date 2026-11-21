@@ -1,8 +1,8 @@
 ---
-title: "L’arbre et la grille"
-description: "Ce que le finder affiche, et comment : trois panneaux qui se souviennent de leur largeur, un arbre chargé par paliers qui nourrit le cache de la grille, la grille en trois vues, la lentille de statut, la recherche récursive, le fil d’Ariane qui parle comme la grille, et l’aperçu qui choisit son lecteur."
+title: "La grille, le tri, la recherche"
+description: "Ce que le finder montre au centre et à droite : la grille en trois vues, la lentille de statut, la recherche récursive, le fil d’Ariane qui parle comme la grille, et l’aperçu qui choisit son lecteur."
 section: "Le finder"
-order: 3
+order: 4
 entities:
   MediaAsset: [fullPath, status, description, mimeType, format]
   FolderLabel: [path, displayName]
@@ -10,9 +10,6 @@ stories:
   - title: Un administrateur cherche une photo dans la bibliothèque
     actor: Administrateur
     steps:
-      - label: L’arbre charge deux niveaux, puis un de plus chaque fois qu’il descend
-        call: storage.getTree
-        section: Un arbre chargé par paliers
       - label: Il tape un mot ; après 300 ms, la recherche part dans tout le dossier courant
         call: media.searchRecursive
         section: Chercher dans le dossier courant
@@ -27,94 +24,15 @@ stories:
 import { Callout } from "#features/docs/ui/Callout.tsx"
 import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
-> **Précédemment.** Le finder ne connaît pas le stockage : il parle à un adaptateur, qui ne promet que `list` et offre le reste en capacités. Son état vit dans un store Zustand, un seul par page.
+> **Précédemment.** L’arbre charge la bibliothèque par paliers, et range chaque dossier lu dans le cache de la grille. Ouvrir un dossier visible dans l’arbre est donc instantané. Reste à montrer ce qu’il contient.
 
-Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s’ajoute au paquet qui l’importe :
 
-<Installer paquets="react-resizable-panels mammoth react-markdown" dans="web" />
+<Installer paquets="mammoth react-markdown" dans="web" />
 
 ## Les parcours du chapitre
 
 <Parcours />
-
-## Trois panneaux qui se souviennent
-
-L’écran se partage en trois : l’arbre, la grille, l’aperçu. Les séparateurs se déplacent (la librairie `react-resizable-panels`), et la disposition choisie est gardée dans `localStorage` :
-
-<CodeExample
-  language="tsx"
-  filepath="apps/web/src/features/finder-core/components/Finder.tsx"
-  filename="Finder.tsx"
-  snippetStart="const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);"
-  snippetLead="2"
-  snippetLines="9"
-  snippetHighlight="3,6,8"
-  snippetTitle="Relire la disposition, sans jamais casser l’écran"
-  fullFileTitle="Voir le fichier complet"
-/>
-
-L’aperçu, lui, démarre **replié** à chaque ouverture, même si la largeur sauvegardée le montrait déplié : il ne sert que sur demande, et un écran déjà chargé gagne à commencer simple. Une préférence de largeur, oui ; une préférence d’ouverture, non.
-
-## Un arbre chargé par paliers
-
-L’arbre pose un problème de taille. La bibliothèque contient des centaines de dossiers ; tout charger d’un coup coûterait une longue attente, ne rien charger rendrait chaque dépliage lent. Le compromis : charger **deux niveaux**, puis, chaque fois qu’on déplie plus profond, **deux niveaux sous le dossier le plus profond ouvert**.
-
-<CodeExample
-  language="tsx"
-  filepath="apps/web/src/features/finder-core/components/FinderTree.tsx"
-  filename="FinderTree.tsx"
-  snippetStart="if (!rootChanged) {"
-  snippetEnd="(fin du bloc)"
-  snippetHighlight="4,7,8,9"
-  snippetTitle="La profondeur suit le dossier le plus profond"
-  fullFileTitle="Voir le fichier complet"
-/>
-
-La profondeur ne fait que monter (une « marque des hautes eaux ») : refermer un dossier ne recharge rien. Le calcul a lieu **pendant le rendu**, pas dans un effet : changer un état pendant le rendu est permis à React tant que c’est conditionnel, et cela évite un rendu intermédiaire à la mauvaise profondeur.
-
-Le chargement lui-même a un effet de bord précieux :
-
-<CodeExample
-  language="tsx"
-  filepath="apps/web/src/features/finder-core/components/FinderTree.tsx"
-  filename="FinderTree.tsx"
-  snippetStart=".getTree({ path: rootPath, depth: treeDepth })"
-  snippetLead="8"
-  snippetEnd="}, [adapter, rootPath, reloadKey, treeDepth, fileFilter]);"
-  snippetHighlight="12,15,16,17,18,19,20,21,22"
-  snippetTitle="L’arbre remplit le cache de la grille"
-  fullFileTitle="Voir le fichier complet"
-/>
-
-En parcourant l’arbre reçu, il range **chaque dossier chargé** dans le cache de contenu du store (`cacheChildrenAt`). Cliquer ensuite sur un dossier déjà visible dans l’arbre affiche la grille aussitôt : son contenu est déjà là. L’arbre et la grille ne font pas deux fois le même travail.
-
-Trois autres détails de cet effet reviennent partout dans le finder :
-
-- **`cancelled`** : une réponse arrivée après un changement de racine est jetée. Sans lui, une réponse lente pourrait écraser une réponse plus récente.
-- **`reloadKey`** dans les dépendances : après une modification, `reloadFolderContent()` incrémente la clé, et l’arbre se recharge avec la grille.
-- **`fileFilter`** : le sélecteur de médias ne montre que des images et des vidéos ; l’arbre élague les autres fichiers avec le même filtre que la grille.
-
-### Le dossier qui se matérialise
-
-Au-delà de la profondeur chargée, un dossier a `children: undefined` (« pas encore chargé »). L’arbre le sait, et le montre pendant que le palier suivant arrive :
-
-<CodeExample
-  language="tsx"
-  filepath="apps/web/src/features/finder-core/components/FinderTreeFolder.tsx"
-  filename="FinderTreeFolder.tsx"
-  snippetStart="const isMaterializing ="
-  snippetLines="5"
-  snippetTitle="Ouvert, avec des enfants, mais pas encore chargés"
-  fullFileTitle="Voir le fichier complet"
-/>
-
-<Callout type="warning">
-Cette règle a une conséquence que le projet a payée : un nœud fabriqué à la main, sans `children`, reste « en train de se matérialiser » pour toujours, car aucun palier ne le chargera.
-
-<Promesse vers="dev/finder/trois-finders-en-un" section="Deux bugs, deux règles">
-C’est arrivé : l’imbrication des espaces de groupe a fait tourner un indicateur sans fin. La règle qui en est sortie : **ne jamais fabriquer de nœud d’arbre ; réarranger les nœuds réels**.
-</Promesse>
-</Callout>
 
 ## La grille, en trois vues
 
@@ -212,7 +130,7 @@ Chaque partie de l’écran a sa façon de ne pas faire attendre : l’arbre ré
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Combien de niveaux l’arbre charge-t-il ?", "Deux, puis deux sous le dossier le plus profond ouvert ; la profondeur ne redescend jamais."], ["Pourquoi l’arbre remplit-il le cache ?", "Pour qu’un clic sur un dossier visible affiche la grille sans requête."], ["Que filtre la lentille de statut ?", "Les fichiers de la grille, jamais l’arbre ni les dossiers."], ["Quand part la recherche ?", "300 ms après la dernière frappe, dans tout le sous-arbre du dossier courant ; le serveur borne et le dit."], ["D’où viennent les noms du fil d’Ariane ?", "Des mêmes sources que la grille : libellé, nom d’espace, clé brute, dans cet ordre."], ["Comment s’ouvre un .docx ?", "Converti en HTML dans le navigateur, par une librairie chargée à la demande."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que filtre la lentille de statut ?", "Les fichiers de la grille, jamais l’arbre ni les dossiers."], ["Quand part la recherche ?", "300 ms après la dernière frappe, dans tout le sous-arbre du dossier courant ; le serveur borne et le dit."], ["D’où viennent les noms du fil d’Ariane ?", "Des mêmes sources que la grille : libellé, nom d’espace, clé brute, dans cet ordre."], ["Comment s’ouvre un .docx ?", "Converti en HTML dans le navigateur, par une librairie chargée à la demande."]]' />
 
 ## À suivre
 

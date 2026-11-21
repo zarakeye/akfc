@@ -1,0 +1,286 @@
+---
+title: "L’arbre chargé par paliers"
+description: "L’écran en trois panneaux qui se souviennent de leur largeur, puis l’arbre : pourquoi ni tout charger ni charger dossier par dossier, des paliers de deux niveaux et une profondeur qui ne fait que monter, un état ajusté pendant le rendu, un arbre qui nourrit le cache de la grille, un dossier récursif qui ne charge rien lui-même, le dossier qui se matérialise, et les espaces de groupe réarrangés sans nœud inventé."
+section: "Le finder"
+order: 3
+entities:
+  Folder: [fullPath]
+  MemberGroup: [name, parentGroupId]
+stories:
+  - title: Un administrateur déplie l’arbre de la bibliothèque
+    actor: Administrateur
+    steps:
+      - label: L’arbre charge deux niveaux sous la racine
+        call: storage.getTree
+        section: Deux niveaux, puis deux de plus
+      - label: Il déplie un dossier au-delà ; le palier suivant arrive pendant que le dossier se matérialise
+        call: storage.getTree
+        section: Le dossier qui se matérialise
+      - label: Les espaces de groupe s’affichent imbriqués selon leurs groupes parents
+        call: storage.groupSpaceHierarchy
+        section: Des espaces rangés sans nœud inventé
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Le finder parle à un adaptateur, et garde ce qu’il sait dans un store : le dossier courant, son contenu, un cache des dossiers déjà lus, qu’on ne modifie jamais en place, et `reloadKey` pour tout relire après une modification.
+
+Ce chapitre utilise pour la première fois la dépendance suivante :
+
+<Installer paquets="react-resizable-panels" dans="web" />
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## Trois panneaux qui se souviennent
+
+L’écran du finder se partage en trois panneaux côte à côte : l’arbre à gauche, la grille au centre, l’aperçu à droite. Les séparateurs se déplacent à la souris. C’est le travail de `react-resizable-panels` : un `Group` contient des `Panel`, chacun avec une taille par défaut, une taille minimale et maximale, et, pour l’aperçu, la possibilité d’être replié à zéro.
+
+Un administrateur qui a élargi l’arbre pour lire de longs noms de dossiers ne veut pas le refaire à chaque visite. La disposition est donc gardée dans `localStorage`, comme les préférences du chapitre précédent :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/Finder.tsx"
+  filename="Finder.tsx"
+  snippetStart="const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);"
+  snippetLead="2"
+  snippetLines="26"
+  snippetHighlight="5,25"
+  snippetTitle="La disposition restaurée, puis l’aperçu replié"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Deux temps, et leur ordre compte :
+
+1. **la disposition sauvegardée est restaurée** (`setLayout`) : largeur de l’arbre comprise ;
+2. **l’aperçu est replié**, après. Dans l’autre ordre, la disposition restaurée le rouvrirait aussitôt.
+
+L’aperçu démarre donc replié à chaque ouverture, même si la dernière disposition le montrait ouvert. Il ne sert que sur demande, et un écran qui s’ouvre gagne à commencer simple. Sa largeur, elle, reste dans la disposition, et revient au premier dépliage.
+
+👉 une préférence de largeur, oui
+👉 une préférence d’ouverture, non
+
+Sous 1 280 pixels de large, l’arbre n’est pas affiché du tout. Sur une tablette ou un téléphone, on navigue par la grille et le fil d’Ariane, qui se touchent du doigt ; aucune application de fichiers mobile (Fichiers, Drive, OneDrive) ne montre d’arbre.
+
+## Le problème : un arbre trop grand pour être chargé
+
+La bibliothèque contient des centaines de dossiers : un par discipline, par cours, par stage, par évènement, par espace de groupe, chacun avec ses sous-dossiers. L’arbre doit pourtant donner l’impression que tout est là, prêt à être déplié.
+
+Trois stratégies se présentent :
+
+<DocsTable columnsJson='["Stratégie", "Ce qu’elle coûte", "Ce qu’on ressent"]' rowsJson='[["Tout charger d’un coup", "Une seule requête, mais qui parcourt tout le stockage et rend un arbre énorme.", "Une longue attente à l’ouverture, pour des dossiers qu’on ne dépliera jamais."], ["Charger un dossier à son dépliage", "Une requête par clic sur une flèche.", "Un indicateur de chargement à chaque dépliage, même pour un dossier voisin."], ["Charger par paliers", "Une requête au départ, puis une à chaque fois qu’on descend plus bas que ce qui est chargé.", "Ce qu’on déplie est presque toujours déjà là."]]' />
+
+Le finder a pris la troisième. L’idée : quand on ouvre un dossier, on a de bonnes chances d’ouvrir aussi un de ses enfants. Charger un niveau d’avance coûte peu, et évite l’attente au clic suivant.
+
+## Deux niveaux, puis deux de plus
+
+La règle tient en deux phrases. Au départ, l’arbre charge **deux niveaux** sous la racine. Ensuite, chaque fois qu’un dossier est ouvert, il s’assure d’avoir chargé **deux niveaux sous le dossier ouvert le plus profond**.
+
+Pour mesurer cette profondeur, l’arbre compte les segments de chemin sous la racine :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/components/FinderTree.tsx"
+  filename="FinderTree.tsx"
+  snippetStart="function levelBelowRoot(path: string, rootPath: string): number {"
+  snippetEnd="(fin du bloc)"
+  snippetTitle="La profondeur d’un dossier sous la racine"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`AKFC/courses/2026` est au niveau 2 sous la racine `AKFC`. S’il est ouvert, il faut avoir chargé jusqu’au niveau 4 : ses enfants, et les enfants de ses enfants.
+
+Et voici le calcul de la profondeur nécessaire :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTree.tsx"
+  filename="FinderTree.tsx"
+  snippetStart="if (!rootChanged) {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,7,9"
+  snippetTitle="La profondeur ne fait que monter"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Deux propriétés de ce calcul.
+
+**La profondeur ne fait que monter.** On ne change `treeDepth` que si la profondeur nécessaire la **dépasse**. Refermer un dossier ne la fait pas redescendre : ce qui est chargé reste chargé, et rouvrir ne coûte rien. On appelle cela une **marque des hautes eaux** (*high-water mark*) : comme la trace qu’une crue laisse sur un mur, elle garde le niveau le plus haut jamais atteint.
+
+**Le calcul a lieu pendant le rendu, pas dans un effet.** C’est inhabituel, et ça mérite qu’on s’y arrête.
+
+### Ajuster un état pendant le rendu
+
+Le réflexe serait d’écrire un effet : « quand `openPaths` change, recalcule la profondeur ». Suivons ce qui se passerait au clic sur la flèche d’un dossier profond :
+
+1. `openPaths` change, React redessine l’arbre, avec l’**ancienne** profondeur ;
+2. l’écran s’affiche ;
+3. l’effet s’exécute, découvre qu’il faut descendre plus bas, change `treeDepth` ;
+4. React redessine l’arbre une seconde fois, et la requête part.
+
+Un rendu de trop, et un écran affiché dans un état qu’on sait déjà faux. React permet mieux : appeler un `set…` **pendant** le rendu, à condition que ce soit conditionnel (sinon la boucle serait infinie). React abandonne alors le rendu en cours et le recommence aussitôt avec la nouvelle valeur, **avant** d’afficher quoi que ce soit. La documentation de React appelle cela « ajuster un état quand une prop change », et le recommande précisément pour remplacer ce genre d’effet.
+
+La condition, ici, c’est `needed > treeDepth` : une fois `treeDepth` mis à jour, elle devient fausse, et le rendu suivant ne change plus rien.
+
+### Repartir de zéro quand la racine change
+
+Le même procédé sert juste au-dessus, quand la racine ou l’adaptateur changent (le passage d’un finder à un autre, chapitre 2) :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTree.tsx"
+  filename="FinderTree.tsx"
+  snippetStart="const [prevDeps, setPrevDeps] = useState({ rootPath, adapter });"
+  snippetLines="14"
+  snippetHighlight="1,4,7,10,11"
+  snippetTitle="Une nouvelle racine remet l’arbre à zéro"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’arbre garde, dans un état, les valeurs de `rootPath` et `adapter` du rendu précédent. S’il les trouve différentes, il remet tout à zéro : chargement en cours, pas d’erreur, deux niveaux, aucun dossier ouvert. Toujours pendant le rendu, toujours sans effet, et sans afficher un instant les dossiers ouverts de l’ancienne racine.
+
+<Callout type="concept">
+Un état qui se **déduit** d’une prop qui change n’a pas besoin d’effet : on le compare pendant le rendu, et on l’ajuste s’il le faut. Un effet sert à parler au monde extérieur (le réseau, le navigateur), pas à synchroniser deux états de React entre eux.
+</Callout>
+
+## La lecture, et ce qu’elle apprend à la grille
+
+Le calcul a fixé `treeDepth`. L’effet, lui, va chercher l’arbre, et il dépend de cette profondeur :
+
+<CodeWalkthrough
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTree.tsx"
+  filename="FinderTree.tsx"
+  snippetStart="  useEffect(() => {"
+  snippetEnd="  }, [adapter, rootPath, reloadKey, treeDepth, fileFilter]);"
+  title="Le chargement de l’arbre"
+  stepsJson='[{"title": "Une capacité, pas une certitude", "body": "getTree est facultatif dans le contrat : sans lui, l’effet ne fait rien, et le rendu affichera un message.", "scope": "1-6", "focus": "4-6"}, {"title": "Un seul appel, toute la profondeur", "body": "L’arbre redemande toujours depuis la racine, jusqu’à treeDepth. Plus simple qu’une greffe de sous-arbre, et la réponse reste petite à l’échelle du club.", "scope": "8-10", "focus": "9-9"}, {"title": "Le même filtre que la grille", "body": "Le sélecteur de médias ne montre que des images et des vidéos : l’arbre élague les autres fichiers avec le filtre de la grille.", "scope": "10-13", "focus": "12-12"}, {"title": "Ranger chaque dossier dans le cache", "body": "Chaque dossier dont les enfants sont arrivés est rangé dans le cache de la grille. Le parcours descend dans tout l’arbre reçu.", "scope": "15-24", "focus": "16-22"}, {"title": "Erreur, fin, et réponse en retard", "body": "Une réponse arrivée après un changement est ignorée, erreur comprise. Le chargement ne se termine que pour la requête en cours.", "scope": "26-38", "focus": "36-38"}]'
+/>
+
+Arrêtons-nous sur les dépendances de l’effet, parce qu’elles disent **quand** l’arbre se relit :
+
+- `treeDepth` : un palier de plus est nécessaire ;
+- `rootPath` et `adapter` : on a changé de finder ;
+- `reloadKey` : un fichier a été envoyé, renommé, déplacé (chapitre 2) ;
+- `fileFilter` : le filtre a changé.
+
+Le cas `reloadKey` a une conséquence agréable : après un renommage, l’arbre se relit, mais `openPaths` et `treeDepth` ne bougent pas. Les dossiers ouverts le restent.
+
+### Un arbre qui nourrit la grille
+
+Le parcours `walk` est l’effet de bord le plus utile du finder. Chaque dossier reçu avec ses enfants est rangé, par `cacheChildrenAt`, dans le **même cache** que celui où `useFinderData` regarde avant de lire un dossier (chapitre 1) :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetStart="  cacheChildrenAt: (path, children) =>"
+  snippetEnd="    }),"
+  snippetHighlight="3,4,6"
+  snippetTitle="cacheChildrenAt : un dossier de l’arbre devient un dossier de la grille"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Les enfants sont séparés en dossiers et fichiers, la forme qu’attend la grille, et la `Map` est copiée, comme toujours (chapitre 2). Conséquence : cliquer sur un dossier **visible dans l’arbre** affiche la grille aussitôt, sans requête, puisque son contenu est déjà là.
+
+👉 l’arbre et la grille ne font jamais deux fois le même travail
+👉 ce que l’un a lu, l’autre le sait
+
+## Un dossier récursif qui ne charge rien
+
+L’arbre se dessine avec deux composants : `FinderTreeFile` pour un fichier, `FinderTreeFolder` pour un dossier. Ce dernier est **récursif** : il s’affiche lui-même, puis, s’il est ouvert, affiche un `FinderTreeFolder` pour chacun de ses sous-dossiers, qui fera de même. La profondeur de l’arbre devient la profondeur des appels.
+
+Le point le plus important de ce composant, c’est ce qu’il **ne fait pas** : il ne charge rien. Ses enfants sont `node.children`, arrivés avec le palier que `FinderTree` a demandé.
+
+### Ce que le dossier reçoit
+
+`FinderTree` garde deux informations que tous les dossiers doivent connaître : quels dossiers sont ouverts (`openPaths`), et comment en ouvrir ou fermer un (`onToggleOpen`). Il les passe en props, et chaque dossier les passe à ses sous-dossiers.
+
+N’est-ce pas le forage de props que le chapitre 2 évitait avec un store ? Non, pour deux raisons. Ces informations n’intéressent **que** l’arbre : ni la grille ni la barre d’outils ne veulent savoir quels dossiers sont dépliés. Et la chaîne n’a pas d’intermédiaires qui se contentent de transporter : chaque `FinderTreeFolder` se sert de `openPaths` pour savoir s’il est lui-même ouvert. Un état local au composant qui l’utilise reste la solution la plus simple ; on ne le sort dans un store que lorsque d’autres en ont besoin.
+
+### Deux gestes sur une ligne
+
+Une ligne de dossier réagit à deux clics différents :
+
+- **la flèche** déplie ou replie le dossier dans l’arbre (`onToggleOpen`), sans changer de dossier courant ;
+- **le libellé** ouvre le dossier dans la grille (`onOpen`), qui appelle `setPath`.
+
+On peut donc explorer l’arbre sans quitter le dossier affiché, ou au contraire sauter à un dossier sans déplier toute sa branche. Le dossier courant est mis en évidence dans l’arbre (`isActive`).
+
+En mode sélection, le clic sur le libellé sélectionne le dossier au lieu de l’ouvrir. La corbeille, elle, reste une feuille : pas de flèche, et son clic mène à sa vue plate, présentée avec les actions sur les fichiers.
+
+## Le dossier qui se matérialise
+
+Revenons à la convention du chapitre 1. Au-delà de la profondeur chargée, un dossier a `children: undefined`, « pas encore chargé », mais `hasChildren: true`, « il y a quelque chose dessous ». L’arbre affiche donc sa flèche.
+
+Que se passe-t-il quand on clique dessus ? `openPaths` change, la profondeur nécessaire dépasse `treeDepth`, un nouveau palier est demandé. Pendant ce temps, le dossier est ouvert, annoncé non vide, mais sans enfants. C’est l’état qu’on appelle « en train de se matérialiser » :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTreeFolder.tsx"
+  filename="FinderTreeFolder.tsx"
+  snippetStart="  const isMaterializing = isOpen && hasChildren && node.children === undefined;"
+  snippetLead="1"
+  snippetLines="2"
+  snippetHighlight="2"
+  snippetTitle="Ouvert, annoncé non vide, pas encore là"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Tant qu’il l’est, la flèche devient un indicateur qui tourne, et une ligne « Chargement… » s’affiche sous le dossier. Quand le palier arrive, `node.children` est rempli, `isMaterializing` devient faux, et les enfants prennent la place de l’indicateur.
+
+Remarquons que rien, dans ce composant, n’a déclenché le chargement. Il a suffi d’ouvrir le dossier : `FinderTree` a vu la profondeur nécessaire changer, et a demandé le palier suivant. Le dossier se contente de **constater** qu’il attend.
+
+<Callout type="warning">
+Cette règle a une conséquence : un nœud fabriqué à la main, avec `hasChildren: true` mais sans `children`, reste « en train de se matérialiser » pour toujours. Aucun palier ne le chargera, puisqu’il n’existe pas dans le stockage.
+</Callout>
+
+## Des espaces rangés sans nœud inventé
+
+Les espaces des groupes collaboratifs sont rangés à plat dans le stockage : `AKFC/collaborative-group-spaces/<espace>`, un dossier par groupe. Mais les groupes, eux, ont une hiérarchie : un groupe peut avoir des sous-groupes, qui ont chacun leur espace. L’arbre doit montrer cette hiérarchie, alors que le stockage ne la connaît pas.
+
+`FinderTreeFolder` lit la hiérarchie des groupes (`storage.groupSpaceHierarchy`), et, au niveau du dossier des espaces seulement, **réarrange les nœuds réels** :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTreeFolder.tsx"
+  filename="FinderTreeFolder.tsx"
+  snippetStart="    const augment = (n: FinderNode): FinderNode => {"
+  snippetLines="15"
+  snippetHighlight="2,6,7,14"
+  snippetTitle="Les espaces des sous-groupes, placés sous l’espace de leur groupe parent"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Chaque espace garde **son** nœud, venu du stockage, avec ses enfants déjà chargés par le palier. On ne fait qu’ajouter, à la liste de ses enfants, les nœuds des espaces de ses sous-groupes. Les chemins ne changent pas : un clic sur un sous-espace mène à son vrai dossier.
+
+<Promesse vers="dev/finder/trois-finders-en-un" section="Deux bugs, deux règles">
+Une première version fabriquait des nœuds intermédiaires pour représenter la hiérarchie. Sans `children`, ils restaient « en train de se matérialiser » pour toujours. D’où la règle : **ne jamais fabriquer de nœud d’arbre ; réarranger les nœuds réels**.
+</Promesse>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que garde le navigateur de l’écran ?", "La largeur des panneaux ; l’aperçu, lui, démarre replié."], ["Pourquoi charger par paliers ?", "Ni l’attente d’un arbre complet, ni une requête à chaque dépliage."], ["Quelle est la règle ?", "Deux niveaux au départ, puis deux sous le dossier ouvert le plus profond."], ["Pourquoi la profondeur ne redescend-elle jamais ?", "Ce qui est chargé reste chargé : refermer puis rouvrir ne coûte rien."], ["Pourquoi pas d’effet pour la calculer ?", "Un état ajusté pendant le rendu évite un rendu de trop et un écran faux."], ["Que gagne la grille au chargement de l’arbre ?", "Chaque dossier reçu est rangé dans son cache : l’ouvrir est instantané."], ["Qui charge les enfants d’un dossier ?", "FinderTree, par paliers. FinderTreeFolder ne charge rien."], ["Que veut dire « se matérialiser » ?", "Ouvert, annoncé non vide, mais pas encore chargé : le palier suivant arrive."], ["Comment montrer la hiérarchie des groupes ?", "En réarrangeant les nœuds réels des espaces, jamais en en fabriquant."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer à la grille, nous devrions pouvoir expliquer :
+
+- pourquoi l’aperçu est replié après la restauration de la disposition, et pas avant ;
+- les trois stratégies de chargement d’un arbre, et ce que chacune coûte ;
+- la règle des paliers, et ce qu’est une marque des hautes eaux ;
+- pourquoi ajuster un état pendant le rendu vaut mieux qu’un effet ici ;
+- ce que l’arbre range dans le cache de la grille, et ce que cela change au clic ;
+- pourquoi `openPaths` reste un état local de l’arbre, passé en props ;
+- la différence entre cliquer la flèche et cliquer le libellé ;
+- ce qu’est un dossier « en train de se matérialiser », et pourquoi un nœud fabriqué le reste pour toujours.
+
+## À suivre
+
+L’arbre montre la structure. La grille, elle, montre le contenu : trois façons de l’afficher, un tri qui comprend les numéros, une lentille de statut, une recherche qui descend dans tous les sous-dossiers, un fil d’Ariane, et un aperçu qui choisit comment lire chaque fichier.
+
+<Callout type="tip">
+**Chapitre suivant : la grille, le tri, la recherche.** Les trois vues, le tri naturel, la lentille de statut, la recherche récursive, le fil d’Ariane qui se replie, et l’aperçu qui choisit son lecteur.
+</Callout>

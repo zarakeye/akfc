@@ -1,7 +1,7 @@
 "use client";
 
 import { useFinderReadOnly } from "#features/finder-core/state/FinderReadOnlyContext.ts";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -42,8 +42,9 @@ import FinderTreeFile from "#features/finder-core/components/FinderTreeFile.tsx"
 /**
  * FinderTreeFolder
  *
- * Composant récursif d'un dossier dans la TreeView. (Doc de chargement /
- * corbeille / barre verticale inchangée — cf. historique.)
+ * Composant récursif d'un dossier dans la TreeView. Il ne charge rien : ses enfants arrivent
+ * avec le palier que FinderTree demande à l'adaptateur. Il affiche, déplie, accepte un dépôt,
+ * et réarrange visuellement les espaces de groupe selon leur hiérarchie.
  *
  * ─── Mode picker (panier) ─────────────────────────────────────────────────
  *
@@ -154,24 +155,6 @@ export default function FinderTreeFolder({
   const { data: groupSpaceHierarchy } = trpc.storage.groupSpaceHierarchy.useQuery();
 
 
-  const [loadedChildren, setLoadedChildren] = useState<FinderNode[] | null>(
-    null,
-  );
-
-  const reloadKey = useFinderStore((s) => s.reloadKey);
-  const isFirstReloadKeyRef = useRef(true);
-  const autoLoadTriggeredRef = useRef(false);
-
-  useEffect(() => {
-    if (isFirstReloadKeyRef.current) {
-      isFirstReloadKeyRef.current = false;
-      return;
-    }
-    setLoadedChildren(null);
-    autoLoadTriggeredRef.current = false;
-  }, [reloadKey]);
-
-
   const [isDragOver, setIsDragOver] = useState(false);
 
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
@@ -181,8 +164,8 @@ export default function FinderTreeFolder({
   const multiSelectActive = useFinderStore((s) => s.multiSelectActive);
   const selectedIds = useFinderStore((s) => s.selection.roots);
 
-  const effectiveChildren: FinderNode[] | undefined =
-    node.children !== undefined ? node.children : (loadedChildren ?? undefined);
+  // Les enfants viennent tous du palier chargé par FinderTree : un dossier ne charge rien lui-même.
+  const effectiveChildren: FinderNode[] | undefined = node.children;
 
   // ─── Option B : imbrication VISUELLE des espaces de groupe ──────────────
   // Au niveau de `groups/`, on ré-arrange les nœuds RÉELS des espaces selon
@@ -239,11 +222,8 @@ export default function FinderTreeFolder({
 
   const hasChildren = node.hasChildren ?? (displayChildren?.length ?? 0) > 0;
 
-  const isMaterializing =
-    isOpen &&
-    hasChildren &&
-    node.children === undefined &&
-    loadedChildren === null;
+  // Ouvert, annoncé non vide, mais au-delà du palier chargé : le palier suivant arrive.
+  const isMaterializing = isOpen && hasChildren && node.children === undefined;
 
   function handleToggleOpen(e: React.MouseEvent) {
     e.stopPropagation();

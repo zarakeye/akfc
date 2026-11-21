@@ -13,7 +13,10 @@ import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
 
 /**
  * FinderTree — composant racine de la TreeView du finder.
- * (Doc de chargement progressif / high-water mark inchangée — cf. historique.)
+ *
+ * Chargement par paliers : deux niveaux d'abord, puis deux sous le dossier ouvert le plus
+ * profond. La profondeur ne fait que monter (marque des hautes eaux) ; refermer ne recharge
+ * rien. Chaque dossier reçu est aussi rangé dans le cache de la grille (cacheChildrenAt).
  *
  * ─── Mode picker (panier) ─────────────────────────────────────────────────
  * Reçoit `pickMode`/`isInCart`/`onPickToggle` et les propage à toute la
