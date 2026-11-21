@@ -6,6 +6,7 @@ import { FileSearch, Files, FileWarning, Maximize2 } from 'lucide-react';
 
 import type { FileAdapter, FinderNode, FinderNodeMetadata } from '@akfc/contracts/finder/index.ts';
 
+import { useShallow } from "zustand/react/shallow";
 import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
 import { useNodeMetadata } from '#features/finder-core/hooks/useNodeMetadata.ts';
 import { useNodeTextContent } from '#features/finder-core/hooks/useNodeTextContent.ts';
@@ -71,7 +72,7 @@ type Props = {
 };
 
 export default function PreviewPanel({ adapter }: Props): JSX.Element {
-  const { selection, files } = useFinderStore();
+  const { selection, files } = useFinderStore(useShallow((s) => ({ selection: s.selection, files: s.files })));
   const [modalOpen, setModalOpen] = useState(false);
 
   const allItems = files.map((f) => ({ id: f.id, path: f.path }));

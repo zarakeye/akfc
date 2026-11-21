@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { APP_ROOT } from '@akfc/config/app.ts';
-import type { FinderNode } from '@akfc/contracts/finder/index.ts';
+import type { FileAdapter, FinderNode } from '@akfc/contracts/finder/index.ts';
 
 /**
  * Les trois lentilles de statut. `'all'` n'est pas un statut — c'est
@@ -21,13 +21,16 @@ const STATUS_FILTER_KEY = 'akfc.finder.statusFilter';
  */
 function loadStatusFilter(): StatusFilter {
   if (typeof window === 'undefined') return 'all';
-  const stored = window.localStorage.getItem(STATUS_FILTER_KEY);
-  return stored === 'pending' || stored === 'published' ? stored : 'all';
+  try {
+    const stored = window.localStorage.getItem(STATUS_FILTER_KEY);
+    if (stored === 'pending' || stored === 'published') return stored;
+  } catch { /* stockage refusé (navigation privée) : le défaut suffit */ }
+  return 'all';
 }
 
 function saveStatusFilter(filter: StatusFilter): void {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(STATUS_FILTER_KEY, filter);
+  try { window.localStorage.setItem(STATUS_FILTER_KEY, filter); } catch { /* */ }
 }
 
 /**
@@ -84,6 +87,14 @@ export type SearchState = {
 type FinderState = {
   currentPath: string;
   setPath: (path: string) => void;
+
+  /** L'adaptateur du finder affiché : le store est global, il sert un finder après l'autre. */
+  boundAdapter: FileAdapter | null;
+  /**
+   * Appelé par chaque `Finder` à l'affichage. Un autre adaptateur : le cache, écrit par le
+   * précédent, est vidé. Un dossier courant hors de la racine : on revient à la racine.
+   */
+  bindFinder: (adapter: FileAdapter, rootPath: string) => void;
 
   folders: FinderNode[];
   files: FinderNode[];
@@ -235,8 +246,24 @@ function saveSearchFlags(flags: SearchFlags): void {
   } catch { /* */ }
 }
 
-export const useFinderStore = create<FinderState>((set) => ({
+export const useFinderStore = create<FinderState>((set, get) => ({
   currentPath: `${APP_ROOT}`,
+
+  boundAdapter: null,
+
+  bindFinder: (adapter, rootPath) => {
+    if (get().boundAdapter !== adapter) {
+      set((state) => ({
+        boundAdapter: adapter,
+        contentCache: new Map(),
+        folders: [],
+        files: [],
+        reloadKey: state.reloadKey + 1,
+      }));
+    }
+    const path = get().currentPath;
+    if (path !== rootPath && !path.startsWith(`${rootPath}/`)) get().setPath(rootPath);
+  },
 
   setPath: (path) =>
     set((state) => {

@@ -43,7 +43,7 @@ Naviguer est l’action centrale, et elle fait plus que changer de dossier :
 Le contenu est restitué depuis le cache s’il existe (pas de clignotement), la sélection est vidée (des identifiants d’un autre dossier n’y auraient plus de sens), et la recherche s’arrête : elle portait sur le dossier qu’on vient de quitter.
 
 <Callout type="warning">
-Le store est **global** : un seul finder par page. C’est le cas partout, et c’est pourquoi la page « Mes espaces » doit, en arrivant, replacer le dossier courant sur sa propre racine (le store démarre sur celle de la bibliothèque). Deux finders sur une même page partageraient leur dossier courant.
+Le store est **global** : un seul finder par page, et un finder après l’autre d’une page à la suivante. Chaque `Finder` s’y déclare donc en arrivant (`bindFinder`) : un autre adaptateur vide le cache, un dossier courant hors de sa racine revient à la racine. Deux finders sur une même page partageraient malgré tout leur dossier courant.
 </Callout>
 
 ### Des préférences qui survivent au rechargement

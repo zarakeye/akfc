@@ -27,6 +27,7 @@ import FinderTableRow from "#features/finder-core/components/FinderTableRow.tsx"
 import FinderCompactRow from "#features/finder-core/components/FinderCompactRow.tsx";
 
 import { useFinderData } from "#features/finder-core/hooks/useFinderData.ts";
+import { useShallow } from "zustand/react/shallow";
 import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
 
 import Breadcrumb from "#features/finder-core/components/Breadcrumb.tsx";
@@ -164,7 +165,36 @@ export default function Finder({
     setSortSecondary,
     toggleSortDirection,
     resetSort,
-  } = useFinderStore();
+  } = useFinderStore(
+    // Un objet recréé à chaque lecture : useShallow le compare champ par champ, et le finder ne
+    // se redessine que si l'un de ces champs change (pas à chaque frappe dans la recherche).
+    useShallow((s) => ({
+      folders: s.folders,
+      files: s.files,
+      contentCache: s.contentCache,
+      currentPath: s.currentPath,
+      setPath: s.setPath,
+      selection: s.selection,
+      toggleSelect: s.toggleSelect,
+      selectOnly: s.selectOnly,
+      selectRange: s.selectRange,
+      multiSelectActive: s.multiSelectActive,
+      enterMultiSelect: s.enterMultiSelect,
+      exitMultiSelect: s.exitMultiSelect,
+      viewMode: s.viewMode,
+      sort: s.sort,
+      setSortPrimary: s.setSortPrimary,
+      setSortSecondary: s.setSortSecondary,
+      toggleSortDirection: s.toggleSortDirection,
+      resetSort: s.resetSort,
+    })),
+  );
+
+  // Avant la lecture du dossier : le store sert un finder après l'autre (bibliothèque, Mes espaces,
+  // sélecteur). Celui-ci s'y déclare, ce qui recale le dossier courant et vide le cache d'un autre.
+  useEffect(() => {
+    useFinderStore.getState().bindFinder(adapter, rootPath);
+  }, [adapter, rootPath]);
 
   const { loading, error } = useFinderData(adapter);
   const actionError = useFinderStore((s) => s.actionError);

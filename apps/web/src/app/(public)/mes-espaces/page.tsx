@@ -3,7 +3,6 @@
 import {
   type ChangeEvent,
   type JSX,
-  useEffect,
   useRef,
   useState,
 } from "react";
@@ -130,11 +129,6 @@ function MemberDepositBar(): JSX.Element | null {
  * haut niveau accessibles (racines multiples gérées). Dépôt superposé.
  */
 export default function MesEspacesPage(): JSX.Element {
-  useEffect(() => {
-    // Le store s'initialise sur l'appRoot ; on le place sur la racine virtuelle.
-    useFinderStore.getState().setPath(MEMBER_FINDER_ROOT);
-  }, []);
-
   return (
     <div className="mx-auto flex h-[calc(100dvh-9rem)] max-w-6xl flex-col p-4">
       <h1 className="mb-4 shrink-0 text-2xl font-semibold">
