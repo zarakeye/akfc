@@ -477,7 +477,10 @@ export default function Finder({
 
     if (multiSelectActive) {
       if (e.shiftKey && selection.anchorId) {
-        const ids = allItems.map((i) => i.id);
+        // La plage suit l'ordre AFFICHÉ (trié, filtré par statut) : `allItems`
+        // contient aussi les fichiers masqués par le filtre, qu'une plage
+        // sélectionnerait sans qu'on les voie.
+        const ids = sortedAllItems.map((i) => i.id);
         const start = ids.indexOf(selection.anchorId);
         const end = ids.indexOf(node.id);
 

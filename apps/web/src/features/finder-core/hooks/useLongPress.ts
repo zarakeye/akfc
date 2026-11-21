@@ -139,15 +139,21 @@ export function useLongPress(
 
     // ✅ Annulation robuste : tout évènement de fin globale annule le timer.
     const onAnyEnd = () => cancel();
+    // La fenêtre qui perd le focus (autre onglet, autre application), et elle
+    // seule : écouté en capture, `blur` arrive aussi pour CHAQUE élément qui
+    // perd le focus, dont le bouton ou le champ quitté par ce même appui.
+    const onWindowBlur = (e: FocusEvent) => {
+      if (e.target === window) cancel();
+    };
 
     window.addEventListener('mouseup', onAnyEnd, true);
-    window.addEventListener('blur', onAnyEnd, true);
+    window.addEventListener('blur', onWindowBlur);
     window.addEventListener('dragstart', onAnyEnd, true);
     window.addEventListener('touchend', onAnyEnd, true);
 
     cleanupWindowListenersRef.current = () => {
       window.removeEventListener('mouseup', onAnyEnd, true);
-      window.removeEventListener('blur', onAnyEnd, true);
+      window.removeEventListener('blur', onWindowBlur);
       window.removeEventListener('dragstart', onAnyEnd, true);
       window.removeEventListener('touchend', onAnyEnd, true);
     };

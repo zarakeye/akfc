@@ -1,6 +1,6 @@
 'use client';
 
-import { JSX, useState } from 'react';
+import { JSX, useRef, useState } from 'react';
 
 /**
  * Champ d'édition en ligne d'un nom de fichier ou de dossier.
@@ -29,6 +29,19 @@ export function RenameInput({
   className?: string;
 }): JSX.Element {
   const [value, setValue] = useState(initial);
+  // Entrée puis clic ailleurs : sans ce verrou, la perte du focus validerait
+  // une seconde fois pendant que le premier renommage est en route, sur
+  // l'ancien chemin.
+  const committingRef = useRef(false);
+  const commit = async (): Promise<void> => {
+    if (committingRef.current) return;
+    committingRef.current = true;
+    try {
+      await onCommit(value);
+    } finally {
+      committingRef.current = false;
+    }
+  };
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
@@ -47,13 +60,13 @@ export function RenameInput({
           e.stopPropagation();
           if (e.key === 'Enter') {
             e.preventDefault();
-            void onCommit(value);
+            void commit();
           } else if (e.key === 'Escape') {
             e.preventDefault();
             onCancel();
           }
         }}
-        onBlur={() => void onCommit(value)}
+        onBlur={() => void commit()}
         className={
           className ??
           'w-full rounded border border-info/40 bg-card px-1 py-0.5 text-xs text-foreground outline-none'

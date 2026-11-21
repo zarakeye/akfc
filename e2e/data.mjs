@@ -66,6 +66,7 @@ export const PARTANT_MEDIA = { id: "e2e-media-partant", key: "AKFC/e2e/partant.p
 
 /** Le média sur lequel on tague des personnes. */
 export const TAG_MEDIA = { id: "e2e-media-tags", key: "AKFC/e2e/tags.png" };
+export const RANGE_PENDING = { id: "e2e-media-plage", key: "AKFC/e2e/plage-en-attente.png" };
 /** Le tableau des droits d'une galerie : un média à elle seule, que l'on tague par la modale. */
 /** Une galerie PUBLIQUE et son média : un refus d'une personne taguée bloque et masque. */
 export const TAG_PUBLIC_GALLERY = { title: "Galerie publique des tags", slug: "e2e-galerie-tags-publique", mediaId: "e2e-media-tags-public", key: "AKFC/e2e/tags-public.png" };

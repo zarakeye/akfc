@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, BIRTH_DATE, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, COMMENT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
+import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, BIRTH_DATE, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, COMMENT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, RANGE_PENDING, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -241,6 +241,15 @@ await prisma.user.update({
     data: {
       id: TAG_MEDIA.id, fullPath: TAG_MEDIA.key, mimeType: "image/png", format: "png", originalFileName: "tags.png",
       bytes: png.byteLength, width: 1, height: 1, appRoot: "AKFC", status: "published", uploaderUserId: USERS.admin.id,
+    },
+  });
+  // Un fichier en attente parmi des fichiers validés : une plage Maj + clic sous le filtre
+  // « Validés » ne doit pas le prendre.
+  await s3.send(new PutObjectCommand({ Bucket, Key: RANGE_PENDING.key, Body: png, ContentType: "image/png" }));
+  await prisma.mediaAsset.create({
+    data: {
+      id: RANGE_PENDING.id, fullPath: RANGE_PENDING.key, mimeType: "image/png", format: "png", originalFileName: "plage-en-attente.png",
+      bytes: png.byteLength, width: 1, height: 1, appRoot: "AKFC", status: "pending", uploaderUserId: USERS.admin.id,
     },
   });
   // Galerie réservée aux membres (absente de la page publique des galeries) : tableau des droits.

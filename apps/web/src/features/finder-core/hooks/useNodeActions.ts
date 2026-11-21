@@ -338,6 +338,9 @@ export function useNodeActions(): {
           },
         });
         reloadFolderContent();
+        // Comme après une suppression : les éléments cochés ont changé de
+        // chemin, la sélection les désignerait à leur ancienne place.
+        exitMultiSelect();
         return null;
       } catch (err) {
         return err instanceof Error
@@ -345,7 +348,7 @@ export function useNodeActions(): {
           : 'Le déplacement a échoué.';
       }
     },
-    [moveMutation, reloadFolderContent],
+    [moveMutation, reloadFolderContent, exitMultiSelect],
   );
 
   return {
