@@ -26,9 +26,10 @@ import { useFinderStore, type SearchResultNode } from '#features/finder-core/sta
  * ─── Loading et race conditions ──────────────────────────────────────
  *
  * Pendant le debounce + le fetch, on pose `loading: true` pour que l'UI
- * puisse afficher un spinner. Le tRPC client garantit l'absence de race
- * conditions sur les requêtes superposées (la dernière query "gagne" car
- * le `useEffect` voit la dernière valeur du store).
+ * puisse afficher un spinner. Deux requêtes peuvent se croiser (« pho »,
+ * puis « photo » tapé après le départ de la première) : la réponse d'une
+ * recherche dépassée est ignorée grâce au drapeau `cancelled`, posé par le
+ * nettoyage de l'effet dès que la requête, les options ou le dossier changent.
  *
  * ─── Cleanup ─────────────────────────────────────────────────────────
  *
@@ -63,6 +64,7 @@ export function useFinderSearch(): void {
     if (debounceRef.current) {
       window.clearTimeout(debounceRef.current);
     }
+    let cancelled = false;
     debounceRef.current = window.setTimeout(async () => {
       try {
         // Le prefix de recherche est le currentPath (toujours un dossier).
@@ -113,17 +115,21 @@ export function useFinderSearch(): void {
           };
         });
 
+        if (cancelled) return;
         setSearchResults(results, data.truncated);
       } catch (err) {
         // Si le fetch fail (réseau ou regex invalide côté serveur retournant
         // []), on pose juste des résultats vides — le loading est reset.
         console.error('[useFinderSearch] fetch failed', err);
+        if (cancelled) return;
         setSearchResults([], false);
       }
     }, 300);
 
-    // Cleanup : cancel le timeout si query/flags/currentPath changent avant la fin
+    // Nettoyage : si la requête, les options ou le dossier changent, le minuteur en attente
+    // est annulé, et la réponse d'une recherche déjà partie sera ignorée.
     return () => {
+      cancelled = true;
       if (debounceRef.current) {
         window.clearTimeout(debounceRef.current);
         debounceRef.current = null;

@@ -1,6 +1,6 @@
 ---
 title: "La grille, le tri, la recherche"
-description: "Ce que le finder montre au centre et à droite : la grille en trois vues, la lentille de statut, la recherche récursive, le fil d’Ariane qui parle comme la grille, et l’aperçu qui choisit son lecteur."
+description: "Ce que le finder montre au centre et à droite : une seule liste préparée pour trois vues, un tri à deux critères qui comprend les numéros et place les dossiers d’abord, des sections qui suivent le tri, la lentille de statut, une recherche récursive qui attend une pause et ignore les réponses dépassées, un fil d’Ariane qui parle comme la grille et se replie, et un aperçu qui choisit son lecteur et enregistre seul."
 section: "Le finder"
 order: 4
 entities:
@@ -12,7 +12,7 @@ stories:
     steps:
       - label: Il tape un mot ; après 300 ms, la recherche part dans tout le dossier courant
         call: media.searchRecursive
-        section: Chercher dans le dossier courant
+        section: Chercher dans tout le sous-arbre
       - label: Le fil d’Ariane montre les libellés des dossiers, comme la grille
         call: storage.folderLabels
         section: Un fil d’Ariane qui parle comme la grille
@@ -34,68 +34,212 @@ Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune 
 
 <Parcours />
 
-## La grille, en trois vues
+## Une liste, trois vues
 
-Le panneau central montre le contenu du dossier courant, en grille de vignettes, en tableau (colonnes triables : nom, type, taille, date, expéditeur) ou en liste compacte. Les trois vues lisent la même liste triée ; seul le composant de ligne change (`GridItem`, `FinderTableRow`, `FinderCompactRow`).
+Le panneau central montre le contenu du dossier courant de trois façons, au choix de l’utilisateur (le choix est une préférence gardée dans le navigateur, chapitre 2) :
 
-Le tri a **deux niveaux** (un critère principal, un critère secondaire pour départager), et suit la convention des explorateurs : dossiers d’abord. La partie Stockage a montré le comparateur français qui range « photo 2 » avant « photo 10 ».
+<DocsTable columnsJson='["Vue", "Composant d’une ligne", "Pour quoi faire"]' rowsJson='[["Grille", "GridItem", "Reconnaître des photos à leur vignette."], ["Tableau", "FinderTableRow", "Comparer : colonnes nom, type, taille, date, expéditeur, triables d’un clic."], ["Liste compacte", "FinderCompactRow", "Voir beaucoup de noms d’un coup, sur un petit écran."]]' />
 
-La **lentille de statut** (« Tous », « En attente », « Validés ») retire des fichiers de la grille, et seulement de la grille :
+Trois vues, mais **une seule préparation**. Avant d’afficher quoi que ce soit, `Finder` construit la liste à montrer, en trois étapes enchaînées, chacune dans un `useMemo` :
+
+1. **les fichiers visibles** : le contenu du dossier, moins ce que le filtre du finder écarte (le sélecteur de médias ne garde que les images et les vidéos), moins ce que la lentille de statut écarte ;
+2. **la liste triée** : dossiers et fichiers visibles, triés selon le tri choisi ;
+3. **les groupes** : la liste triée découpée en sections (« A », « B »… ou « Images », « PDF »…).
+
+Les trois vues lisent ces mêmes groupes ; seule la façon de dessiner une ligne change. Un tri, un filtre, une recherche ne s’écrivent donc qu’une fois, et ne peuvent pas diverger d’une vue à l’autre.
+
+👉 la vue est une façon de dessiner, pas une façon de calculer
+
+### Ce que `useMemo` apporte ici
+
+`useMemo(calcul, dépendances)` garde le résultat d’un calcul tant que ses dépendances n’ont pas changé. Un tri de quelques centaines de fichiers n’est pas lent en soi ; mais `Finder` se redessine pour bien d’autres raisons (une sélection, un survol de glisser-déposer). Sans `useMemo`, chaque rendu retrierait tout, et, surtout, produirait un **nouveau tableau** : les composants qui le reçoivent croiraient la liste changée et se redessineraient aussi. Avec lui, le tableau garde son identité tant que le contenu, le filtre et le tri n’ont pas bougé.
+
+## La lentille de statut
+
+Un dossier contient des fichiers **en attente** (envoyés, pas encore validés) et des fichiers **publiés**. Le statut est une métadonnée de chaque fichier, pas un emplacement (partie Stockage). La lentille (« Tous », « En attente », « Validés ») permet de n’en voir qu’une sorte sans changer de dossier :
 
 <CodeExample
   language="tsx"
   filepath="apps/web/src/features/finder-core/components/Finder.tsx"
   filename="Finder.tsx"
   snippetStart="const visibleFiles = useMemo(() => {"
-  snippetEnd="(fin du bloc)"
-  snippetHighlight="4"
-  snippetTitle="Une lentille, pas un tri"
+  snippetEnd="  }, [files, fileFilter, statusFilter]);"
+  snippetHighlight="2,4"
+  snippetTitle="Le filtre du finder, puis la lentille"
   fullFileTitle="Voir le fichier complet"
 />
 
-Ni l’arbre ni les dossiers ne sont filtrés : un dossier n’a pas de statut, et un arbre qui change de forme avec un filtre rendrait indécidable la question « ce dossier a-t-il disparu, ou est-il filtré ? ».
+Deux choses ne sont **jamais** filtrées.
 
-## Chercher dans le dossier courant
+**Les dossiers.** Un dossier n’a pas de statut : il contient les deux sortes. Le retirer parce qu’il ne contient que des fichiers en attente le rendrait introuvable, alors qu’il existe.
 
-La barre de recherche transforme la grille : tant qu’elle contient du texte, la grille montre les **résultats** à la place du dossier, dans tout le sous-arbre du dossier courant. L’arbre, lui, reste un outil de navigation.
+**L’arbre.** La lentille n’est jamais transmise à `FinderTree`, contrairement au filtre du sélecteur. Un arbre qui change de forme quand on change de lentille rendrait indécidable la question : « ce dossier a-t-il disparu parce qu’il est filtré, ou parce qu’il n’existe plus ? »
+
+👉 un filtre qui cache, oui ; un filtre qui fait douter de ce qui existe, non
+
+## Trier : deux critères, et les dossiers d’abord
+
+Le tri a **deux niveaux** : un critère principal, et un critère secondaire qui départage les égalités. Trier par type, puis par date : les images ensemble, les plus récentes d’abord. Chaque niveau a son sens, croissant ou décroissant.
 
 <CodeExample
   language="ts"
-  filepath="apps/web/src/features/finder-core/hooks/useFinderSearch.ts"
-  filename="useFinderSearch.ts"
-  snippetStart="debounceRef.current = window.setTimeout(async () => {"
-  snippetLead="7"
-  snippetLines="11"
-  snippetHighlight="2,8,11,13"
-  snippetTitle="Une requête par pause de frappe, pas par lettre"
+  filepath="apps/web/src/features/finder-core/utils/sortNodes.ts"
+  filename="sortNodes.ts"
+  snippetStart="export function sortNodes("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="5,9,11,15,22"
+  snippetTitle="sortNodes : le principal, puis le secondaire"
   fullFileTitle="Voir le fichier complet"
 />
 
-L’indicateur de chargement s’allume **dès la première lettre**, la requête part après 300 ms sans frappe. Les options (casse, mot entier, expression régulière) sont transmises au serveur, qui borne le nombre de résultats (200 par défaut) et le dit (`truncated`) : une liste annoncée incomplète vaut mieux qu’une page qui ne répond plus. Changer de dossier vide la recherche (c’est `setPath` qui s’en charge, chapitre précédent).
+Lisons-le dans l’ordre.
 
-Ici, le hook appelle `trpcUtils.media.searchRecursive.fetch` : il est dans un composant, il a accès au client React Query, et il profite de son cache. L’adaptateur, qui n’est pas un composant, n’a pas ce choix.
+**Une copie d’abord.** `[...nodes]` copie le tableau avant de le trier : `Array.prototype.sort` trie **en place**, et la liste reçue appartient au store. La trier directement, ce serait la modifier en place, ce que le chapitre 2 a exclu.
+
+**Un comparateur par critère.** Une fonction de comparaison rend un nombre : négatif si `a` passe avant `b`, positif s’il passe après, zéro s’ils sont égaux. `compareByField` choisit la bonne fonction selon le critère (nom, type, taille, date, expéditeur), et un `switch` exhaustif garantit qu’un critère ajouté un jour sans comparateur sera une erreur de compilation, pas un tri silencieusement ignoré.
+
+**Le sens, sans dupliquer.** Pour trier en décroissant, on n’écrit pas un second comparateur : `applyDirection` inverse simplement le signe du résultat.
+
+**Le départage, puis la stabilité.** Si le critère principal donne zéro, le secondaire tranche. S’il donne zéro aussi, la fonction rend zéro, et c’est la **stabilité** du tri qui décide : depuis ES2019, `sort` garde l’ordre d’origine des éléments égaux.
+
+**Les dossiers d’abord, quel que soit le critère et le sens.** C’est la convention de l’Explorateur de Windows et de la plupart des gestionnaires de fichiers : les dossiers forment toujours un bloc en tête, trié lui-même selon le critère ; les fichiers suivent. Trier par date décroissante montre les fichiers les plus récents… sous les dossiers, pas au milieu d’eux.
+
+### Un comparateur qui comprend les numéros
+
+Le tri par nom s’appuie sur un comparateur créé une seule fois pour tout le module :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/utils/sortNodes.ts"
+  filename="sortNodes.ts"
+  snippetStart="const COLLATOR = new Intl.Collator('fr', {"
+  snippetLines="4"
+  snippetHighlight="2,3"
+  snippetTitle="Un comparateur français et numérique"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`Intl.Collator` est le comparateur de texte du navigateur, réglé pour une langue. Deux options font tout son intérêt :
+
+- **`numeric: true`** : les suites de chiffres sont comparées comme des nombres. Un tri de texte ordinaire range `photo10` avant `photo2`, parce que le caractère « 1 » vient avant « 2 » ; le comparateur numérique range `photo2` avant `photo10`, comme un humain ;
+- **`sensitivity: 'base'`** : la casse et les accents ne départagent pas. « Été » et « ete » sont égaux pour le tri, et ne se retrouvent pas aux deux bouts de la liste.
+
+Le créer une seule fois n’est pas un détail : construire un `Intl.Collator` coûte bien plus cher qu’une comparaison, et un tri en fait des milliers.
+
+### Les autres critères
+
+Chaque comparateur règle ses cas limites :
+
+- **la taille** : un dossier n’a pas de taille, compté comme zéro ;
+- **la date d’envoi** : elle vient de la base, après coup (chapitre 1). Un fichier sans fiche n’a pas de date ; il va en bout de liste, plutôt que de se glisser n’importe où. Les dates sont des chaînes ISO 8601 (`2026-11-21T13:54:00Z`), qui se comparent comme du texte dans l’ordre chronologique : inutile de construire des milliers d’objets `Date` ;
+- **le type** : par famille (document, image, vidéo, son), puis par format (`JPG`, `PNG`…), puis par nom ;
+- **l’expéditeur** : par nom ; sans expéditeur, en bout de liste.
+
+## Des sections qui suivent le tri
+
+En grille et en tableau, la liste triée est découpée en sections, avec un en-tête. Le découpage dépend du critère principal :
+
+<DocsTable columnsJson='["Tri principal", "Sections"]' rowsJson='[["Nom", "Dossiers, puis une section par initiale (A, B… et # pour ce qui ne commence pas par une lettre)."], ["Type", "Dossiers, puis une famille (Images, Documents…) avec un sous-en-tête par format."], ["Taille", "Dossiers, puis moins de 1 Mo, de 1 à 10 Mo, de 10 à 100 Mo, plus de 100 Mo."], ["Date", "Dossiers, puis Aujourd’hui, Hier, Cette semaine, Ce mois-ci, Cette année, puis une section par année."], ["Expéditeur", "Dossiers, puis une section par expéditeur."]]' />
+
+Le découpage tient en une seule passe sur la liste, grâce à une propriété du tri : les éléments d’une même section sont **déjà consécutifs**. `groupNodes` n’a qu’à ouvrir une nouvelle section chaque fois que la clé change :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/utils/sortNodes.ts"
+  filename="sortNodes.ts"
+  snippetStart="export function groupNodes("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="9,10"
+  snippetTitle="groupNodes : une section s’ouvre quand la clé change"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cette propriété est un **invariant** : une règle que le code suppose vraie partout. Si le tri cessait de regrouper les éléments d’une même section, la même section apparaîtrait deux fois, avec la même clé React. C’est pourquoi chaque découpage met les dossiers dans une section à eux, en tête : c’est là que le tri les place.
+
+## Chercher dans tout le sous-arbre
+
+La barre de recherche change ce que montre la grille : tant qu’elle contient du texte, la grille affiche les **résultats**, trouvés dans **tout le sous-arbre** du dossier courant, avec pour chacun le dossier où il se trouve. L’arbre, lui, reste un outil de navigation.
+
+La recherche se fait sur le serveur (`media.searchRecursive`) : le navigateur ne connaît que les dossiers déjà ouverts, le serveur connaît tout. Côté navigateur, un hook pilote l’envoi :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/finder-core/hooks/useFinderSearch.ts"
+  filename="useFinderSearch.ts"
+  snippetStart="  useEffect(() => {"
+  snippetEnd="  ]);"
+  title="useFinderSearch"
+  stepsJson='[{"title": "Rien à chercher", "body": "Un champ vide efface les résultats, et la grille revient au dossier.", "scope": "1-6", "focus": "3-6"}, {"title": "L’indicateur tout de suite, la requête plus tard", "body": "Le chargement s’affiche dès la première lettre ; la requête, elle, attend 300 ms sans frappe.", "scope": "8-15", "focus": "9-15"}, {"title": "La requête", "body": "Le dossier courant sert de préfixe ; les options (casse, mot entier, expression régulière) partent avec le texte.", "scope": "15-26", "focus": "18-25"}, {"title": "Une réponse dépassée ne touche à rien", "body": "Si la frappe a continué entre-temps, cette réponse n’est plus la bonne : elle est ignorée.", "scope": "64-74", "focus": "66-67"}, {"title": "Le nettoyage", "body": "À chaque changement de texte, d’option ou de dossier : la réponse en vol est marquée dépassée, le minuteur en attente est annulé.", "scope": "77-85", "focus": "79-84"}]'
+/>
+
+### Attendre une pause
+
+Envoyer une requête à chaque lettre tapée chargerait le serveur pour rien : « p », « ph », « pho »… n’intéressent personne. Le hook attend donc que la frappe **s’arrête** 300 millisecondes. Chaque nouvelle lettre annule le minuteur en cours et en relance un. C’est ce qu’on appelle un **anti-rebond** (*debounce*) : seule compte la dernière d’une série d’actions rapprochées.
+
+L’indicateur de chargement, lui, s’allume dès la première lettre. Sans cela, on taperait, rien ne bougerait pendant 300 ms, et on croirait la recherche en panne.
+
+### Deux requêtes qui se croisent
+
+L’anti-rebond ne suffit pas. Imaginons : on tape « pho », on attend, la requête part ; on ajoute « to ». La requête « photo » part 300 ms plus tard. Rien ne garantit que « pho » reviendra **avant** « photo » : le serveur a pu traiter la seconde plus vite. Si « pho » arrive en dernier, il écrase les résultats de « photo », et l’écran montre des résultats qui ne correspondent plus au champ.
+
+C’est la condition de course du chapitre 1, et la réponse est la même : un drapeau `cancelled`, posé par le nettoyage de l’effet dès que le texte, une option ou le dossier change. La réponse d’une recherche dépassée arrive, trouve le drapeau levé, et ne touche à rien.
+
+<Callout type="warning">
+L’anti-rebond réduit le nombre de requêtes ; il ne règle pas leur ordre d’arrivée. Toute réponse qui peut arriver après qu’une autre est partie doit vérifier qu’elle est encore attendue.
+</Callout>
+
+### Ce que le serveur fait de la requête
+
+Côté serveur, `searchRecursive` commence par les droits : on ne cherche que là où l’on peut lire (`assertCanReadPaths`). Il compile ensuite la requête en expression régulière, en échappant les caractères spéciaux sauf si l’utilisateur a demandé une expression régulière. Cette option est réservée aux administrateurs : une expression mal construite peut occuper le serveur de longues secondes.
+
+Puis il lit le sous-arbre en base, par paquets de 500 fiches, et garde celles dont le nom, la description ou l’expéditeur correspondent. Il s’arrête à 200 résultats, ou après 10 000 fiches lues, et le dit (`truncated`). L’écran l’annonce alors : une liste qui se dit incomplète vaut mieux qu’une page qui ne répond plus.
+
+Ici, le hook appelle `trpcUtils.media.searchRecursive.fetch` : il est dans un composant, il a accès au client React Query, et il profite de son cache. L’adaptateur, qui n’est pas un composant, n’a pas ce choix (chapitre 1).
+
+Changer de dossier vide la recherche : c’est `setPath` qui s’en charge (chapitre 2).
 
 ## Un fil d’Ariane qui parle comme la grille
 
-Le chemin d’un fichier est fait de clés techniques (`collaborative-group-spaces/bureau-cmh2…`). La grille, elle, montre des noms : les libellés que les administrateurs ont donnés aux dossiers (`FolderLabel`), les noms des groupes pour leurs espaces. Le fil d’Ariane doit parler la même langue :
+Au-dessus de la grille, le **fil d’Ariane** montre le chemin du dossier courant, segment par segment, chacun cliquable. Mais un chemin est fait de clés techniques (`collaborative-group-spaces/bureau-cmh2…`), alors que la grille montre des noms : les libellés donnés aux dossiers par les administrateurs, les noms des groupes pour leurs espaces. Le fil doit parler la même langue que la grille, sans quoi on lirait « Bureau » dans la grille et un identifiant dans le fil.
+
+Il consulte donc les mêmes sources, dans le même ordre de priorité que le serveur : le **libellé** du dossier s’il en a un, sinon le **nom de l’espace** s’il s’agit d’un espace de groupe, sinon la **clé brute**.
+
+Deux autres règles :
+
+- **l’espace personnel d’un administrateur est masqué** : il voit « Espace personnel », pas le dossier technique qui le porte ;
+- **la racine est celle du finder** : pour un membre, le fil commence à « Mes espaces », jamais à la racine du stockage qu’il ne peut pas voir.
 
 <CodeExample
   language="tsx"
   filepath="apps/web/src/features/finder-core/components/Breadcrumb.tsx"
   filename="Breadcrumb.tsx"
   snippetStart="const isMemberRoot = rootPath !== APP_ROOT;"
-  snippetLead="4"
-  snippetEnd="  }));"
-  snippetHighlight="1,5,8,12,13,20,25"
-  snippetTitle="Les mêmes noms partout, et une racine relative"
+  snippetLines="11"
+  snippetHighlight="1,4,7,8"
+  snippetTitle="Pour un membre, le fil commence à « Mes espaces »"
   fullFileTitle="Voir le fichier complet"
 />
 
-Trois règles s’y lisent : la **priorité des noms** est celle du serveur (libellé, puis nom d’espace, puis clé brute), l’espace personnel d’un administrateur est **masqué** (il voit « Espace personnel », pas le dossier technique qui le porte), et la **racine est relative au finder** : pour un membre, le fil commence à « Mes espaces », jamais à la racine du stockage qu’il ne peut pas voir. Au-delà de quatre segments, et quelle que soit la taille de l’écran, le fil garde la racine et les deux derniers ; les intermédiaires passent dans un menu « … ». Quatre plutôt que deux, parce que chaque segment visible est aussi une cible de dépôt (chapitre suivant) : on ne lâche pas un fichier sur un « … ».
+### Un fil qui se replie
+
+Un chemin profond ne tient pas sur une ligne. Au-delà de quatre segments, le fil garde la racine et les deux derniers, et range les intermédiaires dans un menu ouvert par « … » :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/Breadcrumb.tsx"
+  filename="Breadcrumb.tsx"
+  snippetStart="  const collapsed = segments.length > MAX_VISIBLE_SEGMENTS;"
+  snippetLines="5"
+  snippetHighlight="1,2"
+  snippetTitle="La racine, « … », le parent, le dossier courant"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pourquoi quatre, et pas deux ? Parce que chaque segment visible est aussi une **cible de dépôt** : on peut y lâcher un fichier glissé depuis la grille (chapitre 6). Un segment replié dans le menu cesse de l’être. Un seuil assez haut garde toutes leurs cibles aux chemins ordinaires ; seuls les chemins vraiment profonds, qui débordaient de toute façon, perdent celles du milieu, et l’arbre reste là pour eux.
 
 ## L’aperçu choisit son lecteur
 
-Le panneau de droite montre le fichier sélectionné. Le contrat ne distingue que trois sortes de fichiers (image, vidéo, document) ; l’aperçu a besoin de plus fin :
+Le panneau de droite montre le fichier sélectionné. Le contrat ne connaît que trois sortes de fichiers (image, vidéo, document) ; l’aperçu a besoin d’être plus fin, et décide d’un **lecteur** à partir du type et du format :
 
 <CodeExample
   language="tsx"
@@ -108,21 +252,58 @@ Le panneau de droite montre le fichier sélectionné. Le contrat ne distingue qu
   fullFileTitle="Voir le fichier complet"
 />
 
-Une image s’affiche, une vidéo et un son se lisent, un PDF s’ouvre dans un cadre, un texte et un Markdown se lisent en clair, un document Word est converti en HTML **dans le navigateur**. Pour ce dernier, la librairie n’est chargée qu’au besoin :
+<DocsTable columnsJson='["Lecteur", "Comment le fichier s’affiche"]' rowsJson='[["image", "Une balise img, à l’échelle du panneau."], ["video, audio", "Le lecteur du navigateur, avec ses commandes."], ["pdf", "Le lecteur PDF du navigateur, dans un cadre."], ["text", "Le texte, lu tel quel, en police à chasse fixe."], ["markdown", "Le texte mis en forme par react-markdown."], ["docx", "Converti en HTML dans le navigateur, par mammoth."], ["unsupported", "Un message : aperçu non pris en charge pour ce format."]]' />
+
+L’ordre des tests compte : le type d’abord (`image`, `video`), qui vient de la nature du fichier ; puis le format, qui vient de son extension ou de ses métadonnées. Un format inconnu n’est jamais une erreur : il tombe sur « non pris en charge », et l’aperçu le dit au lieu de rester vide.
+
+### Charger un lecteur lourd seulement quand il sert
+
+Le lecteur Word repose sur `mammoth`, une bibliothèque qui sait lire le format `.docx` et le convertir en HTML. Elle pèse lourd. L’importer en tête de fichier, comme les autres, l’ajouterait au code téléchargé par **chaque** page qui contient un finder, même si personne n’y ouvre jamais un document Word.
 
 <CodeExample
   language="tsx"
   filepath="apps/web/src/features/finder-core/components/PreviewPanel.tsx"
   filename="PreviewPanel.tsx"
   snippetStart="const mammoth = await import('mammoth');"
-  snippetLines="2"
+  snippetLines="1"
   snippetTitle="Un import dynamique"
   fullFileTitle="Voir le fichier complet"
 />
 
-`mammoth` pèse lourd ; l’importer en tête de fichier l’ajouterait au chargement de chaque page qui contient un finder. L’`import()` dynamique le place dans un morceau séparé, téléchargé la première fois qu’un `.docx` est ouvert.
+`import('mammoth')`, écrit comme une fonction et attendu avec `await`, est un **import dynamique**. L’outil de construction (le *bundler*) range alors `mammoth` dans un morceau de code séparé (*chunk*), que le navigateur ne télécharge que la première fois que cette ligne s’exécute, c’est-à-dire la première fois qu’on ouvre un `.docx`.
 
-Sous l’aperçu, la **description** du fichier s’édite sur place. Pas de bouton « Enregistrer » : elle part quand on quitte le champ, ou 1,5 seconde après la dernière frappe (`media.updateDescription`), avec un indicateur discret (en cours, enregistré, erreur). La valeur locale fait foi pendant la frappe ; le store et la base suivent.
+👉 un import statique se paie au chargement de la page
+👉 un import dynamique se paie au premier usage, et seulement s’il a lieu
+
+### Une description qui s’enregistre seule
+
+Sous l’aperçu, la **description** du fichier s’édite sur place. Il n’y a pas de bouton « Enregistrer » : la description part dans deux cas, le premier qui arrive l’emporte :
+
+- **on quitte le champ** : le geste naturel du « j’ai fini » ;
+- **la frappe s’arrête 1,5 seconde** : pour celui qui laisse le curseur dans le champ et passe à autre chose.
+
+Un petit indicateur dit où l’on en est : en cours, enregistré (une coche, deux secondes), ou une erreur.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/DescriptionField.tsx"
+  filename="DescriptionField.tsx"
+  snippetStart="  const [prevFileId, setPrevFileId] = useState(file.id);"
+  snippetLines="9"
+  snippetHighlight="2,4,5"
+  snippetTitle="Changer de fichier remet le champ à jour, pendant le rendu"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois précautions rendent ce confort sûr.
+
+**La valeur locale fait foi pendant la frappe.** Le champ garde sa propre valeur ; le store et la base suivent. Si l’enrichissement (chapitre 1) apporte une fiche à jour pendant qu’on tape, il n’écrase pas ce qu’on est en train d’écrire.
+
+**Changer de fichier remet le champ à jour**, et c’est l’identifiant du fichier qui le décide, pas le contenu de sa description. On retrouve le procédé du chapitre 3 : un état ajusté pendant le rendu, sans effet.
+
+**Un enregistrement en attente ne part jamais sur le mauvais fichier.** Si l’on change de fichier pendant les 1,5 seconde, le nettoyage d’un effet lié à `file.id` annule le minuteur, avant qu’il puisse enregistrer l’ancien texte sur le nouveau chemin.
+
+Après un enregistrement réussi, le cache de `media.getByPaths` est invalidé : l’enrichissement relit les fiches, et la nouvelle description apparaît partout, recherche comprise.
 
 <Callout type="insight">
 Chaque partie de l’écran a sa façon de ne pas faire attendre : l’arbre réutilise ce qu’il a chargé pour la grille, la grille s’affiche avant les fiches de la base, la recherche attend une pause, l’aperçu ne charge ses lecteurs lourds qu’à la demande, et la description s’enregistre seule.
@@ -130,12 +311,26 @@ Chaque partie de l’écran a sa façon de ne pas faire attendre : l’arbre ré
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que filtre la lentille de statut ?", "Les fichiers de la grille, jamais l’arbre ni les dossiers."], ["Quand part la recherche ?", "300 ms après la dernière frappe, dans tout le sous-arbre du dossier courant ; le serveur borne et le dit."], ["D’où viennent les noms du fil d’Ariane ?", "Des mêmes sources que la grille : libellé, nom d’espace, clé brute, dans cet ordre."], ["Comment s’ouvre un .docx ?", "Converti en HTML dans le navigateur, par une librairie chargée à la demande."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi les trois vues ne divergent-elles jamais ?", "Elles lisent la même liste, filtrée, triée et découpée une seule fois."], ["Que filtre la lentille de statut ?", "Les fichiers de la grille ; jamais les dossiers, jamais l’arbre."], ["Comment le tri départage-t-il ?", "Le principal, puis le secondaire, puis l’ordre d’origine (tri stable)."], ["Où vont les dossiers ?", "Toujours en tête, triés eux-mêmes selon le critère."], ["Pourquoi photo2 avant photo10 ?", "Intl.Collator avec numeric: true compare les chiffres comme des nombres."], ["Comment les sections se découpent-elles en une passe ?", "Le tri rend consécutifs les éléments d’une même section ; un changement de clé ouvre la suivante."], ["Quand part la recherche ?", "300 ms après la dernière frappe ; une réponse dépassée est ignorée."], ["D’où viennent les noms du fil d’Ariane ?", "Libellé, nom d’espace, clé brute, dans cet ordre, comme la grille."], ["Pourquoi quatre segments avant repli ?", "Chaque segment visible est une cible de dépôt."], ["Comment s’ouvre un .docx ?", "Converti en HTML par mammoth, chargé par un import dynamique au premier usage."], ["Quand la description s’enregistre-t-elle ?", "En quittant le champ, ou 1,5 seconde après la dernière frappe."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer aux actions sur les fichiers, nous devrions pouvoir expliquer :
+
+- pourquoi trois vues partagent une seule préparation, et ce que `useMemo` y apporte ;
+- ce que la lentille de statut cache, et ce qu’elle ne cache jamais ;
+- comment `sortNodes` copie, compare, inverse et départage ;
+- ce que font `numeric` et `sensitivity` dans un `Intl.Collator` ;
+- l’invariant sur lequel repose `groupNodes` ;
+- la différence entre un anti-rebond et la protection contre une réponse dépassée ;
+- d’où le fil d’Ariane tire ses noms, et pourquoi il se replie à quatre ;
+- ce qu’est un import dynamique, et quand il se paie ;
+- les trois précautions de la description enregistrée seule.
 
 ## À suivre
 
-Le finder montre. Il reste à agir : sélectionner beaucoup d’un coup, renommer, déplacer à la souris ou par une boîte, jeter, publier. Chaque geste passe par le serveur, et le finder doit rester juste après.
+Le finder montre. Il reste à agir : sélectionner beaucoup d’un coup, ouvrir un menu sur un fichier, renommer, jeter, publier. Chaque geste passe par le serveur, et le finder doit rester juste après.
 
 <Callout type="tip">
-**Chapitre suivant : agir sur les fichiers.** Une sélection qui tient en deux ensembles, le mode sélection, le menu contextuel, le glisser-déposer et son fantôme, et un « supprimer » qui ne veut pas dire la même chose partout.
+**Chapitre suivant : agir sur les fichiers.** Une sélection qui tient en deux ensembles, le mode sélection et l’appui long, le menu contextuel, et `useNodeActions` suivi jusqu’au serveur.
 </Callout>

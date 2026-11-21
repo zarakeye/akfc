@@ -9,21 +9,18 @@ import type {
  * Trie un tableau de FinderNodes selon un critère primaire et un critère
  * secondaire optionnel (départage des items égaux sur le primaire).
  *
- * Pattern explorateurs OS (macOS Finder, Windows Explorer, Nautilus).
+ * Les dossiers passent toujours avant les fichiers, quels que soient le critère et
+ * le sens (convention de l'Explorateur Windows) ; le tri s'applique dans chaque bloc.
  *
  * ─── Champs supportés ──────────────────────────────────────────────────
  *
  *   - `name`   : comparaison locale (Intl.Collator FR par défaut, gère
  *                les accents, la casse, les nombres dans les noms).
- *   - `type`   : folders avant files (convention universelle des explorateurs).
- *                Pour les files, départage par `meta.kind` puis par `meta.format`.
- *   - `size`   : taille en octets. `undefined` traité comme 0 (folders
- *                n'ont typiquement pas de size — ils restent groupés en
- *                tête grâce au compareByType implicite si on ajoute un
- *                tie-break par name).
- *   - `date`   : ⚠️ placeholder — MediaMeta n'expose pas encore de date.
- *                Tombe sur stabilité d'Array.sort en attendant.
- *   - `sender` : ⚠️ idem placeholder.
+ *   - `type`   : par famille (`meta.kind`), puis par format, puis par nom.
+ *   - `size`   : taille en octets ; `undefined` vaut 0.
+ *   - `date`   : date d'envoi (`meta.createdAt`, apportée par la base après coup) ;
+ *                les fichiers sans date vont en bout de liste.
+ *   - `sender` : expéditeur (`meta.uploadedBy`) ; sans expéditeur, en bout de liste.
  *
  * ─── Direction ─────────────────────────────────────────────────────────
  *
@@ -196,6 +193,10 @@ export function sortNodes(
 ): FinderNode[] {
   const sorted = [...nodes];
   sorted.sort((a, b) => {
+    // Les dossiers d'abord, quels que soient le critère et le sens : le sens ne
+    // s'applique qu'à l'intérieur de chaque bloc.
+    if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+
     const primary = applyDirection(
       compareByField(a, b, sort.primary),
       sort.primaryDirection,
@@ -225,9 +226,8 @@ export function sortNodes(
  *
  * `key` : identifiant interne stable (clé React), insensible à la
  *         localisation.
- * `label` : libellé affiché à l'utilisateur (FR, déjà capitalisé). Vide
- *           si la field ne supporte pas le groupage (date, sender pour
- *           l'instant) — le caller ne rend pas de header dans ce cas.
+ * `label` : libellé affiché à l'utilisateur (FR, déjà capitalisé). Vide :
+ *           pas d'en-tête de section.
  */
 export type GroupInfo = {
   key: string;
@@ -331,6 +331,7 @@ function deriveEffectiveKind(node: FinderNode): 'image' | 'video' | 'audio' | 'd
 export function getGroupInfo(node: FinderNode, field: SortField): GroupInfo {
   switch (field) {
     case 'name': {
+      if (node.type === 'folder') return { key: 'folder', label: TYPE_LABELS.folder };
       const firstChar = node.name.trim().charAt(0).toUpperCase();
       // Normalisation NFD pour décomposer les accents puis on les supprime.
       // Ainsi "Émile" → "E" → groupe "E" (et pas "É" tout seul).
@@ -376,6 +377,7 @@ export function getGroupInfo(node: FinderNode, field: SortField): GroupInfo {
     }
 
     case 'size': {
+      if (node.type === 'folder') return { key: 'folder', label: TYPE_LABELS.folder };
       const size = node.size ?? 0;
       // Folders (size === 0) tombent dans le bucket "< 1 MB" — discutable
       // mais cohérent : ils n'ont pas de poids propre.
@@ -442,8 +444,8 @@ export function getGroupInfo(node: FinderNode, field: SortField): GroupInfo {
  * les items de même clé — donc une passe linéaire suffit pour les détecter.
  *
  * Retourne toujours au moins un groupe quand la liste n'est pas vide.
- * Si le field ne produit pas de labels (date/sender), tous les nodes vont
- * dans un unique groupe avec label vide (le caller ne rend pas de header).
+ * Chaque critère a ses groupes : initiale (nom), type puis format, tranche de
+ * taille, période (date d'envoi), expéditeur.
  */
 export function groupNodes(
   sortedNodes: FinderNode[],
