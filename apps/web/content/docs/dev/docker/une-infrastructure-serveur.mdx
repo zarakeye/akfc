@@ -37,6 +37,8 @@ Fournisseur SMTP | L’envoi des e-mails | SMTP chiffré, depuis le conteneur ak
 
 Un visiteur ne parle qu’à Caddy, sur les ports 80 et 443. Caddy parle au site, sur le réseau `web` ; le site parle à la base, sur le réseau `internal`. La base n’a **aucun** port ouvert sur la machine, et le réseau `internal` n’a pas de sortie vers Internet : même un conteneur compromis sur ce réseau ne peut rien envoyer au dehors.
 
+pgAdmin n’est pas servi aux visiteurs, et il est pourtant aussi sur le réseau `web`. Un réseau `internal` n’a pas de passerelle vers la machine : un port publié n’y mène nulle part. Pour que `127.0.0.1:5050` du serveur atteigne pgAdmin, il lui faut un réseau ordinaire. Il est sur `internal` pour joindre la base.
+
 ## Le dossier d’infrastructure
 
 Tout ce qui décrit le serveur vit dans un seul dossier, par exemple `~/infra`. Il est **versionné dans un dépôt Git privé, distinct de celui du site** : le dépôt du site décrit le site ; celui-ci décrit le serveur, qui peut héberger plusieurs sites.
@@ -64,17 +66,20 @@ Les données sont dans des **dossiers de la machine** montés dans les conteneur
   language="yaml"
   title="docker-compose.yml (modèle, dans le dossier d’infrastructure)"
   kind="pattern"
-  codeJson='"name: infra\n\nservices:\n  caddy:\n    image: caddy:2\n    restart: unless-stopped\n    ports:\n      - \"80:80\"\n      - \"443:443\"\n    volumes:\n      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro\n      - ./caddy/data:/data\n    networks: [web]\n\n  postgres:\n    image: postgres:17\n    restart: unless-stopped\n    environment:\n      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}\n    volumes:\n      - ./postgres/data:/var/lib/postgresql/data\n      - ./postgres/init:/docker-entrypoint-initdb.d:ro\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U postgres\"]\n      interval: 5s\n      retries: 20\n    networks: [internal]\n\n  akfc-migrator:\n    build:\n      context: ./apps/akfc\n      target: migrator\n    restart: \"no\"\n    env_file: ./apps/akfc/.env\n    depends_on:\n      postgres:\n        condition: service_healthy\n    networks: [internal]\n\n  akfc:\n    build:\n      context: ./apps/akfc\n      target: runner\n    restart: unless-stopped\n    env_file: ./apps/akfc/.env\n    depends_on:\n      akfc-migrator:\n        condition: service_completed_successfully\n    networks: [web, internal]\n\n  pgadmin:\n    image: dpage/pgadmin4\n    restart: unless-stopped\n    environment:\n      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}\n      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}\n    ports:\n      - \"127.0.0.1:5050:80\"\n    volumes:\n      - ./pgadmin/data:/var/lib/pgadmin\n    networks: [web, internal]\n\nnetworks:\n  web:\n  internal:\n    internal: true"'
+  codeJson='"name: infra\n\nservices:\n  caddy:\n    image: caddy:2\n    restart: unless-stopped\n    ports:\n      - \"80:80\"\n      - \"443:443\"\n    volumes:\n      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro\n      - ./caddy/data:/data\n    networks: [web]\n\n  postgres:\n    image: postgres:17\n    restart: unless-stopped\n    environment:\n      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}\n    volumes:\n      - ./postgres/data:/var/lib/postgresql/data\n      - ./postgres/init:/docker-entrypoint-initdb.d:ro\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U postgres\"]\n      interval: 5s\n      retries: 20\n    networks: [internal]\n\n  akfc-migrator:\n    build:\n      context: ./apps/akfc\n      target: migrator\n    restart: \"no\"\n    env_file: ./apps/akfc/.env\n    depends_on:\n      postgres:\n        condition: service_healthy\n    networks: [internal]\n\n  akfc:\n    build:\n      context: ./apps/akfc\n      target: runner\n    restart: unless-stopped\n    env_file: ./apps/akfc/.env\n    depends_on:\n      akfc-migrator:\n        condition: service_completed_successfully\n    networks: [web, internal]\n\n  pgadmin:\n    image: dpage/pgadmin4:9\n    restart: unless-stopped\n    environment:\n      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}\n      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}\n    ports:\n      - \"127.0.0.1:5050:80\"\n    volumes:\n      - ./pgadmin/data:/var/lib/pgadmin\n    networks: [web, internal]\n\nnetworks:\n  web:\n  internal:\n    internal: true"'
 />
 
 Ce qui change par rapport au compose de développement :
 
 - **`restart: unless-stopped`** : un conteneur qui s’arrête sur une erreur est relancé, et tous redémarrent avec le serveur. Sauf le migrateur (`restart: "no"`), qui doit tourner une fois par déploiement, pas en boucle.
 - **`build`** au lieu d’`image` pour le site : le serveur construit lui-même les deux images du chapitre 3, à partir du clone, en choisissant l’étape (`target`). Il les construit pour sa propre architecture.
-- **`depends_on` avec une condition** : le migrateur attend que la base soit `healthy` ; le site attend que le migrateur se soit **terminé sans erreur** (`service_completed_successfully`). Une migration qui échoue empêche donc le nouveau site de démarrer, et l’ancien continue de servir.
+- **`depends_on` avec une condition** : le migrateur attend que la base soit `healthy` ; le site attend que le migrateur se soit **terminé sans erreur** (`service_completed_successfully`). Une migration qui échoue empêche donc le nouveau site de démarrer, et l’ancien continue de servir. Le migrateur n’est que sur le réseau `internal`, sans sortie vers Internet : rien de ce qu’il fait au lancement ne doit télécharger quoi que ce soit. C’est pourquoi son image télécharge pnpm **au build** (chapitre 3) : au lancement, `pnpm prisma migrate deploy` n’a besoin que de la base.
 - **`env_file`** : les secrets arrivent au conteneur au démarrage, depuis un fichier du serveur. Dans ce fichier, l’hôte de la base est le **nom du service**, `postgres`, pas `localhost` : dans un conteneur, `localhost` désigne le conteneur lui-même.
 - **`${POSTGRES_PASSWORD}`** : Compose remplace cette expression par la valeur du `.env` posé à côté de lui. Le fichier versionné ne contient que le nom de la variable.
 - **Aucun port publié**, sauf ceux de Caddy et celui de pgAdmin, limité à `127.0.0.1`.
+- **Des versions majeures, pas des versions exactes** : `caddy:2`, `postgres:17`, `dpage/pgadmin4:9`. En développement, les images sont figées au chiffre près (`seaweedfs:4.52`). Sur le serveur, on fige la version **majeure**, celle qui peut casser : une mise à jour corrective ou de sécurité arrive au prochain `docker compose pull`, sans qu’un `latest` fasse un jour passer Postgres de 17 à 18. Un changement de version majeure se décide, et pour Postgres il se prépare : les données d’une version ne se lisent pas avec la suivante.
+
+👉 sur le serveur, on fige ce qui peut casser, et on laisse passer les correctifs
 
 <Callout type="warning">
 **Un port publié contourne le pare-feu.** Sur Linux, Docker écrit ses propres règles réseau, qui passent **avant** celles d’un pare-feu comme `ufw`. Un `ports: "5432:5432"` ouvre la base à Internet même si `ufw` n’autorise que 22, 80 et 443. D’où les deux règles de ce modèle : ne publier que ce qui doit l’être, et préfixer par `127.0.0.1` tout ce qui ne sert qu’à l’administrateur.
@@ -117,7 +122,20 @@ Tant que la connexion est ouverte, `http://localhost:5050` sur la machine affich
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du modèle"]' rowsJson='[["Où est décrit le serveur ?", "Dans un dossier d’infrastructure, versionné dans un dépôt privé distinct de celui du site."], ["Qu’est-ce qui est ouvert sur Internet ?", "Les ports 80 et 443 de Caddy, et SSH ; rien d’autre."], ["Comment le site joint-il la base ?", "Par le nom du service, postgres, sur le réseau internal."], ["Pourquoi deux réseaux ?", "web reçoit les visiteurs ; internal, sans sortie vers Internet, isole la base."], ["Qui applique les migrations ?", "akfc-migrator, dont le site attend la fin sans erreur."], ["Où sont les secrets ?", "Dans deux .env du serveur, jamais versionnés : celui du compose et celui du site."], ["Qu’est-ce qui se sauvegarde ?", "Les dossiers de données (postgres/data surtout) ; la configuration est dans le dépôt d’infrastructure."], ["Comment administrer la base ?", "pgAdmin sur 127.0.0.1 du serveur, par un tunnel SSH."]]' />
+<DocsTable columnsJson='["Question", "Réponse du modèle"]' rowsJson='[["Où est décrit le serveur ?", "Dans un dossier d’infrastructure, versionné dans un dépôt privé distinct de celui du site."], ["Qu’est-ce qui est ouvert sur Internet ?", "Les ports 80 et 443 de Caddy, et SSH ; rien d’autre."], ["Comment le site joint-il la base ?", "Par le nom du service, postgres, sur le réseau internal."], ["Pourquoi deux réseaux ?", "web reçoit les visiteurs ; internal, sans sortie vers Internet, isole la base."], ["Qui applique les migrations ?", "akfc-migrator, dont le site attend la fin sans erreur."], ["Où sont les secrets ?", "Dans deux .env du serveur, jamais versionnés : celui du compose et celui du site."], ["Qu’est-ce qui se sauvegarde ?", "Les dossiers de données (postgres/data surtout) ; la configuration est dans le dépôt d’infrastructure."], ["Comment administrer la base ?", "pgAdmin sur 127.0.0.1 du serveur, par un tunnel SSH."], ["À quelle version figer les images du serveur ?", "À la version majeure (caddy:2, postgres:17, pgadmin4:9) : les correctifs passent, les ruptures se décident."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer à la qualité, nous devrions pouvoir expliquer :
+
+- ce qu’est un proxy inverse, et ce que Caddy fait seul pour le HTTPS ;
+- pourquoi deux réseaux, et ce qu’un réseau `internal` interdit ;
+- pourquoi le dossier d’infrastructure est un dépôt privé à part, et pourquoi son `.gitignore` ignore tout par défaut ;
+- pourquoi les données du serveur sont dans des dossiers de la machine, et ce qu’il faut sauvegarder ;
+- comment le migrateur passe avant le site, et ce qui se passe si une migration échoue ;
+- d’où viennent les secrets d’un conteneur, et pourquoi l’hôte de la base est `postgres` et pas `localhost` ;
+- pourquoi un port publié contourne le pare-feu, et comment administrer la base par un tunnel SSH ;
+- à quelle version figer une image de serveur.
 
 ## À suivre
 
