@@ -229,6 +229,7 @@ export default function Cropper({
   // corps de l'effet.
   const [imgVersion, setImgVersion] = useState(0);
   const [problem, setProblem] = useState<string | null>(null);
+  const [encoding, setEncoding] = useState(false);
   useEffect(() => {
     const img = new Image();
     img.src = picture.previewUrl;
@@ -254,7 +255,7 @@ export default function Cropper({
 
   const handleCrop = async () => {
     const img = imgRef.current;
-    if (!img) return;
+    if (!img || encoding) return; // un second clic pendant l'encodage ne produit pas un second fichier
     const ws = workspaceSize();
     // À la résolution de la photo, pas à celle de l'écran (plafonnée par maxOutputSide).
     const side = outputSide({
@@ -267,8 +268,12 @@ export default function Cropper({
     const opaque = outputTypes.includes("image/jpeg");
     const canvas = document.createElement("canvas");
     drawCrop(canvas, img, grid, zoom.value, rotation.value, ws, side, opaque ? "#ffffff" : undefined);
-    const blob = await encodeCanvas(canvas, outputTypes);
-    if (!blob) return;
+    setProblem(null);
+    setEncoding(true);
+    const blob = await encodeCanvas(canvas, outputTypes).finally(() => setEncoding(false));
+    // Aucun format n'a pu être écrit (mémoire du navigateur épuisée par une photo immense, par
+    // exemple) : on le dit, au lieu d'un bouton qui ne fait rien.
+    if (!blob) return setProblem("L'image recadrée n'a pas pu être produite. Réessayez avec un cadre plus petit ou une photo plus légère.");
     const gridFrac = {
       x: grid.x / ws, y: grid.y / ws, width: grid.width / ws, height: grid.height / ws,
     };
@@ -407,7 +412,7 @@ export default function Cropper({
         <div className="flex justify-end gap-2 mt-4">
           {problem && <p role="alert" className="mr-auto self-center text-sm text-destructive">{problem}</p>}
           <button type="button" onClick={onCancel} className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${cancelCls}`}>Annuler</button>
-          <button type="button" onClick={() => void handleCrop()} className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90">Recadrer</button>
+          <button type="button" onClick={() => void handleCrop()} disabled={encoding} className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60">{encoding ? "Recadrage…" : "Recadrer"}</button>
         </div>
       </div>
     </div>

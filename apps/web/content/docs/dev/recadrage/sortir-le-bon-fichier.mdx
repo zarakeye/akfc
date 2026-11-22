@@ -72,12 +72,16 @@ Le serveur exige que l’extension et le type concordent. Le nom suit donc le **
   filename="Cropper.tsx"
   snippetStart="const handleCrop = async () => {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="6,13,15,16,24,25"
+  snippetHighlight="6,13,15,18,21,28,29"
   snippetTitle="handleCrop : taille, fond, format, nom"
   fullFileTitle="Voir le fichier complet"
 />
 
 `stage-2026.jpg` devient `stage-2026.avif` ou `stage-2026.webp` selon ce que le navigateur sait écrire, ou reste `stage-2026.jpg`, un vrai JPEG cette fois. La recette (zoom, rotation, cadre en fractions) accompagne toujours le fichier : l’avatar s’en sert pour rouvrir le recadrage.
+
+Encoder une photo de 4096 px en AVIF ou en WebP peut prendre plusieurs secondes : pendant ce temps, le bouton devient « Recadrage… » et ne répond plus, pour qu’un second clic ne produise pas un second fichier. Et `encodeCanvas` peut rendre `null` : un navigateur à court de mémoire n’écrit aucun format. Le cropper le dit alors, avec une issue : un cadre plus petit, ou une photo plus légère.
+
+👉 un geste qui peut échouer le dit, et un geste qui prend du temps se montre en cours
 
 <Callout type="warning">
 **Le nom du fichier est une donnée, pas une étiquette.** Le serveur range, sert et filtre d’après lui. Tout code qui transforme un fichier dans le navigateur (conversion HEIC, recadrage, compression) doit rendre un nom dont l’extension correspond au contenu.
@@ -93,7 +97,19 @@ Un test de bout en bout couvre le parcours qui cassait : une photo JPEG fabriqu�
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi le recadrage était-il refusé ?", "Un PNG portait le nom d’origine (.jpg) ; le serveur exige que l’extension et le type concordent."], ["Quelle taille rend un recadrage ?", "La résolution réelle de la portion gardée : cadre ÷ (containScale × zoom), plafonnée à 4096 px (1024 pour l’avatar)."], ["Quel format ?", "Le premier que le navigateur sait écrire parmi ceux demandés ; on lit le type obtenu, car toBlob rend du PNG sans prévenir."], ["Et le nom ?", "Il suit le type obtenu."], ["Pourquoi un fond blanc ?", "Le JPEG n’a pas de transparence ; le fond est le même quel que soit le format obtenu."], ["Où sont les règles ?", "Dans packages/contracts/src/media/cropOutput.ts, testées sans navigateur ; l’encodage est dans gallery-crop/lib/encodeCanvas.ts."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi le recadrage était-il refusé ?", "Un PNG portait le nom d’origine (.jpg) ; le serveur exige que l’extension et le type concordent."], ["Quelle taille rend un recadrage ?", "La résolution réelle de la portion gardée : cadre ÷ (containScale × zoom), plafonnée à 4096 px (1024 pour l’avatar)."], ["Quel format ?", "Le premier que le navigateur sait écrire parmi ceux demandés ; on lit le type obtenu, car toBlob rend du PNG sans prévenir."], ["Et le nom ?", "Il suit le type obtenu."], ["Pourquoi un fond blanc ?", "Le JPEG n’a pas de transparence ; le fond est le même quel que soit le format obtenu."], ["Et si l’encodage échoue ou traîne ?", "Le bouton se désactive pendant l’encodage ; un échec affiche un message au lieu de ne rien faire."], ["Où sont les règles ?", "Dans packages/contracts/src/media/cropOutput.ts, testées sans navigateur ; l’encodage est dans gallery-crop/lib/encodeCanvas.ts."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer au contenu éditorial, nous devrions pouvoir expliquer :
+
+- pourquoi un recadrage était refusé par le serveur, et pourquoi le contrôle du serveur a eu raison ;
+- comment calculer la résolution réelle d’un recadrage, et pourquoi on la plafonne ;
+- pourquoi `toBlob` oblige à lire le type obtenu plutôt que de croire le type demandé ;
+- pourquoi un fond blanc est peint quand le JPEG fait partie des recours ;
+- pourquoi le nom d’un fichier doit suivre son contenu ;
+- pourquoi ces règles vivent dans les contrats, testées sans navigateur ;
+- ce que fait le cropper quand l’encodage échoue ou prend du temps.
 
 ## À suivre
 

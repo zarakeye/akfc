@@ -96,6 +96,40 @@ test.describe("Recadrage : le fichier produit", () => {
     expect(Math.abs(f.y - w.y - (w.height - f.height) / 2)).toBeLessThan(2);
   });
 
+  test("un recadrage que le navigateur ne sait pas encoder le dit", async ({ page }) => {
+    await loginAs(page, USERS.admin.email);
+    await page.goto("/dashboard/library/add");
+
+    const base64 = await page.evaluate(async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 600;
+      canvas.getContext("2d")!.fillRect(0, 0, 800, 600);
+      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.9));
+      const bytes = new Uint8Array(await blob!.arrayBuffer());
+      let bin = "";
+      bytes.forEach((b) => (bin += String.fromCharCode(b)));
+      return btoa(bin);
+    });
+    await page.locator("select").first().selectOption({ label: DISCIPLINES.publiee.name });
+    await page.locator('input[type="file"]').last().setInputFiles({
+      name: `encodage-e2e-${Date.now()}.jpg`,
+      mimeType: "image/jpeg",
+      buffer: Buffer.from(base64, "base64"),
+    });
+    await page.locator("form img").first().click();
+
+    // Le navigateur n'écrit plus rien, comme à court de mémoire devant une photo immense.
+    await page.evaluate(() => {
+      HTMLCanvasElement.prototype.toBlob = function (callback: BlobCallback) {
+        callback(null);
+      };
+    });
+    await page.getByRole("button", { name: "Recadrer" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "n'a pas pu être produite" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Recadrer" })).toBeEnabled();
+  });
+
   test("quand l'établi rétrécit, le cadre suit dans la même proportion", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await loginAs(page, USERS.admin.email);
