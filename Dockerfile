@@ -81,11 +81,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
-# Création utilisateur + home + cache Corepack
+# Un utilisateur sans privilèges, sous lequel tourne le site. (Le service ne lance jamais pnpm :
+# pas de cache Corepack à préparer pour lui.)
 RUN groupadd --system --gid 1001 nodejs \
-  && useradd --system --uid 1001 --gid nodejs --create-home nextjs \
-  && mkdir -p /home/nextjs/.cache/node/corepack/v1 \
-  && chown -R nextjs:nodejs /home/nextjs
+  && useradd --system --uid 1001 --gid nodejs --create-home nextjs
 
 # ffmpeg : affiches des vidéos stockées sur R2 ; libheif : photos HEIC d'iPhone (service mediaDerivatives).
 # AVANT la copie de l'application : cette couche (la plus lourde) ne change pas d'un déploiement à

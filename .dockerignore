@@ -17,8 +17,12 @@ dist
 
 # Secrets. Les variables d'environnement se passent au CONTENEUR, jamais à
 # l'image : une valeur copiée dans une couche y reste, même supprimée ensuite.
+# Sans « **/ », un motif ne vise que la racine : apps/web/.env.local, où vivent les
+# variables de l'application en développement, entrait dans le contexte.
 .env
 .env.*
+**/.env
+**/.env.*
 !.env.example
 
 # Résidus macOS, que OneDrive propage abondamment dans ce dépôt.
