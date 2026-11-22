@@ -18,6 +18,7 @@ import { PublishToMembersDialog } from '#features/member-documents/PublishToMemb
 import { useSessionStore } from '#lib/stores/useSessionStore.ts';
 import { displayName, baseNameOf } from '#features/finder-core/utils/fileType.ts';
 import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
+import { useFolderDropTarget } from '#features/finder-core/hooks/useFolderDropTarget.ts';
 
 type Props = {
   node: FinderNode;
@@ -50,6 +51,10 @@ export default function FinderCompactRow({
   const readOnly = useFinderReadOnly();
   const longPress = useLongPress(onLongPress);
   const isFolder = node.type === 'folder';
+  // Un dossier de la grille reçoit les dépôts, comme dans l'arbre.
+  const { isDragOver, handlers: dropHandlers } = useFolderDropTarget(node.path, {
+    enabled: isFolder && !readOnly,
+  });
 
   // Les dossiers de statut n'ont pas d'actions : ni menu, ni renommage, ni
   // déplacement. Même règle que dans la grille (cf. utils/statusFolders.ts).
@@ -111,6 +116,8 @@ export default function FinderCompactRow({
       onDoubleClick={onDoubleClick}
       draggable={!readOnly}
       onDragStart={onDragStart}
+      {...dropHandlers}
+      data-finder-drop-path={isFolder ? node.path : undefined}
       onContextMenu={
         isStatus || readOnly
           ? undefined
@@ -128,7 +135,7 @@ export default function FinderCompactRow({
       className={`
         cursor-pointer select-none
         flex items-center gap-3 px-3 py-1.5
-        ${isSelected ? 'bg-info-muted' : 'hover:bg-muted'}
+        ${isDragOver ? 'bg-info-muted ring-1 ring-ring' : isSelected ? 'bg-info-muted' : 'hover:bg-muted'}
       `}
       role="button"
       aria-pressed={isSelected}

@@ -21,7 +21,6 @@ import { APP_ROOT } from "@akfc/config/app.ts";
 import { trpc } from "#core/trpc/trpcClient.ts";
 
 import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
-import { exclusionsUnder } from "#features/finder-core/utils/selectionNodes.ts";
 import { friendlySpaceFolderLabel } from "#features/finder-core/utils/spaceFolderLabel.ts";
 import { useLongPress } from "#features/finder-core/hooks/useLongPress.ts";
 import { useNodeActions } from "#features/finder-core/hooks/useNodeActions.ts";
@@ -32,13 +31,7 @@ import ContextMenu, {
   type ContextMenuItem,
 } from "#features/finder-core/components/ContextMenu.tsx";
 import { RenameInput } from "#features/finder-core/components/RenameInput.tsx";
-import {
-  FINDER_DRAG_MIME,
-  tryParsePayload,
-  isDropAllowed,
-  isDropEffective,
-  nodesFromDragItems,
-} from "#features/finder-core/dnd/payload.ts";
+import { useFolderDropTarget } from "#features/finder-core/hooks/useFolderDropTarget.ts";
 import FinderTreeFile from "#features/finder-core/components/FinderTreeFile.tsx";
 import { getTriState } from "#features/finder-core/utils/triState.ts";
 
@@ -157,11 +150,7 @@ export default function FinderTreeFolder({
   const { data: groupSpaceHierarchy } = trpc.storage.groupSpaceHierarchy.useQuery();
 
 
-  const [isDragOver, setIsDragOver] = useState(false);
 
-  const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
-  const setActionError = useFinderStore((s) => s.setActionError);
-  const exitMultiSelect = useFinderStore((s) => s.exitMultiSelect);
   const toggleSelect = useFinderStore((s) => s.toggleSelect);
   const multiSelectActive = useFinderStore((s) => s.multiSelectActive);
   const selection = useFinderStore((s) => s.selection);
@@ -248,83 +237,12 @@ export default function FinderTreeFolder({
     onOpen(node.path);
   }
 
-  function isFinderDrag(e: React.DragEvent): boolean {
-    return e.dataTransfer.types.includes(FINDER_DRAG_MIME);
-  }
-
-  // Tout dossier survolé peut recevoir le drop : le statut d'un fichier n'est pas un lieu.
-  function acceptsHighlight(): boolean {
-    return true;
-  }
-
-  function handleDragEnter(e: React.DragEvent) {
-    if (!isFinderDrag(e)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (acceptsHighlight()) setIsDragOver(true);
-  }
-
-  function handleDragOver(e: React.DragEvent) {
-    if (!isFinderDrag(e)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const ok = acceptsHighlight();
-    e.dataTransfer.dropEffect = ok ? "move" : "none";
-    if (ok && !isDragOver) setIsDragOver(true);
-    else if (!ok && isDragOver) setIsDragOver(false);
-  }
-
-  function handleDragLeave(e: React.DragEvent) {
-    const related = e.relatedTarget as Node | null;
-    if (related && e.currentTarget.contains(related)) return;
-    setIsDragOver(false);
-  }
-
-  async function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-
-    const raw = e.dataTransfer.getData(FINDER_DRAG_MIME);
-    const payload = tryParsePayload(raw);
-    if (!payload) return;
-
-    const items = payload.items;
-    const targetPath = node.path;
-
-    if (!isDropAllowed(targetPath, items)) return;
-    if (!isDropEffective(targetPath, items)) return;
-
-    const BIN_ROOT_PATH = `${APP_ROOT}/bin`;
-
-    // Déposer sur la corbeille, c'est « supprimer » : même confirmation que
-    // le menu et la barre d'outils, puis le même chemin (`deleteNodes`).
-    if (targetPath === BIN_ROOT_PATH) {
-      useFinderStore.getState().askDelete(nodesFromDragItems(items));
-      return;
-    }
-
-    if (!adapter.moveItems) {
-      console.warn(
-        "[FinderTreeFolder] adapter.moveItems unavailable, drop ignoré",
-      );
-      return;
-    }
-
-    // Un drop déplace ; il ne change jamais le statut (publier, c'est media.setStatus).
-    try {
-      await adapter.moveItems({
-        items,
-        target: { type: "folder", path: targetPath },
-        excluded: exclusionsUnder(items, useFinderStore.getState().selection),
-      });
-      setActionError(null);
-      reloadFolderContent();
-      exitMultiSelect();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Le déplacement a échoué.");
-    }
-  }
+  // Le dossier est une cible de dépôt (sauf en lecture seule) : même règle et
+  // même dépôt que la grille et le fil d'Ariane.
+  const { isDragOver, handlers: dropHandlers } = useFolderDropTarget(node.path, {
+    enabled: !readOnly,
+    adapter,
+  });
 
   const showChevron = hasChildren && !isBinRoot;
 
@@ -334,10 +252,7 @@ export default function FinderTreeFolder({
   return (
     <div
       className="select-none"
-      onDragEnter={handleDragEnter}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      {...dropHandlers}
     >
       <div
         onClick={handleRowClick}

@@ -25,6 +25,7 @@ import { MoveDialog } from '#features/finder-core/components/MoveDialog.tsx';
 import { PublishToMembersDialog } from '#features/member-documents/PublishToMembersDialog.tsx';
 import { useSessionStore } from '#lib/stores/useSessionStore.ts';
 import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
+import { useFolderDropTarget } from '#features/finder-core/hooks/useFolderDropTarget.ts';
 
 /* -------------------------------------------------------------------------- */
 /*                              FORMAT HELPERS                                */
@@ -164,6 +165,10 @@ export default function GridItem({
   const readOnly = useFinderReadOnly();
 
   const isFolder = node.type === 'folder';
+  // Un dossier de la grille reçoit les dépôts, comme dans l'arbre.
+  const { isDragOver, handlers: dropHandlers } = useFolderDropTarget(node.path, {
+    enabled: isFolder && !readOnly,
+  });
   const kind = node.meta?.kind;
   const url = node.meta?.url;
 
@@ -250,6 +255,8 @@ export default function GridItem({
     <>
       <div
         draggable={!isStatus && !readOnly}
+        {...dropHandlers}
+        data-finder-drop-path={isFolder ? node.path : undefined}
         onClick={(e) => {
           // Avale le click parasite qui suit immédiatement un longpress
           // (cf. doc dans useLongPress.ts). Sans ce skip, le toggle dans
@@ -295,7 +302,9 @@ export default function GridItem({
       className={clsx(
         'relative aspect-square rounded-lg border bg-card overflow-hidden cursor-pointer select-none',
         'transition-shadow hover:shadow-md',
-        pinned
+        isDragOver
+          ? 'ring-2 ring-ring border-info/40 bg-info-muted'
+          : pinned
           ? 'ring-2 ring-ring border-success/40'
           : isSelected
           ? 'ring-2 ring-ring border-info/40'

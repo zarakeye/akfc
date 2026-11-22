@@ -12,21 +12,15 @@ import { trpc } from '#core/trpc/trpcClient.ts';
 import { buildPathSegments } from '#features/finder-core/utils/path.ts';
 import { isPersoSpaceFolder } from '#features/finder-core/utils/spaceFolderKind.ts';
 import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
-import { exclusionsUnder } from '#features/finder-core/utils/selectionNodes.ts';
-import {
-  FINDER_DRAG_MIME,
-  tryParsePayload,
-  isDropAllowed,
-  isDropEffective,
-  nodesFromDragItems,
-} from '#features/finder-core/dnd/payload.ts';
+import { isDropAllowedForCurrentDrag } from '#features/finder-core/dnd/dragGhost.ts';
+import { dropOnFolder, isFinderDrag } from '#features/finder-core/hooks/useFolderDropTarget.ts';
 
 type Props = {
   /**
    * Adapter actif (stockage, côté library). Nécessaire pour
    * le drop : un drop sur un segment du breadcrumb déclenche un move
    * agnostique via `adapter.moveItems` (sauf si la cible est le bin —
-   * cf. dispatch dans `handleDrop`).
+   * cf. `dropOnFolder`).
    */
   adapter: FileAdapter;
   /**
@@ -58,7 +52,8 @@ type Props = {
  *   - Dispatch des actions :
  *       * Cible = `${APP_ROOT}/bin` → confirmation (`askDelete`), puis `trash.trashToBin`
  *       * Sinon → `adapter.moveItems`
- *     Strictement parallèle au comportement de `FinderTreeFolder.handleDrop`.
+ *     Le dépôt lui-même est `dropOnFolder` (hooks/useFolderDropTarget.ts), partagé
+ *     avec l'arbre et la grille.
  *   - Surbrillance bleue sur le segment survolé pendant le drag.
  *
  * ─── Repli des chemins profonds ─────────────────────────────────────────
@@ -86,9 +81,6 @@ const MAX_VISIBLE_SEGMENTS = 4;
 export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
   const currentPath = useFinderStore((s) => s.currentPath);
   const setPath = useFinderStore((s) => s.setPath);
-  const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
-  const setActionError = useFinderStore((s) => s.setActionError);
-  const exitMultiSelect = useFinderStore((s) => s.exitMultiSelect);
 
   // Mutation tRPC pour les drops vers le bin (cf. FinderTreeFolder).
 
@@ -173,10 +165,6 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
    * etc. Strictement identique à la fonction locale de `FinderTreeFolder`
    * (la définition n'est pas exportée de `payload.ts`, on duplique).
    */
-  function isFinderDrag(e: React.DragEvent): boolean {
-    return e.dataTransfer.types.includes(FINDER_DRAG_MIME);
-  }
-
   /**
    * Construit les handlers DnD pour un segment précis. On ferme sur
    * `targetPath` et `index` plutôt que de tout poser dans la JSX —
@@ -187,7 +175,7 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
       if (!isFinderDrag(e)) return;
       e.preventDefault();
       e.stopPropagation();
-      setDragOverIndex(index);
+      if (isDropAllowedForCurrentDrag(targetPath)) setDragOverIndex(index);
     }
 
     function handleDragOver(e: React.DragEvent) {
@@ -195,8 +183,11 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
       // ⚠️ preventDefault est requis pour autoriser le drop sur cet élément.
       e.preventDefault();
       e.stopPropagation();
-      e.dataTransfer.dropEffect = 'move';
-      if (dragOverIndex !== index) setDragOverIndex(index);
+      // Même règle que le badge du fantôme : un segment interdit ne s'allume pas.
+      const ok = isDropAllowedForCurrentDrag(targetPath);
+      e.dataTransfer.dropEffect = ok ? 'move' : 'none';
+      if (ok && dragOverIndex !== index) setDragOverIndex(index);
+      else if (!ok && dragOverIndex === index) setDragOverIndex(-1);
     }
 
     function handleDragLeave(e: React.DragEvent) {
@@ -207,48 +198,13 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
       setDragOverIndex((current) => (current === index ? -1 : current));
     }
 
-    async function handleDrop(e: React.DragEvent) {
+    function handleDrop(e: React.DragEvent) {
+      if (!isFinderDrag(e)) return;
       e.preventDefault();
       e.stopPropagation();
       setDragOverIndex(-1);
-
-      const raw = e.dataTransfer.getData(FINDER_DRAG_MIME);
-      const payload = tryParsePayload(raw);
-      if (!payload) return;
-
-      const items = payload.items;
-
-      // Garde-fous standards du DnD (cf. payload.ts).
-      if (!isDropAllowed(targetPath, items)) return;
-      if (!isDropEffective(targetPath, items)) return;
-
-      // ─── Cas spécial : drop sur la racine du bin ─────────────────────
-      // Strictement parallèle à FinderTreeFolder.handleDrop.
-      const BIN_ROOT_PATH = `${APP_ROOT}/bin`;
-      if (targetPath === BIN_ROOT_PATH) {
-        // Même confirmation que le menu et la barre d'outils, puis `deleteNodes`.
-        useFinderStore.getState().askDelete(nodesFromDragItems(items));
-        return;
-      }
-
-      // ─── Cas normal : move agnostique via l'adapter ──────────────────
-      if (!adapter.moveItems) {
-        console.warn('[Breadcrumb] adapter.moveItems unavailable, drop ignoré');
-        return;
-      }
-
-      try {
-        await adapter.moveItems({
-          items,
-          target: { type: 'folder', path: targetPath },
-          excluded: exclusionsUnder(items, useFinderStore.getState().selection),
-        });
-        setActionError(null);
-        reloadFolderContent();
-        exitMultiSelect();
-      } catch (err) {
-        setActionError(err instanceof Error ? err.message : 'Le déplacement a échoué.');
-      }
+      // Le même dépôt que l'arbre et la grille (corbeille confirmée, déplacement sinon).
+      void dropOnFolder(e, targetPath, adapter);
     }
 
     return { handleDragEnter, handleDragOver, handleDragLeave, handleDrop };

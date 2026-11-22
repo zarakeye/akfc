@@ -19,9 +19,9 @@ import type { LifecycleStatus } from '#features/finder-core/utils/statusFolders.
  * Les trois transitions n'ont pas la même sémantique :
  *
  *   - vers `bin`            → `trash.trashToBin` (crée les TrashEntry pour
- *     garder la restaurabilité). C'est EXACTEMENT le chemin du drop-sur-bin
- *     du DnD (FinderTreeFolder.handleDrop) et du bouton Corbeille
- *     (useNodeActions.deleteNodes) — on ne le duplique pas, on le réutilise.
+ *     garder la restaurabilité). C'est la même procédure que le bouton
+ *     Corbeille et le dépôt sur la corbeille (`useNodeActions.deleteNodes`,
+ *     après confirmation).
  *
  *   - `pending` ↔ `published` → `media.setStatus`. **Un UPDATE, pas un
  *     déplacement.** Le binaire ne bouge pas : `MediaAsset.status` est la

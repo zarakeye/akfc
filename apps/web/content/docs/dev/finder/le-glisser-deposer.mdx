@@ -28,7 +28,7 @@ Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune 
 
 ## Ce qu’un glisser transporte
 
-Glisser des fichiers sur un dossier de l’arbre, sur un segment du fil d’Ariane ou sur la corbeille les y déplace. Le navigateur fournit les événements (`dragstart`, `dragover`, `drop`) et un sac pour transporter des données (`DataTransfer`). Le finder y range un **paquet** à lui :
+Glisser des fichiers sur un dossier de l’arbre ou de la grille, sur un segment du fil d’Ariane ou sur la corbeille les y déplace. Le navigateur fournit les événements (`dragstart`, `dragover`, `drop`) et un sac pour transporter des données (`DataTransfer`). Le finder y range un **paquet** à lui :
 
 <CodeExample
   language="ts"
@@ -49,11 +49,11 @@ Le dépôt lui-même choisit sa voie selon la cible. Déposer sur la corbeille, 
 
 <CodeExample
   language="tsx"
-  filepath="apps/web/src/features/finder-core/components/FinderTreeFolder.tsx"
-  filename="FinderTreeFolder.tsx"
-  snippetStart="async function handleDrop(e: React.DragEvent) {"
+  filepath="apps/web/src/features/finder-core/hooks/useFolderDropTarget.ts"
+  filename="useFolderDropTarget.ts"
+  snippetStart="export async function dropOnFolder("
   snippetEnd="(fin du bloc)"
-  snippetHighlight="6,7,13,14,20,21,25,34,37"
+  snippetHighlight="6,10,11,17,18,23,29,32"
   snippetTitle="La corbeille après confirmation, ou un déplacement"
   fullFileTitle="Voir le fichier complet"
 />

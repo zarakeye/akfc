@@ -238,6 +238,19 @@ function handleDocumentDragOver(e: DragEvent): void {
   setBadgeState(isDropAllowed(targetPath, itemsRef) ? 'allowed' : 'forbidden');
 }
 
+/**
+ * Le dépôt sur `targetPath` est-il permis pour le glisser en cours ?
+ *
+ * Pendant `dragenter` / `dragover`, le navigateur ne laisse pas lire le
+ * contenu du glisser (`getData` rend une chaîne vide jusqu'au `drop`) : une
+ * cible ne peut donc pas savoir seule ce qu'on lui apporte. Le fantôme, lui,
+ * l'a reçu au départ. Les cibles lui posent la question, et leur surbrillance
+ * dit la même chose que le badge.
+ */
+export function isDropAllowedForCurrentDrag(targetPath: string): boolean {
+  return isDropAllowed(targetPath, itemsRef);
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                  CLEANUP                                   */
 /* -------------------------------------------------------------------------- */
