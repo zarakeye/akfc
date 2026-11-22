@@ -101,12 +101,16 @@ Un logo pèse quelques dizaines de kilo-octets. Pour lui, le navigateur lit le f
   filename="sitePartners.service.ts"
   snippetStart="export function validateLogo(buf: Buffer, mime: LogoMime): void {"
   snippetEnd="^}"
-  snippetHighlight="6,8,14,17"
+  snippetHighlight="6,8,16,19-20,25-26"
   snippetTitle="validateLogo"
   fullFileTitle="Voir le fichier complet"
 />
 
-Trois contrôles. La **taille**, 512 Ko au plus. La **signature** du fichier : ses premiers octets doivent être ceux d’un PNG, d’un JPEG ou d’un WebP, quel que soit le type annoncé. Et, pour un SVG, le **contenu** : un SVG est un document XML, qui peut porter du script, des gestionnaires d’événements, un lien `javascript:` ou une image chargée depuis un autre site. Ceux-là sont refusés.
+Trois contrôles. La **taille**, 512 Ko au plus. La **signature** du fichier : ses premiers octets doivent être ceux d’un PNG, d’un JPEG ou d’un WebP, quel que soit le type annoncé. Et, pour un SVG, le **contenu** : un SVG est un document XML, qui peut porter du script, des gestionnaires d’événements, un lien `javascript:` ou une ressource chargée depuis un autre site, par un attribut ou par le style. Ceux-là sont refusés.
+
+Le contrôle lit le texte **comme le lira le navigateur**. En XML, `&#106;` s’écrit pour « j », et un navigateur ignore les blancs glissés dans un schéma : `java&#9;script:` reste un lien javascript. Chercher le mot dans le texte brut ne suffit donc pas. On décode d’abord les références de caractères, puis on retire les blancs avant de chercher le schéma.
+
+👉 on contrôle ce que le navigateur lira, pas ce que le fichier écrit
 
 Les logos des partenaires sont rangés dans la base (`logoData`, en octets) et servis par `/api/site-partners/{id}/logo` ; celui du site, dans une clé réservée du stockage, `system/logo.svg`, hors de l’arborescence du finder, et servi par `/api/media/site-logo`. Dans les deux cas, la réponse porte `Content-Security-Policy: sandbox` et `X-Content-Type-Options: nosniff` : un SVG ouvert directement dans un onglet ne peut rien exécuter.
 
@@ -139,7 +143,20 @@ Les deux logos actuels du club passent le contrôle tels quels. Un test de bout 
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Combien de portes ?", "Six écrans par où un fichier entre ; trois circuits."], ["Qu’est-ce qui choisit le circuit ?", "La nature du fichier pour le club : un média, un document attaché à une personne, un réglage."], ["Que donne un formulaire de la famille commune ?", "Une destination, un fichier et ses deux mutations. Jamais un chemin."], ["Pourquoi l’avatar n’utilise-t-il pas uploadToR2 ?", "Ses procédures n’ont pas la même forme : pas de destination, une clé par membre."], ["Pourquoi un logo passe-t-il dans la requête ?", "512 Ko au plus : le serveur lit le fichier entier et peut vérifier son contenu avant de l’écrire."], ["Qu’est-ce qui a changé ?", "Le logo du site passe désormais par validateLogo, comme ceux des partenaires."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Combien de portes ?", "Six écrans par où un fichier entre ; trois circuits."], ["Qu’est-ce qui choisit le circuit ?", "La nature du fichier pour le club : un média, un document attaché à une personne, un réglage."], ["Que donne un formulaire de la famille commune ?", "Une destination, un fichier et ses deux mutations. Jamais un chemin."], ["Pourquoi l’avatar n’utilise-t-il pas uploadToR2 ?", "Ses procédures n’ont pas la même forme : pas de destination, une clé par membre."], ["Pourquoi un logo passe-t-il dans la requête ?", "512 Ko au plus : le serveur lit le fichier entier et peut vérifier son contenu avant de l’écrire."], ["Qu’est-ce qui a changé ?", "Le logo du site passe par validateLogo, comme ceux des partenaires ; et validateLogo lit le SVG décodé, style compris."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer aux formulaires de lot, nous devrions pouvoir expliquer :
+
+- par où un fichier entre sur le site, et pourquoi six portes n’empruntent que trois circuits ;
+- ce qui décide du circuit : la nature du fichier pour le club ;
+- pourquoi un formulaire donne une destination, jamais un chemin ;
+- pourquoi `uploadToR2` reçoit ses deux mutations au lieu de les appeler ;
+- pourquoi l’avatar a son propre circuit, écrit en clair ;
+- pourquoi un logo voyage dans la requête, et ce que le serveur peut alors vérifier ;
+- pourquoi un SVG se contrôle décodé, et ce que `sandbox` et `nosniff` ajoutent à la lecture ;
+- comment choisir la famille d’un nouvel envoi.
 
 ## À suivre
 

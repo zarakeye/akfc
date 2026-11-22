@@ -30071,7 +30071,7 @@
   },
   "ensureDefaultPartners": {
    "file": "packages/backend/src/modules/sitePartners/sitePartners.service.ts",
-   "line": 94,
+   "line": 112,
    "effects": [
     {
      "model": "SitePartner",
@@ -30081,7 +30081,7 @@
       [
        [
         "db.sitePartner.createMany",
-        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:96"
+        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:114"
        ]
       ]
      ]
@@ -30094,17 +30094,17 @@
       [
        [
         "db.sitePartner.count",
-        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:95"
+        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:113"
        ]
       ],
       [
        [
         "completeMjcPartner",
-        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:105"
+        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:123"
        ],
        [
         "db.sitePartner.findFirst",
-        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:106"
+        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:124"
        ]
       ]
      ]
@@ -30117,11 +30117,11 @@
       [
        [
         "completeMjcPartner",
-        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:105"
+        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:123"
        ],
        [
         "db.sitePartner.update",
-        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:116"
+        "packages/backend/src/modules/sitePartners/sitePartners.service.ts:134"
        ]
       ]
      ]

@@ -36,6 +36,14 @@ export function parseLinks(value: unknown): PartnerLink[] {
  * Contrôle d'un logo envoyé : type, taille, signature du fichier, et pour un SVG l'absence de
  * script ou de contenu actif (servi par notre origine, il ne doit rien pouvoir exécuter).
  */
+/** `&#106;` et `&#x6A;` deviennent « j » ; une référence hors d'Unicode devient « ? ». */
+function decodeCharacterReferences(text: string): string {
+  const char = (code: number): string => (code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : "?");
+  return text
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex: string) => char(parseInt(hex, 16)))
+    .replace(/&#(\d+);?/g, (_, dec: string) => char(Number(dec)));
+}
+
 export function validateLogo(buf: Buffer, mime: LogoMime): void {
   const bad = (message: string): never => {
     throw new TRPCError({ code: "BAD_REQUEST", message });
@@ -49,10 +57,20 @@ export function validateLogo(buf: Buffer, mime: LogoMime): void {
   if (mime === "image/svg+xml") {
     const text = buf.toString("utf8");
     if (!/<svg[\s>]/i.test(text)) bad("Ce fichier n'est pas un SVG.");
-    if (/<script|<foreignObject|\son[a-z]+\s*=|javascript:|<iframe|<embed|<object/i.test(text)) {
+    // Le navigateur décode les références de caractères (`&#106;` pour « j ») et ignore les
+    // blancs glissés dans un schéma (`java&#9;script:`) : les contrôles lisent le texte décodé.
+    const decoded = decodeCharacterReferences(text);
+    const squeezed = decoded.replace(/[\u0000-\u0020]+/g, "");
+    if (
+      /<script|<foreignObject|\son[a-z]+\s*=|<iframe|<embed|<object/i.test(decoded) ||
+      /javascript:/i.test(squeezed)
+    ) {
       bad("Ce SVG contient du contenu actif (script, événement, lien javascript) : refusé.");
     }
-    if (/(?:xlink:)?href\s*=\s*["']\s*(?:https?:)?\/\//i.test(text)) bad("Ce SVG charge une ressource externe : refusé.");
+    if (
+      /(?:xlink:)?href\s*=\s*["']\s*(?:https?:)?\/\//i.test(decoded) ||
+      /url\(\s*["']?\s*(?:https?:)?\/\/|@import/i.test(decoded)
+    ) bad("Ce SVG charge une ressource externe : refusé.");
   }
 }
 
