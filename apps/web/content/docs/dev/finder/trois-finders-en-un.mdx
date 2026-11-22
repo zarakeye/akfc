@@ -1,12 +1,12 @@
 ---
 title: "Trois finders en un"
-description: "Le même composant en trois rôles : le sélecteur de médias et son panier qui survit à la navigation, le mode lecture seule, le finder des membres et sa racine virtuelle construite par un adaptateur ; l’imbrication des espaces de groupe dans l’arbre et la grille ; et deux bugs qui ont laissé deux règles."
+description: "Le même composant en trois rôles : le sélecteur de médias et son panier, le mode lecture seule, le finder des membres et sa racine inventée ; chercher là où l’on voit ; l’imbrication des espaces de groupe ; et deux règles laissées par deux bugs."
 section: "Le finder"
 order: 7
 entities:
   MemberGroup: [name, isCollaborative, parentGroupId]
   MemberGroupMembership: [access]
-  MediaAsset: [fullPath]
+  MediaAsset: [fullPath, status]
 stories:
   - title: Un administrateur ajoute des photos à une galerie
     actor: Administrateur
@@ -17,15 +17,18 @@ stories:
       - label: À la validation, les chemins du panier deviennent des identifiants de médias
         call: media.resolveByPaths
         section: Le sélecteur de médias et son panier
-  - title: Un membre ouvre ses espaces et dépose un document
+  - title: Un membre ouvre ses espaces, cherche et dépose un document
     actor: Membre
     steps:
       - label: La racine « Mes espaces » liste ses groupes de plus haut niveau
         call: storage.myCollaborativeSpaces
         section: Une racine qui n’existe pas
+      - label: Depuis la racine, il cherche un fichier ; la recherche couvre tous ses espaces
+        call: media.searchRecursive
+        section: Une racine qui n’existe pas
       - label: Éditeur de l’espace courant, il dépose un PDF, qui devient un document du groupe
         call: memberDocument.depositToGroupSpace
-        section: Lire, et déposer quand on en a le droit
+        section: Une racine qui n’existe pas
   - title: Un administrateur voit les espaces rangés en arbre
     actor: Administrateur
     steps:
@@ -39,7 +42,16 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Dans la bibliothèque, un administrateur sélectionne, renomme, déplace (par une fenêtre ou en faisant glisser), publie et jette. Chaque geste passe par le serveur, et le finder relit ce qui a changé.
 
-Le composant `Finder` reçoit, en plus de son adaptateur et de sa racine, trois réglages : `pickMode` (piocher), `fileFilter` (n’afficher que certains fichiers), `readOnly` (ne rien modifier). Avec eux, et un second adaptateur, il devient trois outils différents.
+Jusqu’ici, un seul finder : la bibliothèque, ouverte par un administrateur. Le même composant sert pourtant à deux autres usages :
+
+- **piocher** des images depuis un formulaire (une galerie, une page, une fiche de discipline) ;
+- **consulter**, pour un membre, les espaces des groupes auxquels il appartient, sans rien pouvoir y casser.
+
+Trois usages, et un seul composant à maintenir. Le chapitre 1 a posé l’outil : l’adapter décide d’où viennent les fichiers. Il en faut deux de plus, des réglages :
+
+<DocsTable columnsJson='["Réglage", "Effet"]' rowsJson='[["pickMode", "Un clic sur un fichier l’ajoute à un panier, au lieu de l’ouvrir."], ["fileFilter", "N’affiche que certains fichiers (les images et les vidéos, pour le sélecteur) ; les dossiers restent navigables."], ["readOnly", "Retire tout ce qui modifie."]]' />
+
+Avec eux, et un second adapter, `Finder` devient trois outils.
 
 ## Les parcours du chapitre
 
@@ -47,9 +59,11 @@ Le composant `Finder` reçoit, en plus de son adaptateur et de sa racine, trois 
 
 ## Le sélecteur de médias et son panier
 
-Un administrateur qui compose une galerie, une page ou un bloc d’images doit choisir des médias **dans plusieurs dossiers** : trois photos du stage de mars, deux de la démonstration de juin. Le sélecteur de médias (`MediaPicker`) est le finder complet, ouvert dans une fenêtre, en mode **panier** : un clic sur un fichier l’épingle ou le retire, et le panier se remplit au fil de la navigation.
+Un administrateur qui compose une galerie doit choisir des médias **dans plusieurs dossiers** : trois photos du stage de mars, deux de la démonstration de juin. Le sélecteur de médias (`MediaPicker`) ouvre le finder complet dans une fenêtre, en mode **panier** : un clic sur un fichier l’épingle ou le retire, et le panier se remplit au fil de la navigation.
 
-Le panier ne peut pas être la sélection du finder : `setPath` vide la sélection à chaque changement de dossier (chapitre 1). Il vit donc dans **son propre store** :
+### Un panier, pas une sélection
+
+Le panier ne peut pas être la sélection du finder. Hors du mode sélection, ouvrir un dossier repart sans sélection (chapitre 5), et chaque finder qui s’affiche aussi. Le panier vit donc dans **son propre store** :
 
 <CodeExample
   language="ts"
@@ -62,9 +76,58 @@ Le panier ne peut pas être la sélection du finder : `setPath` vide la sélecti
   fullFileTitle="Voir le fichier complet"
 />
 
-Trois détails comptent. Le panier est une `Map` indexée par chemin, qui garde **l’ordre d’insertion** : les images arrivent dans la galerie dans l’ordre où on les a cochées. Il garde le nœud **entier**, pour que le bandeau du panier affiche vignettes et noms sans rien redemander. Et il vit dans le paquet `packages/finder-core`, sans React DOM : le jour d’une application mobile, le même panier servira.
+Trois choix comptent :
 
-Le sélecteur passe au finder `fileFilter={isMediaNode}` (images et vidéos), que la grille et l’arbre appliquent tous deux ; les dossiers restent navigables. À la validation, il rend des **chemins** ; c’est le formulaire appelant qui les convertit en identifiants de médias :
+1. **Une `Map` indexée par chemin.** Elle garde l’**ordre d’insertion** : les images arrivent dans la galerie dans l’ordre où on les a cochées. Le chemin sert de clé, et un même média ne peut pas entrer deux fois.
+2. **Le nœud entier.** Le bandeau du panier (`PickerCart`) affiche vignettes et noms sans rien redemander au serveur.
+3. **Un paquet à part**, `packages/finder-core`, sans React DOM. Le jour d’une application mobile, le même panier servira.
+
+Le sélecteur vide le panier à l’ouverture, à l’annulation et après la validation : chaque ouverture est une nouvelle cueillette.
+
+### Ce qu’on peut piocher
+
+Deux filtres, à deux étages :
+
+- **`fileFilter`** (par défaut `isMediaNode`) cache ce qui n’est ni image ni vidéo, dans la grille comme dans l’arbre.
+- **`isPickable`** refuse, au clic, un fichier qui n’est pas **validé**. Un média en attente reste visible, mais une page publique ne doit pas afficher un fichier qu’aucun administrateur n’a validé. Un bandeau le dit dès l’ouverture.
+
+Certains champs ne prennent **qu’un** média : l’image d’un résumé, une image dans un texte. Pour eux, le sélecteur s’ouvre avec `single` : choisir un média remplace le précédent, au lieu d’en accumuler que le champ ignorerait.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/MediaPicker.tsx"
+  filename="MediaPicker.tsx"
+  snippetStart="  function handlePickToggle("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,4,5"
+  snippetTitle="Épingler, ou remplacer"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le clic suit le chemin vu au chapitre 5 : dans `handleClick`, le mode panier passe **avant** le mode sélection.
+
+### Des chemins, puis des identifiants
+
+À la validation, le sélecteur rend des **chemins**. Le formulaire appelant les convertit en identifiants de médias, toujours par la même fonction, `pathsToMediaIds` :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/media/pathsToMediaIds.ts"
+  filename="pathsToMediaIds.ts"
+  snippetStart="export async function pathsToMediaIds(appRoot: string, paths: string[]): Promise<string[]> {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="3,4,5,6,7,8"
+  snippetTitle="Des chemins, puis des identifiants"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+1. Le serveur (`media.resolveByPaths`) vérifie d’abord que l’utilisateur peut lire ces chemins, puis rend, pour chacun, l’identifiant de son média ou `null`.
+2. La fonction garde l’**ordre du panier**, et écarte un chemin sans média.
+3. Si aucun chemin n’a de média, elle lève une erreur plutôt que de rendre une liste vide.
+
+Le sélecteur **attend** la validation du formulaire. Si elle échoue (aucun média, refus du serveur, panne), il affiche le message et reste ouvert, panier compris : on peut retirer un fichier, réessayer ou annuler. Sinon, il vide le panier et se ferme.
+
+La galerie, elle, n’ajoute pas deux fois un média déjà présent :
 
 <CodeExample
   language="tsx"
@@ -73,23 +136,38 @@ Le sélecteur passe au finder `fileFilter={isMediaNode}` (images et vidéos), qu
   snippetStart="async function handlePickerSubmit(paths: string[]): Promise<void> {"
   snippetEnd="(fin du bloc)"
   snippetHighlight="2,4,5,6"
-  snippetTitle="Des chemins, puis des identifiants"
+  snippetTitle="Ajouter sans doublon"
   fullFileTitle="Voir le fichier complet"
 />
 
-Le serveur reste juge (`media.resolveByPaths`) : un chemin qui ne correspond à aucun média n’entre pas, et un média déjà présent n’est pas ajouté deux fois.
+Pourquoi un identifiant, et pas le chemin ? Un fichier peut être déplacé ou renommé : son chemin change, son identifiant non. Une galerie qui garderait des chemins se viderait au premier rangement de la bibliothèque.
+
+👉 le finder parle en chemins ; un contenu retient des identifiants
 
 ## Lire sans modifier
 
-`readOnly` retire tout ce qui modifie : l’entrée dans le mode sélection (l’appui long ne fait plus rien), la barre de sélection multiple (changement de statut, suppression groupée), le bouton supprimer, le **menu contextuel** et le **glisser-déposer**. Restent la navigation, l’arbre, la grille, l’aperçu, la recherche, la lentille de statut et le choix de la vue.
+`readOnly` retire tout ce qui modifie :
 
-Le menu contextuel et le glisser sont décidés dans chaque élément (vignette, ligne du tableau, ligne compacte, nœuds de l’arbre), loin de `Finder`. Les cinq composants recevaient bien `isStatus`, pas `readOnly` : le clic droit proposait encore, dans « Mes espaces », Renommer, Déplacer… et Mettre à la corbeille. Plutôt que de faire descendre la prop à travers l’arbre, `Finder` la pose dans un contexte React, `FinderReadOnlyContext`, que chaque élément lit avec `useFinderReadOnly()`.
+- l’entrée dans le mode sélection (l’appui long ne fait plus rien) ;
+- la barre de sélection multiple (changement de statut, suppression groupée) ;
+- le menu contextuel (renommer, déplacer, jeter) ;
+- le glisser-déposer : aucun élément ne se saisit, aucun dossier ne reçoit de dépôt.
 
-Ce n’est pas une protection : c’est un confort. La protection est au serveur, dont les gardes refusent toute modification à qui n’en a pas le droit. Une interface qui proposerait un bouton que le serveur refuserait toujours mentirait à l’utilisateur ; `readOnly` évite ce mensonge.
+Restent la navigation, l’arbre, la grille, l’aperçu, la recherche, la lentille de statut et le choix de la vue.
+
+Ces décisions se prennent loin de `Finder`, dans chaque élément : la vignette, la ligne du tableau, la ligne compacte, les nœuds de l’arbre, le hook de dépôt. Faire descendre une prop `readOnly` à travers tous ces niveaux serait fragile : un intermédiaire qui l’oublie, et un élément propose de nouveau « Renommer ». `Finder` pose donc la valeur dans un **contexte React**, `FinderReadOnlyContext`, que chaque élément lit avec `useFinderReadOnly()`.
+
+<Callout type="concept">
+**Un contexte React.** `createContext(valeurParDéfaut)` crée un canal. Un composant le remplit (`<FinderReadOnlyContext.Provider value={readOnly}>`), et tout descendant le lit (`useContext`), à n’importe quelle profondeur, sans que les composants du milieu aient à le transmettre. C’est l’outil des réglages « ambiants », qui concernent toute une région de l’interface.
+</Callout>
+
+`readOnly` n’est pas une protection : c’est une politesse. La protection est au serveur, dont les gardes refusent toute modification à qui n’en a pas le droit. Une interface qui proposerait un bouton toujours refusé mentirait à l’utilisateur ; `readOnly` évite ce mensonge.
+
+👉 l’interface ne propose que ce que le serveur acceptera
 
 ## Une racine qui n’existe pas
 
-Un membre d’un ou plusieurs groupes collaboratifs a des **espaces** : un dossier par groupe, sous `collaborative-group-spaces/`. Il ne doit voir que les siens, et un membre de deux groupes du même niveau a **deux racines**. Or le finder n’a qu’une racine. La solution tient dans un second adaptateur, qui invente une racine : `__mes-espaces__`.
+Un membre d’un ou plusieurs groupes collaboratifs a des **espaces** : un dossier par groupe, sous `collaborative-group-spaces/`. Il ne doit voir que les siens, et un membre de deux groupes du même niveau a **deux racines**. Or le finder n’a qu’une racine. La solution tient dans un second adapter, qui invente une racine : `__mes-espaces__`.
 
 <CodeExample
   language="ts"
@@ -102,9 +180,15 @@ Un membre d’un ou plusieurs groupes collaboratifs a des **espaces** : un dossi
   fullFileTitle="Voir le fichier complet"
 />
 
-À la racine inventée, l’adaptateur rend les espaces **de plus haut niveau** parmi ceux du membre (un espace dont le groupe parent lui est inaccessible devient une racine). Sous un espace, il délègue à l’adaptateur de la bibliothèque, qui lit le contenu réel avec les mêmes droits de lecture côté serveur, puis il **ajoute** les sous-espaces du groupe. Les chemins rendus sont les vrais chemins de stockage : naviguer, prévisualiser, chercher marchent sans rien changer au finder.
+Suivons-le, capacité par capacité :
 
-La page qui l’accueille fait deux choses de plus :
+1. **`list` à la racine inventée** : les espaces **de plus haut niveau** parmi ceux du membre. Un espace dont le groupe parent lui est inaccessible devient une racine (`rootSpaces`).
+2. **`list` sous un espace** : il délègue à l’adapter de la bibliothèque, qui lit le contenu réel avec les mêmes gardes de lecture côté serveur, puis il **ajoute** les sous-espaces du groupe.
+3. **`getTree`** fait de même pour l’arbre, en profondeur (`buildSpaceNode`). Les nœuds rendus sont **réels** : leurs chemins sont les vrais chemins de stockage.
+4. **`getNode`** connaît la racine inventée, qu’aucun serveur ne connaît.
+5. **`searchScopes`** : la section « Chercher là où l’on voit ».
+
+Parce que les chemins sont réels, naviguer, prévisualiser et ouvrir marchent sans rien changer au finder. La page qui l’accueille est courte :
 
 <CodeExample
   language="tsx"
@@ -112,14 +196,57 @@ La page qui l’accueille fait deux choses de plus :
   filename="page.tsx"
   snippetStart="export default function MesEspacesPage(): JSX.Element {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="4,12,15,16,17"
+  snippetHighlight="7,11,12,13"
   snippetTitle="La page Mes espaces"
   fullFileTitle="Voir le fichier complet"
 />
 
-Elle **replace le dossier courant** sur la racine inventée en arrivant : le store est global, et il démarre sur celle de la bibliothèque. Et elle passe `readOnly` : un membre ne renomme ni ne déplace. Le fil d’Ariane, qui compare la racine du finder à celle de la bibliothèque, commence alors à « Mes espaces » (chapitre 2).
+Elle passe l’adapter des membres, la racine inventée et `readOnly`, et pose la barre de dépôt au-dessus. Le reste se règle tout seul :
 
-### Lire, et déposer quand on en a le droit
+- **le dossier courant** : `bindFinder` (chapitre 2) ramène le store sur la racine inventée, puisqu’il se trouvait hors d’elle ;
+- **le fil d’Ariane**, qui compare la racine du finder à celle de la bibliothèque, commence à « Mes espaces » (chapitre 4).
+
+### Chercher là où l’on voit
+
+La recherche récursive (chapitre 4) descend sous un **préfixe** de stockage : le dossier courant. À la racine inventée, il n’y a pas de préfixe. Le serveur, à qui l’on demanderait de chercher sous `__mes-espaces__`, refuserait : ce n’est pas un dossier où le membre a des droits.
+
+Et dans un espace, le préfixe ne suffit pas non plus. Ses sous-espaces sont **imbriqués à l’affichage**, mais rangés **à plat** dans le stockage (section « Ranger les espaces comme les groupes ») : ils ne sont pas sous son chemin.
+
+C’est donc l’adapter, qui sait ce qu’il affiche, qui dit où chercher : une capacité facultative de plus, `searchScopes(path)`. Les deux adapters s’appuient sur la même règle :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-adapters/spaces/spaceSearchScopes.ts"
+  filename="spaceSearchScopes.ts"
+  snippetStart="export function spaceSearchScopes(spaces: readonly SpaceRef[], path: string): string[] {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="3,7,9,11"
+  snippetTitle="Un espace, et tous ses sous-espaces"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+1. **Hors d’un espace** : sous le dossier seul.
+2. **Depuis un espace** : lui, et ses sous-espaces à toute profondeur. Un ensemble `seen` empêche une hiérarchie mal formée de boucler.
+3. **Depuis la racine inventée**, l’adapter des membres répond lui-même : dans **tous** ses espaces.
+
+L’adapter de la bibliothèque applique la même règle aux espaces, pour un administrateur. Le hook de recherche lance une requête par préfixe, réunit les résultats et retire les doublons :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/hooks/useFinderSearch.ts"
+  filename="useFinderSearch.ts"
+  snippetStart="        const adapter = useFinderStore.getState().boundAdapter;"
+  snippetLines="25"
+  snippetHighlight="2,4,8,14,19,23,24"
+  snippetTitle="Une recherche par préfixe, une seule liste"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une recherche qui échoue (un refus, une panne) **ne s’affiche pas** comme « aucun résultat » : le message s’affiche au-dessus de la liste. Et l’option « expression régulière », que le serveur réserve aux administrateurs (une expression mal construite peut le bloquer), n’est proposée qu’à eux.
+
+👉 l’adapter qui invente un affichage dit aussi où chercher dedans
+
+### Déposer, à côté du finder
 
 Un membre **éditeur** d’un espace peut y déposer un document. Le dépôt n’est pas une capacité du finder : c’est une barre posée **au-dessus**, qui lit le dossier courant dans le store et retrouve l’espace où l’on se trouve :
 
@@ -129,18 +256,26 @@ Un membre **éditeur** d’un espace peut y déposer un document. Le dépôt n�
   filename="page.tsx"
   snippetStart="function MemberDepositBar(): JSX.Element | null {"
   snippetLines="45"
-  snippetHighlight="2,15,18,29,31,38,39"
+  snippetHighlight="2,17,20,28,30,39,40,42,43"
   snippetTitle="Un dépôt à côté du finder"
   fullFileTitle="Voir le fichier complet"
 />
 
-Le fichier suit le circuit d’envoi signé du site (une destination plutôt qu’un chemin, partie Stockage), puis devient un **document du groupe** (`memberDocument.depositToGroupSpace`) : les autres membres le voient arriver comme non lu, avec leur cloche. Après le dépôt, `reloadFolderContent()` fait relire l’adaptateur ; un `invalidate` de React Query ne suffirait pas, puisque l’adaptateur appelle le serveur par le client impératif, hors de son cache.
+Suivons un dépôt :
+
+1. **Trouver l’espace** du dossier courant, et vérifier qu’on y est éditeur. Sinon la barre ne s’affiche pas.
+2. **Envoyer** par le circuit signé du site (partie Stockage) : une **destination** (« l’espace du groupe X »), pas un chemin. C’est le serveur qui décide où le fichier se range.
+3. **Un fichier du même nom ?** Le serveur refuse (`CONFLICT`). La barre demande alors s’il faut le remplacer : l’ancien restera dans ses versions (partie Corbeille).
+4. **En faire un document du groupe** (`memberDocument.depositToGroupSpace`) : les autres membres le voient arriver comme non lu, avec leur cloche.
+5. **Relire.** `reloadFolderContent()` fait relire l’adapter. Un `invalidate` de React Query ne suffirait pas : l’adapter appelle le serveur par le client impératif, hors de son cache (chapitre 1).
 
 ## Ranger les espaces comme les groupes
 
-Les groupes forment un **arbre** dans la base (`parentGroupId`) : le Bureau sous les Administrateurs, par exemple. Les espaces, eux, sont **à plat** dans le stockage, tous sous `collaborative-group-spaces/`. Les déplacer physiquement pour suivre l’arbre des groupes serait une erreur : leur chemin est leur identité, et un groupe qui change de parent obligerait à tout déplacer. L’arbre des groupes est donc **appliqué à l’affichage**, sans toucher au stockage.
+Les groupes forment un **arbre** dans la base (`parentGroupId`) : le Bureau sous les Administrateurs, par exemple. Les espaces, eux, sont **à plat** dans le stockage, tous sous `collaborative-group-spaces/`.
 
-Dans l’arbre de la bibliothèque, le dossier `collaborative-group-spaces` réarrange ses enfants selon la hiérarchie que lui donne `storage.groupSpaceHierarchy` :
+Les déplacer physiquement pour suivre l’arbre des groupes serait une erreur. Leur chemin est leur identité : les documents, les droits et les entrées de corbeille le retiennent. Un groupe qui changerait de parent obligerait à tout déplacer. L’arbre des groupes est donc **appliqué à l’affichage**, sans toucher au stockage.
+
+Dans l’arbre de la bibliothèque, le dossier `collaborative-group-spaces` réarrange ses enfants selon la hiérarchie que lui donne `storage.groupSpaceHierarchy` (servie aux seuls administrateurs) :
 
 <CodeExample
   language="tsx"
@@ -153,17 +288,17 @@ Dans l’arbre de la bibliothèque, le dossier `collaborative-group-spaces` réa
   fullFileTitle="Voir le fichier complet"
 />
 
-Un espace parent reçoit, en plus de ses enfants réels, les **nœuds réels** de ses espaces enfants, récursivement ; seuls les espaces racines restent sous le conteneur. La grille fait le même travail sur les dossiers du dossier courant, et l’adaptateur des membres le fait de son côté.
+Un espace parent reçoit, en plus de ses enfants réels, les **nœuds réels** de ses espaces enfants, récursivement ; seuls les espaces racines restent sous le conteneur. La grille fait le même travail sur les dossiers du dossier courant (`displayFolders`), et l’adapter des membres le fait de son côté.
 
 ### Deux bugs, deux règles
 
-La première version de cette imbrication **fabriquait** des nœuds : pour chaque espace enfant, un `FinderNode` construit à la main, avec son nom et son chemin. Dans l’arbre, ces nœuds tournaient sans fin. Nous avons vu pourquoi au chapitre 2 : un dossier ouvert, avec des enfants, mais `children` absent, est « en train de se matérialiser » ; les vrais nœuds sont chargés en profondeur d’un coup, un nœud fabriqué ne l’est par personne. La correction a été de **réarranger les nœuds réels**, qui portent déjà leurs enfants.
+La première version de cette imbrication **fabriquait** des nœuds : pour chaque espace enfant, un `FinderNode` construit à la main, avec son nom et son chemin. Dans l’arbre, ces nœuds tournaient sans fin. Nous avons vu pourquoi au chapitre 3 : un dossier ouvert, annoncé non vide, mais sans `children`, est « en train de se matérialiser ». Les vrais nœuds arrivent avec le palier suivant ; un nœud fabriqué n’est attendu par personne. La correction a été de **réarranger les nœuds réels**, qui portent déjà leurs enfants.
 
 <Callout type="warning">
-**Règle 1.** Dans ce finder, on ne fabrique jamais un nœud d’arbre. On réarrange les nœuds réels, déjà peuplés par le chargement en profondeur.
+**Règle 1.** Dans l’arbre de ce finder, on ne fabrique jamais un nœud. On réarrange les nœuds réels, déjà peuplés par le chargement en profondeur.
 </Callout>
 
-Le second bug est venu d’un administrateur qui ouvrait « Mes espaces ». Dans la grille, chaque sous-espace apparaissait **deux fois**, avec un avertissement de React sur deux enfants de même clé (la `key`, qui permet à React de reconnaître chaque élément d’une liste d’un rendu à l’autre). Deux mécanismes imbriquaient les mêmes espaces : l’adaptateur des membres, et la transformation de la grille, active pour un administrateur (pour un membre, `groupSpaceHierarchy` est vide : le bug ne se voyait pas). La transformation se retire désormais quand le finder est en lecture seule :
+Le second bug est venu d’un administrateur qui ouvrait « Mes espaces ». Dans la grille, chaque sous-espace apparaissait **deux fois**, avec un avertissement de React sur deux enfants de même clé (la `key`, qui permet à React de reconnaître chaque élément d’une liste d’un rendu à l’autre). Deux mécanismes imbriquaient les mêmes espaces : l’adapter des membres, et la transformation de la grille, active pour un administrateur. Pour un membre, `groupSpaceHierarchy` est vide : le bug ne se voyait pas. La transformation se retire désormais quand le finder est en lecture seule :
 
 <CodeExample
   language="tsx"
@@ -177,12 +312,29 @@ Le second bug est venu d’un administrateur qui ouvrait « Mes espaces ». Dans
 />
 
 <Callout type="warning">
-**Règle 2.** Une transformation d’affichage qui dépend de données d’administration ne se cumule jamais avec un adaptateur qui fait déjà le travail. Quand deux mécanismes peuvent produire le même résultat, il faut décider lequel s’applique, et l’écrire.
+**Règle 2.** Une transformation d’affichage qui dépend de données d’administration ne se cumule jamais avec un adapter qui fait déjà le travail. Quand deux mécanismes peuvent produire le même résultat, il faut décider lequel s’applique, et l’écrire.
 </Callout>
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi un store pour le panier ?", "La sélection du finder est vidée à chaque navigation ; le panier doit survivre."], ["Que rend le sélecteur ?", "Des chemins ; l’appelant les convertit en identifiants (media.resolveByPaths)."], ["readOnly protège-t-il ?", "Non : il évite de proposer ce que le serveur refuserait. La protection est au serveur."], ["Comment un membre a-t-il plusieurs racines ?", "Une racine inventée (__mes-espaces__), dont l’adaptateur rend ses espaces de plus haut niveau."], ["Où vit le dépôt d’un membre ?", "Dans une barre posée au-dessus du finder, qui lit le dossier courant dans le store."], ["Pourquoi ne pas déplacer les espaces pour suivre les groupes ?", "Leur chemin est leur identité : l’arbre des groupes s’applique à l’affichage seulement."], ["Quelles règles ces bugs ont-ils laissées ?", "Ne jamais fabriquer de nœud d’arbre ; ne jamais cumuler deux imbrications."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi un store pour le panier ?", "La sélection repart de zéro à l’ouverture d’un dossier (hors mode sélection) et à chaque finder ; le panier doit survivre."], ["Que peut-on piocher ?", "Une image ou une vidéo (fileFilter), validée (isPickable) ; une seule pour un champ à une image (single)."], ["Que rend le sélecteur ?", "Des chemins ; pathsToMediaIds les convertit en identifiants, qui survivent à un déplacement."], ["Et si la validation échoue ?", "Le sélecteur affiche le message et reste ouvert, panier compris."], ["readOnly protège-t-il ?", "Non : il évite de proposer ce que le serveur refuserait. La protection est au serveur."], ["Pourquoi un contexte React pour readOnly ?", "Les décisions se prennent dans chaque élément, loin de Finder : un contexte évite de transmettre la prop à chaque niveau."], ["Comment un membre a-t-il plusieurs racines ?", "Une racine inventée (__mes-espaces__), dont l’adapter rend ses espaces de plus haut niveau."], ["Où cherche-t-on depuis Mes espaces ?", "Là où l’adapter le dit (searchScopes) : dans tous les espaces du membre, ou dans un espace et ses sous-espaces."], ["Où vit le dépôt d’un membre ?", "Dans une barre posée au-dessus du finder, qui lit le dossier courant dans le store."], ["Pourquoi ne pas déplacer les espaces pour suivre les groupes ?", "Leur chemin est leur identité : l’arbre des groupes s’applique à l’affichage seulement."], ["Quelles règles ces bugs ont-ils laissées ?", "Ne jamais fabriquer de nœud d’arbre ; ne jamais cumuler deux imbrications."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de quitter le finder, nous devrions pouvoir expliquer :
+
+- les trois réglages qui font trois outils d’un même composant ;
+- pourquoi le panier n’est pas la sélection, et pourquoi c’est une `Map` indexée par chemin ;
+- la différence entre `fileFilter`, `isPickable` et `single` ;
+- pourquoi un contenu retient des identifiants de médias, et pas des chemins, et pourquoi la conversion est une seule fonction ;
+- ce que fait le sélecteur quand la validation échoue ;
+- ce qu’est un contexte React, et pourquoi `readOnly` passe par lui ;
+- pourquoi `readOnly` n’est pas une protection ;
+- comment une racine qui n’existe pas devient la racine d’un finder ;
+- pourquoi chercher depuis « Mes espaces » demande à l’adapter où chercher ;
+- pourquoi le dépôt d’un membre est à côté du finder, et pas dedans ;
+- pourquoi les espaces sont à plat dans le stockage et imbriqués à l’affichage ;
+- les deux règles, et le bug qui a laissé chacune.
 
 ## À suivre
 

@@ -196,9 +196,10 @@ export function SummaryFieldset({
           open
           adapter={finderStorageAdapter}
           rootPath={APP_ROOT}
+          single
           onClose={() => setPickerOpen(false)}
           onSubmit={async (paths) => {
-            // Un seul média pour ce champ : le premier du panier. La conversion
+            // Un seul média pour ce champ (`single`). La conversion
             // est commune à tous les formulaires (pathsToMediaIds).
             const [first] = await pathsToMediaIds(APP_ROOT, paths);
             if (first) onMediaIdChange(first);

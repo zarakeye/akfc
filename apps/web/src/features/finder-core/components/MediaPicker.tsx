@@ -34,6 +34,11 @@ type Props = {
   fileFilter?: (node: FinderNode) => boolean;
   /** Libellé du bouton de validation : le sélecteur sert aux galeries, aux pages, aux fiches… */
   submitLabel?: string;
+  /**
+   * Pour un champ qui ne prend qu'un média (image d'un résumé, image dans un texte) :
+   * en choisir un remplace le précédent, au lieu d'en accumuler que le champ ignorerait.
+   */
+  single?: boolean;
 };
 
 /**
@@ -66,7 +71,8 @@ export function MediaPicker({
   adapter,
   rootPath,
   fileFilter = isMediaNode,
-  submitLabel = 'Ajouter la sélection',
+  submitLabel,
+  single = false,
 }: Props): JSX.Element {
   const items = usePickerCartStore((s) => s.items);
   const toggleCart = usePickerCartStore((s) => s.toggleCart);
@@ -94,6 +100,8 @@ export function MediaPicker({
   // Elle ne pouvait plus que le déduire du chemin, qui ne porte pas le statut.
   function handlePickToggle(node: FinderNode) {
     if (!isPickable(node)) return; // non-publié ou dossier → on n'épingle pas
+    // Un seul média : le nouveau remplace l'ancien (le recliquer le retire).
+    if (single && !items.has(node.path)) clearCart();
     toggleCart(node);
   }
 
@@ -129,9 +137,19 @@ export function MediaPicker({
 
       {/* Règle posée d'emblée : seuls les médias validés sont épinglables. */}
       <div className="px-4 py-2 border-b bg-info-muted text-xs text-info">
-        Cliquez sur un média <strong>validé</strong> pour l&apos;ajouter à la
-        sélection. Vous pouvez naviguer entre les dossiers&nbsp;: la sélection
-        est conservée. Un média en attente ou à la corbeille reste visible mais
+        {single ? (
+          <>
+            Cliquez sur un média <strong>validé</strong> pour le choisir&nbsp;: ce
+            champ n&apos;en prend qu&apos;un, un autre clic le remplace.
+          </>
+        ) : (
+          <>
+            Cliquez sur un média <strong>validé</strong> pour l&apos;ajouter à la
+            sélection. Vous pouvez naviguer entre les dossiers&nbsp;: la sélection
+            est conservée.
+          </>
+        )}{' '}
+        Un média en attente ou à la corbeille reste visible mais
         n&apos;est pas sélectionnable tant qu&apos;il n&apos;est pas validé.
       </div>
 
@@ -170,7 +188,7 @@ export function MediaPicker({
             disabled={cartCount === 0 || submitting}
             className="px-3 py-1 bg-brand text-brand-foreground rounded disabled:opacity-50"
           >
-            {submitLabel}
+            {submitLabel ?? (single ? 'Choisir ce média' : 'Ajouter la sélection')}
           </button>
         </div>
       </div>

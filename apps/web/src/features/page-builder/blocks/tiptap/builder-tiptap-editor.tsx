@@ -305,6 +305,8 @@ export function BuilderTipTapEditor({
           open
           adapter={adapter}
           rootPath={mediaRoot}
+          single
+          submitLabel="Insérer l’image"
           onClose={handlePickerClose}
           onSubmit={handlePickerSubmit}
         />
