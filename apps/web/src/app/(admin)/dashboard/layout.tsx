@@ -6,7 +6,7 @@ import { PanelLeft, X } from 'lucide-react';
 
 import Header from '#features/app-shell/Header.tsx';
 import ControlPanelSidebar from '#features/app-shell/ControlPanelSidebar.tsx';
-import { Providers } from '#app/(admin)/dashboard/providers.tsx';
+import { usePreventFileDropNavigation } from '#features/app-shell/usePreventFileDropNavigation.ts';
 
 interface Props {
   children: React.ReactNode;
@@ -42,6 +42,8 @@ interface Props {
  */
 export default function DashboardLayout({ children }: Props): JSX.Element {
   const pathname = usePathname();
+  // Un fichier lâché hors d'une zone de dépôt ne remplace pas le tableau de bord.
+  usePreventFileDropNavigation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Refermeture du tiroir à la navigation, par AJUSTEMENT D'ÉTAT PENDANT LE
@@ -76,77 +78,75 @@ export default function DashboardLayout({ children }: Props): JSX.Element {
   }, [sidebarOpen]);
 
   return (
-    <Providers>
-      <div className="flex h-dvh flex-col bg-background">
-        <div className="sticky top-0 z-50 shrink-0 bg-background">
-          <Header />
+    <div className="flex h-dvh flex-col bg-background">
+      <div className="sticky top-0 z-50 shrink-0 bg-background">
+        <Header />
+      </div>
+
+      {/* Barre d'ouverture du tiroir — sous `lg` uniquement.
+          Bouton LIBELLÉ et non icône seule : le header porte déjà un
+          burger, celui de la navigation du site. Deux burgers identiques
+          l'un sous l'autre seraient indistinguables. */}
+      <div className="shrink-0 border-b border-border bg-background px-4 py-2 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          aria-expanded={sidebarOpen}
+          data-tour="dashboard.sidebar"
+          className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          <PanelLeft className="h-4 w-4" />
+          Panneau de contrôle
+        </button>
+      </div>
+
+      <div className="flex min-h-0 flex-1">
+        {/* Sidebar permanente — à partir de `lg`. Scroll propre si la
+            liste dépasse. */}
+        {/* Même nom de tuto que le bouton du tiroir : le moteur vise celui qui est visible. */}
+        <div className="hidden overflow-y-auto lg:flex [&>aside]:h-full [&>aside]:min-h-full" data-tour="dashboard.sidebar">
+          <ControlPanelSidebar />
         </div>
 
-        {/* Barre d'ouverture du tiroir — sous `lg` uniquement.
-            Bouton LIBELLÉ et non icône seule : le header porte déjà un
-            burger, celui de la navigation du site. Deux burgers identiques
-            l'un sous l'autre seraient indistinguables. */}
-        <div className="shrink-0 border-b border-border bg-background px-4 py-2 lg:hidden">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            aria-expanded={sidebarOpen}
-            data-tour="dashboard.sidebar"
-            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
-          >
-            <PanelLeft className="h-4 w-4" />
-            Panneau de contrôle
-          </button>
-        </div>
+        {/* ⚠️ le main DOIT être relative.
+            overflow-y-auto : scroll vertical naturel du contenu long.
+            Rembourrage réduit sous `lg` : `p-10` coûtait 80px de largeur
+            sur un téléphone qui en a 390. */}
+        <main className="relative min-h-0 flex-1 overflow-y-auto p-4 lg:p-10">
+          {children}
+        </main>
+      </div>
 
-        <div className="flex min-h-0 flex-1">
-          {/* Sidebar permanente — à partir de `lg`. Scroll propre si la
-              liste dépasse. */}
-          {/* Même nom de tuto que le bouton du tiroir : le moteur vise celui qui est visible. */}
-          <div className="hidden overflow-y-auto lg:flex [&>aside]:h-full [&>aside]:min-h-full" data-tour="dashboard.sidebar">
-            <ControlPanelSidebar />
-          </div>
-
-          {/* ⚠️ le main DOIT être relative.
-              overflow-y-auto : scroll vertical naturel du contenu long.
-              Rembourrage réduit sous `lg` : `p-10` coûtait 80px de largeur
-              sur un téléphone qui en a 390. */}
-          <main className="relative min-h-0 flex-1 overflow-y-auto p-4 lg:p-10">
-            {children}
-          </main>
-        </div>
-
-        {/* Tiroir — sous `lg` uniquement. */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div
-              className="absolute inset-0 bg-black/60"
-              onClick={() => setSidebarOpen(false)}
-              aria-hidden="true"
-            />
-            <div className="relative flex h-full w-[min(85vw,20rem)] flex-col overflow-y-auto bg-gray-800">
-              <div className="flex items-center justify-between px-4 py-3 text-white">
-                <span className="text-sm font-semibold uppercase tracking-wide">
-                  Panneau de contrôle
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSidebarOpen(false)}
-                  aria-label="Fermer le panneau"
-                  className="p-1"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              {/* La sidebar impose sa propre largeur (`w-60`) : on la laisse
-                  s'étirer au tiroir, plus large sur les grands téléphones. */}
-              <div className="[&>aside]:w-full">
-                <ControlPanelSidebar />
-              </div>
+      {/* Tiroir — sous `lg` uniquement. */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="relative flex h-full w-[min(85vw,20rem)] flex-col overflow-y-auto bg-gray-800">
+            <div className="flex items-center justify-between px-4 py-3 text-white">
+              <span className="text-sm font-semibold uppercase tracking-wide">
+                Panneau de contrôle
+              </span>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(false)}
+                aria-label="Fermer le panneau"
+                className="p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {/* La sidebar impose sa propre largeur (`w-60`) : on la laisse
+                s'étirer au tiroir, plus large sur les grands téléphones. */}
+            <div className="[&>aside]:w-full">
+              <ControlPanelSidebar />
             </div>
           </div>
-        )}
-      </div>
-    </Providers>
+        </div>
+      )}
+    </div>
   );
 }
