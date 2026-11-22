@@ -36,9 +36,12 @@ export default function CropGridOverlay({ grid, setGrid, workspaceRef, shape = '
     const onPointerUp = () => { dragStart.current = null; };
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+    // Geste interrompu par le système (appel, geste de navigation) : le cadre est lâché aussi.
+    window.addEventListener('pointercancel', onPointerUp);
     return () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
     };
   }, [setGrid, workspaceRef]);
 

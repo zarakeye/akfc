@@ -187,12 +187,16 @@ export default function Cropper({
   // Seed de la GRILLE dès que le workspace a une largeur réelle, via
   // ResizeObserver — indépendant du timing de chargement de l'image (marche
   // donc pour un fichier disque ET une capture caméra décodée instantanément).
+  // Ensuite, si l'établi change de taille (téléphone tourné, fenêtre redimensionnée),
+  // le cadre suit dans la même proportion : il garde la même portion de l'image.
   useEffect(() => {
     const el = workspaceRef.current;
     if (!el) return;
+    let lastWidth = 0;
     const seed = (w: number) => {
       if (!w || seededGrid.current) return;
       seededGrid.current = true;
+      lastWidth = w;
       if (initialTransform) {
         const gf = initialTransform.gridFrac;
         setGrid({ x: gf.x * w, y: gf.y * w, width: gf.width * w, height: gf.height * w });
@@ -205,9 +209,16 @@ export default function Cropper({
         setGrid({ x: off, y: off, width: side, height: side });
       }
     };
-    seed(el.getBoundingClientRect().width);
-    if (seededGrid.current) return;
-    const ro = new ResizeObserver((entries) => seed(entries[0].contentRect.width));
+    const follow = () => {
+      const w = el.getBoundingClientRect().width;
+      if (!seededGrid.current) return seed(w);
+      if (!w || !lastWidth || w === lastWidth) return;
+      const k = w / lastWidth;
+      lastWidth = w;
+      setGrid((g) => ({ x: g.x * k, y: g.y * k, width: g.width * k, height: g.height * k }));
+    };
+    follow();
+    const ro = new ResizeObserver(follow);
     ro.observe(el);
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -217,6 +228,7 @@ export default function Cropper({
   // signale son arrivée à l'effet de dessin. Le setState est dans le rappel `onload`, pas dans le
   // corps de l'effet.
   const [imgVersion, setImgVersion] = useState(0);
+  const [problem, setProblem] = useState<string | null>(null);
   useEffect(() => {
     const img = new Image();
     img.src = picture.previewUrl;
@@ -224,6 +236,9 @@ export default function Cropper({
       imgRef.current = img;
       setImgVersion((v) => v + 1);
     };
+    // Un fichier que le navigateur ne sait pas décoder : on le dit, au lieu d'un aperçu vide
+    // et d'un bouton « Recadrer » qui ne fait rien.
+    img.onerror = () => setProblem("Le navigateur ne sait pas lire cette image : elle ne peut pas être recadrée.");
   }, [picture.previewUrl]);
 
   // Aperçu redessiné quand la grille, le zoom, la rotation ou l'image changent. Les valeurs sont
@@ -390,6 +405,7 @@ export default function Cropper({
         )}
 
         <div className="flex justify-end gap-2 mt-4">
+          {problem && <p role="alert" className="mr-auto self-center text-sm text-destructive">{problem}</p>}
           <button type="button" onClick={onCancel} className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${cancelCls}`}>Annuler</button>
           <button type="button" onClick={() => void handleCrop()} className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90">Recadrer</button>
         </div>

@@ -10,7 +10,7 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Trois formulaires d’envoi proposent de recadrer une image avant de l’envoyer : la bibliothèque, le dépôt des membres et l’avatar. Le chapitre « Un fichier, un usage » s’est arrêté à la porte du recadrage, avec sa recette.
 
-Recadrer, c’est répondre à trois questions : quelle partie de l’image garder, à quel zoom, sous quel angle. Il existe d’excellentes bibliothèques pour cela, et le projet en avait installé une (Cropper.js 2, et son adaptateur React), avant de s’en passer : le composant `Cropper` du site (le « cropper », dans la suite) est écrit à la main, en un peu moins de quatre cents lignes. Cette partie le démonte en deux chapitres : ici, comment on voit et règle un recadrage ; ensuite, comment on en sort un fichier juste.
+Recadrer, c’est répondre à trois questions : quelle partie de l’image garder, à quel zoom, sous quel angle. Il existe d’excellentes bibliothèques pour cela, et le projet en avait installé une (Cropper.js 2, et son adaptateur React), avant de s’en passer : le composant `Cropper` du site (le « cropper », dans la suite) est écrit à la main, en environ quatre cents lignes. Cette partie le démonte en deux chapitres : ici, comment on voit et règle un recadrage ; ensuite, comment on en sort un fichier juste.
 
 <Callout type="insight">
 Les dépendances de ce premier essai (`cropperjs`, `@cropper/elements`, `react-cropper`) sont restées déclarées longtemps après qu’aucun fichier ne les importait plus, avec `cropper-elements.d.ts`, qui déclarait leurs balises pour TypeScript. Elles ont été retirées, et le fichier de verrouillage avec elles. Une dépendance inutilisée n’est pas gratuite : elle s’installe sur chaque machine et dans chaque image Docker, se met à jour, et déclenche des alertes de sécurité pour du code que rien n’exécute. Avant de la retirer, on vérifie qu’aucun fichier ne l’importe : une recherche du nom du paquet dans le dépôt, puis `pnpm check`.
@@ -55,7 +55,7 @@ Le cadre ne change pas de taille : on le **déplace**, et l’on règle la porti
   fullFileTitle="Voir le fichier complet"
 />
 
-Le geste commence sur le cadre (`pointerdown`), mais il est suivi sur la **fenêtre** : un doigt qui déborde du cadre en allant trop vite ne le lâche pas. La position est bornée à l’établi. Les événements de pointeur couvrent la souris, le doigt et le stylet ; `touch-none` empêche le téléphone de faire défiler la page pendant le geste.
+Le geste commence sur le cadre (`pointerdown`), mais il est suivi sur la **fenêtre** : un doigt qui déborde du cadre en allant trop vite ne le lâche pas. Il se termine sur `pointerup`, ou sur `pointercancel` : le système d’un téléphone peut interrompre un geste (un appel, un geste de navigation), et un cadre resté « tenu » suivrait le pointeur suivant. La position est bornée à l’établi. Les événements de pointeur couvrent la souris, le doigt et le stylet ; `touch-none` empêche le téléphone de faire défiler la page pendant le geste.
 
 Le masque est un SVG plein écran, assombri, où le cadre est découpé :
 
@@ -117,11 +117,28 @@ Le début et la fin du geste étaient jusqu’ici écoutés à la souris (`mouse
 
 Le cadre de départ de la galerie a longtemps été écrit en pixels fixes, 200 × 200 à 150 px du coin : centré sur l’établi de 500 px d’un ordinateur, collé au bord droit sur un téléphone, où l’établi fait 350 px. Il est maintenant calculé comme celui de l’avatar, en proportion de l’établi mesuré : 40 %, soit les mêmes 200 px sur ordinateur, et un cadre centré sur toutes les largeurs. Une position écrite en pixels ne vaut que pour la taille d’écran à laquelle on l’a choisie.
 
-La recette est en **fractions** de l’établi, pas en pixels : rouverte sur un écran d’une autre taille, elle replace le cadre au même endroit de l’image. Le cadre n’est posé qu’une fois l’établi mesuré, par un `ResizeObserver`, et non au chargement de l’image : une capture de la caméra est décodée avant que l’établi ait une largeur.
+La recette est en **fractions** de l’établi, pas en pixels : rouverte sur un écran d’une autre taille, elle replace le cadre au même endroit de l’image. Le cadre n’est posé qu’une fois l’établi mesuré, par un `ResizeObserver`, et non au chargement de l’image : une capture de la caméra est décodée avant que l’établi ait une largeur. L’observateur reste branché ensuite. Si l’établi change de taille (un téléphone qu’on tourne, une fenêtre qu’on réduit), le cadre est mis à l’échelle dans la même proportion, et garde la même portion de l’image.
+
+👉 le cadre se mesure en proportion de l’établi, à la pose comme après
+
+Une image que le navigateur ne sait pas décoder ne laisse pas un aperçu vide et un bouton muet : le cropper l’écoute (`onerror`) et affiche un message à côté de ses boutons.
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi pas une bibliothèque ?", "Le besoin tient en un cadre, un zoom et une rotation ; le composant maison fait 378 lignes. Les dépendances installées pour un premier essai ne servent plus."], ["Comment l’établi transforme-t-il l’image ?", "En CSS (scale puis rotate, autour du centre) : rien n’est recalculé pendant le geste."], ["Et le cadre ?", "Il se déplace, il ne se redimensionne pas ; le zoom règle la portion gardée."], ["Comment l’aperçu reste-t-il juste ?", "Il est redessiné par drawCrop, la fonction qui produit aussi le fichier, avec les mêmes transformations dans le même ordre."], ["Que défait « Défaire » ?", "Un geste entier, s’il a duré au moins 250 ms."], ["Qu’est-ce qui a changé ?", "Les gestes des curseurs sont écoutés au pointeur : « Défaire » marche au doigt."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi pas une bibliothèque ?", "Le besoin tient en un cadre, un zoom et une rotation ; le composant maison fait un peu plus de 400 lignes. Les dépendances installées pour un premier essai ne servent plus."], ["Comment l’établi transforme-t-il l’image ?", "En CSS (scale puis rotate, autour du centre) : rien n’est recalculé pendant le geste."], ["Et le cadre ?", "Il se déplace, il ne se redimensionne pas ; le zoom règle la portion gardée."], ["Comment l’aperçu reste-t-il juste ?", "Il est redessiné par drawCrop, la fonction qui produit aussi le fichier, avec les mêmes transformations dans le même ordre."], ["Que défait « Défaire » ?", "Un geste entier, s’il a duré au moins 250 ms."], ["Qu’est-ce qui a changé ?", "Les gestes des curseurs sont écoutés au pointeur (« Défaire » marche au doigt) ; le cadre suit l’établi quand il change de taille, et se lâche si le geste est interrompu."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de sortir un fichier du recadrage, nous devrions pouvoir expliquer :
+
+- pourquoi le projet a écrit son cropper plutôt que de garder une bibliothèque, et pourquoi on retire une dépendance inutilisée ;
+- pourquoi le zoom et la rotation se font en CSS pendant le geste ;
+- comment le cadre se déplace, pourquoi on le suit sur la fenêtre, et ce qu’est `pointercancel` ;
+- comment un masque SVG découpe un rectangle ou un cercle, et pourquoi le cercle n’est qu’un affichage ;
+- pourquoi l’aperçu et le fichier sont dessinés par la même fonction, avec les mêmes transformations dans le même ordre ;
+- pourquoi « Défaire » enregistre un geste et pas chaque valeur ;
+- ce qui distingue le recadrage de galerie de celui de l’avatar ;
+- pourquoi le cadre se mesure en proportion de l’établi, et ce qui se passe quand l’établi change de taille.
 
 ## À suivre
 
