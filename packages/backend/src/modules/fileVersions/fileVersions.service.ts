@@ -152,6 +152,27 @@ export async function prepareReplacement(prisma: PrismaClient, fullPath: string)
 }
 
 /**
+ * Un remplacement refusé à l'enregistrement (taille ou type qui ne correspondent pas, droit de
+ * remplacer perdu entre-temps). Le nouveau contenu est déjà au stockage, sous la clé du fichier :
+ * la ligne décrirait un contenu qui n'est plus là. On remet l'ancien, gardé par
+ * prepareReplacement, puis on retire cette version préparée. Rend `false` s'il n'y avait rien à
+ * remettre (aucune version préparée).
+ */
+export async function abandonReplacement(prisma: PrismaClient, fullPath: string): Promise<boolean> {
+  const asset = await prisma.mediaAsset.findUnique({ where: { fullPath }, select: { id: true } });
+  if (!asset) return false;
+  const prepared = await prisma.fileVersion.findFirst({
+    where: { mediaAssetId: asset.id, confirmed: false },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, storageKey: true },
+  });
+  if (!prepared) return false;
+  await r2CopyFile(prepared.storageKey, fullPath);
+  await dropVersions(prisma, [prepared]);
+  return true;
+}
+
+/**
  * Après le remplacement (registerR2Upload) : la version préparée devient visible, les vignettes de
  * l'ancien contenu sont effacées, et la conservation s'applique au fichier.
  */

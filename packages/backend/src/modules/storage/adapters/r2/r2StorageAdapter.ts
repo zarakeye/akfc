@@ -33,6 +33,7 @@ import { HARD_MAX_UPLOAD_BYTES } from "@akfc/contracts/storage/r2-upload.schema.
 
 import { getR2Client, getR2PresignClient, getR2Bucket } from "#modules/storage/adapters/r2/client.ts";
 import { probeMediaDimensions } from "#modules/media/services/mediaDerivatives.service.ts";
+import { abandonReplacement } from "#modules/fileVersions/fileVersions.service.ts";
 
 /**
  * r2StorageAdapter — implémentation Cloudflare R2 complète
@@ -379,14 +380,20 @@ export function createR2StorageAdapter(
       const actualBytes = head.ContentLength ?? 0;
       const actualMime = head.ContentType ?? "";
 
-      // Un objet refusé ici n'est référencé par aucune ligne MediaAsset : on le retire du
-      // bucket pour ne pas laisser de fichier orphelin. S'il remplaçait un fichier déjà connu
-      // (écrasement confirmé), on le laisse : la ligne existante pointe toujours vers lui.
+      // Un refus ne laisse rien de faux. Un nouveau fichier n'est référencé par aucune ligne :
+      // on le retire du bucket, sans quoi il resterait orphelin. Un remplacement a pris la place
+      // de l'ancien contenu, que la ligne décrit toujours : on remet l'ancien (gardé en version).
       const reject = async (message: string): Promise<never> => {
         const known = await prisma.mediaAsset.findUnique({ where: { fullPath: input.path }, select: { id: true } });
         if (!known) {
           await s3.send(new DeleteObjectCommand({ Bucket, Key: input.path })).catch((err) => {
             console.error("[r2] objet refusé non supprimé", input.path, err);
+          });
+        } else {
+          // Un remplacement refusé : le contenu reçu a pris la place de l'ancien, que la ligne
+          // décrit toujours. On remet l'ancien, gardé en version au moment de signer.
+          await abandonReplacement(prisma, input.path).catch((err) => {
+            console.error("[r2] contenu remplacé non rétabli", input.path, err);
           });
         }
         // Une saisie refusée, pas une panne : le message doit arriver jusqu'à l'utilisateur.

@@ -129,9 +129,9 @@ Puis les valeurs réelles sont confrontées à l’annonce :
   language="ts"
   filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
   filename="r2StorageAdapter.ts"
-  snippetStart="// Un objet refusé ici n'est référencé par aucune ligne MediaAsset : on le retire du"
+  snippetStart="// Un refus ne laisse rien de faux. Un nouveau fichier n'est référencé par aucune ligne :"
   snippetLines="31"
-  snippetHighlight="5,7,17,20"
+  snippetHighlight="5,7,13,23,26"
   snippetTitle="Refuser, et ne rien laisser derrière"
   fullFileTitle="Voir le fichier complet"
 />
@@ -140,7 +140,15 @@ Trois contrôles, et une règle de nettoyage.
 
 - **La taille réelle** est bornée à 500 Mio. C’est le seul endroit où cette limite est vraiment tenue : l’URL signée ne la fixait pas, et le `maxBytes` vérifié à la signature n’était qu’une annonce.
 - **La taille et le type** doivent être ceux annoncés. Un écart signale une erreur, ou une tentative ; dans les deux cas, on ne garde pas un fichier que personne n’a décrit honnêtement.
-- **Un refus supprime l’objet.** Il n’est référencé par aucune ligne : le laisser serait créer un orphelin invisible, qui occupe le stockage pour rien. Sauf s’il **remplaçait** un fichier connu : la ligne existante pointe toujours vers cette clé, et supprimer l’objet la rendrait orpheline à son tour.
+- **Un refus ne laisse rien de faux.** Deux cas :
+  - **un nouveau fichier** : l’objet n’est référencé par aucune ligne. Le laisser serait créer un orphelin invisible, qui occupe le stockage pour rien : il est supprimé ;
+  - **un remplacement** : l’objet a pris la place de l’ancien contenu, sous la même clé, et la ligne existante décrit toujours cet ancien contenu (sa taille, son type). Le supprimer rendrait la ligne orpheline ; le garder la rendrait fausse. Or l’ancien contenu n’est pas perdu : à la signature, `prepareReplacement` l’a copié en version (chapitre « Les versions d’un fichier »). Le refus le **remet** à sa place (`abandonReplacement`), puis retire cette version préparée.
+
+👉 une ligne refusée ne doit ni disparaître ni mentir : elle retrouve son contenu
+
+<Callout type="info">
+La remise en place suppose que le navigateur revienne enregistrer. Un client qui envoie un contenu de remplacement sans jamais appeler `registerR2Upload` laisse ce contenu en place, et la version préparée est purgée un jour plus tard. Ce cas demande une URL signée valide, donc un droit de remplacer au moment de signer : c’est la fenêtre décrite au chapitre 2. La fermer tout à fait demanderait d’envoyer sous une clé temporaire, puis de copier côté serveur.
+</Callout>
 
 `reject` renvoie `Promise<never>` : TypeScript sait qu’après `await reject(…)`, l’exécution ne continue pas. C’est ce qui permet d’écrire les contrôles à la suite, sans `else`.
 
@@ -212,6 +220,22 @@ C’est ce qui permet d’ouvrir le **dépôt** à tous les membres sans ouvrir 
 ## Récapitulatif
 
 <DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que croit le serveur du navigateur ?", "Rien de ce qui décide : il revérifie le droit, recalcule le dossier, relit l’objet."], ["Que garde-t-il entre signature et enregistrement ?", "Rien. Les deux procédures sont indépendantes ; la seconde reconstruit tout."], ["Que vérifie HeadObject ?", "Que l’objet existe, sa taille réelle (500 Mio au plus) et son type, comparés à l’annonce."], ["Que devient un objet refusé ?", "Il est supprimé du stockage, sauf s’il remplaçait un fichier déjà connu."], ["Qui est l’auteur ?", "L’utilisateur de la session ; remplacer un fichier existant suit la même règle qu’à la signature."], ["Dans quel état naît un fichier ?", "En attente, jusqu’à validation par un administrateur."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de servir un premier fichier, nous devrions pouvoir expliquer :
+
+- pourquoi le serveur ne croit rien de ce que le navigateur dit avoir déposé ;
+- les quatre scénarios de l’intervalle entre signature et enregistrement ;
+- pourquoi les deux procédures ne partagent aucun état, et ce que cela oblige à refaire ;
+- comment l’enregistrement vérifie que le chemin reçu est bien dans le dossier autorisé ;
+- ce que `HeadObject` relit, et pourquoi la limite de 500 Mio n’est vraiment tenue qu’ici ;
+- pourquoi un refus est un `BAD_REQUEST` et pas une `Error` ;
+- ce que devient l’objet refusé, nouveau fichier ou remplacement ;
+- pourquoi les dimensions se mesurent « au meilleur effort », et pourquoi au-delà de 60 Mio on renonce ;
+- d’où vient chaque champ de la ligne `MediaAsset` ;
+- pourquoi chaque fichier est admis seul, et pas tout un lot dans une transaction ;
+- pourquoi tout envoi naît « en attente ».
 
 ## À suivre
 

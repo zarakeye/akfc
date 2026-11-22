@@ -9882,11 +9882,11 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:227"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:219"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:240"
        ]
       ]
      ]
@@ -9899,11 +9899,11 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:227"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:233"
        ]
       ]
      ]
@@ -9916,7 +9916,7 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:227"
        ],
        [
         "assertMayRead",
@@ -9945,7 +9945,7 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:227"
        ],
        [
         "assertMayRead",
@@ -9974,21 +9974,21 @@
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:227"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:233"
        ]
       ],
       [
        [
         "listVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:206"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:227"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:219"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:240"
        ]
       ]
      ]
@@ -10010,15 +10010,15 @@
       [
        [
         "versionDownloadUrl",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:300"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -10031,15 +10031,15 @@
       [
        [
         "versionDownloadUrl",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:300"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -10052,7 +10052,7 @@
       [
        [
         "versionDownloadUrl",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:300"
        ],
        [
         "assertMayRead",
@@ -10081,7 +10081,7 @@
       [
        [
         "versionDownloadUrl",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:300"
        ],
        [
         "assertMayRead",
@@ -10123,15 +10123,15 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:204"
        ]
       ]
      ]
@@ -10148,29 +10148,29 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.updateMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:200"
        ]
       ],
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:204"
        ]
       ]
      ]
@@ -10195,7 +10195,7 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "snapshot",
@@ -10216,7 +10216,7 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "snapshot",
@@ -10230,7 +10230,7 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "dropVersions",
@@ -10251,29 +10251,29 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ],
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:213"
        ]
       ]
      ]
@@ -10288,7 +10288,7 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "snapshot",
@@ -10309,15 +10309,15 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -10339,11 +10339,11 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "prisma.mediaAsset.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:311"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:332"
        ]
       ]
      ]
@@ -10356,15 +10356,15 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:175"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:196"
        ]
       ]
      ]
@@ -10379,15 +10379,15 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.memberDocument.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:199"
        ]
       ]
      ]
@@ -10400,7 +10400,7 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "mayRestore",
@@ -10429,7 +10429,7 @@
       [
        [
         "restoreVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:301"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:322"
        ],
        [
         "mayRestore",
@@ -10467,7 +10467,7 @@
       [
        [
         "deleteVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:331"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:352"
        ],
        [
         "dropVersions",
@@ -10488,15 +10488,15 @@
       [
        [
         "deleteVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:331"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:352"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -10509,15 +10509,15 @@
       [
        [
         "deleteVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:331"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:352"
        ],
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -16255,11 +16255,11 @@
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:241"
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:273"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:274"
        ]
       ]
      ]
@@ -16275,11 +16275,11 @@
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:241"
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:278"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:279"
        ]
       ]
      ]
@@ -16314,7 +16314,7 @@
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:241"
        ],
        [
         "rewriteAssetPaths",
@@ -16328,7 +16328,7 @@
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:241"
        ],
        [
         "rewriteAssetPaths",
@@ -17243,11 +17243,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
        ],
        [
         "prisma.discipline.count",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:472"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:479"
        ]
       ]
      ]
@@ -17264,15 +17264,15 @@
       [
        [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:204"
        ]
       ]
      ]
@@ -17289,29 +17289,29 @@
       [
        [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.updateMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:200"
        ]
       ],
       [
        [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:204"
        ]
       ]
      ]
@@ -17341,11 +17341,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
        ],
        [
         "prisma.eventDiscipline.createMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:476"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:483"
        ]
       ]
      ]
@@ -17357,12 +17357,12 @@
      "trails": [
       [
        [
-        "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+        "adapter.registerUploadedAsset",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
        ],
        [
-        "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "abandonReplacement",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:161"
        ],
        [
         "dropVersions",
@@ -17382,16 +17382,30 @@
      "trails": [
       [
        [
+        "adapter.registerUploadedAsset",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
+       ],
+       [
+        "abandonReplacement",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:161"
+       ],
+       [
+        "prisma.fileVersion.findFirst",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+       ]
+      ],
+      [
+       [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
        ],
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:213"
        ]
       ]
      ]
@@ -17406,11 +17420,11 @@
       [
        [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
        ],
        [
         "prisma.fileVersion.updateMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:185"
        ]
       ]
      ]
@@ -17475,11 +17489,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:484"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:491"
        ]
       ]
      ]
@@ -17546,11 +17560,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:484"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:491"
        ]
       ]
      ]
@@ -17563,15 +17577,15 @@
       [
        [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:175"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:196"
        ]
       ]
      ]
@@ -17586,15 +17600,15 @@
       [
        [
         "confirmReplacement",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:158"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
        ],
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.memberDocument.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:199"
        ]
       ]
      ]
@@ -22466,9 +22480,59 @@
    ],
    "emails": []
   },
+  "abandonReplacement": {
+   "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
+   "line": 161,
+   "effects": [
+    {
+     "model": "FileVersion",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "dropVersions",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:128"
+       ],
+       [
+        "prisma.fileVersion.deleteMany",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:135"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FileVersion",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.fileVersion.findFirst",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:162"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "confirmReplacement": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 158,
+   "line": 179,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -22482,11 +22546,11 @@
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:204"
        ]
       ]
      ]
@@ -22503,21 +22567,21 @@
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.updateMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:200"
        ]
       ],
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:204"
        ]
       ]
      ]
@@ -22530,7 +22594,7 @@
       [
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ],
        [
         "dropVersions",
@@ -22551,11 +22615,11 @@
       [
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:213"
        ]
       ]
      ]
@@ -22570,7 +22634,7 @@
       [
        [
         "prisma.fileVersion.updateMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:164"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:185"
        ]
       ]
      ]
@@ -22583,11 +22647,11 @@
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:175"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:196"
        ]
       ]
      ]
@@ -22602,11 +22666,11 @@
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.memberDocument.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:199"
        ]
       ]
      ]
@@ -22616,7 +22680,7 @@
   },
   "listVersions": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 206,
+   "line": 227,
    "effects": [
     {
      "model": "FileVersion",
@@ -22626,7 +22690,7 @@
       [
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:219"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:240"
        ]
       ]
      ]
@@ -22639,7 +22703,7 @@
       [
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:233"
        ]
       ]
      ]
@@ -22702,13 +22766,13 @@
       [
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:233"
        ]
       ],
       [
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:219"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:240"
        ]
       ]
      ]
@@ -22718,7 +22782,7 @@
   },
   "versionDownloadUrl": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 279,
+   "line": 300,
    "effects": [
     {
      "model": "FileVersion",
@@ -22728,11 +22792,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -22745,11 +22809,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -22809,7 +22873,7 @@
   },
   "restoreVersion": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 301,
+   "line": 322,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -22823,11 +22887,11 @@
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:204"
        ]
       ]
      ]
@@ -22844,21 +22908,21 @@
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.updateMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:179"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:200"
        ]
       ],
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.documentReceipt.upsert",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:183"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:204"
        ]
       ]
      ]
@@ -22927,21 +22991,21 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ],
       [
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:213"
        ]
       ]
      ]
@@ -22973,11 +23037,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -22999,7 +23063,7 @@
       [
        [
         "prisma.mediaAsset.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:311"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:332"
        ]
       ]
      ]
@@ -23012,11 +23076,11 @@
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:175"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:196"
        ]
       ]
      ]
@@ -23031,11 +23095,11 @@
       [
        [
         "announceNewVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:174"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:195"
        ],
        [
         "prisma.memberDocument.update",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:178"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:199"
        ]
       ]
      ]
@@ -23095,7 +23159,7 @@
   },
   "deleteVersion": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 331,
+   "line": 352,
    "effects": [
     {
      "model": "FileVersion",
@@ -23122,11 +23186,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -23139,11 +23203,11 @@
       [
        [
         "findVersion",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:257"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:278"
        ],
        [
         "prisma.fileVersion.findFirst",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:258"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:279"
        ]
       ]
      ]
@@ -23153,7 +23217,7 @@
   },
   "purgeFileVersions": {
    "file": "packages/backend/src/modules/fileVersions/fileVersions.service.ts",
-   "line": 346,
+   "line": 367,
    "effects": [
     {
      "model": "FileVersion",
@@ -23180,23 +23244,23 @@
       [
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:348"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:369"
        ]
       ],
       [
        [
         "prisma.fileVersion.groupBy",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:354"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:375"
        ]
       ],
       [
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:213"
        ]
       ]
      ]
@@ -28157,7 +28221,7 @@
       [
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:367"
        ],
        [
         "dropVersions",
@@ -28178,35 +28242,35 @@
       [
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:367"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:348"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:369"
        ]
       ],
       [
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:367"
        ],
        [
         "prisma.fileVersion.groupBy",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:354"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:375"
        ]
       ],
       [
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:367"
        ],
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:213"
        ]
       ]
      ]
@@ -29063,7 +29127,7 @@
        ],
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:367"
        ],
        [
         "dropVersions",
@@ -29088,11 +29152,11 @@
        ],
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:367"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:348"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:369"
        ]
       ],
       [
@@ -29102,11 +29166,11 @@
        ],
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:367"
        ],
        [
         "prisma.fileVersion.groupBy",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:354"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:375"
        ]
       ],
       [
@@ -29116,15 +29180,15 @@
        ],
        [
         "purgeFileVersions",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:346"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:367"
        ],
        [
         "applyRetention",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:191"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:212"
        ],
        [
         "prisma.fileVersion.findMany",
-        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:192"
+        "packages/backend/src/modules/fileVersions/fileVersions.service.ts:213"
        ]
       ]
      ]
