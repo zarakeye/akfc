@@ -141,7 +141,15 @@ La première version lisait « les 1 000 premières lignes du sous-arbre », pui
 
 Deux gardes précèdent la lecture : le droit de lire le dossier de départ, et l’expression régulière (un motif de recherche dans du texte, comme `^photo-\d+`) réservée aux administrateurs. L’expression est exécutée sur le serveur, et certaines, mal construites, comme `(a+)+$`, obligent le moteur à essayer un nombre de combinaisons qui double à chaque caractère : une seule recherche peut alors occuper le serveur de longues secondes.
 
+**Où chercher.** Le serveur cherche sous un préfixe. C’est le navigateur qui choisit lequel, ou lesquels : il le demande à l’adapter (`searchScopes`, partie Finder, chapitre 1). Le plus souvent, c’est le dossier courant. Mais la racine « Mes espaces » n’a pas de préfixe, et un espace de groupe montre ses sous-espaces, qui sont rangés à plat ailleurs dans le stockage. L’adapter rend alors plusieurs préfixes : le navigateur lance une recherche par préfixe et réunit les résultats en retirant les doublons. Chacune repasse par la garde de lecture : un préfixe ajouté par l’adapter n’ouvre rien que le serveur refuserait.
+
+👉 le serveur cherche sous un préfixe ; l’adapter dit lesquels
+
+**Une erreur n’est pas « aucun résultat ».** Un refus (un dossier qu’on n’a pas le droit de lire, une expression régulière demandée par un membre) ou une panne s’affiche au-dessus de la liste. Et l’option « expression régulière » n’est proposée qu’aux administrateurs, puisque le serveur la refuserait aux autres.
+
 ## Côté navigateur : un cache par dossier
+
+Cette section en donne l’essentiel ; la partie Finder la reprend en détail : le store (« Le store du finder »), l’arbre chargé par paliers (« L’arbre chargé par paliers »), la grille et la recherche (« La grille, le tri, la recherche »).
 
 Le composant garde son état dans un store Zustand (`useFinderStore`) — Zustand est la petite bibliothèque d’état partagé du projet, à côté de React Query qui, lui, garde les réponses du serveur : dossier courant, contenu, sélection, tri, mode d’affichage. Le hook `useFinderData` charge le contenu du dossier courant et le range dans un **cache par chemin** :
 
@@ -190,7 +198,24 @@ Enfin, la lentille de statut (« Tous », « En attente », « Validés ») ne f
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui fabrique l’arbre ?", "Le serveur (storage.getTree), à chaque ouverture : droits, stockage, puis compléments de la base."], ["Dans quel ordre ?", "Le stockage d’abord (ce qui existe), la base ensuite (ce qui doit exister, et comment le nommer). Le physique prime."], ["Comment éviter un espace en double ?", "Dédoublonnage par le suffixe stable « -<identifiant> », jamais par le nom."], ["Combien de requêtes pour enrichir un dossier ?", "Deux, quel que soit le nombre de fichiers."], ["Comment la recherche trouve-t-elle tout ?", "Lecture par paquets triés, avec curseur, bornée à 10 000 lignes et signalée tronquée au-delà."], ["Que garde le navigateur ?", "Un cache par dossier, vidé après chaque modification ; les réponses périmées sont ignorées."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui fabrique l’arbre ?", "Le serveur (storage.getTree), à chaque ouverture : droits, stockage, puis compléments de la base."], ["Dans quel ordre ?", "Le stockage d’abord (ce qui existe), la base ensuite (ce qui doit exister, et comment le nommer). Le physique prime."], ["Comment éviter un espace en double ?", "Dédoublonnage par le suffixe stable « -<identifiant> », jamais par le nom."], ["Combien de requêtes pour enrichir un dossier ?", "Deux, quel que soit le nombre de fichiers."], ["Comment la recherche trouve-t-elle tout ?", "Lecture par paquets triés, avec curseur, bornée à 10 000 lignes et signalée tronquée au-delà."], ["Où cherche-t-on ?", "Sous le ou les préfixes que l’adapter désigne ; une recherche par préfixe, chacune gardée par le droit de lire."], ["Que garde le navigateur ?", "Un cache par dossier, vidé après chaque modification ; les réponses périmées sont ignorées."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de modifier l’arbre, nous devrions pouvoir expliquer :
+
+- pourquoi `storage.getTree` traduit le stockage au lieu de le relayer, et dans quel ordre il passe ;
+- pourquoi le droit de lire se vérifie avant toute lecture ;
+- pourquoi, avec un stockage S3, le physique prime et la base complète, à l’inverse de l’époque Cloudinary ;
+- comment un espace réinjecté n’apparaît jamais deux fois ;
+- pourquoi l’enrichissement coûte deux requêtes par dossier, et ce qu’est le piège du « N + 1 » ;
+- ce que sont les libellés de dossier, et pourquoi une opération ne reconstruit jamais un chemin depuis un nom affiché ;
+- comment fonctionne l’illusion de l’espace personnel, et où est la vraie garde ;
+- pourquoi la recherche lit la base et pas le stockage, par paquets et avec un curseur ;
+- pourquoi l’expression régulière est réservée aux administrateurs ;
+- d’où viennent les préfixes d’une recherche, et pourquoi chacun repasse par la garde ;
+- ce que le cache par dossier apporte, et pourquoi une réponse arrivée en retard est ignorée ;
+- pourquoi la lentille de statut ne filtre que la grille.
 
 ## À suivre
 
