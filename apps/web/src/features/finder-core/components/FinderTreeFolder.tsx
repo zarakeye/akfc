@@ -37,6 +37,7 @@ import {
   tryParsePayload,
   isDropAllowed,
   isDropEffective,
+  nodesFromDragItems,
 } from "#features/finder-core/dnd/payload.ts";
 import FinderTreeFile from "#features/finder-core/components/FinderTreeFile.tsx";
 import { getTriState } from "#features/finder-core/utils/triState.ts";
@@ -153,7 +154,6 @@ export default function FinderTreeFolder({
     ];
   }
 
-  const trashToBinMutation = trpc.trash.trashToBin.useMutation();
   const { data: groupSpaceHierarchy } = trpc.storage.groupSpaceHierarchy.useQuery();
 
 
@@ -297,22 +297,10 @@ export default function FinderTreeFolder({
 
     const BIN_ROOT_PATH = `${APP_ROOT}/bin`;
 
+    // Déposer sur la corbeille, c'est « supprimer » : même confirmation que
+    // le menu et la barre d'outils, puis le même chemin (`deleteNodes`).
     if (targetPath === BIN_ROOT_PATH) {
-      try {
-        await trashToBinMutation.mutateAsync({
-          appRoot: APP_ROOT,
-          sources: items.map((it) => ({
-            kind:
-              it.type === "folder" ? ("folder" as const) : ("file" as const),
-            fullPath: it.path,
-          })),
-        });
-        setActionError(null);
-        reloadFolderContent();
-        exitMultiSelect();
-      } catch (err) {
-        setActionError(err instanceof Error ? err.message : "La mise à la corbeille a échoué.");
-      }
+      useFinderStore.getState().askDelete(nodesFromDragItems(items));
       return;
     }
 

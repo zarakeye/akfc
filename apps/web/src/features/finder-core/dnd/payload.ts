@@ -97,6 +97,20 @@ export function dragItemFromNode(node: FinderNode): DragItem {
   };
 }
 
+/**
+ * L'inverse : des nœuds minimaux pour un dépôt qui passe par une action du
+ * finder (la confirmation de mise à la corbeille). Le nom, que le paquet ne
+ * transporte pas, est le dernier segment du chemin.
+ */
+export function nodesFromDragItems(items: readonly DragItem[]): FinderNode[] {
+  return items.map((it) => ({
+    id: it.id,
+    path: it.path,
+    type: it.type,
+    name: it.path.split("/").pop() ?? it.path,
+  }));
+}
+
 /* -------------------------------------------------------------------------- */
 /*                              VALIDATION RULES                              */
 /* -------------------------------------------------------------------------- */

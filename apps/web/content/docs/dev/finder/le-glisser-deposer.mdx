@@ -45,7 +45,7 @@ Le paquet voyage sous un type MIME maison, `application/x-finder-drag`. C’est 
 
 Les règles de dépôt sont **structurelles** (pas dans soi-même, pas dans son propre sous-dossier) ; tout ce qui relève des droits et du métier reste au serveur, qui refusera s’il le faut. Une troisième règle évite l’inutile : déposer dans le dossier où l’on est déjà ne fait aucun aller-retour (`isDropEffective`).
 
-Le dépôt lui-même choisit sa procédure selon la cible :
+Le dépôt lui-même choisit sa voie selon la cible. Déposer sur la corbeille, c’est « supprimer » : le dépôt passe par la même confirmation que le menu et la barre d’outils (chapitre 5), puis par le même chemin. Ailleurs, c’est un déplacement, qui emporte les exclusions de la sélection :
 
 <CodeExample
   language="tsx"
@@ -53,8 +53,8 @@ Le dépôt lui-même choisit sa procédure selon la cible :
   filename="FinderTreeFolder.tsx"
   snippetStart="async function handleDrop(e: React.DragEvent) {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="6,7,13,14,18,20,37,44,46"
-  snippetTitle="La corbeille, ou un déplacement"
+  snippetHighlight="6,7,13,14,20,21,25,34,37"
+  snippetTitle="La corbeille après confirmation, ou un déplacement"
   fullFileTitle="Voir le fichier complet"
 />
 

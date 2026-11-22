@@ -18,6 +18,7 @@ import {
   tryParsePayload,
   isDropAllowed,
   isDropEffective,
+  nodesFromDragItems,
 } from '#features/finder-core/dnd/payload.ts';
 
 type Props = {
@@ -55,7 +56,7 @@ type Props = {
  *   - Le risque "no-op" (drag d'un item DÉJÀ dans le folder cible) est
  *     géré par `isDropEffective` qui avale silencieusement.
  *   - Dispatch des actions :
- *       * Cible = `${APP_ROOT}/bin` → `trash.trashToBin`
+ *       * Cible = `${APP_ROOT}/bin` → confirmation (`askDelete`), puis `trash.trashToBin`
  *       * Sinon → `adapter.moveItems`
  *     Strictement parallèle au comportement de `FinderTreeFolder.handleDrop`.
  *   - Surbrillance bleue sur le segment survolé pendant le drag.
@@ -90,7 +91,6 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
   const exitMultiSelect = useFinderStore((s) => s.exitMultiSelect);
 
   // Mutation tRPC pour les drops vers le bin (cf. FinderTreeFolder).
-  const trashToBinMutation = trpc.trash.trashToBin.useMutation();
 
   // Index du segment actuellement survolé en drag — pour le highlight.
   // -1 si rien.
@@ -226,20 +226,8 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
       // Strictement parallèle à FinderTreeFolder.handleDrop.
       const BIN_ROOT_PATH = `${APP_ROOT}/bin`;
       if (targetPath === BIN_ROOT_PATH) {
-        try {
-          await trashToBinMutation.mutateAsync({
-            appRoot: APP_ROOT,
-            sources: items.map((it) => ({
-              kind: it.type === 'folder' ? ('folder' as const) : ('file' as const),
-              fullPath: it.path,
-            })),
-          });
-          setActionError(null);
-          reloadFolderContent();
-          exitMultiSelect();
-        } catch (err) {
-          setActionError(err instanceof Error ? err.message : 'La mise à la corbeille a échoué.');
-        }
+        // Même confirmation que le menu et la barre d'outils, puis `deleteNodes`.
+        useFinderStore.getState().askDelete(nodesFromDragItems(items));
         return;
       }
 
