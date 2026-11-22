@@ -122,19 +122,8 @@ export async function mergeGroupSpaceFoldersIntoTree(params: {
   };
   find(root);
 
-  // Dépôt commun : racine toujours visible (carte mentale admin), même vide.
-  const commonRepoPath = `${appRoot}/common-repository`;
-  let hasCommonRepo = false;
-  const findCommon = (n: StorageNode): void => {
-    if (n.type !== "folder") return;
-    if (n.path === commonRepoPath || n.path.endsWith("/common-repository")) {
-      hasCommonRepo = true;
-    }
-    (n.children ?? []).forEach(findCommon);
-  };
-  findCommon(root);
-  const injectCommonRepo =
-    !hasCommonRepo && (await isAdminByGroup(prisma, userId));
+  // Le Dépôt commun, visible même vide, est l'affaire de `ensureContentRootsInTree`, à la
+  // racine seulement : l'injecter ici l'ajoutait à CHAQUE dossier lu par un administrateur.
 
   const groupExtra = groupsNode
     ? await missingGroupSpaceFolders({
@@ -152,12 +141,7 @@ export async function mergeGroupSpaceFoldersIntoTree(params: {
         userId,
       })
     : [];
-  if (
-    groupExtra.length === 0 &&
-    persoExtra.length === 0 &&
-    !injectCommonRepo
-  )
-    return root;
+  if (groupExtra.length === 0 && persoExtra.length === 0) return root;
 
   const rebuild = (n: StorageNode): StorageNode => {
     if (n.type !== "folder") return n;
@@ -170,13 +154,5 @@ export async function mergeGroupSpaceFoldersIntoTree(params: {
     if (!n.children) return n;
     return { ...n, children: n.children.map(rebuild) };
   };
-  let rebuilt = rebuild(root) as StorageFolderNode;
-  if (injectCommonRepo) {
-    rebuilt = {
-      ...rebuilt,
-      hasChildren: true,
-      children: [...(rebuilt.children ?? []), folderNode(commonRepoPath)],
-    };
-  }
-  return rebuilt;
+  return rebuild(root) as StorageFolderNode;
 }

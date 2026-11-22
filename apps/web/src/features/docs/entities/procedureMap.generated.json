@@ -30559,6 +30559,14 @@
      "trails": [
       [
        [
+        "missingGroupSpaceFolders",
+        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:50"
+       ],
+       [
+        "collaborativeGroupIds",
+        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:25"
+       ],
+       [
         "isAdminByGroup",
         "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
        ],
@@ -30607,6 +30615,14 @@
      "fields": [],
      "trails": [
       [
+       [
+        "missingGroupSpaceFolders",
+        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:50"
+       ],
+       [
+        "collaborativeGroupIds",
+        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:25"
+       ],
        [
         "isAdminByGroup",
         "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"

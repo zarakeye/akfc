@@ -54,11 +54,11 @@ export async function planMoveOperations(
 
   return items.map((item) => {
     // Un dossier ne se dépose ni dans lui-même, ni dans l'un de ses descendants : la boucle
-    // déplacerait ses propres objets sous un préfixe qu'elle est en train de vider.
-    if (
-      item.type === "folder" &&
-      (targetFolder === item.path || targetFolder.startsWith(`${item.path}/`))
-    ) {
+    // déplacerait ses propres objets sous un préfixe qu'elle est en train de vider. Un dossier
+    // sélectionné qui part en morceaux (exclusions) non plus : ses morceaux s'y recopieraient.
+    const inside = (folder: string | undefined): boolean =>
+      folder !== undefined && (targetFolder === folder || targetFolder.startsWith(`${folder}/`));
+    if ((item.type === "folder" && inside(item.path)) || inside(item.anchor)) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Un dossier ne peut pas être déplacé dans lui-même.",
@@ -130,6 +130,8 @@ type ResolvedItem = {
   path: string;
   /** Chemin à recréer sous le dossier cible : relatif au parent de la racine sélectionnée. */
   relative: string;
+  /** Dossier sélectionné dont l'élément garde la structure (il part avec lui, en morceaux). */
+  anchor?: string;
 };
 
 async function resolveSource(
@@ -153,21 +155,28 @@ async function resolveSource(
     out.push(item);
   };
 
-  for (const root of source.roots.map(trimSlashes)) {
-    // Seule une exclusion EXACTE écarte une racine : une racine cochée à
-    // nouveau dans un dossier exclu est voulue.
-    if (excluded.includes(root)) continue;
-    const name = lastSegment(root);
+  const roots = source.roots.map(trimSlashes).filter((root) => !excluded.includes(root));
+
+  for (const root of roots) {
+    // Seule une exclusion EXACTE écarte une racine (filtre ci-dessus) : une racine cochée à
+    // nouveau dans un dossier exclu est voulue. Elle part alors AVEC le dossier sélectionné
+    // au-dessus d'elle, à sa place dans la structure, et non à plat dans la cible.
+    const anchor = roots
+      .filter((other) => root.startsWith(`${other}/`))
+      .sort((a, b) => a.length - b.length)[0];
+    // Sous ce dossier sans exclusion entre les deux, la racine est déjà comprise : elle partirait deux fois.
+    if (anchor && !excluded.some((ex) => ex.startsWith(`${anchor}/`) && root.startsWith(`${ex}/`))) continue;
+    const name = anchor ? `${lastSegment(anchor)}/${root.slice(anchor.length + 1)}` : lastSegment(root);
 
     const rootNode = adapter.getNode ? await adapter.getNode(root) : null;
     if (rootNode?.type === "file") {
-      push({ type: "file", path: root, relative: name });
+      push({ type: "file", path: root, relative: name, anchor });
       continue;
     }
 
     // Dossier sans exclusion à l'intérieur : déplacé d'un bloc.
     if (!excluded.some((ex) => ex.startsWith(`${root}/`))) {
-      push({ type: "folder", path: root, relative: name });
+      push({ type: "folder", path: root, relative: name, anchor });
       continue;
     }
 
@@ -178,7 +187,12 @@ async function resolveSource(
     const subtree = await adapter.getTree({ path: root, depth: Infinity });
     walkTree(subtree.root, (node) => {
       if (node.type !== "file" || isExcluded(node.path)) return;
-      push({ type: "file", path: node.path, relative: `${name}/${node.path.slice(root.length + 1)}` });
+      push({
+        type: "file",
+        path: node.path,
+        relative: `${name}/${node.path.slice(root.length + 1)}`,
+        anchor: anchor ?? root,
+      });
     });
   }
 

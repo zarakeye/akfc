@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, BIRTH_DATE, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, COMMENT_POST, PASSWORD, ATELIER, ATELIER_FILE, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, RANGE_PENDING, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
+import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, BIRTH_DATE, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, COMMENT_POST, PASSWORD, ATELIER, ATELIER_FILE, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, RANGE_PENDING, MOVE_TREE, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -252,6 +252,9 @@ await prisma.user.update({
       bytes: png.byteLength, width: 1, height: 1, appRoot: "AKFC", status: "pending", uploaderUserId: USERS.admin.id,
     },
   });
+  for (const key of [MOVE_TREE.top, MOVE_TREE.left, MOVE_TREE.reselected]) {
+    await s3.send(new PutObjectCommand({ Bucket, Key: key, Body: png, ContentType: "image/png" }));
+  }
   // Galerie réservée aux membres (absente de la page publique des galeries) : tableau des droits.
   await s3.send(new PutObjectCommand({ Bucket, Key: TAG_GALLERY.key, Body: png, ContentType: "image/png" }));
   await prisma.mediaAsset.create({

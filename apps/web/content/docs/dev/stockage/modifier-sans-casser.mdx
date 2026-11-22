@@ -146,12 +146,14 @@ Une sélection peut mêler fichiers et dossiers. Le service de résolution en fa
   snippetStart="async function resolveSource("
   snippetEnd="(fin du bloc)"
   title="resolveSource — une sélection en opérations"
-  stepsJson='[{"title": "Un fichier : tel quel", "body": "Il garde son nom dans le dossier cible.", "scope": "26-30", "focus": "28-28"}, {"title": "Un dossier : d’un bloc", "body": "Sans exclusion à l’intérieur, le dossier part ENTIER, sous-dossiers compris : une seule opération dossier.", "scope": "32-36", "focus": "34-34"}, {"title": "Avec des exclusions : fichier par fichier", "body": "Si la sélection exclut une partie du dossier, on descend aux fichiers — et chacun garde son chemin RELATIF au dossier sélectionné.", "scope": "38-47", "focus": "45-45"}]'
+  stepsJson='[{"title": "Une source simple", "body": "Un fichier ou un dossier désigné seul garde son nom dans la cible.", "scope": "5-8", "focus": "7-7"}, {"title": "Les racines, et l’exclusion exacte", "body": "Seule une exclusion EXACTE écarte une racine. Une racine cochée à nouveau dans un dossier exclu est voulue : elle part AVEC le dossier sélectionné au-dessus d’elle (son ancre), à sa place dans la structure. Une racine déjà comprise dans son ancre, sans exclusion entre les deux, est ignorée : elle partirait deux fois.", "scope": "22-33", "focus": "28-30"}, {"title": "Un fichier : tel quel", "body": "Il garde son nom, ou son chemin sous l’ancre.", "scope": "35-39", "focus": "37-37"}, {"title": "Un dossier : d’un bloc", "body": "Sans exclusion à l’intérieur, le dossier part ENTIER, sous-dossiers compris : une seule opération dossier.", "scope": "41-45", "focus": "42-42"}, {"title": "Avec des exclusions : fichier par fichier", "body": "Si la sélection exclut une partie du dossier, on descend aux fichiers — et chacun garde son chemin RELATIF au dossier sélectionné. Le dossier devient leur ancre, pour le refus « dans lui-même ».", "scope": "47-60", "focus": "52-52"}]'
 />
 
 La première version, héritée de l’époque des dossiers de statut, développait **tout** dossier sélectionné en ses fichiers, et posait chacun sous `<cible>/<nom du fichier>` : les sous-dossiers disparaissaient, leur contenu était **aplati** dans la cible, et deux `photo.jpg` de sous-dossiers différents se percutaient. C’est le genre de bogue qu’aucun test « un fichier dans un dossier » ne voit.
 
-Le même service refuse de déposer un dossier **dans lui-même** ou dans l’un de ses descendants : la boucle de copie déplacerait ses propres objets sous un préfixe qu’elle est en train de vider.
+Une sélection se décrit par des racines et des exclusions, et la marque la plus profonde l’emporte (partie Finder, chapitre 5). « Ce dossier, sauf ce sous-dossier, mais cette photo du sous-dossier » donne donc trois marques. Déplacé, l’ensemble doit arriver comme on le voit : le dossier, sans le sous-dossier, mais avec la photo, rangée à sa place. La première version déposait la photo à plat dans la cible, comme si elle avait été choisie seule.
+
+Le même service refuse de déposer un dossier **dans lui-même** ou dans l’un de ses descendants : la boucle de copie déplacerait ses propres objets sous un préfixe qu’elle est en train de vider. Il en va de même pour un dossier qui part en morceaux : déposé dans l’un de ses sous-dossiers, chaque morceau s’y recopierait.
 
 ## La procédure de déplacement
 
@@ -188,11 +190,30 @@ Le code d’erreur est `SERVICE_UNAVAILABLE`, pas `INTERNAL_SERVER_ERROR` : c’
 Ce que la compensation ne couvre pas : un **arrêt du serveur** au milieu d’un geste. Plus personne n’est là pour défaire. C’est la limite de toute compensation applicative ; la lever demanderait un journal des opérations en cours, rejoué au démarrage.
 </Callout>
 
-Côté navigateur, un glisser-déposer n’a pas de formulaire où afficher une erreur : longtemps, un refus finissait dans la console, et l’administrateur voyait son fichier « revenir » sans explication. Le refus s’affiche désormais dans le bandeau du Finder (`actionError` du store), avec le message du serveur — d’où l’importance qu’il soit une `TRPCError` en français, et pas une `Error` dont le texte serait masqué en production.
+Côté navigateur, le glisser-déposer et l’action « Déplacer… » passent par le même `adapter.moveItems`, donc par la même procédure `storage.move` (partie Finder, chapitres 5 et 6). Un glisser-déposer n’a pas de formulaire où afficher une erreur : longtemps, un refus finissait dans la console, et l’administrateur voyait son fichier « revenir » sans explication. Le refus s’affiche désormais dans le bandeau du Finder (`actionError` du store), avec le message du serveur — d’où l’importance qu’il soit une `TRPCError` en français, et pas une `Error` dont le texte serait masqué en production.
 
 ## La corbeille, une quarantaine
 
-La corbeille n’est pas un statut : c’est un **rangement**. `trash.trashToBin` déplace l’élément dans une zone cachée, `AKFC/bin/.trash/<identifiant>/`, et crée une ligne `TrashEntry` qui garde son nom et son **chemin d’origine** :
+La corbeille n’est pas un statut : c’est un **rangement**. `trash.trashToBin` déplace l’élément dans une zone cachée, `AKFC/bin/.trash/<identifiant>/`, et crée une ligne `TrashEntry` qui garde son nom et son **chemin d’origine**.
+
+La corbeille jette par **morceaux entiers** : un élément, une `TrashEntry`, un dossier de quarantaine. Une sélection « ce dossier, sauf cette photo » est donc d’abord découpée (`expandSelection`) en morceaux qui ne contiennent aucune exclusion :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/expandSelection.ts"
+  filename="expandSelection.ts"
+  snippetStart="export async function expandSelection("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="19,21,25"
+  snippetTitle="expandSelection — des morceaux aussi gros que possible"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le découpage garde les morceaux aussi gros que possible : une racine sans exclusion sous elle part entière ; sinon on descend d’un niveau, et seulement là où une exclusion se cache. Une photo exclue dans `stages/2026/jour-1` laisse `stages/2026/jour-2` partir d’un bloc. La liste des descendants compte aussi les dossiers connus en base, pour qu’un sous-dossier vide parte avec le reste. La validation (`media.setStatus`) lit la même sélection, exclusions comprises (chapitre 4).
+
+👉 le déplacement garde la structure ; la corbeille, elle, jette par morceaux entiers
+
+Chaque morceau suit ensuite le même chemin :
 
 <CodeWalkthrough
   language="ts"
@@ -202,7 +223,7 @@ La corbeille n’est pas un statut : c’est un **rangement**. `trash.trashToBin
   snippetLead="1"
   snippetLines="89"
   title="trashToBin — réserver, puis déplacer"
-  stepsJson='[{"title": "Ni la racine, ni la corbeille", "body": "On ne jette ni la racine, ni la corbeille elle-même, ni ce qu’elle contient déjà.", "scope": "3-4", "focus": "3-3"}, {"title": "Un identifiant unique dans le chemin", "body": "Deux `photo.jpg` jetés depuis deux dossiers différents coexistent dans la corbeille : chacun a son dossier `.trash/<uuid>/`. Les collisions sont impossibles par construction.", "scope": "6-11", "focus": "11-11"}, {"title": "La TrashEntry avant le déplacement", "body": "La ligne est créée AVANT de déplacer : si le déplacement échoue, la corbeille sait au moins qu’un élément était en route, et d’où il venait. L’ordre inverse pourrait laisser des objets dans la quarantaine sans aucune trace.", "scope": "33-47", "focus": "40-41"}, {"title": "Puis la quarantaine, lignes comprises", "body": "Les objets partent sous `storageRoot`, et leurs lignes MediaAsset les SUIVENT (rewriteAssetPaths) : statut, nom d’origine, description et auteur reviendront avec eux à la restauration. Les lignes Folder du sous-arbre disparaissent de l’ancien endroit.", "scope": "49-90", "focus": "74-74"}, {"title": "Et si une étape échoue", "body": "Pas de transaction commune : on compense. Les objets reviennent à leur place, et la TrashEntry réservée est retirée.", "scope": "58-63", "focus": "62-62"}]'
+  stepsJson='[{"title": "Ni la racine, ni la corbeille", "body": "On ne jette ni la racine, ni la corbeille elle-même, ni ce qu’elle contient déjà.", "scope": "3-4", "focus": "3-3"}, {"title": "Un identifiant unique dans le chemin", "body": "Deux `photo.jpg` jetés depuis deux dossiers différents coexistent dans la corbeille : chacun a son dossier `.trash/<uuid>/`. Les collisions sont impossibles par construction.", "scope": "6-11", "focus": "11-11"}, {"title": "La TrashEntry avant le déplacement", "body": "La ligne est créée AVANT de déplacer : si le déplacement échoue, la corbeille sait au moins qu’un élément était en route, et d’où il venait. L’ordre inverse pourrait laisser des objets dans la quarantaine sans aucune trace.", "scope": "34-50", "focus": "35-35"}, {"title": "Puis la quarantaine, lignes comprises", "body": "Les objets partent sous `storageRoot`, et leurs lignes MediaAsset les SUIVENT (rewriteAssetPaths) : statut, nom d’origine, description et auteur reviendront avec eux à la restauration. Les lignes Folder du sous-arbre disparaissent de l’ancien endroit.", "scope": "52-89", "focus": "77-77"}, {"title": "Et si une étape échoue", "body": "Pas de transaction commune : on compense. Les objets reviennent à leur place, et la TrashEntry réservée est retirée.", "scope": "57-73", "focus": "62-62"}]'
 />
 
 Avant la boucle, trois refus, tous **avant** le moindre déplacement — rien n’est jeté si un seul élément est refusé :
@@ -296,12 +317,29 @@ Le stockage et la base doivent rester d’accord. Chaque geste du Finder écrit 
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fait « Renommer » sur un fichier ?", "Un UPDATE de displayName ; la clé ne change pas, le stockage n’est pas touché."], ["Et sur un dossier ?", "Un déplacement (copie puis suppression), refusé pour les dossiers que le code connaît, pour « .. », et si la cible est occupée."], ["Qu’est-ce qui suit un dossier déplacé ?", "MediaAsset, Folder et FolderLabel, en une transaction, préfixe échappé dans le LIKE (rewriteAssetPaths)."], ["Comment évite-t-on d’écraser ?", "Cible vérifiée partout (stockage, MediaAsset, Folder) et doublons de la sélection refusés, avant toute copie."], ["Et si une étape échoue ?", "Compensation : l’adapter ramène ses objets, le geste multiple défait ses opérations en sens inverse. Seul un arrêt du serveur en plein geste n’est pas couvert."], ["Où va un fichier jeté ?", "Dans bin/.trash/<uuid>/, avec une TrashEntry qui garde son chemin d’origine ; refusé s’il est encore utilisé."], ["Que devient sa ligne MediaAsset ?", "Elle suit l’objet dans la quarantaine (hors compteurs, hors recherche), revient avec lui à la restauration, même à côté, et disparaît avec lui à la suppression."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fait « Renommer » sur un fichier ?", "Un UPDATE de displayName ; la clé ne change pas, le stockage n’est pas touché."], ["Et sur un dossier ?", "Un déplacement (copie puis suppression), refusé pour les dossiers que le code connaît, pour « .. », et si la cible est occupée."], ["Qu’est-ce qui suit un dossier déplacé ?", "MediaAsset, Folder et FolderLabel, en une transaction, préfixe échappé dans le LIKE (rewriteAssetPaths)."], ["Comment évite-t-on d’écraser ?", "Cible vérifiée partout (stockage, MediaAsset, Folder) et doublons de la sélection refusés, avant toute copie."], ["Et si une étape échoue ?", "Compensation : l’adapter ramène ses objets, le geste multiple défait ses opérations en sens inverse. Seul un arrêt du serveur en plein geste n’est pas couvert."], ["Et une sélection avec exclusions ?", "Le déplacement garde la structure (une racine recochée suit son dossier) ; la corbeille la découpe en morceaux entiers (expandSelection)."], ["Où va un fichier jeté ?", "Dans bin/.trash/<uuid>/, avec une TrashEntry qui garde son chemin d’origine ; refusé s’il est encore utilisé."], ["Que devient sa ligne MediaAsset ?", "Elle suit l’objet dans la quarantaine (hors compteurs, hors recherche), revient avec lui à la restauration, même à côté, et disparaît avec lui à la suppression."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant d’aborder le Finder côté navigateur, nous devrions pouvoir expliquer :
+
+- pourquoi le stockage et la base ne partagent aucune transaction, et les trois règles qui en découlent ;
+- pourquoi renommer un fichier ne touche pas le stockage, et pourquoi renommer un dossier le touche ;
+- pourquoi « Renommer » n’édite que le libellé d’un dossier que le code connaît ;
+- comment un dossier se déplace : préfixe avec « / », pagination, copies par paquets ;
+- ce que `rewriteAssetPaths` réécrit, et pourquoi les jokers du `LIKE` sont échappés ;
+- comment une sélection avec exclusions devient des opérations, et ce qu’est l’ancre d’une racine recochée ;
+- pourquoi la cible doit être libre partout (stockage, MediaAsset, Folder) ;
+- comment la compensation rend un geste multiple « tout ou rien », et ce qu’elle ne couvre pas ;
+- pourquoi la corbeille découpe une sélection en morceaux entiers ;
+- pourquoi la `TrashEntry` est créée avant le déplacement, et pourquoi les lignes suivent leurs objets ;
+- pourquoi on refuse de jeter un fichier encore utilisé ;
+- comment la restauration évite d’écraser, et ce que la suppression définitive efface.
 
 ## À suivre
 
 Le serveur sait lire, déplacer, jeter et restaurer. Le navigateur, lui, doit montrer tout cela à des administrateurs et à des membres, dans un explorateur qui ressemble à ceux qu’ils connaissent : un arbre, une grille, un aperçu, une sélection, le glisser-déposer.
 
 <Callout type="tip">
-**Partie suivante : le finder.** Un composant, des adaptateurs ; le store du finder ; l’arbre chargé par paliers ; la grille, le tri, la recherche ; agir sur les fichiers ; trois finders en un.
+**Partie suivante : le finder.** Un composant, des adaptateurs ; le store du finder ; l’arbre chargé par paliers ; la grille, le tri, la recherche ; agir sur les fichiers ; le glisser-déposer ; trois finders en un.
 </Callout>
