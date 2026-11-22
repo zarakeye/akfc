@@ -20,6 +20,10 @@ Et chaque machine a les siens. Le Mac d’un développeur a Postgres 15, celui d
 
 Docker change la question. Au lieu d’**installer** un logiciel, on **décrit** dans le dépôt celui dont le projet a besoin, à une version exacte (`postgres:17-alpine`), et Docker le fait tourner, isolé du reste de la machine. La description est versionnée avec le code : un `git pull` qui change de version de Postgres la change pour tout le monde, Mac, intégration continue et serveur.
 
+Encore faut-il l’écrire partout pareil. Le dépôt décrit Postgres dans deux fichiers compose (développement et sandbox) : ils portent la même version majeure, 17, celle de la production. Une version qui diverge, ne serait-ce que dans la démo, et le problème revient.
+
+👉 une version figée ne protège que si elle est la même partout
+
 ## Les mots de Docker
 
 La mise en route en a donné quatre, juste assez pour lancer la base. Les voici tous, dans l’ordre où ils s’emboîtent.
@@ -69,6 +73,20 @@ Toutes se lancent depuis la racine du dépôt. Celles qui visent un fichier comp
 ## Récapitulatif
 
 <DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Quel problème Docker règle-t-il ?", "Des services à une version exacte, décrite dans le dépôt, identique sur chaque machine, isolée du système."], ["Image ou conteneur ?", "L’image est le modèle figé, le conteneur une image en marche ; on recrée le conteneur, les données restent dans un volume."], ["Combien de fichiers Docker dans le dépôt ?", "Trois : docker-compose.dev.yml (développement, tests, CI), Dockerfile (l’image de production), docker-compose.sandbox.yml (la sandbox)."], ["Le site tourne-t-il dans Docker en développement ?", "Non : pnpm dev tourne sur la machine, pour un rechargement rapide ; seuls ses services sont dans Docker."], ["Comment joindre la base depuis la machine ?", "Par son port publié, 127.0.0.1:5435 ; un conteneur, lui, la joint par son nom de service."], ["Qu’est-ce qui efface les données ?", "down -v pour un projet ; un prune --volumes pour toute la machine, à éviter."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de détailler l’infrastructure locale, nous devrions pouvoir expliquer :
+
+- le problème que Docker règle, et pourquoi on décrit une version au lieu d’installer un logiciel ;
+- la différence entre une image, une couche et un conteneur ;
+- ce qu’un volume garde, et la différence entre un volume nommé et un dossier monté ;
+- comment la machine joint un conteneur (port publié), et comment un conteneur en joint un autre (nom de service, réseau) ;
+- ce que décrivent un Dockerfile et un fichier compose ;
+- les quatre usages de Docker dans le projet, et les trois fichiers qui les décrivent ;
+- pourquoi le site, en développement, ne tourne pas dans Docker ;
+- pourquoi le serveur construit lui-même son image ;
+- ce qui efface des données, et pourquoi `docker system prune --volumes` est à proscrire.
 
 ## À suivre
 
