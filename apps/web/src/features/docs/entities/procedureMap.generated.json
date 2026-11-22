@@ -8009,7 +8009,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 84,
+   "line": 88,
    "effects": [
     {
      "model": "SiteSettings",
@@ -8073,7 +8073,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 90,
+   "line": 94,
    "effects": [
     {
      "model": "TrashEntry",
@@ -8099,7 +8099,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 96,
+   "line": 100,
    "effects": [
     {
      "model": "Category",
@@ -8109,7 +8109,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "requiredRootPaths",
@@ -8123,7 +8123,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "isProtectedDisciplineFolderPath",
@@ -8137,7 +8137,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "isProtectedDisciplineFolderPath",
@@ -8158,7 +8158,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "isProtectedDisciplineFolderPath",
@@ -8179,11 +8179,11 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "prisma.folder.deleteMany",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:323"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:342"
        ]
       ]
      ]
@@ -8196,19 +8196,41 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "normalizeSources",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:148"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:149"
+       ],
+       [
+        "expandSelection",
+        "packages/backend/src/modules/storage/expandSelection.ts:24"
+       ],
+       [
+        "params.listDescendants",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:164"
+       ],
+       [
+        "prisma.folder.findMany",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:167"
+       ]
+      ],
+      [
+       [
+        "trashToBin",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
+       ],
+       [
+        "normalizeSources",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:149"
        ],
        [
         "detectKind",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:96"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:97"
        ],
        [
         "prisma.folder.findFirst",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:102"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:103"
        ]
       ]
      ]
@@ -8221,7 +8243,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
@@ -8242,7 +8264,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
@@ -8263,7 +8285,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
@@ -8277,15 +8299,15 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "knownMimeType",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:77"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:78"
        ],
        [
         "prisma.mediaAsset.findFirst",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:82"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:83"
        ]
       ]
      ]
@@ -8301,7 +8323,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "rewriteAssetPaths",
@@ -8315,7 +8337,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "rewriteAssetPaths",
@@ -8336,7 +8358,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
@@ -8427,7 +8449,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
@@ -8448,7 +8470,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "trashRetentionDays",
@@ -8482,11 +8504,11 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "prisma.trashEntry.create",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:278"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:297"
        ]
       ]
      ]
@@ -8499,25 +8521,25 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "prisma.trashEntry.delete",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:308"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:327"
        ]
       ],
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "undo",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:304"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:323"
        ],
        [
         "prisma.trashEntry.delete",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:308"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:327"
        ]
       ]
      ]
@@ -8530,11 +8552,11 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:177"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:196"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:190"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:209"
        ]
       ]
      ]
@@ -8546,7 +8568,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 118,
+   "line": 122,
    "effects": [
     {
      "model": "MemberGroup",
@@ -8690,7 +8712,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 124,
+   "line": 128,
    "effects": [
     {
      "model": "Folder",
@@ -8951,7 +8973,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 136,
+   "line": 140,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -9385,7 +9407,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 142,
+   "line": 146,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -17736,7 +17758,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 67,
+   "line": 71,
    "effects": [
     {
      "model": "MediaAsset",
@@ -17746,7 +17768,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:79"
+        "packages/backend/src/modules/media/router.ts:83"
        ]
       ]
      ]
@@ -17829,7 +17851,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:79"
+        "packages/backend/src/modules/media/router.ts:83"
        ]
       ]
      ]
@@ -17841,7 +17863,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 138,
+   "line": 142,
    "effects": [
     {
      "model": "MediaAsset",
@@ -17851,7 +17873,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:151"
+        "packages/backend/src/modules/media/router.ts:155"
        ]
       ]
      ]
@@ -17933,7 +17955,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 189,
+   "line": 193,
    "effects": [
     {
      "model": "MediaAsset",
@@ -17943,7 +17965,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:200"
+        "packages/backend/src/modules/media/router.ts:204"
        ]
       ],
       [
@@ -18052,7 +18074,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 259,
+   "line": 263,
    "effects": [
     {
      "model": "MediaAsset",
@@ -18062,17 +18084,17 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:313"
+        "packages/backend/src/modules/media/router.ts:317"
        ]
       ],
       [
        [
         "fetchBatch",
-        "packages/backend/src/modules/media/router.ts:312"
+        "packages/backend/src/modules/media/router.ts:316"
        ],
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:313"
+        "packages/backend/src/modules/media/router.ts:317"
        ]
       ]
      ]
@@ -18155,17 +18177,17 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:313"
+        "packages/backend/src/modules/media/router.ts:317"
        ]
       ],
       [
        [
         "fetchBatch",
-        "packages/backend/src/modules/media/router.ts:312"
+        "packages/backend/src/modules/media/router.ts:316"
        ],
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:313"
+        "packages/backend/src/modules/media/router.ts:317"
        ]
       ]
      ]
@@ -18177,7 +18199,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 458,
+   "line": 462,
    "effects": [
     {
      "model": "MediaAsset",
@@ -18189,7 +18211,7 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:471"
+        "packages/backend/src/modules/media/router.ts:475"
        ]
       ]
      ]
@@ -18271,7 +18293,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 503,
+   "line": 507,
    "effects": [
     {
      "model": "Gallery",
@@ -18281,11 +18303,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:28"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:44"
        ],
        [
         "db.galleryItem.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:64"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:81"
        ]
       ]
      ]
@@ -18298,11 +18320,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:28"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:44"
        ],
        [
         "db.galleryItem.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:64"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:81"
        ]
       ]
      ]
@@ -18315,11 +18337,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:28"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:44"
        ],
        [
         "db.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:50"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:67"
        ]
       ]
      ]
@@ -18334,13 +18356,13 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:538"
+        "packages/backend/src/modules/media/router.ts:549"
        ]
       ],
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:547"
+        "packages/backend/src/modules/media/router.ts:558"
        ]
       ]
      ]
@@ -18423,11 +18445,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:28"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:44"
        ],
        [
         "db.pageMediaReference.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:60"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:77"
        ]
       ]
      ]
@@ -23853,7 +23875,7 @@
   },
   "assertStatusChangeDoesntUnpublishReferencedAssets": {
    "file": "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts",
-   "line": 28,
+   "line": 44,
    "effects": [
     {
      "model": "Gallery",
@@ -23863,7 +23885,7 @@
       [
        [
         "db.galleryItem.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:64"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:81"
        ]
       ]
      ]
@@ -23876,7 +23898,7 @@
       [
        [
         "db.galleryItem.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:64"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:81"
        ]
       ]
      ]
@@ -23889,7 +23911,7 @@
       [
        [
         "db.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:50"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:67"
        ]
       ]
      ]
@@ -23902,7 +23924,7 @@
       [
        [
         "db.pageMediaReference.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:60"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:77"
        ]
       ]
      ]
@@ -30205,6 +30227,30 @@
    ],
    "emails": []
   },
+  "expandSelection": {
+   "file": "packages/backend/src/modules/storage/expandSelection.ts",
+   "line": 24,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "params.listDescendants",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:164"
+       ],
+       [
+        "prisma.folder.findMany",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:167"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "isSpaceEmpty": {
    "file": "packages/backend/src/modules/storage/isSpaceEmpty.service.ts",
    "line": 17,
@@ -35965,7 +36011,7 @@
   },
   "trashToBin": {
    "file": "packages/backend/src/modules/trash/services/trashToBin.service.ts",
-   "line": 177,
+   "line": 196,
    "effects": [
     {
      "model": "Category",
@@ -36029,7 +36075,7 @@
       [
        [
         "prisma.folder.deleteMany",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:323"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:342"
        ]
       ]
      ]
@@ -36042,15 +36088,33 @@
       [
        [
         "normalizeSources",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:148"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:149"
+       ],
+       [
+        "expandSelection",
+        "packages/backend/src/modules/storage/expandSelection.ts:24"
+       ],
+       [
+        "params.listDescendants",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:164"
+       ],
+       [
+        "prisma.folder.findMany",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:167"
+       ]
+      ],
+      [
+       [
+        "normalizeSources",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:149"
        ],
        [
         "detectKind",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:96"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:97"
        ],
        [
         "prisma.folder.findFirst",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:102"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:103"
        ]
       ]
      ]
@@ -36107,11 +36171,11 @@
       [
        [
         "knownMimeType",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:77"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:78"
        ],
        [
         "prisma.mediaAsset.findFirst",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:82"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:83"
        ]
       ]
      ]
@@ -36218,7 +36282,7 @@
       [
        [
         "prisma.trashEntry.create",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:278"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:297"
        ]
       ]
      ]
@@ -36231,17 +36295,17 @@
       [
        [
         "prisma.trashEntry.delete",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:308"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:327"
        ]
       ],
       [
        [
         "undo",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:304"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:323"
        ],
        [
         "prisma.trashEntry.delete",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:308"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:327"
        ]
       ]
      ]
@@ -36254,7 +36318,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:190"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:209"
        ]
       ]
      ]

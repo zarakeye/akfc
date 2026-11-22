@@ -14,7 +14,9 @@ export type TrashToBinInput = {
   sources: Array<
     | { kind: "folder"; fullPath: string }
     | { kind: "file"; fullPath: string }
-    | { kind: "selection"; roots: string[] } // roots explicites uniquement
+    // Racines cochées, sauf ce qui a été décoché dessous (même forme que la
+    // sélection de `storage.move`). Sans `excluded`, chaque racine part entière.
+    | { kind: "selection"; roots: string[]; excluded?: string[] }
   >;
 };
 

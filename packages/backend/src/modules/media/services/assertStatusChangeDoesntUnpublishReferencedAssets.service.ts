@@ -20,6 +20,22 @@ import type { Prisma, PrismaClient } from '@prisma/client';
  * retirer.
  */
 
+/**
+ * Ce qu'une sélection laisse de côté (« ce dossier, sauf cette photo »), en
+ * clauses `NOT` pour Prisma. Partagé par `media.setStatus` et par cette garde :
+ * les deux doivent viser exactement les mêmes fichiers.
+ */
+export function excludedAssetsWhere(
+  excluded: readonly string[],
+): Prisma.MediaAssetWhereInput | undefined {
+  if (excluded.length === 0) return undefined;
+  return {
+    NOT: excluded.map((ex) => ({
+      OR: [{ fullPath: ex }, { fullPath: { startsWith: `${ex}/` } }],
+    })),
+  };
+}
+
 export type StatusChangeSource = {
   kind: 'file' | 'folder';
   path: string;
@@ -30,6 +46,7 @@ export async function assertStatusChangeDoesntUnpublishReferencedAssets(
   sources: readonly StatusChangeSource[],
   nextStatus: 'pending' | 'published',
   appRoot: string,
+  excluded: readonly string[] = [],
 ): Promise<void> {
   // On ne garde que la SORTIE de published. Y entrer n'a jamais cassé de page.
   if (nextStatus !== 'pending') return;
@@ -48,7 +65,7 @@ export async function assertStatusChangeDoesntUnpublishReferencedAssets(
   // 2) Les assets concernés QUI SONT PUBLIÉS. `status` est la vérité : c'est
   //    ici que la garde cesse de lire le chemin.
   const affectedAssets = await db.mediaAsset.findMany({
-    where: { appRoot, status: 'published', OR: orClauses },
+    where: { appRoot, status: 'published', OR: orClauses, ...excludedAssetsWhere(excluded) },
     select: { id: true, fullPath: true },
   });
 

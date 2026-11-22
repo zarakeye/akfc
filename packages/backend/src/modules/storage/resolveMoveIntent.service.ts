@@ -154,7 +154,9 @@ async function resolveSource(
   };
 
   for (const root of source.roots.map(trimSlashes)) {
-    if (isExcluded(root)) continue;
+    // Seule une exclusion EXACTE écarte une racine : une racine cochée à
+    // nouveau dans un dossier exclu est voulue.
+    if (excluded.includes(root)) continue;
     const name = lastSegment(root);
 
     const rootNode = adapter.getNode ? await adapter.getNode(root) : null;

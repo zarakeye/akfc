@@ -56,7 +56,11 @@ const trashToBinInputSchema = z.object({
       z.union([
         z.object({ kind: z.literal("folder"), fullPath: z.string().min(1) }),
         z.object({ kind: z.literal("file"), fullPath: z.string().min(1) }),
-        z.object({ kind: z.literal("selection"), roots: z.array(z.string().min(1)).min(1) }),
+        z.object({
+          kind: z.literal("selection"),
+          roots: z.array(z.string().min(1)).min(1),
+          excluded: z.array(z.string().min(1)).optional(),
+        }),
       ])
     )
     .min(1),

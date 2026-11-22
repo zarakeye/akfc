@@ -20,7 +20,11 @@ import { sameAppRoot } from '#trpc/middleware.ts';
 import type { ResolvedMedia } from '@akfc/contracts/page/index.ts';
 import { deriveMediaKind } from '#modules/media/helpers/deriveMediaKind.ts';
 import { buildMediaProxyUrl } from '#modules/media/helpers/media-url.ts';
-import { assertStatusChangeDoesntUnpublishReferencedAssets } from '#modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts';
+import {
+  assertStatusChangeDoesntUnpublishReferencedAssets,
+  excludedAssetsWhere,
+} from '#modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts';
+import { isUnderExcluded } from '#modules/storage/expandSelection.ts';
 import { FORMER_MEMBER_LABEL } from "@akfc/contracts/shared/formerMember.ts";
 
 /* -------------------------------------------------------------------------- */
@@ -512,6 +516,8 @@ export const mediaRouter = router({
             }),
           )
           .min(1),
+        // Décoché sous un dossier coché : ni la garde ni l'UPDATE n'y touchent.
+        excluded: z.array(z.string().min(1)).optional(),
         status: z.enum(["pending", "published"]),
       }),
     )
@@ -524,17 +530,22 @@ export const mediaRouter = router({
         paths: input.sources.map((s) => s.path),
       });
 
+      const excluded = input.excluded ?? [];
+      const notExcluded = excludedAssetsWhere(excluded);
+
       // AVANT le moindre UPDATE : on ne dépublie pas ce qu'une page ou une galerie affiche.
       await assertStatusChangeDoesntUnpublishReferencedAssets(
         ctx.prisma,
         input.sources,
         input.status,
         input.appRoot,
+        excluded,
       );
 
       const results = await Promise.all(
         input.sources.map(async (source) => {
           if (source.kind === "file") {
+            if (isUnderExcluded(source.path, excluded)) return { source, count: 0, skipped: true };
             const { count } = await ctx.prisma.mediaAsset.updateMany({
               where: { appRoot: input.appRoot, fullPath: source.path },
               data: { status: input.status },
@@ -548,6 +559,7 @@ export const mediaRouter = router({
             where: {
               appRoot: input.appRoot,
               fullPath: { startsWith: `${source.path}/` },
+              ...notExcluded,
             },
             data: { status: input.status },
           });
@@ -556,7 +568,7 @@ export const mediaRouter = router({
       );
 
       const silent = results.filter(
-        (r) => r.source.kind === "file" && r.count === 0,
+        (r) => r.source.kind === "file" && r.count === 0 && !("skipped" in r),
       );
       if (silent.length > 0) {
         throw new TRPCError({

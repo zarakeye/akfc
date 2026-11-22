@@ -13,6 +13,7 @@ import { isProtectedEntityFolderPath } from "#modules/storage/protectedEntityFol
 import { requiredRootPaths } from "#modules/storage/ensureContentRoots.service.ts";
 import { rewriteAssetPaths } from "#modules/storage/mediaPaths.ts";
 import { assertTrashDoesntRemoveUsedAssets } from "#modules/trash/services/trashedAssets.service.ts";
+import { expandSelection } from "#modules/storage/expandSelection.ts";
 import {
   r2Exists,
   r2GetInfo,
@@ -153,7 +154,25 @@ async function normalizeSources(params: { prisma: PrismaClient; input: TrashToBi
 
   for (const s of input.sources) {
     if (s.kind === "selection") {
-      for (const root of s.roots) {
+      // « Ce dossier, sauf cette photo » : la corbeille jette par morceaux
+      // entiers, on découpe donc la sélection en morceaux qui n'en contiennent
+      // aucune exclusion. Les dossiers connus en base comptent aussi, pour
+      // qu'un sous-dossier vide parte avec le reste.
+      const roots = await expandSelection({
+        roots: s.roots,
+        excluded: s.excluded ?? [],
+        listDescendants: async (prefix) => {
+          const [objects, folders] = await Promise.all([
+            r2ListByPrefix(prefix),
+            prisma.folder.findMany({
+              where: { appRoot: input.appRoot, fullPath: { startsWith: prefix } },
+              select: { fullPath: true },
+            }),
+          ]);
+          return [...objects.map((o) => o.key), ...folders.map((f) => f.fullPath)];
+        },
+      });
+      for (const root of roots) {
         const p = normalizePath(root);
         if (seen.has(p)) continue;
         seen.add(p);
