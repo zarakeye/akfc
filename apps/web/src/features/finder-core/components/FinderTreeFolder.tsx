@@ -21,6 +21,7 @@ import { APP_ROOT } from "@akfc/config/app.ts";
 import { trpc } from "#core/trpc/trpcClient.ts";
 
 import { useFinderStore } from "#features/finder-core/state/useFinderStore.ts";
+import { exclusionsUnder } from "#features/finder-core/utils/selectionNodes.ts";
 import { friendlySpaceFolderLabel } from "#features/finder-core/utils/spaceFolderLabel.ts";
 import { useLongPress } from "#features/finder-core/hooks/useLongPress.ts";
 import { useNodeActions } from "#features/finder-core/hooks/useNodeActions.ts";
@@ -38,6 +39,7 @@ import {
   isDropEffective,
 } from "#features/finder-core/dnd/payload.ts";
 import FinderTreeFile from "#features/finder-core/components/FinderTreeFile.tsx";
+import { getTriState } from "#features/finder-core/utils/triState.ts";
 
 /**
  * FinderTreeFolder
@@ -162,7 +164,7 @@ export default function FinderTreeFolder({
   const exitMultiSelect = useFinderStore((s) => s.exitMultiSelect);
   const toggleSelect = useFinderStore((s) => s.toggleSelect);
   const multiSelectActive = useFinderStore((s) => s.multiSelectActive);
-  const selectedIds = useFinderStore((s) => s.selection.roots);
+  const selection = useFinderStore((s) => s.selection);
 
   // Les enfants viennent tous du palier chargé par FinderTree : un dossier ne charge rien lui-même.
   const effectiveChildren: FinderNode[] | undefined = node.children;
@@ -326,6 +328,7 @@ export default function FinderTreeFolder({
       await adapter.moveItems({
         items,
         target: { type: "folder", path: targetPath },
+        excluded: exclusionsUnder(items, useFinderStore.getState().selection),
       });
       setActionError(null);
       reloadFolderContent();
@@ -415,7 +418,12 @@ export default function FinderTreeFolder({
         {multiSelectActive && !pickMode && !isStatus && (
           <input
             type="checkbox"
-            checked={selectedIds.has(node.id)}
+            // Coché aussi quand un dossier au-dessus l'est ; à moitié quand
+            // quelque chose dessous est dans l'autre état.
+            checked={getTriState(node.path, selection) === 'checked'}
+            ref={(el) => {
+              if (el) el.indeterminate = getTriState(node.path, selection) === 'indeterminate';
+            }}
             readOnly
             className="shrink-0"
           />

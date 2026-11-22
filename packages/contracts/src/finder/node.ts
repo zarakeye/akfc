@@ -14,7 +14,9 @@ export type NodeType = 'folder' | 'file';
  * Chaque adapter peut enrichir cette interface via le champ `meta` sans casser le core.
  */
 export interface FinderNode {
-  id: string;             // unique (peut être path ou uuid selon adapter)
+  // Unique, et égal à `path` dans tous les adapters : la sélection du finder
+  // (racines, exclusions) compare des chemins pour savoir qui couvre qui.
+  id: string;
   name: string;
   path: string;           // chemin logique (source of truth)
   type: NodeType;

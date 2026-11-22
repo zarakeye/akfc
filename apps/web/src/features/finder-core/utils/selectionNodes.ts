@@ -73,3 +73,19 @@ export function resolveSelectedNodes(
   }
   return out;
 }
+
+/**
+ * Les exclusions qui concernent une action sur `nodes` : celles rangées sous
+ * l'un d'eux. Elles ne valent que si `nodes` est la sélection elle-même (des
+ * racines) : un clic droit sur un dossier PARENT d'une racine vise ce dossier
+ * en entier, pas « ce dossier sauf ce qu'on a décoché plus bas ».
+ */
+export function exclusionsUnder(
+  nodes: readonly { id: string; path: string }[],
+  selection: { roots: ReadonlySet<string>; excluded: ReadonlySet<string> },
+): string[] {
+  if (!nodes.every((n) => selection.roots.has(n.id))) return [];
+  return [...selection.excluded].filter((ex) =>
+    nodes.some((n) => ex.startsWith(`${n.path}/`)),
+  );
+}

@@ -58,15 +58,15 @@ Sélectionner un dossier, c’est sélectionner tout ce qu’il contient. Puis d
   fullFileTitle="Voir le fichier complet"
 />
 
-`roots` : ce qui a été coché. `excluded` : ce qui a été décoché **à l’intérieur** d’un dossier coché. `anchorId` : le point de départ d’une sélection par plage. Un élément est sélectionné s’il est une racine, ou s’il descend d’une racine sans être exclu :
+`roots` : ce qui a été coché. `excluded` : ce qui a été décoché **à l’intérieur** d’un dossier coché. `anchorId` : le point de départ d’une sélection par plage. Parmi les marques posées sur un chemin ou sur ses ancêtres, la plus profonde décide : une racine coche, une exclusion décoche :
 
 <CodeExample
   language="ts"
-  filepath="apps/web/src/features/finder-core/utils/resolveSelection.ts"
-  filename="resolveSelection.ts"
-  snippetStart="export function resolveSelection(params: {"
+  filepath="apps/web/src/features/finder-core/utils/triState.ts"
+  filename="triState.ts"
+  snippetStart="export function isPathSelected(path: string, { roots, excluded }: SelectionSets): boolean {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="12,22,25"
+  snippetHighlight="5,11"
   snippetTitle="Ce qui est réellement sélectionné"
   fullFileTitle="Voir le fichier complet"
 />

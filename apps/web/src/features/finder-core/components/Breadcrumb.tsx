@@ -12,6 +12,7 @@ import { trpc } from '#core/trpc/trpcClient.ts';
 import { buildPathSegments } from '#features/finder-core/utils/path.ts';
 import { isPersoSpaceFolder } from '#features/finder-core/utils/spaceFolderKind.ts';
 import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { exclusionsUnder } from '#features/finder-core/utils/selectionNodes.ts';
 import {
   FINDER_DRAG_MIME,
   tryParsePayload,
@@ -252,6 +253,7 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
         await adapter.moveItems({
           items,
           target: { type: 'folder', path: targetPath },
+          excluded: exclusionsUnder(items, useFinderStore.getState().selection),
         });
         setActionError(null);
         reloadFolderContent();

@@ -437,17 +437,6 @@ export default function Finder({
   );
 
   /**
-   * 🔹 Flat list pour calcul tri-state + range
-   */
-  const allItems = useMemo(
-    () => [
-      ...folders.map((f) => ({ id: f.id, path: f.path })),
-      ...files.map((f) => ({ id: f.id, path: f.path })),
-    ],
-    [folders, files],
-  );
-
-  /**
    * 🔹 Gestion du clic — comportement dépendant du mode.
    *
    * **Mode picker (panier)** :
@@ -477,9 +466,9 @@ export default function Finder({
 
     if (multiSelectActive) {
       if (e.shiftKey && selection.anchorId) {
-        // La plage suit l'ordre AFFICHÉ (trié, filtré par statut) : `allItems`
-        // contient aussi les fichiers masqués par le filtre, qu'une plage
-        // sélectionnerait sans qu'on les voie.
+        // La plage suit l'ordre AFFICHÉ (trié, filtré par statut) : le contenu
+        // brut du dossier contient aussi les fichiers masqués par le filtre,
+        // qu'une plage sélectionnerait sans qu'on les voie.
         const ids = sortedAllItems.map((i) => i.id);
         const start = ids.indexOf(selection.anchorId);
         const end = ids.indexOf(node.id);
@@ -655,6 +644,10 @@ export default function Finder({
               <>
                 <span className="text-xs text-muted-foreground shrink-0">
                   {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
+                  {/* Compter tout ce que couvre un dossier coché obligerait à lire
+                      son contenu : on dit seulement ce qui en est retiré. */}
+                  {selection.excluded.size > 0 &&
+                    ` sauf ${selection.excluded.size}`}
                 </span>
 
                 {!isBinAction && (
@@ -954,28 +947,19 @@ export default function Finder({
                             </div>
                           )}
                           {group.nodes.map((node) => {
-                            const isFolder = node.type === "folder";
-                            const triState: TriState = isFolder
-                              ? getTriState({
-                                  item: node,
-                                  allItems,
-                                  roots: selection.roots,
-                                  excluded: selection.excluded,
-                                })
-                              : selection.roots.has(node.id)
-                                ? "checked"
-                                : "unchecked";
+                            // Coché aussi quand un dossier au-dessus l'est (sauf exclusion).
+                            const triState: TriState = getTriState(node.path, selection);
 
                             return (
                               <GridItem
                                 key={node.id}
                                 node={node}
-                                isSelected={selection.roots.has(node.id)}
+                                isSelected={triState !== "unchecked"}
                                 multiSelectActive={multiSelectActive}
                                 triState={triState}
                                 onClick={(e) => handleClick(node, e)}
                                 onDoubleClick={
-                                  isFolder
+                                  node.type === "folder"
                                     ? () => handleDoubleClick(node)
                                     : undefined
                                 }
@@ -1048,28 +1032,19 @@ export default function Finder({
                               </tr>
                             )}
                             {group.nodes.map((node) => {
-                              const isFolder = node.type === "folder";
-                              const triState: TriState = isFolder
-                                ? getTriState({
-                                    item: node,
-                                    allItems,
-                                    roots: selection.roots,
-                                    excluded: selection.excluded,
-                                  })
-                                : selection.roots.has(node.id)
-                                  ? "checked"
-                                  : "unchecked";
+                              // Coché aussi quand un dossier au-dessus l'est (sauf exclusion).
+                              const triState: TriState = getTriState(node.path, selection);
 
                               return (
                                 <FinderTableRow
                                   key={node.id}
                                   node={node}
-                                  isSelected={selection.roots.has(node.id)}
+                                  isSelected={triState !== "unchecked"}
                                   multiSelectActive={multiSelectActive}
                                   triState={triState}
                                   onClick={(e) => handleClick(node, e)}
                                   onDoubleClick={
-                                    isFolder
+                                    node.type === "folder"
                                       ? () => handleDoubleClick(node)
                                       : undefined
                                   }
@@ -1115,28 +1090,19 @@ export default function Finder({
                             </div>
                           )}
                           {group.nodes.map((node) => {
-                            const isFolder = node.type === "folder";
-                            const triState: TriState = isFolder
-                              ? getTriState({
-                                  item: node,
-                                  allItems,
-                                  roots: selection.roots,
-                                  excluded: selection.excluded,
-                                })
-                              : selection.roots.has(node.id)
-                                ? "checked"
-                                : "unchecked";
+                            // Coché aussi quand un dossier au-dessus l'est (sauf exclusion).
+                            const triState: TriState = getTriState(node.path, selection);
 
                             return (
                               <FinderCompactRow
                                 key={node.id}
                                 node={node}
-                                isSelected={selection.roots.has(node.id)}
+                                isSelected={triState !== "unchecked"}
                                 multiSelectActive={multiSelectActive}
                                 triState={triState}
                                 onClick={(e) => handleClick(node, e)}
                                 onDoubleClick={
-                                  isFolder
+                                  node.type === "folder"
                                     ? () => handleDoubleClick(node)
                                     : undefined
                                 }

@@ -181,6 +181,12 @@ export interface MoveOptions {
   target: MoveTarget;
 
   /**
+   * Chemins décochés sous l'un des `items` (« ce dossier, sauf ceci ») :
+   * ils restent en place.
+   */
+  excluded?: string[];
+
+  /**
    * comportement en cas de conflit
    */
   strategy?: 'overwrite' | 'skip' | 'rename';

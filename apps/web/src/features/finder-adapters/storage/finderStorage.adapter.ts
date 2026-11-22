@@ -163,8 +163,11 @@ function mapFileToFinderNode(
  *      (`planMoveOperations`) déplace chaque fichier, et chaque dossier d'un bloc,
  *      sous-dossiers compris.
  */
-function moveOptionsToSource(items: MoveOptions['items']): StorageMoveSource {
-  if (items.length === 1) {
+function moveOptionsToSource(
+  items: MoveOptions['items'],
+  excluded: string[] = [],
+): StorageMoveSource {
+  if (items.length === 1 && excluded.length === 0) {
     const only = items[0];
     return { type: only.type, path: only.path };
   }
@@ -172,6 +175,7 @@ function moveOptionsToSource(items: MoveOptions['items']): StorageMoveSource {
   return {
     type: 'selection',
     roots: items.map((it) => it.path),
+    excluded,
   };
 }
 
@@ -234,7 +238,7 @@ export const finderStorageAdapter: FileAdapter = {
   },
 
   async moveItems(options: MoveOptions): Promise<void> {
-    const source = moveOptionsToSource(options.items);
+    const source = moveOptionsToSource(options.items, options.excluded);
     const target = moveOptionsToTarget(options.target);
 
     // Un DnD réorganise, il ne publie pas : le statut des fichiers déplacés ne change pas.

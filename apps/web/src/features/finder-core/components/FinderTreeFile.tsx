@@ -18,6 +18,7 @@ import { PublishToMembersDialog } from '#features/member-documents/PublishToMemb
 import { useSessionStore } from '#lib/stores/useSessionStore.ts';
 import { baseNameOf } from '#features/finder-core/utils/fileType.ts';
 import { parentPath } from '#features/finder-core/utils/path.ts';
+import { isPathSelected } from '#features/finder-core/utils/triState.ts';
 import ContextMenu, {
   type ContextMenuItem,
 } from '#features/finder-core/components/ContextMenu.tsx';
@@ -91,7 +92,7 @@ export default function FinderTreeFile({
   const toggleSelect = useFinderStore((s) => s.toggleSelect);
   const multiSelectActive = useFinderStore((s) => s.multiSelectActive);
   const currentPath = useFinderStore((s) => s.currentPath);
-  const selectedIds = useFinderStore((s) => s.selection.roots);
+  const selection = useFinderStore((s) => s.selection);
 
   const longPress = useLongPress(() => {
     if (onLongPress) onLongPress(node);
@@ -107,7 +108,7 @@ export default function FinderTreeFile({
     useNodeActions();
 
   const isActive =
-    currentPath === parentPath(node.path) && selectedIds.has(node.id);
+    currentPath === parentPath(node.path) && selection.roots.has(node.id);
 
   // Lecture seule (« Mes espaces ») : ni menu contextuel, ni glisser.
   const readOnly = useFinderReadOnly();
@@ -243,7 +244,7 @@ export default function FinderTreeFile({
         {multiSelectActive && !pickMode && (
           <input
             type="checkbox"
-            checked={selectedIds.has(node.id)}
+            checked={isPathSelected(node.path, selection)}
             readOnly
             className="shrink-0"
           />

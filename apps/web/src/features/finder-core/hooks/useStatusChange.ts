@@ -8,6 +8,7 @@ import { trpc } from '#core/trpc/trpcClient.ts';
 import { APP_ROOT } from '@akfc/config/app.ts';
 
 import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
+import { exclusionsUnder } from '#features/finder-core/utils/selectionNodes.ts';
 import type { LifecycleStatus } from '#features/finder-core/utils/statusFolders.ts';
 
 /**
@@ -61,16 +62,21 @@ export function useStatusChange(): {
     async (nodes: FinderNode[], target: LifecycleStatus): Promise<void> => {
       if (nodes.length === 0) return;
       setError(null);
+      // Ce qu'on a décoché sous un dossier coché ne change pas de statut.
+      const excluded = exclusionsUnder(nodes, useFinderStore.getState().selection);
 
       try {
         if (target === 'bin') {
           await trashToBinMutation.mutateAsync({
             appRoot: APP_ROOT,
-            sources: nodes.map((n) => ({
-              kind:
-                n.type === 'folder' ? ('folder' as const) : ('file' as const),
-              fullPath: n.path,
-            })),
+            sources:
+              excluded.length > 0
+                ? [{ kind: 'selection' as const, roots: nodes.map((n) => n.path), excluded }]
+                : nodes.map((n) => ({
+                    kind:
+                      n.type === 'folder' ? ('folder' as const) : ('file' as const),
+                    fullPath: n.path,
+                  })),
           });
           utils.trash.listBin.invalidate();
           utils.storage.getAttentionCounts.invalidate();
@@ -82,6 +88,7 @@ export function useStatusChange(): {
               kind: node.type === 'folder' ? ('folder' as const) : ('file' as const),
               path: node.path,
             })),
+            excluded,
             status: target,
           });
           // Publier ou dépublier change le décompte `pending`. La cloche est

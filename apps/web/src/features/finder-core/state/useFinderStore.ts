@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { APP_ROOT } from '@akfc/config/app.ts';
 import type { FileAdapter, FinderNode } from '@akfc/contracts/finder/index.ts';
+import {
+  selectInSelection,
+  toggleInSelection,
+  type SelectionSets,
+} from '#features/finder-core/utils/triState.ts';
 
 /**
  * Les trois lentilles de statut. `'all'` n'est pas un statut — c'est
@@ -45,6 +50,11 @@ function saveStatusFilter(filter: StatusFilter): void {
  * La TreeView reste navigationnelle peu importe le mode.
  */
 
+/**
+ * La sélection : ce qui a été coché (`roots`), ce qui a été décoché sous un
+ * dossier coché (`excluded`), et le dernier élément cliqué (`anchorId`, départ
+ * d'une plage Maj + clic). Les règles sont dans `utils/triState.ts`.
+ */
 type SelectionState = {
   roots: Set<string>;
   excluded: Set<string>;
@@ -116,7 +126,6 @@ type FinderState = {
   toggleSelect: (id: string) => void;
   selectOnly: (id: string) => void;
   selectRange: (ids: string[]) => void;
-  excludeItem: (id: string) => void;
   clearSelection: () => void;
 
   /**
@@ -335,18 +344,11 @@ export const useFinderStore = create<FinderState>((set, get) => ({
   setSelection: (ids, anchorId = null): void =>
     set(() => ({ selection: { roots: new Set(ids), excluded: new Set(), anchorId } })),
 
+  // Cocher, décocher, exclure : la règle vit dans `toggleInSelection` (utils/triState.ts).
   toggleSelect: (id): void =>
     set((state) => {
-      const { roots, excluded } = state.selection;
-      const nextRoots = new Set(roots);
-      const nextExcluded = new Set(excluded);
-      if (nextRoots.has(id)) {
-        nextRoots.delete(id);
-      } else {
-        nextRoots.add(id);
-        nextExcluded.delete(id);
-      }
-      return { selection: { roots: nextRoots, excluded: nextExcluded, anchorId: id } };
+      const { roots, excluded } = toggleInSelection(id, state.selection);
+      return { selection: { roots, excluded, anchorId: id } };
     }),
 
   selectOnly: (id): void =>
@@ -355,22 +357,15 @@ export const useFinderStore = create<FinderState>((set, get) => ({
   selectRange: (ids): void =>
     set((state) => {
       if (!ids.length) return state;
-      const nextRoots = new Set(state.selection.roots);
-      for (const id of ids) nextRoots.add(id);
+      let sets: SelectionSets = state.selection;
+      for (const id of ids) sets = selectInSelection(id, sets);
       return {
         selection: {
-          ...state.selection,
-          roots: nextRoots,
+          roots: new Set(sets.roots),
+          excluded: new Set(sets.excluded),
           anchorId: ids[ids.length - 1] ?? state.selection.anchorId,
         },
       };
-    }),
-
-  excludeItem: (id): void =>
-    set((state) => {
-      const nextExcluded = new Set(state.selection.excluded);
-      nextExcluded.add(id);
-      return { selection: { ...state.selection, excluded: nextExcluded } };
     }),
 
   clearSelection: (): void =>

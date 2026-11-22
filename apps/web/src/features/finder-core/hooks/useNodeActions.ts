@@ -10,9 +10,11 @@ import type { FinderNode } from '@akfc/contracts/finder/index.ts';
 import { useFinderStore } from '#features/finder-core/state/useFinderStore.ts';
 import {
   buildNodePool,
+  exclusionsUnder,
   resolveSelectedNodes,
 } from '#features/finder-core/utils/selectionNodes.ts';
 import { isProtectedEntityFolder } from '#features/finder-core/utils/spaceFolderKind.ts';
+import { isPathSelected } from '#features/finder-core/utils/triState.ts';
 import { baseNameOf } from '#features/finder-core/utils/fileType.ts';
 
 const BIN_PATH = `${APP_ROOT}/bin`;
@@ -204,10 +206,15 @@ export function useNodeActions(): {
         utils.trash.listBin.invalidate();
       } else {
         // ─── Hors bin → trashToBin ──────────────────────────────────────
-        const sources = nodes.map((n) => ({
-          kind: n.type === 'folder' ? ('folder' as const) : ('file' as const),
-          fullPath: n.path,
-        }));
+        // « Ce dossier, sauf ce qu'on a décoché dedans » : le serveur découpe.
+        const excluded = exclusionsUnder(nodes, useFinderStore.getState().selection);
+        const sources =
+          excluded.length > 0
+            ? [{ kind: 'selection' as const, roots: nodes.map((n) => n.path), excluded }]
+            : nodes.map((n) => ({
+                kind: n.type === 'folder' ? ('folder' as const) : ('file' as const),
+                fullPath: n.path,
+              }));
         try {
           await trashToBinMutation.mutateAsync({
             appRoot: APP_ROOT,
@@ -238,7 +245,9 @@ export function useNodeActions(): {
 
   const effectiveNodesFor = useCallback(
     (focusedNode: FinderNode): FinderNode[] => {
-      if (multiSelectActive && selection.roots.has(focusedNode.id)) {
+      // Visé alors qu'il fait partie de la sélection (coché, ou sous un dossier
+      // coché) : l'action vaut pour toute la sélection.
+      if (multiSelectActive && isPathSelected(focusedNode.path, selection)) {
         // Multi-select avec focusedNode dedans → toute la sélection.
         //
         // ⚠️ La sélection est partagée Grid + Tree (même `selection.roots`).
@@ -257,7 +266,7 @@ export function useNodeActions(): {
       }
       return [focusedNode];
     },
-    [multiSelectActive, selection.roots, folders, files, contentCache, searchResults],
+    [multiSelectActive, selection, folders, files, contentCache, searchResults],
   );
 
   /**
@@ -317,8 +326,9 @@ export function useNodeActions(): {
     ): Promise<string | null> => {
       if (nodes.length === 0) return null;
 
+      const excluded = exclusionsUnder(nodes, useFinderStore.getState().selection);
       const source =
-        nodes.length === 1
+        nodes.length === 1 && excluded.length === 0
           ? {
               type: (nodes[0].type === 'folder' ? 'folder' : 'file') as
                 | 'folder'
@@ -328,6 +338,7 @@ export function useNodeActions(): {
           : {
               type: 'selection' as const,
               roots: nodes.map((n) => n.path),
+              excluded,
             };
 
       try {
