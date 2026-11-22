@@ -7,16 +7,18 @@ export type PersoImageCounts = {
 };
 
 /**
- * Compte les images de l'espace perso d'un admin, ventilées par statut.
+ * Compte les images de l'espace personnel d'un membre, ventilées par statut.
  *
- * Un asset perso est identifié par la conjonction :
- *   - `uploaderUserId = userId` : le dossier perso est dérivé de `ctx.sessionClient.user.id`
- *     à l'upload, donc l'uploader est toujours le propriétaire du dossier ;
- *   - `fullPath` contient `/persos/` : distingue le perso du `general` et des
- *     disciplines. Le segment survit au move pending→published (qui ne change
- *     que le segment de statut, `segment[1]`) ;
- *   - `mimeType image/*` : le quota ne porte que sur les images ;
- *   - `status ∈ {pending, published}` : la corbeille (`bin`) ne compte pas.
+ * Une image de l'espace personnel est reconnue à trois conditions :
+ *   - `uploaderUserId = userId` : le dossier personnel est dérivé de la session à l'envoi,
+ *     donc l'auteur d'un envoi est toujours le propriétaire du dossier ;
+ *   - `fullPath` contient `/personal-space/` : distingue l'espace personnel des autres
+ *     destinations du même auteur ;
+ *   - `mimeType image/*` : le quota ne porte que sur les images.
+ * Un fichier mis à la corbeille quitte l'espace (son chemin change) et ne compte plus.
+ *
+ * Le quota se vérifie deux fois : à la signature (createR2Upload) et à l'enregistrement
+ * (registerR2Upload), puisqu'il compte les fichiers enregistrés.
  */
 export async function countPersoImages(params: {
   prisma: PrismaClient;

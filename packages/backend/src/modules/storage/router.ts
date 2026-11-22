@@ -65,6 +65,7 @@ import {
   executeMoveOperations,
 } from "#modules/storage/resolveMoveIntent.service.ts";
 import { countPersoImages } from "#modules/media/services/countPersoImages.service.ts";
+import { r2DeleteFile } from "#modules/trash/services/r2TrashOps.ts";
 import { PERSO_PHOTO_QUOTA } from "#modules/media/services/persoPhotoQuota.constants.ts";
 import { listCommonRepositoryFolders } from "#modules/media/services/listCommonRepositoryFolders.service.ts";
 import { listMyCommonRepositoryContainers } from "#modules/media/services/listMyCommonRepositoryContainers.service.ts";
@@ -888,6 +889,18 @@ export const storageRouter = router({
           code: "FORBIDDEN",
           message: "Ce fichier existe déjà et ne peut être remplacé que par un administrateur.",
         });
+      }
+      // Le quota se revérifie ici : il est compté sur les fichiers ENREGISTRÉS, et signer
+      // plusieurs envois avant d'en enregistrer un seul les ferait tous passer sous la limite.
+      // Le fichier refusé est retiré du stockage : il n'aurait aucune ligne pour le retrouver.
+      if (input.destination.kind === "perso" && !existing) {
+        const { total } = await countPersoImages({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.sessionClient.user.id });
+        if (total + 1 > PERSO_PHOTO_QUOTA) {
+          await r2DeleteFile(input.path).catch((err) => {
+            console.error("[r2] envoi hors quota non supprimé", input.path, err);
+          });
+          throw new TRPCError({ code: "BAD_REQUEST", message: `Quota d'images perso atteint (max ${PERSO_PHOTO_QUOTA}).` });
+        }
       }
       const adapter = getAdapter("r2", {
         prisma: ctx.prisma,

@@ -15292,7 +15292,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 149,
+   "line": 150,
    "effects": [
     {
      "model": "MediaAsset",
@@ -15302,23 +15302,23 @@
       [
        [
         "ctx.prisma.mediaAsset.count",
-        "packages/backend/src/modules/storage/router.ts:152"
+        "packages/backend/src/modules/storage/router.ts:153"
        ]
       ],
       [
        [
         "ctx.prisma.mediaAsset.count",
-        "packages/backend/src/modules/storage/router.ts:154"
+        "packages/backend/src/modules/storage/router.ts:155"
        ]
       ],
       [
        [
         "countPersoImages",
-        "packages/backend/src/modules/media/services/countPersoImages.service.ts:21"
+        "packages/backend/src/modules/media/services/countPersoImages.service.ts:23"
        ],
        [
         "prisma.mediaAsset.groupBy",
-        "packages/backend/src/modules/media/services/countPersoImages.service.ts:28"
+        "packages/backend/src/modules/media/services/countPersoImages.service.ts:30"
        ]
       ]
      ]
@@ -15352,7 +15352,7 @@
       [
        [
         "ctx.prisma.trashEntry.count",
-        "packages/backend/src/modules/storage/router.ts:153"
+        "packages/backend/src/modules/storage/router.ts:154"
        ]
       ],
       [
@@ -15374,7 +15374,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 187,
+   "line": 188,
    "effects": [
     {
      "model": "MediaAsset",
@@ -15384,7 +15384,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/router.ts:188"
+        "packages/backend/src/modules/storage/router.ts:189"
        ]
       ]
      ]
@@ -15396,7 +15396,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 234,
+   "line": 235,
    "effects": [
     {
      "model": "MediaAsset",
@@ -15406,11 +15406,11 @@
       [
        [
         "countPersoImages",
-        "packages/backend/src/modules/media/services/countPersoImages.service.ts:21"
+        "packages/backend/src/modules/media/services/countPersoImages.service.ts:23"
        ],
        [
         "prisma.mediaAsset.groupBy",
-        "packages/backend/src/modules/media/services/countPersoImages.service.ts:28"
+        "packages/backend/src/modules/media/services/countPersoImages.service.ts:30"
        ]
       ]
      ]
@@ -15422,7 +15422,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 254,
+   "line": 255,
    "effects": [
     {
      "model": "MediaAsset",
@@ -15448,7 +15448,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 259,
+   "line": 260,
    "effects": [
     {
      "model": "FolderLabel",
@@ -15512,7 +15512,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 270,
+   "line": 271,
    "effects": [
     {
      "model": "FolderLabel",
@@ -15525,7 +15525,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:279"
+        "packages/backend/src/modules/storage/router.ts:280"
        ]
       ]
      ]
@@ -15541,7 +15541,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:279"
+        "packages/backend/src/modules/storage/router.ts:280"
        ]
       ]
      ]
@@ -15570,7 +15570,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 292,
+   "line": 293,
    "effects": [
     {
      "model": "Folder",
@@ -15597,7 +15597,7 @@
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:295"
+        "packages/backend/src/modules/storage/router.ts:296"
        ]
       ],
       [
@@ -15619,7 +15619,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 321,
+   "line": 322,
    "effects": [
     {
      "model": "Folder",
@@ -15646,7 +15646,7 @@
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:331"
+        "packages/backend/src/modules/storage/router.ts:332"
        ]
       ],
       [
@@ -15695,7 +15695,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 350,
+   "line": 351,
    "effects": [
     {
      "model": "Category",
@@ -15961,7 +15961,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 434,
+   "line": 435,
    "effects": [
     {
      "model": "FolderLabel",
@@ -15971,7 +15971,7 @@
       [
        [
         "ctx.prisma.folderLabel.findMany",
-        "packages/backend/src/modules/storage/router.ts:435"
+        "packages/backend/src/modules/storage/router.ts:436"
        ]
       ]
      ]
@@ -15983,7 +15983,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 442,
+   "line": 443,
    "effects": [
     {
      "model": "Category",
@@ -16009,7 +16009,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 446,
+   "line": 447,
    "effects": [
     {
      "model": "FolderLabel",
@@ -16022,7 +16022,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:463"
+        "packages/backend/src/modules/storage/router.ts:464"
        ]
       ]
      ]
@@ -16035,7 +16035,7 @@
       [
        [
         "ctx.prisma.folderLabel.deleteMany",
-        "packages/backend/src/modules/storage/router.ts:460"
+        "packages/backend/src/modules/storage/router.ts:461"
        ]
       ]
      ]
@@ -16051,7 +16051,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:463"
+        "packages/backend/src/modules/storage/router.ts:464"
        ]
       ]
      ]
@@ -16133,7 +16133,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 471,
+   "line": 472,
    "effects": [
     {
      "model": "MemberGroup",
@@ -16212,7 +16212,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 506,
+   "line": 507,
    "effects": [
     {
      "model": "Category",
@@ -16239,7 +16239,7 @@
       [
        [
         "ctx.prisma.folder.findFirst",
-        "packages/backend/src/modules/storage/router.ts:628"
+        "packages/backend/src/modules/storage/router.ts:629"
        ]
       ]
      ]
@@ -16292,7 +16292,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:627"
+        "packages/backend/src/modules/storage/router.ts:628"
        ]
       ]
      ]
@@ -16308,7 +16308,7 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/router.ts:586"
+        "packages/backend/src/modules/storage/router.ts:587"
        ]
       ],
       [
@@ -16418,7 +16418,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 654,
+   "line": 655,
    "effects": [
     {
      "model": "Category",
@@ -16445,7 +16445,7 @@
       [
        [
         "ctx.prisma.folder.findFirst",
-        "packages/backend/src/modules/storage/router.ts:735"
+        "packages/backend/src/modules/storage/router.ts:736"
        ]
       ]
      ]
@@ -16458,7 +16458,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:734"
+        "packages/backend/src/modules/storage/router.ts:735"
        ]
       ]
      ]
@@ -16540,7 +16540,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 759,
+   "line": 760,
    "effects": [
     {
      "model": "Category",
@@ -16650,7 +16650,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/router.ts:779"
+        "packages/backend/src/modules/storage/router.ts:780"
        ]
       ]
      ]
@@ -16814,7 +16814,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 786,
+   "line": 787,
    "effects": [
     {
      "model": "Category",
@@ -17032,7 +17032,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:817"
+        "packages/backend/src/modules/storage/router.ts:818"
        ]
       ],
       [
@@ -17206,7 +17206,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 859,
+   "line": 860,
    "effects": [
     {
      "model": "Category",
@@ -17506,17 +17506,17 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:882"
+        "packages/backend/src/modules/storage/router.ts:883"
        ]
       ],
       [
        [
-        "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
+        "countPersoImages",
+        "packages/backend/src/modules/media/services/countPersoImages.service.ts:23"
        ],
        [
-        "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:386"
+        "prisma.mediaAsset.groupBy",
+        "packages/backend/src/modules/media/services/countPersoImages.service.ts:30"
        ]
       ]
      ]
@@ -24041,7 +24041,7 @@
   },
   "countPersoImages": {
    "file": "packages/backend/src/modules/media/services/countPersoImages.service.ts",
-   "line": 21,
+   "line": 23,
    "effects": [
     {
      "model": "MediaAsset",
@@ -24051,7 +24051,7 @@
       [
        [
         "prisma.mediaAsset.groupBy",
-        "packages/backend/src/modules/media/services/countPersoImages.service.ts:28"
+        "packages/backend/src/modules/media/services/countPersoImages.service.ts:30"
        ]
       ]
      ]

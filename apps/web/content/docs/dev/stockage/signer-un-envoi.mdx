@@ -139,6 +139,12 @@ Le nom du fichier, lui, vient bien du client : c’est le nom d’origine, celui
 
 `Salut final (2025).JPG` devient `salut-final-2025.jpg`. La clé ne contient ni espace, ni parenthèse, ni accent : elle se lit dans une URL sans encodage hasardeux. Le nom d’origine n’est pas perdu : il est conservé dans `MediaAsset.originalFileName`, et c’est lui (ou un nom d’affichage choisi plus tard) que l’interface montre.
 
+<DocsTable columnsJson='["Nom d’origine", "Clé", "Pourquoi"]' rowsJson='[["Salut final (2025).JPG", "salut-final-2025.jpg", "Espaces et parenthèses deviennent des tirets ; l’extension passe en minuscules."], ["été 2026.HEIC", "ete-2026.heic", "Les accents sont retirés."], ["planning_cours.pdf", "planning-cours.pdf", "Les soulignés deviennent des tirets avant le reste, sinon les mots seraient collés."], ["???.jpg", "fichier.jpg", "Il ne reste rien du nom : un nom par défaut."], ["日本.png", "fichier.png", "Les écritures non latines n’ont pas d’équivalent en ASCII : même nom par défaut."]]' />
+
+Les deux dernières lignes ont une conséquence : deux fichiers aux noms entièrement non latins donnent la même clé. Ce n’est pas un écrasement, puisque la section « Pas d’écrasement silencieux » le refuse. Le formulaire demande s’il faut remplacer, et il suffit de renommer l’un des deux. Le nom d’origine, lui, reste intact dans `originalFileName`.
+
+L’**extension**, elle, n’est pas transformée, seulement mise en minuscules. Elle n’a pas besoin de l’être : la vérification du format (plus bas) n’accepte qu’une extension de sa liste, et refuse tout le reste avant la signature.
+
 Cette fonction vivait autrefois dans le navigateur, avec un `slugify` maison. Il divergeait du paquet npm sur `&` et `%` : une discipline « Arts & Combat » produisait deux dossiers, l’un pour ses photos (chemin calculé par le serveur), l’autre pour ses PDF (chemin calculé par le client). Une seule fonction, côté serveur, c’est zéro écart possible.
 
 ## Les contrôles avant de signer
@@ -218,7 +224,11 @@ La procédure répond deux choses. Les noms **déjà présents** à cet endroit,
 
 ### Le quota de l’espace personnel
 
-L’espace personnel n’accepte que des images, dans la limite d’un quota compté en base (`countPersoImages`). Un remplacement ne compte pas : il ne crée pas de fichier.
+L’espace personnel n’accepte que des images, dans la limite de trente. Le quota est compté en base (`countPersoImages`) : les images enregistrées par ce membre sous son espace personnel. Un remplacement ne compte pas, puisqu’il ne crée pas de fichier.
+
+Compter ce qui est **enregistré** a une conséquence : vérifier le quota à la signature ne suffit pas. Signer n’enregistre rien. Un client qui demanderait dix signatures avant d’enregistrer un seul fichier verrait les dix acceptées, sur un compte resté à vingt-neuf. Le quota se vérifie donc **deux fois**, à la signature et à l’enregistrement (chapitre 3). Refusé à l’enregistrement, le fichier déjà arrivé au stockage en est retiré : sans ligne en base, plus rien ne le retrouverait.
+
+👉 une limite comptée sur ce qui est enregistré se vérifie là où l’on enregistre
 
 ## La procédure qui signe
 
@@ -288,11 +298,26 @@ Côté navigateur, la séquence est écrite une seule fois, et tous les formulai
 
 Trois détails comptent. Le **même** type sert à la demande, au `Content-Type` du PUT et à l’enregistrement : le stockage refuserait un PUT dont le type diffère de celui signé, et cette fonction rend l’écart impossible. Le **chemin** renvoyé par le serveur est retransmis tel quel. Et une erreur du stockage est traduite en message lisible, sans recopier le corps XML de sa réponse.
 
-Le formulaire de la bibliothèque envoie ses fichiers **en parallèle** (`Promise.all`), et chaque envoi rend son propre résultat, succès ou erreur : un fichier refusé n’empêche pas les autres d’aboutir, et l’erreur s’affiche sur la vignette concernée. Celui de l’espace personnel les envoie **un par un**, parce que le quota se vérifie à chaque demande.
+Le formulaire de la bibliothèque envoie ses fichiers **en parallèle** (`Promise.all`), et chaque envoi rend son propre résultat, succès ou erreur : un fichier refusé n’empêche pas les autres d’aboutir, et l’erreur s’affiche sur la vignette concernée. Celui de l’espace personnel les envoie **un par un**, parce que le quota se vérifie à chaque demande, et qu’un refus doit arriver avant d’envoyer le suivant.
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fournit le client ?", "Une destination (union discriminée) et un nom d’origine. Jamais un chemin."], ["Qui calcule le dossier ?", "Le serveur, en relisant la base et la session (resolvePendingUploadFolder). Les segments de discipline et d’espace personnel sont stables malgré un renommage."], ["Qui calcule le nom ?", "Le serveur (buildUploadFileName) ; le nom d’origine est conservé à part."], ["Qui peut déposer ?", "Tout membre connecté, sauf l’espace d’un groupe (éditeur) ; rattacher des disciplines à un événement est réservé aux administrateurs."], ["Et écraser ?", "Sur confirmation, et seulement un administrateur, un éditeur dans son groupe, ou l’auteur d’un fichier en attente."], ["Que couvre la signature ?", "Méthode, clé, type, expiration. Ni la taille, ni le contenu."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fournit le client ?", "Une destination (union discriminée) et un nom d’origine. Jamais un chemin."], ["Qui calcule le dossier ?", "Le serveur, en relisant la base et la session (resolvePendingUploadFolder). Les segments de discipline et d’espace personnel sont stables malgré un renommage."], ["Qui calcule le nom ?", "Le serveur (buildUploadFileName) ; le nom d’origine est conservé à part."], ["Qui peut déposer ?", "Tout membre connecté, sauf l’espace d’un groupe (éditeur) ; rattacher des disciplines à un événement est réservé aux administrateurs."], ["Et écraser ?", "Sur confirmation, et seulement un administrateur, un éditeur dans son groupe, ou l’auteur d’un fichier en attente."], ["Que couvre la signature ?", "Méthode, clé, type, expiration. Ni la taille, ni le contenu."], ["Combien d’images dans l’espace personnel ?", "Trente, vérifiées à la signature et à l’enregistrement."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant d’enregistrer un premier envoi, nous devrions pouvoir expliquer :
+
+- pourquoi le client ne fournit jamais de chemin, et ce qu’une union discriminée rend impossible à demander ;
+- ce que le `switch` exhaustif (`satisfies never`) apporte quand une destination s’ajoute ;
+- comment le serveur passe d’une destination au dossier, en relisant la base et la session ;
+- pourquoi un nom d’affichage n’est jamais une clé, et comment l’espace personnel survit à un changement de nom ;
+- ce que devient un nom de fichier, et pourquoi la fonction est côté serveur ;
+- pourquoi la liste des formats est une liste d’autorisés, et pourquoi `application/octet-stream` est accepté ;
+- pourquoi remplacer, c’est publier sans validation, et qui a le droit de le faire ;
+- pourquoi le quota de l’espace personnel se vérifie deux fois ;
+- ce que la signature couvre, ce qu’elle ne couvre pas, et pourquoi elle expire en cinq minutes ;
+- la fenêtre qui reste ouverte pendant ces cinq minutes.
 
 ## À suivre
 
