@@ -120,7 +120,6 @@ export function useNodeActions(): {
   const renameMutation = trpc.storage.rename.useMutation();
   const setFolderLabelMutation = trpc.storage.setFolderLabel.useMutation();
   const { data: contentRootPaths } = trpc.storage.contentRootPaths.useQuery();
-  const moveMutation = trpc.storage.move.useMutation();
 
   // Détection du contexte global : on est "dans le bin" si le path courant
   // est exactement la racine du bin OU un descendant (drilldown). Utilisé
@@ -316,8 +315,9 @@ export function useNodeActions(): {
   );
 
   /**
-   * Déplacement via `storage.move` — un seul node donne une source
-   * `file`/`folder`, plusieurs donnent une source `selection`.
+   * Déplacement par la fenêtre « Déplacer… » : le même chemin que le
+   * glisser-déposer, `adapter.moveItems`, avec les exclusions de la sélection.
+   * L'adapter de la bibliothèque en fait une intention pour `storage.move`.
    */
   const moveNodes = useCallback(
     async (
@@ -326,27 +326,14 @@ export function useNodeActions(): {
     ): Promise<string | null> => {
       if (nodes.length === 0) return null;
 
-      const excluded = exclusionsUnder(nodes, useFinderStore.getState().selection);
-      const source =
-        nodes.length === 1 && excluded.length === 0
-          ? {
-              type: (nodes[0].type === 'folder' ? 'folder' : 'file') as
-                | 'folder'
-                | 'file',
-              path: nodes[0].path,
-            }
-          : {
-              type: 'selection' as const,
-              roots: nodes.map((n) => n.path),
-              excluded,
-            };
+      const { selection, boundAdapter } = useFinderStore.getState();
+      if (!boundAdapter?.moveItems) return 'Ce dossier ne permet pas de déplacer.';
 
       try {
-        await moveMutation.mutateAsync({
-          intent: {
-            source,
-            target: { type: 'folder', path: destination },
-          },
+        await boundAdapter.moveItems({
+          items: nodes.map((n) => ({ id: n.id, path: n.path, type: n.type })),
+          target: { type: 'folder', path: destination },
+          excluded: exclusionsUnder(nodes, selection),
         });
         reloadFolderContent();
         // Comme après une suppression : les éléments cochés ont changé de
@@ -359,7 +346,7 @@ export function useNodeActions(): {
           : 'Le déplacement a échoué.';
       }
     },
-    [moveMutation, reloadFolderContent, exitMultiSelect],
+    [reloadFolderContent, exitMultiSelect],
   );
 
   return {
@@ -372,7 +359,6 @@ export function useNodeActions(): {
     isPending:
       trashToBinMutation.isPending ||
       purgeMutation.isPending ||
-      renameMutation.isPending ||
-      moveMutation.isPending,
+      renameMutation.isPending,
   };
 }

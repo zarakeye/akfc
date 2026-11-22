@@ -18,7 +18,7 @@ export interface FinderNode {
   // (racines, exclusions) compare des chemins pour savoir qui couvre qui.
   id: string;
   name: string;
-  path: string;           // chemin logique (source of truth)
+  path: string;           // la clé de stockage (ou une racine inventée, « Mes espaces »)
   type: NodeType;
   
   hasChildren?: boolean;  // utile pour lazy loading
@@ -39,12 +39,6 @@ export interface FinderNode {
    * sait qu'il y a quelque chose mais on ne l'a pas encore chargé).
    */
   children?: FinderNode[];
-
-  /**
-   * 👉 important pour DnD
-   */
-  isDraggable?: boolean;
-  isDroppable?: boolean;
 
   // extensible sans casser le core
   meta?: MediaMeta;

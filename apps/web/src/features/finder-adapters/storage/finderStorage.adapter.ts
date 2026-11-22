@@ -198,7 +198,7 @@ function moveOptionsToTarget(target: MoveOptions['target']): StorageMoveTarget {
  *   - `getMetadata` : métadonnées d'un asset (sidebar de preview)
  *   - `moveItems`   : déplacement
  *
- * Non implémentées : `getNode` (pas d'usage UI), `delete` (corbeille dédiée).
+ * Non implémentée : `getNode` (pas d'usage UI). Jeter passe par la corbeille (router `trash`).
  */
 export const finderStorageAdapter: FileAdapter = {
   async list(options: ListOptions): Promise<ListResult> {

@@ -333,7 +333,7 @@ Le finder ne corrige pas son affichage à la main après une action (« retirer 
 
 « Déplacer… » ouvre `MoveDialog`, un petit explorateur de dossiers : un fil d’Ariane, les sous-dossiers du niveau courant, et un bouton « Déplacer ici ». Il ne réutilise pas le store du finder : il a son propre dossier courant, et lit l’arbre un niveau à la fois (`storage.getTree`, profondeur 1). On choisit une destination sans rien changer à ce que le finder montre derrière.
 
-Le hook construit une **intention** de déplacement : un fichier, un dossier, ou une sélection de racines avec ses exclusions. Il l’envoie à `storage.move`, que la partie Stockage suit jusqu’au bout (déplacer chaque élément, et tout remettre en place si une étape échoue). Après le déplacement : recharger, et sortir du mode sélection, comme après une suppression. Si le serveur refuse, la fenêtre reste ouverte et affiche son message.
+Le hook passe par l’adapter (`moveItems`), le même chemin que le glisser-déposer du chapitre suivant : les éléments, la destination, et les exclusions de la sélection. L’adapter de la bibliothèque en fait une **intention** de déplacement (un fichier, un dossier, ou une sélection de racines) pour `storage.move`, que la partie Stockage suit jusqu’au bout (déplacer chaque élément, et tout remettre en place si une étape échoue). Après le déplacement : recharger, et sortir du mode sélection, comme après une suppression. Si le serveur refuse, la fenêtre reste ouverte et affiche son message.
 
 Le glisser-déposer mène à la même procédure par un autre geste : c’est le chapitre suivant.
 

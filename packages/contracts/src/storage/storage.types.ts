@@ -15,7 +15,7 @@ import { z } from 'zod';
  *     C'est le même pattern que `FinderNode` côté frontend, mais c'est un
  *     type backend distinct — la frontière entre les deux est traversée
  *     par les adapters frontend qui mappent `StorageNode` → `FinderNode`
- *     en y ajoutant des notions UI (isDraggable, meta.url, etc.).
+ *     en y ajoutant des notions UI (meta.url, meta.status, etc.).
  *   - `ReadonlyArray` partout pour les retours, pour signaler aux
  *     consommateurs qu'ils ne doivent pas muter la donnée reçue.
  */

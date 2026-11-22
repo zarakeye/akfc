@@ -127,7 +127,7 @@ Une seule méthode est **obligatoire** : `list`, le contenu d’un dossier. Tout
 
 On appelle ces méthodes facultatives des **capacités**. Le finder ne suppose jamais qu’une capacité existe : il regarde, et il adapte son interface à ce qu’il trouve.
 
-<DocsTable columnsJson='["Capacité", "Ce qu’elle permet", "Sans elle"]' rowsJson='[["getTree", "L’arbre de gauche, plusieurs niveaux d’un coup.", "L’arbre affiche un message : l’adaptateur ne sait pas fournir d’arborescence."], ["getNode", "Retrouver un nœud précis (la racine virtuelle de Mes espaces).", "Rien ne l’exige dans la bibliothèque."], ["getMetadata", "La taille, les dates, le format, dans l’aperçu.", "L’aperçu se contente de ce que porte le nœud."], ["moveItems", "Le glisser-déposer et la boîte « Déplacer ».", "Un dépôt est ignoré : un adaptateur en lecture seule ne déplace rien."], ["delete", "Supprimer depuis l’adaptateur.", "La bibliothèque ne s’en sert pas : jeter passe par la corbeille, qui a son propre router."]]' />
+<DocsTable columnsJson='["Capacité", "Ce qu’elle permet", "Sans elle"]' rowsJson='[["getTree", "L’arbre de gauche, plusieurs niveaux d’un coup.", "L’arbre affiche un message : l’adaptateur ne sait pas fournir d’arborescence."], ["getNode", "Retrouver un nœud précis (la racine virtuelle de Mes espaces).", "Rien ne l’exige dans la bibliothèque."], ["getMetadata", "La taille, les dates, le format, dans l’aperçu.", "L’aperçu se contente de ce que porte le nœud."], ["moveItems", "Le glisser-déposer et la fenêtre « Déplacer… », par le même chemin.", "Un dépôt est ignoré, et la fenêtre le dit : un adaptateur en lecture seule ne déplace rien."], ["searchScopes", "Dire où chercher quand l’affichage ne suit pas le stockage (une racine inventée, des sous-espaces rangés ailleurs).", "On cherche sous le dossier courant seul."]]' />
 
 ### Regarder avant d’appeler
 
@@ -175,7 +175,7 @@ Ce que l’adaptateur rend, ce sont des **nœuds** : un nœud par dossier ou par
   filename="node.ts"
   snippetStart="export interface FinderNode {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="2,4,7,24,33"
+  snippetHighlight="4,6,7,9,26,29"
   snippetTitle="FinderNode"
   fullFileTitle="Voir le fichier complet"
 />

@@ -153,11 +153,8 @@ export interface FileAdapter {
    */
   searchScopes?(path: string): Promise<string[]>;
 
-  /**
-   * (optionnel) delete
-   * @param path
-   */
-  delete?(path: string): Promise<void>;
+  // Pas de `delete` : jeter passe par la corbeille (router `trash`, chapitre « Agir sur les
+  // fichiers »), qui garde de quoi restaurer. Un adapter n'efface rien.
 }
 
 /**

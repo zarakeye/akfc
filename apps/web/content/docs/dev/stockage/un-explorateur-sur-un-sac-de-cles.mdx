@@ -124,11 +124,13 @@ Le contrat entre le composant et l’adaptateur est une interface de `packages/c
   fullFileTitle="Voir le fichier complet"
 />
 
-Seule `list` est obligatoire. Un adaptateur en lecture seule n’implémente ni `moveItems` ni `delete`, et le composant masque les actions correspondantes. Ce découpage permet d’utiliser **le même composant à trois endroits** :
+Seule `list` est obligatoire. Les autres méthodes sont des **capacités** (partie Finder, chapitre 1) : lire un arbre en profondeur (`getTree`), retrouver un nœud (`getNode`), décrire un fichier (`getMetadata`), déplacer (`moveItems`), dire où chercher (`searchScopes`). Le composant regarde ce que l’adapter sait faire avant d’appeler. Il n’y a pas de capacité « supprimer » : jeter passe par la corbeille, qui garde de quoi restaurer, et un adapter n’efface rien.
+
+Ce découpage permet d’utiliser **le même composant à trois endroits** :
 
 - la **bibliothèque** du tableau de bord (`<Finder adapter={finderStorageAdapter} rootPath={APP_ROOT} />`), qui parle aux procédures `storage.*` ;
-- la page **Mes espaces** des membres, avec `memberFinder.adapter.ts`, dont la racine est **virtuelle** — elle n’existe pas dans le stockage — et ne liste que les espaces de groupe accessibles au membre ;
-- le **sélecteur de médias** (`MediaPicker`), qui monte le Finder en mode sélection pour choisir les images d’une page ou d’une galerie.
+- la page **Mes espaces** des membres, avec `memberFinder.adapter.ts`, dont la racine est **virtuelle** — elle n’existe pas dans le stockage — et ne liste que les espaces de groupe accessibles au membre ; Son adapter dit aussi où chercher : sa racine n’existe pas dans le stockage, et la recherche couvre alors tous les espaces du membre.
+- le **sélecteur de médias** (`MediaPicker`), qui monte le Finder en mode panier pour choisir les images d’une page ou d’une galerie (partie Finder, chapitre 7).
 
 <CodeExample
   language="ts"
@@ -158,7 +160,7 @@ Ce qui circule entre les trois couches est un `FinderNode` :
   filename="node.ts"
   snippetStart="export interface FinderNode {"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="2,4,24,33"
+  snippetHighlight="4,6,26,29"
   snippetTitle="FinderNode"
   fullFileTitle="Voir le fichier complet"
 />
@@ -166,6 +168,8 @@ Ce qui circule entre les trois couches est un `FinderNode` :
 Trois champs méritent qu’on s’y arrête.
 
 **`path` est l’identité d’un nœud.** Pour la bibliothèque, c’est la clé de stockage elle-même, celle qui sert aux opérations et aux jointures avec `MediaAsset.fullPath`. Le contrat reste plus général — un adaptateur peut présenter un chemin qui n’existe pas chez un fournisseur, comme la racine virtuelle de *Mes espaces* — mais il ne reconstruit **jamais** un chemin à partir d’un nom affiché.
+
+L’identifiant (`id`) lui est égal dans tous les adapters : la sélection compare des chemins pour savoir qui couvre qui (partie Finder, chapitre 5).
 
 **`children` distingue trois états**, qu’un simple tableau confondrait :
 
@@ -192,7 +196,20 @@ Au temps de Cloudinary, le chemin d’un fichier contenait son statut (`AKFC/pen
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que sait répondre le stockage ?", "Les clés sous un préfixe, regroupées au prochain « / » (ListObjectsV2 + Delimiter) : un niveau à la fois, sans dossier vide."], ["Pourquoi ne pas relayer cette liste ?", "Il y manque le nom lisible, le statut, l’expéditeur, les dossiers vides et les droits ; et la synthèse serait refaite par chaque client."], ["D’où viennent les dossiers vides ?", "Des entités en base (groupes, membres, catégories), complétées par Folder ; les libellés viennent de FolderLabel."], ["Comment le Finder est-il découpé ?", "Un composant, des adaptateurs (bibliothèque, Mes espaces, sélecteur), un backend ; le contrat FileAdapter les relie."], ["Qu’est-ce qui identifie un nœud ?", "Son path : pour la bibliothèque, la clé de stockage. Jamais un nom affiché."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que sait répondre le stockage ?", "Les clés sous un préfixe, regroupées au prochain « / » (ListObjectsV2 + Delimiter) : un niveau à la fois, sans dossier vide."], ["Pourquoi ne pas relayer cette liste ?", "Il y manque le nom lisible, le statut, l’expéditeur, les dossiers vides et les droits ; et la synthèse serait refaite par chaque client."], ["D’où viennent les dossiers vides ?", "Des entités en base (groupes, membres, catégories), complétées par Folder ; les libellés viennent de FolderLabel."], ["Comment le Finder est-il découpé ?", "Un composant, des adaptateurs (bibliothèque, Mes espaces, sélecteur), un backend ; le contrat FileAdapter les relie."], ["Qu’est-ce qui identifie un nœud ?", "Son path : pour la bibliothèque, la clé de stockage. Jamais un nom affiché."], ["Un adapter peut-il effacer ?", "Non : jeter passe par la corbeille ; le contrat n’a pas de delete."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de lire l’arbre, nous devrions pouvoir expliquer :
+
+- ce qu’un stockage S3 sait répondre (`ListObjectsV2`, `Delimiter`), et ce qu’il ne sait pas ;
+- les quatre choses que perd un relais brut de la liste vers le navigateur ;
+- pourquoi un dossier vide ne peut exister que dans la base, et pourquoi les contournements échouent ;
+- ce que `Folder` et `FolderLabel` enregistrent, et pourquoi un nom d’affichage n’est pas une clé ;
+- les trois couches du Finder, et ce que chacune ignore ;
+- pourquoi seule `list` est obligatoire, et pourquoi il n’y a pas de capacité « supprimer » ;
+- les trois états de `children` ;
+- pourquoi l’URL d’aperçu pointe vers la route privée, et pas vers le stockage.
 
 ## À suivre
 
