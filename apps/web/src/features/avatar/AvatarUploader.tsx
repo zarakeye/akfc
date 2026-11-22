@@ -76,12 +76,21 @@ export function AvatarUploader({
     [data?.avatar, userId, version],
   );
 
+  // Les URL `blob:` sont libérées par les gestes qui les abandonnent (dropPending, handleCrop,
+  // handleSettled), et au démontage. Pas à chaque changement : à la confirmation, la proposition
+  // (pendingUrl) devient l'image d'attente (settlingUrl), et la libérer à ce moment ferait
+  // afficher une image cassée en attendant la nouvelle.
+  const blobUrlsRef = useRef<{ pending: string | null; settling: string | null }>({ pending: null, settling: null });
   useEffect(() => {
-    return () => {
-      if (pendingUrl) URL.revokeObjectURL(pendingUrl);
-      if (settlingUrl) URL.revokeObjectURL(settlingUrl);
-    };
+    blobUrlsRef.current = { pending: pendingUrl, settling: settlingUrl };
   }, [pendingUrl, settlingUrl]);
+  useEffect(() => {
+    const urls = blobUrlsRef;
+    return () => {
+      if (urls.current.pending) URL.revokeObjectURL(urls.current.pending);
+      if (urls.current.settling) URL.revokeObjectURL(urls.current.settling);
+    };
+  }, []);
 
   const avatarRadius = shape === "circle" ? "rounded-full" : "rounded-2xl";
 
