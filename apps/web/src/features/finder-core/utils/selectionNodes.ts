@@ -30,11 +30,9 @@ export function buildNodePool(input: {
   const pool = new Map<string, FinderNode>();
 
   const add = (n: FinderNode) => {
-    // On indexe par id ET par path. L'`id` d'un node peut être réassigné
-    // après coup (useMediaAssetEnrichment merge les metas et reconstruit les
-    // nodes), alors que le `path` est stable. `selection.roots` retient la
-    // valeur au moment du clic ; en indexant les deux, la résolution retrouve
-    // le node que `roots` contienne l'ancien id, le nouvel id, ou le path.
+    // Rangé sous son id et sous son chemin. Les deux sont égaux dans tous les
+    // adapters (voir FinderNode) ; la double clé ne coûte rien et garde la
+    // résolution juste pour un appelant qui passerait l'un ou l'autre.
     if (!pool.has(n.id)) pool.set(n.id, n);
     if (!pool.has(n.path)) pool.set(n.path, n);
   };

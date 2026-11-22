@@ -1,0 +1,85 @@
+---
+title: "Le glisser-déposer"
+description: "Faire glisser des fichiers sur un dossier : le paquet que le finder range dans le glisser du navigateur, des règles de dépôt structurelles, un dépôt qui choisit sa procédure, et un fantôme impératif qui suit le pointeur."
+section: "Le finder"
+order: 6
+entities:
+  MediaAsset: [fullPath]
+stories:
+  - title: Un administrateur range une série de photos
+    actor: Administrateur
+    steps:
+      - label: Il fait glisser la sélection sur un dossier de l’arbre ; les fichiers y sont déplacés
+        call: storage.move
+        section: Ce qu’un glisser transporte
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+
+> **Précédemment.** Dans la bibliothèque, un administrateur sélectionne, renomme, déplace par une fenêtre, publie et jette. Chaque geste passe par le serveur, et le finder relit ce qui a changé.
+
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="react-dnd react-dnd-html5-backend" dans="web" />
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## Ce qu’un glisser transporte
+
+Glisser des fichiers sur un dossier de l’arbre, sur un segment du fil d’Ariane ou sur la corbeille les y déplace. Le navigateur fournit les événements (`dragstart`, `dragover`, `drop`) et un sac pour transporter des données (`DataTransfer`). Le finder y range un **paquet** à lui :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/dnd/payload.ts"
+  filename="payload.ts"
+  snippetStart="export function isDropAllowed(targetPath: string, items: DragItem[]): boolean {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,6"
+  snippetTitle="Deux règles de structure, aucune de métier"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le paquet voyage sous un type MIME maison, `application/x-finder-drag`. C’est ce qui distingue un glisser du finder d’une photo glissée depuis le bureau ou un autre onglet : une cible du finder qui ne trouve pas ce type ignore le dépôt, au lieu d’essayer de le lire. Et quand elle le trouve, elle le valide quand même (`tryParsePayload`) : le contenu d’un `DataTransfer` vient d’ailleurs.
+
+Les règles de dépôt sont **structurelles** (pas dans soi-même, pas dans son propre sous-dossier) ; tout ce qui relève des droits et du métier reste au serveur, qui refusera s’il le faut. Une troisième règle évite l’inutile : déposer dans le dossier où l’on est déjà ne fait aucun aller-retour (`isDropEffective`).
+
+Le dépôt lui-même choisit sa procédure selon la cible :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTreeFolder.tsx"
+  filename="FinderTreeFolder.tsx"
+  snippetStart="async function handleDrop(e: React.DragEvent) {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="6,7,13,14,18,20,37,44,46"
+  snippetTitle="La corbeille, ou un déplacement"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## Le fantôme
+
+Pendant le glisser, le navigateur montre une image fantôme de l’élément saisi. Le finder la remplace par la sienne : jusqu’à trois vignettes, un compteur (« +12 ») et un badge vert ou rouge selon que la cible survolée accepte le dépôt. Ce fantôme n’est **pas un composant React** : il suit la souris à chaque événement, et le redessiner par React à cette fréquence saturerait l’application. C’est un petit module impératif, un seul élément DOM en `position: fixed`, déplacé directement.
+
+Pour savoir ce qu’il survole, il interroge le DOM sous le curseur (`document.elementFromPoint`) et remonte jusqu’à un attribut `data-finder-drop-path`, posé par chaque cible (dossier de l’arbre, segment du fil d’Ariane). La règle `isDropAllowed` décide du badge : la même règle que celle du dépôt, ce qui garantit que le badge dit vrai. Il disparaît au `drop` comme au `dragend` : un glisser annulé par Échap ne déclenche pas de `drop`.
+
+<Callout type="insight">
+Le glisser-déposer tient en trois pièces indépendantes : un paquet typé et validé, des cibles qui le reçoivent, un fantôme qui ne fait que regarder. Une nouvelle cible (le fil d’Ariane en est une) n’a besoin que de poser son attribut et d’appeler les mêmes règles.
+</Callout>
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer aux autres rôles du finder, nous devrions pouvoir expliquer :
+
+- pourquoi le paquet voyage sous un type MIME à lui, et pourquoi on le valide quand même ;
+- pourquoi les règles de dépôt sont structurelles, et ce qui reste au serveur ;
+- pourquoi le fantôme n’est pas un composant React.
+
+## À suivre
+
+Tout ce que nous avons vu supposait la bibliothèque, et un administrateur. Le même composant sert aussi à piocher des images depuis un formulaire, et à un membre qui ne doit rien pouvoir modifier, dans des espaces rangés en un arbre qui n’existe que dans la base.
+
+<Callout type="tip">
+**Chapitre suivant : trois finders en un.** Le sélecteur de médias et son panier, le mode lecture seule, le finder des membres et sa racine virtuelle, l’imbrication des espaces de groupe, et deux bugs qui ont laissé deux règles.
+</Callout>

@@ -2,7 +2,7 @@
 title: "Trois finders en un"
 description: "Le même composant en trois rôles : le sélecteur de médias et son panier qui survit à la navigation, le mode lecture seule, le finder des membres et sa racine virtuelle construite par un adaptateur ; l’imbrication des espaces de groupe dans l’arbre et la grille ; et deux bugs qui ont laissé deux règles."
 section: "Le finder"
-order: 6
+order: 7
 entities:
   MemberGroup: [name, isCollaborative, parentGroupId]
   MemberGroupMembership: [access]
@@ -37,7 +37,7 @@ stories:
 import { Callout } from "#features/docs/ui/Callout.tsx"
 import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
-> **Précédemment.** Dans la bibliothèque, un administrateur sélectionne, renomme, déplace, publie et jette. Chaque geste passe par le serveur, et le finder relit ce qui a changé.
+> **Précédemment.** Dans la bibliothèque, un administrateur sélectionne, renomme, déplace (par une fenêtre ou en faisant glisser), publie et jette. Chaque geste passe par le serveur, et le finder relit ce qui a changé.
 
 Le composant `Finder` reçoit, en plus de son adaptateur et de sa racine, trois réglages : `pickMode` (piocher), `fileFilter` (n’afficher que certains fichiers), `readOnly` (ne rien modifier). Avec eux, et un second adaptateur, il devient trois outils différents.
 
