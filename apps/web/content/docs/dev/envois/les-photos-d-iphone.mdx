@@ -77,7 +77,7 @@ Une fonction qui rend `{ files, failed }` plutôt que de lever une erreur laisse
 
 ## Où chaque formulaire convertit
 
-Toutes les zones de dépôt ajoutent `HEIC_ACCEPT` à leurs types acceptés : sans lui, le composant de dépôt refuserait le fichier avant même qu’on puisse le convertir. Ensuite, chacune place la conversion au premier moment où elle a besoin d’**afficher** la photo.
+Les zones de dépôt de la bibliothèque, de l’espace personnel et de l’avatar ajoutent `HEIC_ACCEPT` à leurs types acceptés : sans lui, le composant de dépôt refuserait le fichier avant même qu’on puisse le convertir. Le dépôt des membres n’en a pas besoin : son champ n’impose aucun type, et c’est le serveur qui juge. Ensuite, chacune place la conversion au premier moment où elle a besoin d’**afficher** la photo.
 
 <DocsTable columnsJson='["Formulaire", "Quand", "Pourquoi à ce moment"]' rowsJson='[["Bibliothèque, espace personnel, dépôt des membres", "À l’entrée dans la liste", "La liste montre une vignette, et le recadrage doit lire l’image."], ["Avatar", "Avant d’ouvrir le recadrage", "Le recadrage dessine l’image dans un canvas : il lui faut un format que le navigateur décode."]]' />
 
@@ -93,6 +93,8 @@ Dans la bibliothèque, un lot sans HEIC entre immédiatement ; un lot qui en con
   snippetTitle="La bibliothèque convertit avant la liste"
   fullFileTitle="Voir le fichier complet"
 />
+
+Deux dépôts peuvent se suivre pendant une conversion : le compteur s’additionne, et le message reste affiché jusqu’à la fin de la dernière.
 
 ## La seconde ligne, côté serveur
 
@@ -111,6 +113,8 @@ La bibliothèque accepte toujours l’extension `.heic` (`ALLOWED_UPLOAD_TYPES`)
 
 `sharp`, qui fabrique les vignettes AVIF, ne lit pas le HEIC. `decodeHeif` passe donc par l’outil `heif-dec` de libheif (ou `heif-convert`, son ancien nom), qui écrit un JPEG dans un dossier temporaire, en appliquant la rotation de la photo. Le serveur de production les a : son image Docker les installe. Si l’outil manque, sur un poste de développement par exemple, le serveur le note une fois dans les journaux et sert l’original tel quel : la photo reste téléchargeable, sans vignette.
 
+Un HEIC peut contenir plusieurs images, une rafale par exemple : l’outil en écrit alors une par fichier (`out-1.jpg`, `out-2.jpg`…), et le serveur garde la première. L’outil travaille dans un dossier temporaire, effacé dans tous les cas (`finally`), et il est tué s’il dépasse le délai fixé : une photo piégée ne bloque pas le serveur.
+
 <Promesse vers="dev/docker/l-image-docker" section="Une image, des étapes 🐳">
 L’image du projet se construit en plusieurs étapes, et l’une d’elles ajoute ces outils système ; on la verra avec la mise en production.
 </Promesse>
@@ -122,6 +126,19 @@ L’image du projet se construit en plusieurs étapes, et l’une d’elles ajou
 ## Récapitulatif
 
 <DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi convertir ?", "Seul Safari affiche le HEIC ; envoyé tel quel, il serait illisible pour les autres visiteurs."], ["Où ?", "Sur l’appareil, en WebAssembly (libheif, paquet heic-to). Aucune photo ne passe par un service tiers."], ["Quel coût ?", "Environ 3 Mo, téléchargés seulement quand une photo HEIC est choisie."], ["Pourquoi une à une ?", "La mémoire des téléphones."], ["Et si la conversion échoue ?", "La photo est écartée, les autres partent, et le message propose de l’exporter en JPEG."], ["Quand chaque formulaire convertit-il ?", "Au premier moment où il doit afficher la photo."], ["Et les HEIC déjà stockés ?", "Le serveur les décode avec libheif pour fabriquer leurs vignettes."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer aux envois d’un seul fichier, nous devrions pouvoir expliquer :
+
+- ce qu’est le HEIC, et pourquoi une photo d’iPhone envoyée telle quelle serait cassée pour la plupart des visiteurs ;
+- pourquoi la conversion se fait sur l’appareil, et jamais par un service en ligne ;
+- ce qu’est le WebAssembly, et pourquoi son module ne se charge que si une photo HEIC est choisie ;
+- pourquoi les photos se convertissent une à une ;
+- pourquoi `toBrowserImages` rend `{ files, failed }` au lieu de lever une erreur ;
+- à quel moment chaque formulaire convertit, et pourquoi ce moment-là ;
+- ce que le serveur fait encore d’un HEIC stocké, et ce qui se passe si libheif manque ;
+- pourquoi les deux lignes de défense ne font pas deux fois le même travail.
 
 ## À suivre
 

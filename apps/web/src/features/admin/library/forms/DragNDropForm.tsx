@@ -388,9 +388,9 @@ export default function DragNDropForm(): JSX.Element {
   const onDrop = (dropped: File[]) => {
     const n = countHeic(dropped);
     if (n === 0) return addFiles(dropped);
-    setHeicConverting(n);
+    setHeicConverting((c) => c + n); // un second dépôt peut arriver pendant la conversion
     void toBrowserImages(dropped).then(({ files, failed }) => {
-      setHeicConverting(0);
+      setHeicConverting((c) => c - n);
       addFiles(files);
       if (failed.length > 0) setFilesError(heicFailureMessage(failed));
     });
