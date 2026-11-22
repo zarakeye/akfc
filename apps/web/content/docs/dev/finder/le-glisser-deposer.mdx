@@ -1,30 +1,173 @@
 ---
 title: "Le glisser-déposer"
-description: "Faire glisser des fichiers sur un dossier : le paquet que le finder range dans le glisser du navigateur, des règles de dépôt structurelles, un dépôt qui choisit sa procédure, et un fantôme impératif qui suit le pointeur."
+description: "Déplacer d’un geste : ce qu’est un glisser pour le navigateur, le paquet que le finder y range, les cibles et leur surbrillance, qui décide qu’un dépôt est permis, un dépôt sur la corbeille qui se confirme, un fantôme impératif qui suit le pointeur, et un fichier venu du bureau qui ne fait pas quitter la page."
 section: "Le finder"
 order: 6
 entities:
   MediaAsset: [fullPath]
+  TrashEntry: [previousPath, trashedAt]
 stories:
   - title: Un administrateur range une série de photos
     actor: Administrateur
     steps:
       - label: Il fait glisser la sélection sur un dossier de l’arbre ; les fichiers y sont déplacés
         call: storage.move
-        section: Ce qu’un glisser transporte
+        section: Déposer
+      - label: Il fait glisser une photo ratée sur la corbeille et confirme
+        call: trash.trashToBin
+        section: Déposer
 ---
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Dans la bibliothèque, un administrateur sélectionne, renomme, déplace par une fenêtre, publie et jette. Chaque geste passe par le serveur, et le finder relit ce qui a changé.
+
+« Déplacer… » demande d’ouvrir une fenêtre et de redescendre l’arborescence jusqu’à la destination. Or le dossier visé est souvent déjà sous les yeux, dans l’arbre, dans la grille ou dans le fil d’Ariane. Faire glisser les fichiers dessus est plus direct. Ce geste soulève quatre questions :
+
+1. **Transporter.** Comment savoir, au moment du dépôt, ce qu’on a saisi ?
+2. **Cibler.** Quels éléments acceptent un dépôt, et comment le montrent-ils ?
+3. **Autoriser.** Qui décide qu’un dépôt est permis : la cible, une règle commune, le serveur ?
+4. **Montrer.** Que voit l’utilisateur sous son pointeur pendant le trajet ?
 
 ## Les parcours du chapitre
 
 <Parcours />
 
-## Ce qu’un glisser transporte
+## Ce qu’est un glisser pour le navigateur
 
-Glisser des fichiers sur un dossier de l’arbre ou de la grille, sur un segment du fil d’Ariane ou sur la corbeille les y déplace. Le navigateur fournit les événements (`dragstart`, `dragover`, `drop`) et un sac pour transporter des données (`DataTransfer`). Le finder y range un **paquet** à lui :
+Le navigateur sait faire glisser des éléments sans aucune bibliothèque : c’est l’API **HTML Drag and Drop**. Un élément marqué `draggable` peut être saisi. Ensuite, une suite d’évènements raconte le trajet :
+
+<DocsTable columnsJson='["Évènement", "Reçu par", "Quand"]' rowsJson='[["dragstart", "l’élément saisi", "au début du glisser"], ["dragenter", "chaque élément survolé", "quand le pointeur y entre"], ["dragover", "l’élément survolé", "en continu, plusieurs fois par seconde"], ["dragleave", "l’élément quitté", "quand le pointeur en sort, y compris vers un de ses enfants"], ["drop", "la cible", "au relâchement, si elle l’a accepté"], ["dragend", "l’élément saisi", "à la fin, déposé ou annulé (Échap)"]]' />
+
+Trois règles de cette API guident tout le reste :
+
+1. **Une cible doit dire oui.** Par défaut, un élément refuse les dépôts. Pour accepter, il appelle `e.preventDefault()` dans son `dragover`. Sans cet appel, pas de `drop`.
+2. **Le contenu ne se lit qu’au dépôt.** Les données voyagent dans un objet `DataTransfer` : on les y range au `dragstart` (`setData`), on les lit au `drop` (`getData`). Entre les deux, le navigateur ne montre que leurs **types** (`e.dataTransfer.types`), jamais leur contenu. C’est une protection : une page ne doit pas pouvoir lire ce qu’on fait glisser au-dessus d’elle sans que l’utilisateur l’y dépose.
+3. **Le navigateur dessine une image.** Pendant le trajet, il montre une copie de l’élément saisi. On peut la remplacer (`setDragImage`).
+
+<Callout type="concept">
+**`effectAllowed` et `dropEffect`.** La source annonce ce qu’elle permet (`effectAllowed = "move"` : déplacer, pas copier). Chaque cible survolée dit ce qu’elle ferait (`dropEffect = "move"` ou `"none"`). Le navigateur en tire le curseur, et refuse le dépôt si les deux ne s’accordent pas.
+</Callout>
+
+<Callout type="info">
+**Aucune bibliothèque.** Le projet a longtemps installé `react-dnd`, dont le fournisseur enveloppait le tableau de bord sans qu’aucun composant ne s’en serve. Il faisait pourtant une chose utile, sans le dire : la section « Un fichier venu du bureau » la reprend explicitement, et la dépendance est partie.
+</Callout>
+
+## Saisir
+
+Tout glisser part de la même fonction, `handleDragStart`, que la grille et l’arbre reçoivent du composant `Finder` :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/Finder.tsx"
+  filename="Finder.tsx"
+  snippetStart="function handleDragStart(e: React.DragEvent, node: FinderNode) {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="3,4,9,11,13,18,19,26"
+  snippetTitle="Ce qu’on emporte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Suivons-la :
+
+1. **Lecture seule** (« Mes espaces », chapitre 7) : rien ne se déplace. `e.preventDefault()` au `dragstart` annule le glisser.
+2. **La sélection, ou l’élément seul.** Si l’élément saisi est une racine de la sélection, on emporte toute la sélection ; sinon lui seul. C’est la règle du menu contextuel (chapitre 5).
+3. **Le paquet** est rangé dans le `DataTransfer`, sous un type à lui (section suivante).
+4. **`effectAllowed = "move"`** : un glisser du finder déplace, il ne copie jamais.
+5. **Le fantôme** démarre avec les éléments emportés et une vignette pour chacun.
+
+Deux détails se jouent dans l’arbre, où les lignes sont imbriquées :
+
+- **Saisir un enfant, pas son parent.** La ligne d’un fichier est dans celle de son dossier, elle-même dans celle du dossier parent. Sans précaution, le `dragstart` remonte jusqu’au premier ancêtre déplaçable, et c’est le mauvais élément qui part. Chaque ligne arrête donc la propagation (`e.stopPropagation()`) avant d’appeler `handleDragStart`.
+- **Un glisser n’est pas un appui long.** Commencer à glisser annule l’appui long en cours (`longPress.onDragStart()`) : on ne veut pas entrer dans le mode sélection au milieu d’un déplacement.
+
+## Le paquet
+
+Un glisser du finder emporte une liste d’éléments, réduits à ce qu’il faut pour déplacer :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/dnd/payload.ts"
+  filename="payload.ts"
+  snippetStart="export type DragItem = {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,3,4"
+  snippetTitle="Un élément emporté"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le paquet voyage sous un type MIME maison, `application/x-finder-drag`. C’est ce qui distingue un glisser du finder d’une photo venue du bureau ou d’un texte sélectionné dans un autre onglet. Une cible regarde d’abord si ce type est là (`isFinderDrag`). S’il n’y est pas, elle ignore le glisser sans même essayer de le lire.
+
+Quand le type est là, le dépôt valide quand même le contenu, avec `tryParsePayload` :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/dnd/payload.ts"
+  filename="payload.ts"
+  snippetStart="export function tryParsePayload("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,7,12,21,22,23,27"
+  snippetTitle="Ne rien croire de ce qui arrive"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+1. Pas de texte : rien.
+2. Un texte qui n’est pas du JSON : rien (le `catch`).
+3. Un JSON sans liste `items` : rien.
+4. Un élément sans `id` ou sans `path` textuels, ou d’un type inconnu : rien.
+
+Le contenu d’un `DataTransfer` peut venir d’une autre page, qui aurait employé le même type. Une cible qui lit un paquet invalide ne fait rien.
+
+👉 le type dit « c’est peut-être pour moi » ; la validation dit « c’est bien pour moi »
+
+## Les cibles
+
+Trois sortes d’éléments acceptent un dépôt :
+
+- les **dossiers de l’arbre** ;
+- les **dossiers de la grille**, dans ses trois vues (vignettes, liste, tableau) ;
+- les **segments du fil d’Ariane**, la feuille comprise (chapitre 4) : on peut ramener des fichiers d’un autre dossier dans celui qu’on regarde.
+
+Toutes suivent le même schéma, porté par un seul hook, `useFolderDropTarget(chemin, { enabled })`. Il rend un état (`isDragOver`, pour la surbrillance) et quatre gestionnaires à poser sur l’élément ; en lecture seule, ou pour un fichier, il n’en rend aucun :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/hooks/useFolderDropTarget.ts"
+  filename="useFolderDropTarget.ts"
+  snippetStart="    handlers: {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="3,4,7,8,13,15,16,22,30"
+  snippetTitle="Dire oui, et le montrer"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+1. **`dragenter` et `dragover`** : si ce n’est pas un glisser du finder, on ne fait rien. Sinon, on accepte (`preventDefault`), on arrête la propagation pour que le dossier parent ne s’allume pas aussi, et on règle `dropEffect` et la surbrillance.
+2. **`dragleave`** arrive aussi quand le pointeur passe sur un **enfant** de la cible (une icône, le libellé). On l’ignore tant que l’élément rejoint (`relatedTarget`) est encore dans la cible ; sinon la surbrillance clignoterait.
+3. **`drop`** : la section « Déposer ».
+
+Il reste une difficulté. La surbrillance devrait dire si le dépôt est permis, mais une cible ne peut pas lire le paquet avant le dépôt (règle 2 du navigateur). Le fantôme, lui, a reçu les éléments au départ. Les cibles lui posent donc la question :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/dnd/dragGhost.ts"
+  filename="dragGhost.ts"
+  snippetStart="export function isDropAllowedForCurrentDrag(targetPath: string): boolean {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2"
+  snippetTitle="Demander au fantôme ce qu’on transporte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La surbrillance et le badge du fantôme appliquent ainsi la même règle, et ne peuvent pas se contredire.
+
+Enfin, chaque cible porte un attribut `data-finder-drop-path` qui contient son chemin. Le fantôme le lit pour savoir ce qu’il survole (section « Le fantôme »).
+
+## Qui décide qu’un dépôt est permis
+
+Trois niveaux, du plus rapide au plus sûr.
+
+**1. La structure, dans le navigateur.** `isDropAllowed` refuse ce qui n’a pas de sens, quel que soit l’utilisateur :
 
 <CodeExample
   language="ts"
@@ -37,40 +180,136 @@ Glisser des fichiers sur un dossier de l’arbre ou de la grille, sur un segment
   fullFileTitle="Voir le fichier complet"
 />
 
-Le paquet voyage sous un type MIME maison, `application/x-finder-drag`. C’est ce qui distingue un glisser du finder d’une photo glissée depuis le bureau ou un autre onglet : une cible du finder qui ne trouve pas ce type ignore le dépôt, au lieu d’essayer de le lire. Et quand elle le trouve, elle le valide quand même (`tryParsePayload`) : le contenu d’un `DataTransfer` vient d’ailleurs.
+- pas de dépôt d’un dossier sur lui-même ;
+- pas de dépôt d’un dossier dans l’un de ses sous-dossiers : le dossier se contiendrait lui-même.
 
-Les règles de dépôt sont **structurelles** (pas dans soi-même, pas dans son propre sous-dossier) ; tout ce qui relève des droits et du métier reste au serveur, qui refusera s’il le faut. Une troisième règle évite l’inutile : déposer dans le dossier où l’on est déjà ne fait aucun aller-retour (`isDropEffective`).
+**2. L’utile, dans le navigateur.** `isDropEffective` évite un aller-retour pour rien : déposer des fichiers dans le dossier où ils sont déjà ne change rien. Le dépôt est permis, mais il ne part pas.
 
-Le dépôt lui-même choisit sa voie selon la cible. Déposer sur la corbeille, c’est « supprimer » : le dépôt passe par la même confirmation que le menu et la barre d’outils (chapitre 5), puis par le même chemin. Ailleurs, c’est un déplacement, qui emporte les exclusions de la sélection :
+**3. Le métier, sur le serveur.** Les droits (un éditeur ne déplace que dans l’espace de son groupe), les dossiers protégés, les dossiers d’entités : tout cela reste au serveur. Il refusera s’il le faut, avec un message. Le refaire dans le navigateur ferait deux versions de la même règle, qui finiraient par diverger.
+
+👉 le navigateur écarte l’absurde et l’inutile ; le serveur garde le reste
+
+## Déposer
+
+Le dépôt lit le paquet, repasse les deux gardes, puis choisit sa voie selon la cible :
 
 <CodeExample
-  language="tsx"
+  language="ts"
   filepath="apps/web/src/features/finder-core/hooks/useFolderDropTarget.ts"
   filename="useFolderDropTarget.ts"
   snippetStart="export async function dropOnFolder("
   snippetEnd="(fin du bloc)"
-  snippetHighlight="6,10,11,17,18,23,29,32"
+  snippetHighlight="6,10,11,17,18,22,23,29,32"
   snippetTitle="La corbeille après confirmation, ou un déplacement"
   fullFileTitle="Voir le fichier complet"
 />
 
+Suivons un dépôt :
+
+1. **Lire et valider** : `getData`, puis `tryParsePayload`. Un paquet invalide s’arrête là.
+2. **Les gardes** : `isDropAllowed`, puis `isDropEffective`. On repasse la première même si la surbrillance l’a déjà appliquée : la surbrillance ne fait qu’afficher, et `dragover` accepte même là où elle reste éteinte. C’est le dépôt qui décide, avec ses propres gardes.
+3. **La corbeille.** Déposer sur la corbeille, c’est « supprimer » : le dépôt passe par la même demande que le menu et la barre d’outils (`askDelete`). La même fenêtre de confirmation s’ouvre, puis le même chemin s’applique (chapitre 5). Le paquet ne porte que des chemins ; `nodesFromDragItems` en refait des nœuds minimaux, dont le nom est le dernier segment du chemin.
+4. **Un déplacement.** Sinon, le dépôt vérifie que l’adapter sait déplacer (`moveItems`, une capacité facultative, chapitre 1), puis l’appelle avec la destination et les **exclusions** de la sélection (chapitre 5). L’adapter de la bibliothèque en fait une intention pour `storage.move`.
+5. **Après.** Recharger, sortir du mode sélection, ou afficher l’erreur dans le bandeau du finder. Un glisser n’a pas de champ où montrer un refus : c’est le cas que `actionError` couvre.
+
+Le dépôt ne touche **jamais** au statut. Le commentaire de `moveItems` et celui du hook le rappellent : réorganiser des fichiers en attente ne les publie pas.
+
+Le dépôt vit dans une fonction simple, `dropOnFolder`, hors du hook. Le fil d’Ariane construit ses segments dans une boucle, où l’on ne peut pas appeler de hook (un hook s’appelle toujours dans le même ordre, à chaque rendu). Il garde donc ses propres gestionnaires par segment, mais appelle le même `dropOnFolder`. L’adapter est celui que le finder a lié au store (`bindFinder`, chapitre 2) : une vignette de la grille n’a pas besoin de le recevoir en props.
+
 ## Le fantôme
 
-Pendant le glisser, le navigateur montre une image fantôme de l’élément saisi. Le finder la remplace par la sienne : jusqu’à trois vignettes, un compteur (« +12 ») et un badge vert ou rouge selon que la cible survolée accepte le dépôt. Ce fantôme n’est **pas un composant React** : il suit la souris à chaque événement, et le redessiner par React à cette fréquence saturerait l’application. C’est un petit module impératif, un seul élément DOM en `position: fixed`, déplacé directement.
+Le navigateur dessine une image de l’élément saisi, mais une seule, et sans rien dire de la cible. Le finder la remplace par la sienne : jusqu’à trois vignettes empilées, un compteur (« +12 ») au-delà, et un badge vert ou rouge selon que la cible survolée accepte le dépôt.
 
-Pour savoir ce qu’il survole, il interroge le DOM sous le curseur (`document.elementFromPoint`) et remonte jusqu’à un attribut `data-finder-drop-path`, posé par chaque cible (dossier de l’arbre, segment du fil d’Ariane). La règle `isDropAllowed` décide du badge : la même règle que celle du dépôt, ce qui garantit que le badge dit vrai. Il disparaît au `drop` comme au `dragend` : un glisser annulé par Échap ne déclenche pas de `drop`.
+### Pourquoi pas un composant React
+
+Le fantôme bouge à chaque `dragover`, c’est-à-dire plusieurs fois par seconde. En React, chaque mouvement serait un changement d’état, donc un nouveau rendu. Le fantôme n’a pourtant rien à calculer : il se déplace et change de couleur. C’est donc un petit **module impératif** (`dnd/dragGhost.ts`) : un seul élément du DOM en `position: fixed`, que l’on déplace en écrivant directement ses coordonnées.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/dnd/dragGhost.ts"
+  filename="dragGhost.ts"
+  snippetStart="export function startDragGhost(args: StartGhostArgs): void {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="7,12,13,16,26,27,28"
+  snippetTitle="Un élément, trois écouteurs"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+1. **Effacer l’image du navigateur.** `setDragImage` reçoit un élément d’un pixel, transparent, placé hors de l’écran : le navigateur dessine du vide, et le fantôme prend sa place.
+2. **Créer le fantôme**, avec `pointer-events: none`. Sans cela, il serait lui-même sous le pointeur, et cacherait la cible qu’on cherche à identifier.
+3. **Écouter tout le document** pendant le trajet : `dragover` pour suivre et colorer, `drop` et `dragend` pour nettoyer. Il faut les deux, car un glisser annulé par Échap émet `dragend` sans `drop`.
+
+### Savoir ce qu’on survole
+
+À chaque `dragover`, le fantôme suit le même chemin :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/dnd/dragGhost.ts"
+  filename="dragGhost.ts"
+  snippetStart="function handleDocumentDragOver(e: DragEvent): void {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,6,7,10,20"
+  snippetTitle="Ce qui est sous le pointeur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+1. Il demande au navigateur l’élément sous le pointeur (`document.elementFromPoint`).
+2. Il remonte jusqu’à l’ancêtre qui porte `data-finder-drop-path` (`closest`).
+3. Pas de cible : badge rouge. Une cible : `isDropAllowed` décide.
+
+Une cible qui oublierait cet attribut accepterait les dépôts sous un badge rouge. Le commentaire du fil d’Ariane le rappelle à qui ajoutera un segment.
+
+<Callout type="concept">
+**`textContent`, pas `innerHTML`.** Le nom d’un fichier vient de l’utilisateur. Écrit avec `innerHTML`, un nom comme `<img src=x onerror=…>` deviendrait du code exécuté dans la page. `textContent` l’écrit comme du texte. Seules les deux icônes du badge, écrites par le projet, passent par `innerHTML`.
+</Callout>
 
 <Callout type="insight">
-Le glisser-déposer tient en trois pièces indépendantes : un paquet typé et validé, des cibles qui le reçoivent, un fantôme qui ne fait que regarder. Une nouvelle cible (le fil d’Ariane en est une) n’a besoin que de poser son attribut et d’appeler les mêmes règles.
+Le glisser-déposer tient en trois pièces indépendantes : un paquet typé et validé, des cibles qui le reçoivent, un fantôme qui ne fait que regarder. Une nouvelle cible n’a besoin que d’appeler `useFolderDropTarget` et de poser son attribut : c’est ainsi que la grille est devenue une cible.
 </Callout>
+
+## Un fichier venu du bureau
+
+Le navigateur a son propre comportement pour un fichier qu’on lâche sur une page : il l’**ouvre**, à la place de la page. Une photo glissée depuis le bureau, lâchée à côté d’une zone d’envoi, remplacerait le tableau de bord, et une page en cours d’édition serait perdue.
+
+Les zones d’envoi des formulaires gèrent leurs fichiers et annulent ce comportement elles-mêmes. Pour le reste de la page, le tableau de bord appelle un petit hook :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/app-shell/usePreventFileDropNavigation.ts"
+  filename="usePreventFileDropNavigation.ts"
+  snippetStart="export function usePreventFileDropNavigation(): void {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,7,8,10,13,14,17,18"
+  snippetTitle="Un fichier lâché hors d’une zone ne fait pas quitter la page"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+1. **Seulement les fichiers.** `e.dataTransfer.types` contient `Files` pour un fichier venu du système : c’est l’un des rares renseignements lisibles avant le dépôt. Le glisser du finder, qui transporte son propre type, n’est pas concerné.
+2. **Après les zones de dépôt.** Les écouteurs sont posés sur `window`, en phase de **remontée** : un évènement part de l’élément visé et remonte vers la fenêtre, donc une zone d’envoi le reçoit avant eux. Si elle l’a pris en charge (`e.defaultPrevented`), le hook ne fait rien.
+3. **Sinon, annuler.** `preventDefault` au `dragover` et au `drop` : le navigateur n’ouvre rien, et le curseur « interdit » (`dropEffect = "none"`) dit que lâcher ici ne fera rien.
+
+👉 lâcher un fichier au mauvais endroit ne doit rien coûter
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Quelle bibliothèque ?", "Aucune : l’API Drag and Drop du navigateur."], ["Qu’emporte-t-on ?", "La sélection si l’élément saisi en fait partie, sinon lui seul ; chemins, identifiants, types."], ["Comment reconnaître un glisser du finder ?", "Un type MIME à lui, puis une validation du contenu au dépôt."], ["Où peut-on déposer ?", "Sur un dossier de l’arbre ou de la grille, ou sur un segment du fil d’Ariane : un seul hook, un seul dépôt."], ["Comment une cible sait-elle si le dépôt est permis, sans lire le paquet ?", "Elle demande au fantôme, qui a reçu les éléments au départ."], ["Qui décide ?", "La structure et l’utile dans le navigateur ; les droits et le métier sur le serveur."], ["Déposer sur la corbeille ?", "La même confirmation que le menu, puis le même chemin."], ["Glisser publie-t-il ?", "Jamais : seul media.setStatus change un statut."], ["Pourquoi un fantôme impératif ?", "Il bouge à chaque dragover : un rendu React par mouvement serait du travail pour rien."], ["Un fichier du bureau lâché à côté d’une zone d’envoi ?", "Rien : une garde sur window annule l’ouverture du fichier par le navigateur."]]' />
 
 ## Ce que nous devons savoir expliquer
 
 Avant de passer aux autres rôles du finder, nous devrions pouvoir expliquer :
 
-- pourquoi le paquet voyage sous un type MIME à lui, et pourquoi on le valide quand même ;
-- pourquoi les règles de dépôt sont structurelles, et ce qui reste au serveur ;
-- pourquoi le fantôme n’est pas un composant React.
+- les évènements d’un glisser, et pourquoi une cible doit appeler `preventDefault` dans son `dragover` ;
+- pourquoi le contenu d’un glisser ne se lit qu’au dépôt, et comment les cibles savent quand même si elles peuvent l’accepter ;
+- pourquoi chaque ligne de l’arbre arrête la propagation de son `dragstart` ;
+- pourquoi le paquet voyage sous un type à lui, et pourquoi on le valide quand même ;
+- pourquoi `dragleave` se vérifie avec `relatedTarget` ;
+- pourquoi le dépôt vit dans une fonction à part du hook, et ce que le fil d’Ariane y gagne ;
+- les trois niveaux de décision, et pourquoi les droits restent au serveur ;
+- pourquoi un dépôt sur la corbeille demande confirmation ;
+- pourquoi le fantôme n’est pas un composant React, et pourquoi il ignore le pointeur ;
+- pourquoi `textContent` et pas `innerHTML` ;
+- ce que fait le navigateur d’un fichier lâché sur une page, et pourquoi la garde écoute en phase de remontée.
 
 ## À suivre
 
