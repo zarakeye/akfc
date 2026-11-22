@@ -51,14 +51,30 @@ export default function SearchResultsView(): JSX.Element {
     );
   }
 
+  // Un refus ou une panne n'est pas « aucun résultat » : on le dit.
+  if (!search.loading && search.error && search.results.length === 0) {
+    return (
+      <div
+        className="h-full flex items-center justify-center text-destructive text-sm py-12 px-4 text-center"
+        role="alert"
+      >
+        {search.error}
+      </div>
+    );
+  }
+
   if (!search.loading && search.results.length === 0) {
+    const where = displayRelativePath(currentPath);
     return (
       <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-sm py-12 gap-2">
         <span>
-          Aucun fichier trouvé sous{' '}
-          <code className="bg-muted px-1 py-0.5 rounded text-xs">
-            {displayRelativePath(currentPath)}
-          </code>
+          Aucun fichier trouvé
+          {where !== null && (
+            <>
+              {' '}sous{' '}
+              <code className="bg-muted px-1 py-0.5 rounded text-xs">{where}</code>
+            </>
+          )}
         </span>
         <span className="text-xs">
           Essaie avec moins de caractères, ou ajuste les filtres (Aa / ab| / .*).
@@ -99,6 +115,11 @@ export default function SearchResultsView(): JSX.Element {
             </span>
           )}
         </span>
+        {search.error && (
+          <span className="ml-3 text-destructive" role="alert">
+            {search.error}
+          </span>
+        )}
         {search.truncated && (
           <span className="ml-3 text-warning">
             ⚠️ Liste tronquée — affine la recherche pour voir tous les résultats
@@ -211,10 +232,11 @@ export default function SearchResultsView(): JSX.Element {
 /*                                  HELPERS                                   */
 /* -------------------------------------------------------------------------- */
 
-function displayRelativePath(path: string): string {
+/** Chemin lisible dans la bibliothèque ; `null` hors d'elle (la racine inventée « Mes espaces »). */
+function displayRelativePath(path: string): string | null {
   if (path === APP_ROOT) return '/';
   if (path.startsWith(`${APP_ROOT}/`)) return path.slice(APP_ROOT.length + 1);
-  return path;
+  return null;
 }
 
 function formatBytes(bytes: number): string {

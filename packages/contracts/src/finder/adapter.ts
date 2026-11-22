@@ -142,6 +142,18 @@ export interface FileAdapter {
   moveItems?(options: MoveOptions): Promise<void>;
 
   /**
+   * Où chercher quand l'utilisateur lance une recherche depuis `path`.
+   *
+   * La recherche récursive du serveur descend sous un préfixe de stockage.
+   * Un adapter dont l'affichage ne suit pas le stockage le dit ici : une
+   * racine inventée (« Mes espaces ») n'a pas de préfixe, et un espace de
+   * groupe montre ses sous-espaces, rangés à plat ailleurs dans le stockage.
+   *
+   * Optionnel : sans lui, on cherche sous `path` seul.
+   */
+  searchScopes?(path: string): Promise<string[]>;
+
+  /**
    * (optionnel) delete
    * @param path
    */

@@ -4,6 +4,7 @@ import { JSX, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 import { Search, X, Loader2 } from 'lucide-react';
 import { useFinderStore, type SearchFlags } from '#features/finder-core/state/useFinderStore.ts';
+import { useSessionStore } from '#lib/stores/useSessionStore.ts';
 
 /**
  * 🔎 FinderSearchBar — barre de recherche du finder avec filtres type VS Code.
@@ -44,6 +45,7 @@ export default function FinderSearchBar({
 } = {}): JSX.Element {
   const query = useFinderStore((s) => s.search.query);
   const flags = useFinderStore((s) => s.search.flags);
+  const isAdmin = useSessionStore((st) => st.session?.user?.isAdmin ?? false);
   const loading = useFinderStore((s) => s.search.loading);
 
   const setSearchQuery = useFinderStore((s) => s.setSearchQuery);
@@ -152,13 +154,17 @@ export default function FinderSearchBar({
           label="ab|"
           title="Mot entier"
         />
-        <FlagToggle
-          flag="useRegex"
-          active={flags.useRegex}
-          onToggle={toggleSearchFlag}
-          label=".*"
-          title="Expression régulière"
-        />
+        {/* Réservée aux administrateurs par le serveur (une expression mal
+            construite peut le bloquer) : on ne la propose pas aux autres. */}
+        {isAdmin && (
+          <FlagToggle
+            flag="useRegex"
+            active={flags.useRegex}
+            onToggle={toggleSearchFlag}
+            label=".*"
+            title="Expression régulière"
+          />
+        )}
       </div>
     </div>
   );

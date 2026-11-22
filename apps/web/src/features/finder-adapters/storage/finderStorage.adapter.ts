@@ -9,6 +9,7 @@ import type {
   MoveOptions,
 } from '@akfc/contracts/finder/index.ts';
 import { trpcClient } from '#core/trpc/trpcClient.ts';
+import { spaceSearchScopes } from '#features/finder-adapters/spaces/spaceSearchScopes.ts';
 import type { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
 import type { AppRouter } from '@akfc/backend/modules/index.ts';
 
@@ -223,6 +224,14 @@ export const finderStorageAdapter: FileAdapter = {
     });
 
     return { root: mapStorageNodeToFinderNode(root) };
+  },
+
+  // Un espace de groupe montre ses sous-espaces (imbriqués à l'affichage, à
+  // plat dans le stockage) : on cherche aussi sous eux. La hiérarchie n'est
+  // servie qu'aux administrateurs ; pour les autres, elle est vide.
+  async searchScopes(path: string): Promise<string[]> {
+    const spaces = await trpcClient.storage.groupSpaceHierarchy.query();
+    return spaceSearchScopes(spaces, path);
   },
 
   async getMetadata(path: string): Promise<FinderNodeMetadata | null> {

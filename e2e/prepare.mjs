@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, BIRTH_DATE, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, COMMENT_POST, PASSWORD, ATELIER, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, RANGE_PENDING, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
+import { CONSENT_SINCE, COURSES, DISCIPLINES, DOCUMENT_A, BIRTH_DATE, DIX_HUIT, FAMILIES, MINOR, PARTANT_MEDIA, PARTANT_POST, COMMENT_POST, PASSWORD, ATELIER, ATELIER_FILE, TRASHED_IN_GROUP, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, RANGE_PENDING, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -385,6 +385,16 @@ await prisma.imageConsentForm.create({
       { groupId: ATELIER.id, userId: USERS.membreB.id, access: "VIEWER" },
     ],
   });
+  {
+    const img = Buffer.from(TINY_PNG_BASE64, "base64");
+    await s3.send(new PutObjectCommand({ Bucket, Key: ATELIER_FILE.key, Body: img, ContentType: "image/png" }));
+    await prisma.mediaAsset.create({
+      data: {
+        id: ATELIER_FILE.id, fullPath: ATELIER_FILE.key, mimeType: "image/png", format: "png", originalFileName: ATELIER_FILE.name,
+        bytes: img.byteLength, width: 1, height: 1, appRoot: "AKFC", status: "published", uploaderUserId: USERS.admin.id,
+      },
+    });
+  }
   const png = Buffer.from(TINY_PNG_BASE64, "base64");
   await s3.send(new PutObjectCommand({ Bucket, Key: TRASHED_IN_GROUP.storageRoot, Body: png, ContentType: "image/png" }));
   await prisma.trashEntry.create({

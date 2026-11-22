@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { trpc } from '#core/trpc/trpcClient.ts';
 import { APP_ROOT } from '@akfc/config/app.ts';
 import { useFinderStore, type SearchResultNode } from '#features/finder-core/state/useFinderStore.ts';
+import { useSessionStore } from '#lib/stores/useSessionStore.ts';
 
 /**
  * 🔎 Hook qui pilote la recherche récursive depuis `currentPath`.
@@ -44,6 +45,8 @@ export function useFinderSearch(): void {
 
   const setSearchResults = useFinderStore((s) => s.setSearchResults);
   const setSearchLoading = useFinderStore((s) => s.setSearchLoading);
+  const setSearchError = useFinderStore((s) => s.setSearchError);
+  const isAdmin = useSessionStore((st) => st.session?.user?.isAdmin ?? false);
 
   const trpcUtils = trpc.useUtils();
 
@@ -67,15 +70,33 @@ export function useFinderSearch(): void {
     let cancelled = false;
     debounceRef.current = window.setTimeout(async () => {
       try {
-        // Le prefix de recherche est le currentPath (toujours un dossier).
-        const data = await trpcUtils.media.searchRecursive.fetch({
-          appRoot: APP_ROOT,
-          prefix: currentPath,
-          query: query.trim(),
-          caseSensitive: flags.caseSensitive,
-          wholeWord: flags.wholeWord,
-          useRegex: flags.useRegex,
-        });
+        // Où chercher : sous le dossier courant, sauf si l'adapter en décide
+        // autrement (racine inventée, sous-espaces rangés ailleurs).
+        const adapter = useFinderStore.getState().boundAdapter;
+        const scopes = (await adapter?.searchScopes?.(currentPath)) ?? [currentPath];
+        if (cancelled) return;
+        const pages = await Promise.all(
+          scopes.map((prefix) =>
+            trpcUtils.media.searchRecursive.fetch({
+              appRoot: APP_ROOT,
+              prefix,
+              query: query.trim(),
+              caseSensitive: flags.caseSensitive,
+              wholeWord: flags.wholeWord,
+              // Réservée aux administrateurs côté serveur : un choix resté dans
+              // les préférences d'un membre ne doit pas faire échouer sa recherche.
+              useRegex: flags.useRegex && isAdmin,
+            }),
+          ),
+        );
+        // Un résultat peut venir de deux préfixes qui se recouvrent : une fois suffit.
+        const seen = new Set<string>();
+        const data = {
+          results: pages
+            .flatMap((p) => p.results)
+            .filter((r) => (seen.has(r.path) ? false : (seen.add(r.path), true))),
+          truncated: pages.some((p) => p.truncated),
+        };
 
         // Map vers SearchResultNode (FinderNode + parentPath).
         // Discriminant `kind` côté serveur ('folder' | 'file') → mappé vers
@@ -118,11 +139,11 @@ export function useFinderSearch(): void {
         if (cancelled) return;
         setSearchResults(results, data.truncated);
       } catch (err) {
-        // Si le fetch fail (réseau ou regex invalide côté serveur retournant
-        // []), on pose juste des résultats vides — le loading est reset.
-        console.error('[useFinderSearch] fetch failed', err);
+        // Un refus ou une panne ne doit pas se faire passer pour « aucun
+        // résultat » : le message s'affiche au-dessus de la liste.
         if (cancelled) return;
         setSearchResults([], false);
+        setSearchError(err instanceof Error ? err.message : 'La recherche a échoué.');
       }
     }, 300);
 
@@ -142,6 +163,7 @@ export function useFinderSearch(): void {
     flags.wholeWord,
     flags.useRegex,
     currentPath,
+    isAdmin,
   ]);
 }
 

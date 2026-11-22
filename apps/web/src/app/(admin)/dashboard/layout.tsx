@@ -6,7 +6,6 @@ import { PanelLeft, X } from 'lucide-react';
 
 import Header from '#features/app-shell/Header.tsx';
 import ControlPanelSidebar from '#features/app-shell/ControlPanelSidebar.tsx';
-import { usePreventFileDropNavigation } from '#features/app-shell/usePreventFileDropNavigation.ts';
 
 interface Props {
   children: React.ReactNode;
@@ -42,8 +41,6 @@ interface Props {
  */
 export default function DashboardLayout({ children }: Props): JSX.Element {
   const pathname = usePathname();
-  // Un fichier lâché hors d'une zone de dépôt ne remplace pas le tableau de bord.
-  usePreventFileDropNavigation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Refermeture du tiroir à la navigation, par AJUSTEMENT D'ÉTAT PENDANT LE

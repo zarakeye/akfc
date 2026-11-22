@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { trpc, getTrpcClient } from '#core/trpc/trpcClient.ts';
 import { JSX, useState } from 'react';
 import { TourProvider } from '#features/tours/index.ts';
+import { usePreventFileDropNavigation } from '#features/app-shell/usePreventFileDropNavigation.ts';
 
 /**
  * Provides the QueryClient and TRPC client to the application.
@@ -16,6 +17,8 @@ import { TourProvider } from '#features/tours/index.ts';
 export function AppProviders({ children }: { children: React.ReactNode }): JSX.Element {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() => getTrpcClient());
+  // Partout sur le site : un fichier lâché hors d'une zone de dépôt ne fait pas quitter la page.
+  usePreventFileDropNavigation();
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>

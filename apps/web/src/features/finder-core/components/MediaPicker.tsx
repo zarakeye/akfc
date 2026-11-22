@@ -28,6 +28,8 @@ type Props = {
    * Les dossiers ne sont jamais filtrés (navigation préservée).
    */
   fileFilter?: (node: FinderNode) => boolean;
+  /** Libellé du bouton de validation : le sélecteur sert aux galeries, aux pages, aux fiches… */
+  submitLabel?: string;
 };
 
 /**
@@ -60,6 +62,7 @@ export function MediaPicker({
   adapter,
   rootPath,
   fileFilter = isMediaNode,
+  submitLabel = 'Ajouter la sélection',
 }: Props): JSX.Element {
   const items = usePickerCartStore((s) => s.items);
   const toggleCart = usePickerCartStore((s) => s.toggleCart);
@@ -146,7 +149,7 @@ export function MediaPicker({
             disabled={cartCount === 0}
             className="px-3 py-1 bg-brand text-brand-foreground rounded disabled:opacity-50"
           >
-            Ajouter à la galerie
+            {submitLabel}
           </button>
         </div>
       </div>

@@ -328,6 +328,7 @@ export function MediaItemsEditor({
           open
           adapter={finderStorageAdapter}
           rootPath={APP_ROOT}
+          submitLabel="Ajouter à la galerie"
           onClose={() => setPickerOpen(false)}
           onSubmit={(paths) => {
             void handlePickerSubmit(paths);

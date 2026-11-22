@@ -270,9 +270,9 @@ Le glisser-déposer tient en trois pièces indépendantes : un paquet typé et v
 
 ## Un fichier venu du bureau
 
-Le navigateur a son propre comportement pour un fichier qu’on lâche sur une page : il l’**ouvre**, à la place de la page. Une photo glissée depuis le bureau, lâchée à côté d’une zone d’envoi, remplacerait le tableau de bord, et une page en cours d’édition serait perdue.
+Le navigateur a son propre comportement pour un fichier qu’on lâche sur une page : il l’**ouvre**, à la place de la page. Une photo glissée depuis le bureau, lâchée à côté d’une zone d’envoi, remplacerait le tableau de bord ou « Mes espaces », et une page en cours d’édition serait perdue.
 
-Les zones d’envoi des formulaires gèrent leurs fichiers et annulent ce comportement elles-mêmes. Pour le reste de la page, le tableau de bord appelle un petit hook :
+Les zones d’envoi des formulaires gèrent leurs fichiers et annulent ce comportement elles-mêmes. Pour le reste, les fournisseurs de l’application (`AppProviders`, sur toutes les pages) appellent un petit hook :
 
 <CodeExample
   language="ts"

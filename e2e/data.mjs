@@ -140,6 +140,12 @@ export const TRASHED_FOLDER = {
  * son espace : n'importe quel éditeur du groupe peut le restaurer, pas un lecteur.
  */
 export const ATELIER = { id: "e2egroupeatelier", name: "Atelier e2e", slug: "atelier-e2e" };
+/** Un fichier présent dans l'espace « Atelier » : la recherche de « Mes espaces » doit le trouver. */
+export const ATELIER_FILE = {
+  id: "e2e-media-atelier",
+  name: "planning-atelier.png",
+  key: "AKFC/collaborative-group-spaces/atelier-e2e-e2egroupeatelier/planning-atelier.png",
+};
 export const TRASHED_IN_GROUP = {
   id: "e2e-corbeille-groupe",
   displayName: "notes-atelier.png",

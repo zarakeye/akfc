@@ -92,6 +92,8 @@ export type SearchState = {
   results: SearchResultNode[];
   truncated: boolean;
   loading: boolean;
+  /** Refus ou panne de la dernière recherche (distinct de « aucun résultat »). */
+  error: string | null;
 };
 
 type FinderState = {
@@ -101,8 +103,9 @@ type FinderState = {
   /** L'adaptateur du finder affiché : le store est global, il sert un finder après l'autre. */
   boundAdapter: FileAdapter | null;
   /**
-   * Appelé par chaque `Finder` à l'affichage. Un autre adaptateur : le cache, écrit par le
-   * précédent, est vidé. Un dossier courant hors de la racine : on revient à la racine.
+   * Appelé par chaque `Finder` à l'affichage. Il repart sans sélection. Un autre adaptateur :
+   * le cache, écrit par le précédent, est vidé. Un dossier courant hors de la racine : on
+   * revient à la racine.
    */
   bindFinder: (adapter: FileAdapter, rootPath: string) => void;
 
@@ -170,6 +173,7 @@ type FinderState = {
   setSearchQuery: (query: string) => void;
   toggleSearchFlag: (flag: keyof SearchFlags) => void;
   setSearchResults: (results: SearchResultNode[], truncated: boolean) => void;
+  setSearchError: (error: string | null) => void;
   setSearchLoading: (loading: boolean) => void;
   clearSearch: () => void;
 };
@@ -279,6 +283,12 @@ export const useFinderStore = create<FinderState>((set, get) => ({
         reloadKey: state.reloadKey + 1,
       }));
     }
+    // Un finder qui s'affiche repart sans sélection : celle d'un finder
+    // précédent (la bibliothèque, avant le sélecteur) ne le concerne pas.
+    set(() => ({
+      selection: { roots: new Set(), excluded: new Set(), anchorId: null },
+      multiSelectActive: false,
+    }));
     const path = get().currentPath;
     if (path !== rootPath && !path.startsWith(`${rootPath}/`)) get().setPath(rootPath);
   },
@@ -290,8 +300,13 @@ export const useFinderStore = create<FinderState>((set, get) => ({
         currentPath: path,
         folders: cached?.folders ?? [],
         files: cached?.files ?? [],
-        selection: { roots: new Set(), excluded: new Set(), anchorId: null },
-        multiSelectActive: false,
+        // En mode sélection, la sélection suit la navigation : on coche dans
+        // plusieurs dossiers, on entre dans un dossier coché pour en exclure
+        // une photo. Ses marques sont des chemins, valables partout. Hors de
+        // ce mode, ouvrir un dossier repart sans sélection.
+        ...(state.multiSelectActive
+          ? {}
+          : { selection: { roots: new Set<string>(), excluded: new Set<string>(), anchorId: null } }),
         // Sortie de la recherche au changement de path : la query est attachée
         // au prefix actuel, ça n'a plus de sens de la garder active.
         search: {
@@ -300,6 +315,7 @@ export const useFinderStore = create<FinderState>((set, get) => ({
           results: [],
           truncated: false,
           loading: false,
+          error: null,
         },
       };
     }),
@@ -472,6 +488,7 @@ export const useFinderStore = create<FinderState>((set, get) => ({
     results: [],
     truncated: false,
     loading: false,
+    error: null,
   },
 
   setSearchQuery: (query) =>
@@ -486,8 +503,11 @@ export const useFinderStore = create<FinderState>((set, get) => ({
 
   setSearchResults: (results, truncated) =>
     set((state) => ({
-      search: { ...state.search, results, truncated, loading: false },
+      search: { ...state.search, results, truncated, loading: false, error: null },
     })),
+
+  setSearchError: (error) =>
+    set((state) => ({ search: { ...state.search, error } })),
 
   setSearchLoading: (loading) =>
     set((state) => ({ search: { ...state.search, loading } })),
@@ -500,6 +520,7 @@ export const useFinderStore = create<FinderState>((set, get) => ({
         results: [],
         truncated: false,
         loading: false,
+        error: null,
       },
     })),
 }));

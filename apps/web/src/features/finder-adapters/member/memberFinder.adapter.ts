@@ -9,6 +9,7 @@ import type {
 
 import { trpcClient } from "#core/trpc/trpcClient.ts";
 import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
+import { spaceSearchScopes } from "#features/finder-adapters/spaces/spaceSearchScopes.ts";
 
 /**
  * Racine VIRTUELLE du finder membre. Ce n'est pas un chemin physique : à cet
@@ -121,6 +122,14 @@ export const memberFinderAdapter: FileAdapter = {
 
     // Chemin sous un espace (sous-dossier ordinaire) : contenu physique seul.
     return finderStorageAdapter.getTree!(options);
+  },
+
+  // Depuis la racine inventée, qui n'a pas de chemin de stockage : dans tous
+  // les espaces du membre. Depuis un espace : lui et ses sous-espaces.
+  async searchScopes(path: string): Promise<string[]> {
+    const spaces = await trpcClient.storage.myCollaborativeSpaces.query();
+    if (path === MEMBER_FINDER_ROOT) return spaces.map((s) => s.path);
+    return spaceSearchScopes(spaces, path);
   },
 
   async getNode(path: string): Promise<FinderNode | null> {
