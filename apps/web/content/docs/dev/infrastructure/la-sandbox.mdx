@@ -17,7 +17,7 @@ git clone … && cd akfc
 docker compose -f docker-compose.sandbox.yml up -d --build
 ```
 
-Le site répond alors sur `http://localhost:3010`, les fichiers stockés sur `http://localhost:9001`, et les e-mails envoyés par le site s’affichent sur `http://localhost:8025`. Rien ne sort de la machine.
+Le site répond alors sur `http://localhost:3010`, les fichiers stockés sur `http://localhost:9001`, et les e-mails envoyés par le site s’affichent sur `http://localhost:8025`. Rien ne sort de la machine. Et rien n’y entre : chaque port est publié sur `127.0.0.1`, et la sandbox, avec ses secrets de démonstration et sa boîte mail ouverte, n’est joignable que depuis la machine qui la lance.
 
 ## Six services, dans l’ordre 🧩
 

@@ -44,11 +44,13 @@ Le site tourne **hors** de Docker et joint chaque service par son port publié, 
 />
 
 - **`name: akfc-dev`** fixe le nom du projet Compose. Sans lui, Compose prendrait le nom du dossier (`akfc`), et deux clones du dépôt dans deux dossiers différents auraient deux bases différentes. Ce nom préfixe les volumes : `akfc-dev_akfc-dev-pgdata`.
-- **`image: postgres:17-alpine`** : la version majeure est écrite ici, et nulle part ailleurs. La variante `alpine` est la plus légère ; pour une base qu’on ne fait que lancer, elle suffit (l’image du site, elle, a ses raisons de ne pas l’être, chapitre 3).
+- **`image: postgres:17-alpine`** : la version majeure est écrite dans ce fichier pour le développement, les tests et l’intégration continue. La sandbox l’écrit aussi, à l’identique ; c’est la seule autre copie. La variante `alpine` est la plus légère ; pour une base qu’on ne fait que lancer, elle suffit (l’image du site, elle, a ses raisons de ne pas l’être, chapitre 3).
 - **`environment`** : l’image officielle de Postgres lit ces trois variables **au premier démarrage**, quand le volume est vide, pour créer l’utilisateur et la base. Les changer ensuite ne change rien : la base existe déjà dans le volume.
-- **`ports: "127.0.0.1:5435:5432"`** se lit « adresse de la machine : port de la machine : port du conteneur ». Le port 5435, et non 5432, laisse la place à un Postgres déjà installé ; `127.0.0.1` réserve l’accès à la machine elle-même. Sans cette adresse, Docker publierait le port **sur toutes les interfaces**, et la base, avec son mot de passe public, serait joignable depuis le Wi-Fi du café.
+- **`ports: "127.0.0.1:5435:5432"`** se lit « adresse de la machine : port de la machine : port du conteneur ». Le port 5435, et non 5432, laisse la place à un Postgres déjà installé ; `127.0.0.1` réserve l’accès à la machine elle-même. Sans cette adresse, Docker publierait le port **sur toutes les interfaces**, et la base, avec son mot de passe public, serait joignable depuis le Wi-Fi du café. La sandbox suit la même règle, pour la même raison : ses secrets de démonstration et sa boîte mail ne regardent que la machine qui la lance.
 - **`volumes`** : le dossier où Postgres range ses données, `/var/lib/postgresql/data`, est un volume nommé. Supprimer le conteneur ne touche pas aux données.
 - **`healthcheck`** : toutes les trois secondes, Docker lance `pg_isready` dans le conteneur. Tant qu’il échoue, le service est `starting` ; ensuite, `healthy`. C’est ce que `--wait` attend, dans `pnpm dev:infra` : la commande ne rend la main que quand la base **répond**, pas seulement quand son conteneur a démarré.
+
+👉 un port publié sans adresse est un port ouvert sur le réseau
 
 ### Le stockage
 
@@ -116,6 +118,20 @@ Les adresses sont donc les mêmes sur le Mac et sur GitHub, et un test qui passe
 ## Récapitulatif
 
 <DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que lance pnpm dev:infra ?", "Trois services : db (Postgres 17), storage (SeaweedFS, S3), mail (Mailpit), et attend qu’ils soient prêts."], ["Pourquoi 5435 et non 5432 ?", "Pour coexister avec un Postgres installé ou avec la sandbox ; tous les ports sont décalés."], ["Pourquoi 127.0.0.1 devant chaque port ?", "Sans lui, le port serait publié sur toutes les interfaces, donc joignable depuis le réseau, mot de passe public compris."], ["Que vérifie un healthcheck ?", "Que le service répond (pg_isready, /healthz) ; --wait attend cet état."], ["Où sont les données ?", "Dans deux volumes nommés, préfixés akfc-dev_ ; down -v les efface."], ["Comment les tests ont-ils leurs données à part ?", "Une base akfc_e2e et un bucket akfc-e2e dans les mêmes conteneurs, remis à zéro à chaque lancement."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de construire l’image du site, nous devrions pouvoir expliquer :
+
+- ce qui tourne dans Docker pendant une séance de travail, ce qui tourne hors de Docker, et comment le site joint chaque service ;
+- pourquoi le projet Compose porte un nom fixe ;
+- quand les variables de l’image Postgres sont lues, et pourquoi les changer ensuite ne change rien ;
+- comment se lit `127.0.0.1:5435:5432`, et ce qui se passe sans l’adresse ;
+- ce que vérifie un healthcheck, et ce qu’attend `--wait` ;
+- pourquoi une image se fige à une version, et jamais à `latest` ;
+- pourquoi Mailpit n’a ni volume ni healthcheck ;
+- comment les tests ont leurs données à part, dans les mêmes conteneurs ;
+- pourquoi l’intégration continue lit le même fichier que le Mac.
 
 ## À suivre
 

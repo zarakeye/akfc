@@ -8,6 +8,9 @@
 #
 #  Reset total : docker compose -f docker-compose.sandbox.yml down -v
 #
+#  Tout écoute sur 127.0.0.1 : la sandbox (secrets de démo, boîte mail ouverte) n'est joignable que
+#  depuis la machine qui la lance, pas depuis le réseau où elle se trouve.
+#
 #  ⚠ Valeurs de démo (secrets bidon) : ne JAMAIS réutiliser en prod.
 # ══════════════════════════════════════════════════════════════════════════
 
@@ -37,8 +40,8 @@ services:
       AWS_ACCESS_KEY_ID: sandbox
       AWS_SECRET_ACCESS_KEY: sandbox-secret
     ports:
-      - "9000:8333"      # API S3 (URL signées vues par le navigateur)
-      - "9001:8888"      # fichiers stockés
+      - "127.0.0.1:9000:8333"      # API S3 (URL signées vues par le navigateur)
+      - "127.0.0.1:9001:8888"      # fichiers stockés
     volumes:
       - sandbox_storage:/data
     healthcheck:
@@ -50,7 +53,7 @@ services:
   mailpit:
     image: ghcr.io/axllent/mailpit:v1.33.0
     ports:
-      - "8025:8025"      # UI web des mails
+      - "127.0.0.1:8025:8025"      # UI web des mails
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: "true"
       MP_SMTP_AUTH_ALLOW_INSECURE: "true"
@@ -102,7 +105,7 @@ services:
       mailpit:
         condition: service_started
     ports:
-      - "3010:3000"
+      - "127.0.0.1:3010:3000"
     environment:
       NODE_ENV: "production"
 
