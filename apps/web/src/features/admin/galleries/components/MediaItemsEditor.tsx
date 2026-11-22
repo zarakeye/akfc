@@ -21,7 +21,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { trpc, trpcClient } from '#core/trpc/trpcClient.ts';
+import { trpc } from '#core/trpc/trpcClient.ts';
+import { pathsToMediaIds } from '#features/media/pathsToMediaIds.ts';
 import { MediaPicker } from '#features/finder-core/components/MediaPicker.tsx';
 import { finderStorageAdapter } from '#features/finder-adapters/storage/finderStorage.adapter.ts';
 import { APP_ROOT } from '@akfc/config/app.ts';
@@ -202,17 +203,8 @@ export function MediaItemsEditor({
   );
 
   async function handlePickerSubmit(paths: string[]): Promise<void> {
-    if (paths.length === 0) return;
-    
-    const byPath = await trpcClient.media.resolveByPaths.query({
-      appRoot: APP_ROOT,
-      paths,
-    });
+    const newIds = await pathsToMediaIds(APP_ROOT, paths);
 
-    const newIds = Object.values(byPath).filter(
-      (mid): mid is string => mid !== null,
-    );
-    
     const seen = new Set(value);
     const toAdd = newIds.filter((mid) => !seen.has(mid));
     onChange([...value, ...toAdd]);
@@ -330,9 +322,7 @@ export function MediaItemsEditor({
           rootPath={APP_ROOT}
           submitLabel="Ajouter à la galerie"
           onClose={() => setPickerOpen(false)}
-          onSubmit={(paths) => {
-            void handlePickerSubmit(paths);
-          }}
+          onSubmit={handlePickerSubmit}
         />
       )}
     </div>

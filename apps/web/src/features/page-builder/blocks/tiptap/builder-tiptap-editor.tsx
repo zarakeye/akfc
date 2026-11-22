@@ -55,6 +55,7 @@ import { Images } from "lucide-react";
 
 // --- tRPC + Picker + Context ---
 import { trpcClient } from "#core/trpc/trpcClient.ts";
+import { pathsToMediaIds } from "#features/media/pathsToMediaIds.ts";
 import { MediaPicker } from "#features/finder-core/components/MediaPicker.tsx";
 import { usePageBuilderContext } from "../../PageBuilderContext";
 
@@ -143,23 +144,14 @@ export function BuilderTipTapEditor({
 
   const handlePickerSubmit = useCallback(
     async (paths: string[]) => {
-      setPickerOpen(false);
       const resolve = pickerResolveRef.current;
-      pickerResolveRef.current = null;
       if (!resolve) return;
-      if (paths.length === 0) {
-        resolve(null);
-        return;
-      }
-      const byPath = await trpcClient.media.resolveByPaths.query({
-        appRoot,
-        paths,
-      });
-      const mediaId =
-        paths
-          .map((p) => byPath[p])
-          .find((id): id is string => typeof id === "string") ?? null;
-      resolve(mediaId);
+      // Convertir d'abord : si le serveur refuse, l'erreur remonte au
+      // sélecteur, qui reste ouvert, et la promesse de l'éditeur attend encore.
+      const [mediaId] = await pathsToMediaIds(appRoot, paths);
+      pickerResolveRef.current = null;
+      setPickerOpen(false);
+      resolve(mediaId ?? null);
     },
     [appRoot],
   );
@@ -314,9 +306,7 @@ export function BuilderTipTapEditor({
           adapter={adapter}
           rootPath={mediaRoot}
           onClose={handlePickerClose}
-          onSubmit={(paths) => {
-            void handlePickerSubmit(paths);
-          }}
+          onSubmit={handlePickerSubmit}
         />
       )}
     </EditorContext.Provider>

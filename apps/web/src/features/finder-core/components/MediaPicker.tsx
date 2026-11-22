@@ -1,4 +1,4 @@
-import { JSX, useEffect, useMemo } from 'react';
+import { JSX, useEffect, useMemo, useState } from 'react';
 import Finder from '#features/finder-core/components/Finder.tsx';
 import { Modal } from '#components/ui/Modal.tsx';
 import type { FileAdapter, FinderNode } from '@akfc/contracts/finder/index.ts';
@@ -12,7 +12,11 @@ import {
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSubmit: (selectedPaths: string[]) => void;
+  /**
+   * Reçoit les chemins du panier. S'il échoue (promesse rejetée), le sélecteur affiche
+   * le message et reste ouvert, panier compris : rien n'est perdu.
+   */
+  onSubmit: (selectedPaths: string[]) => void | Promise<void>;
   adapter: FileAdapter;
   /**
    * Chemin racine de l'arbre du finder embarqué dans le picker.
@@ -68,6 +72,8 @@ export function MediaPicker({
   const toggleCart = usePickerCartStore((s) => s.toggleCart);
   const removeFromCart = usePickerCartStore((s) => s.removeFromCart);
   const clearCart = usePickerCartStore((s) => s.clearCart);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Le panier est une ressource de session : on le vide à l'ouverture du
   // picker pour repartir d'une sélection vierge, et à la fermeture pour ne
@@ -91,13 +97,23 @@ export function MediaPicker({
     toggleCart(node);
   }
 
-  function handleSubmit() {
-    if (cartCount === 0) return;
+  async function handleSubmit(): Promise<void> {
+    if (cartCount === 0 || submitting) return;
 
     // `node.path` est la clé de stockage (`MediaAsset.fullPath`) : c'est ce que
     // `media.resolveByPaths`, au bout de `onSubmit`, sait retrouver.
     const paths = cartNodes.map((n) => n.path);
-    onSubmit(paths);
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await onSubmit(paths);
+    } catch (err) {
+      // Le sélecteur reste ouvert, panier compris : on peut corriger ou réessayer.
+      setSubmitError(err instanceof Error ? err.message : "L'ajout a échoué.");
+      setSubmitting(false);
+      return;
+    }
+    setSubmitting(false);
     clearCart();
     onClose();
   }
@@ -137,6 +153,11 @@ export function MediaPicker({
         <span className="text-sm text-muted-foreground">
           {cartCount} média{cartCount > 1 ? 's' : ''} sélectionné
           {cartCount > 1 ? 's' : ''}
+          {submitError && (
+            <span className="ml-3 text-destructive" role="alert">
+              {submitError}
+            </span>
+          )}
         </span>
 
         <div className="flex gap-2">
@@ -145,8 +166,8 @@ export function MediaPicker({
           </button>
 
           <button
-            onClick={handleSubmit}
-            disabled={cartCount === 0}
+            onClick={() => void handleSubmit()}
+            disabled={cartCount === 0 || submitting}
             className="px-3 py-1 bg-brand text-brand-foreground rounded disabled:opacity-50"
           >
             {submitLabel}

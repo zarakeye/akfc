@@ -6,7 +6,8 @@ import type { inferRouterOutputs } from "@trpc/server";
 
 import { MediaPicker } from "#features/finder-core/components/MediaPicker.tsx";
 import { Button } from "#features/editor-tiptap/ui-primitive/button/index.tsx";
-import { trpc, trpcClient } from "#core/trpc/trpcClient.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { pathsToMediaIds } from "#features/media/pathsToMediaIds.ts";
 import type { AppRouter } from "@akfc/backend/modules/index.ts";
 
 import { usePageBuilderContext } from "#features/page-builder/PageBuilderContext.tsx";
@@ -183,14 +184,7 @@ export function MediaListEditor<TItem extends { mediaId: string }>({
   /* ─── Actions ────────────────────────────────────────────────────── */
 
   async function handlePickerSubmit(paths: string[]) {
-    if (paths.length === 0) return;
-    const resolved = await trpcClient.media.resolveByPaths.query({
-      appRoot: ctx.appRoot,
-      paths,
-    });
-    const newMediaIds = Object.values(resolved).filter(
-      (id): id is string => id !== null,
-    );
+    const newMediaIds = await pathsToMediaIds(ctx.appRoot, paths);
     if (newMediaIds.length === 0) return;
     const newItems = newMediaIds.map(itemFactory);
     onChange([...items, ...newItems]);
@@ -301,12 +295,7 @@ export function MediaListEditor<TItem extends { mediaId: string }>({
           adapter={ctx.adapter}
           rootPath={ctx.mediaRoot}
           onClose={() => setPickerOpen(false)}
-          onSubmit={(paths) => {
-            // Le picker rend une Promise via son onSubmit ?
-            // Non — c'est une callback sync, on doit awaiter ici dans
-            // une fonction async dédiée pour ne pas bloquer le picker.
-            void handlePickerSubmit(paths);
-          }}
+          onSubmit={handlePickerSubmit}
         />
       )}
     </div>

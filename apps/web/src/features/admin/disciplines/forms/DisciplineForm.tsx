@@ -4,7 +4,8 @@ import { useState } from "react";
 import type { Discipline, DisciplineType } from "@prisma/client";
 
 import { PageBuilder } from "#features/page-builder/index.ts";
-import { trpc, trpcClient } from "#core/trpc/trpcClient.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { pathsToMediaIds } from "#features/media/pathsToMediaIds.ts";
 import { MediaPicker } from "#features/finder-core/components/MediaPicker.tsx";
 import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
 import { APP_ROOT } from "@akfc/config/app.ts";
@@ -506,20 +507,11 @@ export function DisciplineForm({
             adapter={finderStorageAdapter}
             rootPath={APP_ROOT}
             onClose={() => setPickerOpen(false)}
-            onSubmit={(paths) => {
-              setPickerOpen(false);
-              if (paths.length === 0) return;
-              // Le picker rend des CHEMINS ; la conversion en identifiant est
-              // la même que celle du builder, pour que les deux voies
-              // produisent exactement la même référence.
-              void trpcClient.media.resolveByPaths
-                .query({ appRoot: APP_ROOT, paths })
-                .then((resolved) => {
-                  const found = Object.values(resolved).find(
-                    (id): id is string => id !== null,
-                  );
-                  if (found) setSummaryMediaId(found);
-                });
+            onSubmit={async (paths) => {
+              // Un seul média pour ce champ : le premier du panier. La conversion
+              // est commune à tous les formulaires (pathsToMediaIds).
+              const [first] = await pathsToMediaIds(APP_ROOT, paths);
+              if (first) setSummaryMediaId(first);
             }}
           />
         )}

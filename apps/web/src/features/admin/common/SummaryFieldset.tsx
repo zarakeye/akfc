@@ -2,7 +2,8 @@
 
 import { useState, type JSX, type ReactNode } from "react";
 
-import { trpc, trpcClient } from "#core/trpc/trpcClient.ts";
+import { trpc } from "#core/trpc/trpcClient.ts";
+import { pathsToMediaIds } from "#features/media/pathsToMediaIds.ts";
 import { MediaPicker } from "#features/finder-core/components/MediaPicker.tsx";
 import { finderStorageAdapter } from "#features/finder-adapters/storage/finderStorage.adapter.ts";
 import { APP_ROOT } from "@akfc/config/app.ts";
@@ -196,20 +197,11 @@ export function SummaryFieldset({
           adapter={finderStorageAdapter}
           rootPath={APP_ROOT}
           onClose={() => setPickerOpen(false)}
-          onSubmit={(paths) => {
-            setPickerOpen(false);
-            if (paths.length === 0) return;
-            // Le picker rend des CHEMINS ; la conversion en identifiant est
-            // celle du builder, pour que les deux voies produisent la même
-            // référence.
-            void trpcClient.media.resolveByPaths
-              .query({ appRoot: APP_ROOT, paths })
-              .then((resolved) => {
-                const found = Object.values(resolved).find(
-                  (id): id is string => id !== null,
-                );
-                if (found) onMediaIdChange(found);
-              });
+          onSubmit={async (paths) => {
+            // Un seul média pour ce champ : le premier du panier. La conversion
+            // est commune à tous les formulaires (pathsToMediaIds).
+            const [first] = await pathsToMediaIds(APP_ROOT, paths);
+            if (first) onMediaIdChange(first);
           }}
         />
       )}
