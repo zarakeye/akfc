@@ -67,7 +67,11 @@ export function getR2Bucket(): string {
  * En prod : R2_PUBLIC_ENDPOINT absent → endpoint R2 public (Cloudflare),
  * joignable par le client. En sandbox : R2_PUBLIC_ENDPOINT=localhost:9000
  * (car `storage:8333`, nom Docker, n'est pas résoluble côté navigateur).
- * Checksum SDK désactivé (CRC calculé sur corps vide → rejeté par MinIO, l'ancien stockage local).
+ *
+ * Somme de contrôle « seulement si requise » (`WHEN_REQUIRED`) : par défaut, le SDK calcule une
+ * somme du corps et la scelle dans l'URL. Au moment de signer, il n'a pas le fichier : il
+ * calculerait celle d'un corps VIDE, et le stockage (R2 comme SeaweedFS) refuserait le vrai
+ * fichier envoyé par le navigateur, dont la somme diffère.
  */
 let cachedPresign: S3Client | null = null;
 
