@@ -679,7 +679,7 @@ export default function DragNDropForm(): JSX.Element {
             ? {
                 ...it,
                 status: 'error' as UploadStatus,
-                errorMessage: 'Submission failed',
+                errorMessage: "L'envoi n'a pas abouti.",
               }
             : it
         )

@@ -61,6 +61,9 @@ type UploadItem = {
 
 type Banner = { kind: 'success' | 'error' | 'info'; text: string };
 
+/** À envoyer : en attente, ou en erreur (relancé avec les autres). */
+const isToSend = (it: UploadItem): boolean => it.status === 'pending' || it.status === 'error';
+
 type UploadOutcome =
   | { ok: true; itemId: string; path: string }
   | { ok: false; itemId: string; error: string };
@@ -96,13 +99,13 @@ export default function PersoPhotoUploader(): JSX.Element {
   const quota = quotaQuery.data;
   const remaining = quota?.remaining ?? 0;
   const atCapacity = quota != null && remaining <= 0;
-  const pendingCount = items.filter((it) => it.status === 'pending').length;
+  const pendingCount = items.filter(isToSend).length;
 
   /* ---- Ajout de fichiers (borné par le quota restant + limite de lot) ---- */
   const addAccepted = useCallback(
     (accepted: File[]) => {
       setItems((prev) => {
-        const pendingNow = prev.filter((it) => it.status === 'pending').length;
+        const pendingNow = prev.filter(isToSend).length;
         const slots = Math.min(
           Math.max(0, remaining - pendingNow),
           MAX_FILES_PER_BATCH - pendingNow,
@@ -172,27 +175,32 @@ export default function PersoPhotoUploader(): JSX.Element {
 
   /* ---- Upload : autorisation → PUT du navigateur → register ---- */
   const upload = async () => {
-    const toUpload = items.filter((it) => it.status === 'pending');
+    // Les fichiers en erreur repartent aussi (une autorisation expirée, une coupure) ; ceux qui
+    // sont arrivés ou ignorés, jamais.
+    const toUpload = items.filter(isToSend);
     if (toUpload.length === 0) return;
 
     setIsUploading(true);
     setBanner(null);
+    const sending = new Set(toUpload.map((it) => it.id));
     setItems((prev) =>
       prev.map((it) =>
-        it.status === 'pending' ? { ...it, status: 'uploading' } : it,
+        sending.has(it.id) ? { ...it, status: 'uploading', error: undefined } : it,
       ),
     );
 
     try {
       // Envoi sur R2 : un fichier déjà présent est ignoré (jamais d'écrasement silencieux en perso).
       const destination = { kind: 'perso' as const };
-      const { existing } = await utils.storage.checkR2Conflicts.fetch({
+      const { existing, duplicateIndexes } = await utils.storage.checkR2Conflicts.fetch({
         destination,
         fileNames: toUpload.map((it) => it.file.name),
       });
       const existingNames = new Set(existing);
       const skippedIds = new Set(toUpload.filter((it) => existingNames.has(it.file.name)).map((it) => it.id));
-      const actuallyUpload = toUpload.filter((it) => !skippedIds.has(it.id));
+      // Même clé qu'un autre fichier du lot : il serait refusé après l'autre. On le dit tout de suite.
+      const duplicateIds = new Set(duplicateIndexes.map((i) => toUpload[i].id));
+      const actuallyUpload = toUpload.filter((it) => !skippedIds.has(it.id) && !duplicateIds.has(it.id));
 
       // Un par un : le quota se vérifie à chaque demande d'envoi.
       const outcomes: UploadOutcome[] = [];
@@ -215,9 +223,15 @@ export default function PersoPhotoUploader(): JSX.Element {
 
       // MAJ des statuts locaux
       const okIds = new Set(successes.map((s) => s.itemId));
-      const failById = new Map(
-        outcomes.filter((o) => !o.ok).map((o) => [o.itemId, o]),
-      );
+      const failById = new Map<string, UploadOutcome>([
+        ...outcomes.filter((o) => !o.ok).map((o): [string, UploadOutcome] => [o.itemId, o]),
+        ...toUpload
+          .filter((it) => duplicateIds.has(it.id))
+          .map((it): [string, UploadOutcome] => [
+            it.id,
+            { ok: false, itemId: it.id, error: `« ${it.file.name} » porte le même nom qu'une autre photo de cet envoi. Renommez-la.` },
+          ]),
+      ]);
       setItems((prev) =>
         prev.map((it) => {
           if (skippedIds.has(it.id)) return { ...it, status: 'skipped' };
@@ -382,7 +396,7 @@ export default function PersoPhotoUploader(): JSX.Element {
                 {it.status === 'skipped' && 'ignorée'}
                 {it.status === 'error' && 'erreur'}
               </span>
-              {it.status === 'pending' && !isUploading && (
+              {isToSend(it) && !isUploading && (
                 <button
                   type="button"
                   onClick={() => removeItem(it.id)}
@@ -395,6 +409,19 @@ export default function PersoPhotoUploader(): JSX.Element {
             </div>
           ))}
         </div>
+      )}
+
+      {/* La raison de chaque erreur : une vignette n'a pas la place de la montrer. */}
+      {items.some((it) => it.status === 'error' && it.error) && (
+        <ul className="text-sm text-destructive space-y-1">
+          {items
+            .filter((it) => it.status === 'error' && it.error)
+            .map((it) => (
+              <li key={it.id}>
+                {it.file.name} : {it.error}
+              </li>
+            ))}
+        </ul>
       )}
 
       {/* Actions */}

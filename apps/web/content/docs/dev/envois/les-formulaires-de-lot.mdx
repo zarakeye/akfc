@@ -58,7 +58,7 @@ Trois formulaires répondent à cette question, chacun à sa manière, parce qu�
 
 ## Trois formulaires, trois réglages
 
-<DocsTable columnsJson='["", "Bibliothèque", "Espace personnel", "Dépôt des membres"]' rowsJson='[["Composant", "DragNDropForm", "PersoPhotoUploader", "CommonRepositoryUpload"], ["Formats", "Images, vidéos, sons, documents, archives", "Images seulement", "Tout ce que la bibliothèque accepte"], ["Limites côté navigateur", "20 fichiers ; 50 Mo par image, 500 Mo pour le reste", "20 fichiers, 50 Mo, et la place restante du quota", "Aucune : le serveur juge"], ["Envoi", "En parallèle", "Un par un", "Un par un"], ["Nom déjà pris", "Un dialogue : ignorer ou remplacer (l’actuel est gardé en version)", "Ignoré, signalé", "Refus du serveur, affiché"], ["Après un échec", "Seuls les fichiers en erreur repartent", "Seuls les fichiers en attente repartent", "Seuls les fichiers non arrivés restent dans la liste"]]' />
+<DocsTable columnsJson='["", "Bibliothèque", "Espace personnel", "Dépôt des membres"]' rowsJson='[["Composant", "DragNDropForm", "PersoPhotoUploader", "CommonRepositoryUpload"], ["Formats", "Images, vidéos, sons, documents, archives", "Images seulement", "Tout ce que la bibliothèque accepte"], ["Limites côté navigateur", "20 fichiers ; 50 Mo par image, 500 Mo pour le reste", "20 fichiers, 50 Mo, et la place restante du quota", "Aucune : le serveur juge"], ["Envoi", "En parallèle", "Un par un", "Un par un"], ["Nom déjà pris", "Un dialogue : ignorer ou remplacer (l’actuel est gardé en version)", "Ignoré, signalé ; un doublon du lot est écarté avec un message", "Refus du serveur, affiché"], ["Après un échec", "Seuls les fichiers en erreur repartent", "Seuls les fichiers en attente ou en erreur repartent", "Seuls les fichiers non arrivés restent dans la liste"]]' />
 
 Les limites du navigateur ne protègent rien : le serveur refait chaque contrôle à la signature, puis à l’enregistrement. Elles évitent d’envoyer ce qui sera refusé, et de le dire après trois minutes de transfert.
 
@@ -169,6 +169,8 @@ L’envoi se fait ensuite **un par un**, dans une boucle `for … of` avec `awai
 
 Pour un nom déjà pris, l’espace personnel ne pose pas de question : le fichier est **ignoré** et marqué comme tel. Dans son propre espace, on ne détruit pas un binaire d’un clic distrait. Le remplacer demande de le jeter puis de le redéposer, et un membre ne peut pas jeter dans son espace personnel : il passe par un administrateur (chapitre « Jeter, retrouver, effacer »).
 
+Comme dans la bibliothèque, une reprise ne renvoie que ce qui n’est pas arrivé : les photos en attente et celles en erreur. Une photo ajoutée ou ignorée ne repart jamais. Une vignette est trop petite pour donner la raison d’une erreur : elle s’affiche sous la grille, une ligne par photo, avec le message du serveur.
+
 ## Le dépôt des membres : une cascade
 
 `/deposer` est la porte des membres vers la bibliothèque du club. Le membre choisit un type de destination (une discipline, un stage, un événement, ou le dépôt commun quand rien ne correspond), puis l’entité concernée. Le formulaire en déduit la destination ; pour une discipline, il retrouve sa catégorie, que le contrat exige. Un événement est envoyé sans disciplines : les rattacher est réservé aux administrateurs.
@@ -202,7 +204,21 @@ Après une erreur, il ne reste que les fichiers qui n’ont pas abouti, et le me
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi des limites dans le navigateur ?", "Pour ne pas envoyer ce qui sera refusé. Le serveur refait tous les contrôles."], ["Quand pose-t-on la question des noms déjà pris ?", "Une fois, avant le premier envoi (storage.checkR2Conflicts), pour tout le lot."], ["Et les doublons dans le lot ?", "Écartés avec un message : le second écraserait le premier."], ["Comment envoyer en parallèle sans perdre les résultats ?", "Chaque envoi rend un résultat, succès ou erreur, et ne rejette jamais."], ["Pourquoi l’espace personnel envoie-t-il un par un ?", "Le quota est revérifié à chaque signature ; en parallèle, toutes les demandes verraient la même place."], ["Qu’est-ce qui a changé dans le dépôt des membres ?", "Un fichier arrivé quitte la liste : une reprise ne renvoie que ce qui a échoué."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi des limites dans le navigateur ?", "Pour ne pas envoyer ce qui sera refusé. Le serveur refait tous les contrôles."], ["Quand pose-t-on la question des noms déjà pris ?", "Une fois, avant le premier envoi (storage.checkR2Conflicts), pour tout le lot."], ["Et les doublons dans le lot ?", "Écartés avec un message : le second écraserait le premier."], ["Comment envoyer en parallèle sans perdre les résultats ?", "Chaque envoi rend un résultat, succès ou erreur, et ne rejette jamais."], ["Pourquoi l’espace personnel envoie-t-il un par un ?", "Le quota est revérifié à chaque signature ; en parallèle, toutes les demandes verraient la même place."], ["Que fait une reprise ?", "Elle ne renvoie que ce qui n’est pas arrivé : la bibliothèque et l’espace personnel gardent l’état de chaque fichier, et le dépôt retire de la liste chaque fichier arrivé."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer aux photos d’iPhone, nous devrions pouvoir expliquer :
+
+- pourquoi les limites du navigateur ne protègent rien, et à quoi elles servent quand même ;
+- pourquoi le formulaire donne un type à un fichier qui n’en a pas, et pourquoi ce n’est pas faire confiance à l’extension ;
+- pourquoi les noms déjà pris se règlent en une seule question, avant le premier envoi ;
+- ce qu’est un doublon du lot, et pourquoi il n’est pas envoyé ;
+- comment un dialogue devient un `await` ;
+- comment envoyer en parallèle sans perdre un seul résultat ;
+- pourquoi l’espace personnel envoie un par un ;
+- comment le dépôt des membres déduit sa destination, et pourquoi son libellé est cosmétique ;
+- la règle de toute reprise : ne jamais renvoyer ce qui est arrivé.
 
 ## À suivre
 

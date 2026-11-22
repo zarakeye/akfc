@@ -139,7 +139,7 @@ await prisma.seminar.create({
     program: EMPTY_PAGE,
     preRegistered: [],
     primaryAnimatorId: USERS.admin.id,
-    animators: { connect: { id: USERS.admin.id } },
+    animators: { connect: [{ id: USERS.admin.id }, { id: USERS.instructeur.id }] },
   },
 });
 

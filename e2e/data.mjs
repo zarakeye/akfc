@@ -40,6 +40,8 @@ export const USERS = {
   motDePasse: { id: "e2e-mot-de-passe", email: "zz-mot-de-passe@e2e.test", firstName: "Oscar" },
   // Essaie de faux mots de passe : la limite des essais doit valoir pour toutes les entrées.
   limiteMdp: { id: "e2e-limite-mdp", email: "zz-limite-mdp@e2e.test", firstName: "Hugo" },
+  // Instructeur non administrateur (co-anime le stage) : il envoie des photos dans son espace personnel.
+  instructeur: { id: "e2e-instructeur", email: "zz-instructeur@e2e.test", firstName: "Iris" },
 };
 
 /** Les deux mineurs de la date de naissance : un nom, un parent (Lou a une date, Tom aucune). */
