@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-import { getR2Client, getR2Bucket } from '@akfc/backend/modules/storage/adapters/r2/client.ts';
+import { getR2Bucket, getR2PresignClient } from '@akfc/backend/modules/storage/adapters/r2/client.ts';
 import { resolveDeliveryKey, streamDerived } from '@akfc/backend/modules/media/services/mediaDerivatives.service.ts';
 import { getSessionFromRequest } from '@akfc/backend/modules/auth/getSessionFromRequest.ts';
 import { canReadStorageKey } from '@akfc/backend/modules/media/services/canReadStorageKey.service.ts';
@@ -91,7 +91,9 @@ export async function GET(
     if (!key) return new NextResponse('Not found', { status: 404 });
     // Déclinaison : en flux, cachable par le navigateur (session requise : cache privé).
     if (key !== r2Key) return (await streamDerived(key, 'private, max-age=3600', req.headers.get('accept'))) as NextResponse;
-    const s3 = getR2Client();
+    // L'URL part au NAVIGATEUR : elle doit viser l'adresse qu'il joint (R2_PUBLIC_ENDPOINT),
+    // pas celle du serveur, qui n'existe que dans le réseau Docker de la sandbox.
+    const s3 = getR2PresignClient();
     const command = new GetObjectCommand({
       Bucket: getR2Bucket(),
       Key: key,

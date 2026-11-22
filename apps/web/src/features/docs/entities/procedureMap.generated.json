@@ -18369,14 +18369,14 @@
      "trails": [
       [
        [
-        "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:549"
+        "tx.mediaAsset.updateMany",
+        "packages/backend/src/modules/media/router.ts:556"
        ]
       ],
       [
        [
-        "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:558"
+        "tx.mediaAsset.updateMany",
+        "packages/backend/src/modules/media/router.ts:566"
        ]
       ]
      ]

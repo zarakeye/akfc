@@ -47,7 +47,7 @@ Deux parcours traversent ce chapitre : valider un fichier, et l’afficher. Chaq
 
 <DocsTable columnsJson='["Statut", "Affiché", "Signification"]' rowsJson='[["pending", "En attente", "Valeur de tout nouvel envoi. Le fichier n’est sélectionnable dans aucun contenu et n’est servi à aucun visiteur."], ["published", "Validé", "Un administrateur l’a validé : il peut être posé dans une page ou une galerie."]]' />
 
-La corbeille n’est pas un troisième statut : y entrer est une opération à part (`trash.trashToBin`), avec sa propre quarantaine, que le chapitre consacré au finder détaille.
+La corbeille n’est pas un troisième statut : y entrer est une opération à part (`trash.trashToBin`), avec sa propre quarantaine, que le chapitre 7 (« Modifier sans casser ») et la partie Corbeille détaillent.
 
 ## Valider, c’est changer une colonne
 
@@ -62,8 +62,10 @@ Aujourd’hui, valider est un `UPDATE` :
   snippetStart="setStatus: storageProcedure"
   snippetEnd="    }),"
   title="media.setStatus — un UPDATE, pas un déplacement"
-  stepsJson='[{"title": "Qui peut valider", "body": "Un administrateur partout ; un membre seulement dans l’espace d’un groupe dont il est éditeur — la même règle que pour la corbeille. Dans les autres destinations, un membre dépose, mais ne publie pas.", "scope": "19-23", "focus": "19-23"}, {"title": "Ne pas dépublier ce qui est affiché", "body": "AVANT le moindre UPDATE : remettre en attente un fichier qu’une page ou une galerie affiche le ferait disparaître sans un mot. La garde refuse, et nomme les contenus concernés.", "scope": "26-32", "focus": "26-26"}, {"title": "Un fichier : sa ligne", "body": "Seule la colonne status change. Le binaire ne bouge pas, sa clé reste la même, aucune référence ne casse.", "scope": "35-40", "focus": "38-38"}, {"title": "Un dossier : tout ce qu’il contient", "body": "Le « / » final n’est pas cosmétique : sans lui, valider le dossier « cours » validerait aussi « cours-avance ». C’est la collision de préfixe qu’un stockage sans dossiers impose de garder en tête.", "scope": "43-52", "focus": "48-48"}]'
+  stepsJson='[{"title": "Qui peut valider", "body": "Un administrateur partout ; un membre seulement dans l’espace d’un groupe dont il est éditeur — la même règle que pour la corbeille. Dans les autres destinations, un membre dépose, mais ne publie pas.", "scope": "19-25", "focus": "21-25"}, {"title": "Ce qu’on a décoché", "body": "Une sélection peut dire « ce dossier, sauf ceci » (partie Finder, chapitre 5). Les chemins exclus deviennent une clause NOT, que la garde et la mise à jour lisent toutes deux : elles visent exactement les mêmes fichiers.", "scope": "27-28", "focus": "27-28"}, {"title": "Tout ou rien", "body": "La garde et les mises à jour vivent dans une même transaction. Un refus, un fichier introuvable ou une panne au milieu défont tout : jamais la moitié d’une sélection validée.", "scope": "30-33", "focus": "33"}, {"title": "Ne pas dépublier ce qui est affiché", "body": "AVANT le moindre UPDATE : remettre en attente un fichier qu’une page ou une galerie affiche le ferait disparaître sans un mot. La garde refuse, et nomme les contenus concernés.", "scope": "34-41", "focus": "35"}, {"title": "Un fichier : sa ligne", "body": "Seule la colonne status change. Le binaire ne bouge pas, sa clé reste la même, aucune référence ne casse. Un fichier exclu est sauté.", "scope": "45-55", "focus": "46,50-53"}, {"title": "Un dossier : tout ce qu’il contient", "body": "Le « / » final n’est pas cosmétique : sans lui, valider le dossier « cours » validerait aussi « cours-avance ». C’est la collision de préfixe qu’un stockage sans dossiers impose de garder en tête.", "scope": "58-68", "focus": "63-64"}, {"title": "Un fichier introuvable annule tout", "body": "Une ligne attendue qui n’existe plus (renommée, jetée entre-temps) : l’erreur est levée DANS la transaction, qui défait les mises à jour déjà faites. L’administrateur corrige sa sélection ; rien n’a changé à moitié.", "scope": "71-79", "focus": "73-75"}]'
 />
+
+👉 valider une sélection, c’est tout valider ou ne rien valider
 
 Le statut a cessé d’être un **cache dérivé du chemin** pour devenir la **source de vérité**. Valider est atomique, sans aller-retour avec le stockage, sans binaire qui bouge.
 
@@ -114,9 +116,9 @@ Le bucket est entièrement privé : aucun objet n’a d’URL publique permanent
   filepath="apps/web/src/app/api/media/r2/[...path]/route.ts"
   filename="route.ts"
   snippetStart="export async function GET("
-  snippetLines="61"
+  snippetLines="63"
   title="La route privée — décider ici, livrer ailleurs"
-  stepsJson='[{"title": "Une session", "body": "Sans session, 401 : la route ne sert rien à un visiteur anonyme.", "scope": "6-9", "focus": "6-9"}, {"title": "Une clé sous la racine", "body": "Next.js rend les segments de l’URL décodés ; on les rejoint par « / ». La clé doit commencer par la racine de l’application — les déclinaisons, rangées sous _derived/, ne sont jamais servies par leur clé — et ne contenir aucun « .. ».", "scope": "17-26", "focus": "21-24"}, {"title": "Le droit de lire", "body": "canReadStorageKey décide. Un refus répond 404, pas 403 : un visiteur ne peut pas distinguer un fichier inexistant d’un fichier qui ne lui est pas destiné.", "scope": "27-30", "focus": "28-29"}, {"title": "Une déclinaison, en flux", "body": "Si une déclinaison est demandée (?variant=…), elle est fabriquée au besoin et servie EN FLUX par la route, avec un cache privé d’une heure.", "scope": "35-38", "focus": "38-38"}, {"title": "L’original, par redirection", "body": "Pour l’original, la route signe une URL de lecture valable 30 minutes et redirige le navigateur (302). Les octets vont directement du stockage au navigateur, sans charger notre serveur. La redirection elle-même n’est jamais mise en cache : chaque signature est différente.", "scope": "39-61", "focus": "56-61"}]'
+  stepsJson='[{"title": "Une session", "body": "Sans session, 401 : la route ne sert rien à un visiteur anonyme.", "scope": "6-9", "focus": "6-9"}, {"title": "Une clé sous la racine", "body": "Next.js rend les segments de l’URL décodés ; on les rejoint par « / ». La clé doit commencer par la racine de l’application — les déclinaisons, rangées sous _derived/, ne sont jamais servies par leur clé — et ne contenir aucun « .. ».", "scope": "17-26", "focus": "21-24"}, {"title": "Le droit de lire", "body": "canReadStorageKey décide. Un refus répond 404, pas 403 : un visiteur ne peut pas distinguer un fichier inexistant d’un fichier qui ne lui est pas destiné.", "scope": "27-30", "focus": "28-29"}, {"title": "Une déclinaison, en flux", "body": "Si une déclinaison est demandée (?variant=…), elle est fabriquée au besoin et servie EN FLUX par la route, avec un cache privé d’une heure.", "scope": "35-38", "focus": "38-38"}, {"title": "L’original, par redirection", "body": "Pour l’original, la route signe une URL de lecture valable 30 minutes et redirige le navigateur (302). Les octets vont directement du stockage au navigateur, sans charger notre serveur. La redirection elle-même n’est jamais mise en cache : chaque signature est différente. L’URL est signée par le client destiné au navigateur (chapitre 1) : elle vise l’adresse qu’il sait joindre, `R2_PUBLIC_ENDPOINT` dans la sandbox, et non celle du serveur.", "scope": "39-63", "focus": "41,58-63"}]'
 />
 
 La symétrie avec l’envoi est complète. À l’aller, le serveur signe un PUT et le fichier ne le traverse pas ; au retour, il signe un GET et le fichier ne le traverse pas davantage. Dans les deux sens, le serveur **décide**, et le stockage **transporte**.
@@ -237,7 +239,23 @@ Une liste blanche à l’envoi **et** des en-têtes défensifs à la livraison :
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fait une validation ?", "Elle change MediaAsset.status ; le binaire, sa clé et les références ne bougent pas."], ["Peut-on dépublier un fichier affiché ?", "Non : la garde refuse (CONFLICT) et nomme les pages et galeries qui l’affichent."], ["Qui peut lire un fichier privé ?", "Un administrateur ; un membre pour l’espace de ses groupes et son espace personnel (canReadStorageKey, par position)."], ["Quand un fichier est-il public ?", "Quand il est validé ET placé dans une page ou une galerie publique."], ["Par où passent les octets ?", "Originaux : redirection vers une URL signée, depuis le stockage. Déclinaisons : en flux, cachables."], ["Comment une déclinaison se renouvelle-t-elle ?", "Sa clé contient l’ETag de l’original : un fichier remplacé produit de nouvelles déclinaisons."], ["Qu’est-ce qui empêche un fichier de s’exécuter ?", "Une liste blanche de formats à l’envoi ; nosniff, sandbox et pièce jointe pour ce que sert notre origine."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fait une validation ?", "Elle change MediaAsset.status ; le binaire, sa clé et les références ne bougent pas."], ["Peut-on dépublier un fichier affiché ?", "Non : la garde refuse (CONFLICT) et nomme les pages et galeries qui l’affichent."], ["Qui peut lire un fichier privé ?", "Un administrateur ; un membre pour l’espace de ses groupes et son espace personnel (canReadStorageKey, par position)."], ["Quand un fichier est-il public ?", "Quand il est validé ET placé dans une page ou une galerie publique."], ["Par où passent les octets ?", "Originaux : redirection vers une URL signée, depuis le stockage. Déclinaisons : en flux, cachables."], ["Comment une déclinaison se renouvelle-t-elle ?", "Sa clé contient l’ETag de l’original : un fichier remplacé produit de nouvelles déclinaisons."], ["Qu’est-ce qui empêche un fichier de s’exécuter ?", "Une liste blanche de formats à l’envoi ; nosniff, sandbox et pièce jointe pour ce que sert notre origine."], ["Valider une sélection peut-il s’arrêter au milieu ?", "Non : la garde et les mises à jour sont une seule transaction."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer au finder du stockage, nous devrions pouvoir expliquer :
+
+- pourquoi valider ne déplace plus rien, et ce que le statut a cessé d’être ;
+- pourquoi la validation d’une sélection est une transaction ;
+- comment la garde trouve ce qui affiche un fichier, et pourquoi son refus est un `CONFLICT` ;
+- pourquoi la racine de l’application ne vient jamais du client (`sameAppRoot`) ;
+- comment la route privée décide, puis laisse le stockage livrer ;
+- pourquoi un refus de lecture répond 404 et pas 403 ;
+- la règle de lecture par position, et la faille qu’elle évite ;
+- les trois gestes délibérés qui rendent un fichier public ;
+- pourquoi les déclinaisons vivent hors de la racine, et pourquoi leur clé contient l’ETag de l’original ;
+- pourquoi une déclinaison est servie en flux, et l’original par redirection ;
+- ce que `nosniff` et la politique `sandbox` empêchent, et pourquoi le PDF en est exempté.
 
 ## À suivre
 

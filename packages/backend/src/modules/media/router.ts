@@ -533,29 +533,37 @@ export const mediaRouter = router({
       const excluded = input.excluded ?? [];
       const notExcluded = excludedAssetsWhere(excluded);
 
-      // AVANT le moindre UPDATE : on ne dépublie pas ce qu'une page ou une galerie affiche.
-      await assertStatusChangeDoesntUnpublishReferencedAssets(
-        ctx.prisma,
-        input.sources,
-        input.status,
-        input.appRoot,
-        excluded,
-      );
+      // La garde et les UPDATE dans une même transaction : tout ou rien. Un refus de la garde,
+      // un fichier introuvable ou une panne au milieu ne laissent pas la moitié d'une sélection
+      // validée (ou remise en attente).
+      const results = await ctx.prisma.$transaction(async (tx) => {
+        // AVANT le moindre UPDATE : on ne dépublie pas ce qu'une page ou une galerie affiche.
+        await assertStatusChangeDoesntUnpublishReferencedAssets(
+          tx,
+          input.sources,
+          input.status,
+          input.appRoot,
+          excluded,
+        );
 
-      const results = await Promise.all(
-        input.sources.map(async (source) => {
+        const out: { source: (typeof input.sources)[number]; count: number; skipped?: true }[] = [];
+        for (const source of input.sources) {
           if (source.kind === "file") {
-            if (isUnderExcluded(source.path, excluded)) return { source, count: 0, skipped: true };
-            const { count } = await ctx.prisma.mediaAsset.updateMany({
+            if (isUnderExcluded(source.path, excluded)) {
+              out.push({ source, count: 0, skipped: true });
+              continue;
+            }
+            const { count } = await tx.mediaAsset.updateMany({
               where: { appRoot: input.appRoot, fullPath: source.path },
               data: { status: input.status },
             });
-            return { source, count };
+            out.push({ source, count });
+            continue;
           }
 
           // Dossier : tout ce qui vit SOUS lui. Le `/` final n'est pas cosmétique — sans lui,
           // publier `cours` publierait aussi `cours-avance`.
-          const { count } = await ctx.prisma.mediaAsset.updateMany({
+          const { count } = await tx.mediaAsset.updateMany({
             where: {
               appRoot: input.appRoot,
               fullPath: { startsWith: `${source.path}/` },
@@ -563,19 +571,20 @@ export const mediaRouter = router({
             },
             data: { status: input.status },
           });
-          return { source, count };
-        }),
-      );
+          out.push({ source, count });
+        }
 
-      const silent = results.filter(
-        (r) => r.source.kind === "file" && r.count === 0 && !("skipped" in r),
-      );
-      if (silent.length > 0) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Fichier introuvable : ${silent.map((r) => r.source.path).join(", ")}.`,
-        });
-      }
+        // Un fichier introuvable annule tout (l'erreur, levée DANS la transaction, la défait) :
+        // l'administrateur corrige sa sélection, rien n'a changé à moitié.
+        const silent = out.filter((r) => r.source.kind === "file" && r.count === 0 && !r.skipped);
+        if (silent.length > 0) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Fichier introuvable : ${silent.map((r) => r.source.path).join(", ")}.`,
+          });
+        }
+        return out;
+      });
 
       return {
         ok: true,

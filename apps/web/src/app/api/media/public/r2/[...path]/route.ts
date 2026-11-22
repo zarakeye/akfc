@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@akfc/backend/prisma.ts';
 import { APP_ROOT } from '@akfc/config/app.ts';
-import { getR2Bucket, getR2Client } from '@akfc/backend/modules/storage/adapters/r2/client.ts';
+import { getR2Bucket, getR2PresignClient } from '@akfc/backend/modules/storage/adapters/r2/client.ts';
 import { resolveDeliveryKey, streamDerived } from '@akfc/backend/modules/media/services/mediaDerivatives.service.ts';
 import { isPubliclyPlaced } from '@akfc/backend/modules/media/services/publiclyPlaced.service.ts';
 import { outsideBin } from '@akfc/backend/modules/storage/mediaPaths.ts';
@@ -82,7 +82,9 @@ export async function GET(
     if (!key) return new NextResponse('Not found', { status: 404 });
     // Déclinaison : en flux, cachable (une heure, puis revalidée en arrière-plan).
     if (key !== r2Key) return (await streamDerived(key, 'public, max-age=3600, stale-while-revalidate=86400', req.headers.get('accept'))) as NextResponse;
-    const s3 = getR2Client();
+    // L'URL part au NAVIGATEUR : elle doit viser l'adresse qu'il joint (R2_PUBLIC_ENDPOINT),
+    // pas celle du serveur, qui n'existe que dans le réseau Docker de la sandbox.
+    const s3 = getR2PresignClient();
     const command = new GetObjectCommand({
       Bucket: getR2Bucket(),
       Key: key,
