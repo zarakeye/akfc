@@ -5,10 +5,17 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import { seedTicketsDecor } from "./seed.sandbox.decor.mjs";
 import { seedDemoPack } from "./seed.sandbox.pack.mjs";
 
 const prisma = new PrismaClient();
 const DEMO_PASSWORD = "sandbox-demo";
+// Lancé par le seeder de la sandbox (DEMO_MODE=1) : des adresses @sandbox.local, auxquelles le site
+// écrit (les e-mails arrivent dans Mailpit), et le décor des parcours. Lancé en développement
+// (pnpm db:seed:dev) : les comptes @akfc.demo habituels
+// (le site ne leur envoie ni bienvenue, ni réponse aux demandes), et rien d'autre.
+const IN_SANDBOX = process.env.DEMO_MODE === "1";
+const DOMAIN = IN_SANDBOX ? "sandbox.local" : "akfc.demo";
 
 async function ensureAdminGroup() {
   let group = await prisma.memberGroup.findFirst({
@@ -59,14 +66,14 @@ async function main() {
   const adminGroupId = await ensureAdminGroup();
 
   const adminId = await ensureUser({
-    email: "admin@akfc.demo",
+    email: `admin@${DOMAIN}`,
     firstName: "Admin",
     hash,
     admin: true,
     adminGroupId,
   });
-  await ensureUser({
-    email: "membre@akfc.demo",
+  const memberId = await ensureUser({
+    email: `membre@${DOMAIN}`,
     firstName: "Membre",
     hash,
     admin: false,
@@ -75,7 +82,7 @@ async function main() {
     legal: { lastName: "Démo", legalAge: "ADULT" },
   });
   await ensureUser({
-    email: "mineur@akfc.demo",
+    email: `mineur@${DOMAIN}`,
     firstName: "Mineur",
     hash,
     admin: false,
@@ -88,7 +95,7 @@ async function main() {
       birthDateVerified: true,
       guardianName: "Parent Démo",
       guardianRelation: "mère",
-      guardianEmail: "parent@akfc.demo",
+      guardianEmail: `parent@${DOMAIN}`,
     },
   });
   console.log("✅ Comptes de démo prêts");
@@ -128,13 +135,17 @@ async function main() {
 
   console.log("✅ Disciplines prêtes");
 
-  // Photos, avatars et bios du paquet de démo, sur des personnes fictives (seed.sandbox.pack.mjs).
-  await seedDemoPack({ prisma, adminId, adminGroupId, hash });
+  if (IN_SANDBOX) {
+    // Photos, avatars et bios du paquet de démo, sur des personnes fictives (seed.sandbox.pack.mjs).
+    await seedDemoPack({ prisma, adminId, adminGroupId, hash });
+    // Les demandes au club, dans tous leurs états, et le bénévole du support (seed.sandbox.decor.mjs).
+    await seedTicketsDecor({ prisma, hash, domain: DOMAIN, adminId, adminGroupId, memberId });
+  }
 
   console.log("");
-  console.log("   Admin  : admin@akfc.demo  /  " + DEMO_PASSWORD);
-  console.log("   Membre : membre@akfc.demo /  " + DEMO_PASSWORD + "  (majeur)");
-  console.log("   Mineur : mineur@akfc.demo /  " + DEMO_PASSWORD + "  (parent : parent@akfc.demo, sans compte, e-mails dans Mailpit)");
+  console.log(`   Admin  : admin@${DOMAIN}  /  ${DEMO_PASSWORD}`);
+  console.log(`   Membre : membre@${DOMAIN} /  ${DEMO_PASSWORD}  (majeur)`);
+  console.log(`   Mineur : mineur@${DOMAIN} /  ${DEMO_PASSWORD}  (parent : parent@${DOMAIN}, sans compte, e-mails dans Mailpit)`);
   console.log("🌱 Seed sandbox terminé");
 }
 

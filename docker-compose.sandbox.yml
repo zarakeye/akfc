@@ -99,6 +99,8 @@ services:
       DIRECT_DATABASE_URL: "postgresql://akfc:sandbox@postgres:5432/akfc_db?schema=public"
       PRISMA_CLIENT_ENGINE_TYPE: "library"
       APP_SHORT_NAME: "AKFC"
+      # La sandbox : comptes @sandbox.local, paquet de démo et décor des parcours.
+      DEMO_MODE: "1"
       # Le paquet de démo (photos, avatars, bios) : téléchargé s'il y a une adresse, sinon lu dans
       # demo-data/ ; sans paquet, la sandbox démarre sans photos.
       AKFC_DEMO_PACK_URL: "${AKFC_DEMO_PACK_URL:-}"
