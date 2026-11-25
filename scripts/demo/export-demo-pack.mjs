@@ -180,10 +180,16 @@ function detectNames(texts, known) {
   const found = new Set();
   for (const text of texts) {
     // Un mot composé (« Jean-Marc ») reste un seul mot.
-    for (const m of text.matchAll(/(?<![\p{L}\p{N}{-])\p{Lu}\p{Ll}[\p{L}'’]*(?:-\p{Lu}\p{Ll}[\p{L}'’]*)*(?: \p{Lu}\p{Ll}[\p{L}'’]*(?:-\p{Lu}\p{Ll}[\p{L}'’]*)*){0,2}/gu)) {
-      const words = m[0].split(" ").filter(isName);
-      if (words.length === 0) continue;
+    // Un mot : « Paul », « Jean-Marc », ou un nom de famille en capitales (« DURAND »).
+    const word = "(?:\\p{Lu}\\p{Ll}[\\p{L}'’]*(?:-\\p{Lu}\\p{Ll}[\\p{L}'’]*)*|\\p{Lu}{2,}(?:-\\p{Lu}{2,})*)";
+    for (const m of text.matchAll(new RegExp(`(?<![\\p{L}\\p{N}{-])${word}(?: ${word}){0,2}(?![\\p{L}\\p{N}])`, "gu"))) {
       const before = text.slice(0, m.index ?? 0);
+      // Des capitales seules sont un sigle (« FFK », « BPJEPS ») ; à côté d'un prénom, ou après un
+      // titre, un nom de famille.
+      const caps = (/** @type {string} */ w) => /^[\p{Lu}-]+$/u.test(w);
+      const mixed = m[0].split(" ").some((w) => !caps(w));
+      const words = m[0].split(" ").filter((w) => isName(w) && (!caps(w) || mixed || TITLES.test(before)));
+      if (words.length === 0) continue;
       const sentenceStart = /(^|[.!?:;]\s*|\n\s*)$/.test(before);
       if (words.length === 1 && sentenceStart) continue;
       // Un mot seul après un titre (« Sifu Lam », « M. Chen ») est un nom de famille ; sinon, un prénom.
@@ -303,6 +309,15 @@ async function main() {
   mkdirSync(path.join(OUT_DIR, "photos"), { recursive: true });
   const taken = new Set();
   let failed = 0;
+  /** La cause du premier échec (code d'erreur seulement : pas de chemin, qui peut porter un nom). */
+  let firstError = "";
+  const fail = (/** @type {unknown} */ error) => {
+    failed += 1;
+    if (!firstError) {
+      const e = /** @type {{ name?: string; code?: string; Code?: string; message?: string }} */ (error);
+      firstError = e?.Code ?? e?.code ?? e?.name ?? "erreur";
+    }
+  };
   let n = 0;
   const nextFile = () => `photo-${String(++n).padStart(4, "0")}.jpg`;
 
@@ -325,8 +340,8 @@ async function main() {
       const packPath = jpgPath(placeholderPath(asset.fullPath.slice(asset.appRoot.length + 1)), taken);
       photos.push({ file, path: packPath, width: info.width, height: info.height });
       mediaPaths.set(asset.id, packPath);
-    } catch {
-      failed += 1;
+    } catch (error) {
+      fail(error);
     }
   }
 
@@ -345,8 +360,8 @@ async function main() {
       writeFileSync(path.join(OUT_DIR, "photos", file), data);
       const person = keyOf("person", user.id);
       avatars.push({ person, file, path: jpgPath(`avatars/{${person}}/${path.posix.basename(key)}`, taken) });
-    } catch {
-      failed += 1;
+    } catch (error) {
+      fail(error);
     }
   }
 
@@ -454,7 +469,10 @@ async function main() {
     `✅ ${OUT_FILE} : ${photos.length} photos dans ${folders} dossiers, ${avatars.length} avatars, ` +
       `${bios.length} bios, ${spaces.length} espaces de groupe`,
   );
-  if (failed) console.log(`   ${failed} illisibles (objet absent du stockage, ou fichier abîmé)`);
+  if (failed) {
+    console.log(`   ${failed} illisibles (objet absent du stockage, ou fichier abîmé) ; première cause : ${firstError}`);
+    if (photos.length === 0) console.log("   Aucune photo lue : le stockage de développement tourne-t-il (docker compose -f docker-compose.dev.yml ps) ?");
+  }
   if (suggested) {
     console.log(`\n   ${suggested} noms repérés dans les bios et remplacés par des noms fictifs : ${NAMES_FILE}.`);
     console.log(`   Relisez-le : retirez ce qui n'est pas une personne, corrigez au besoin, puis relancez.`);
