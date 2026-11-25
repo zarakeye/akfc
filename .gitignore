@@ -66,3 +66,7 @@ prisma/seed.js
 
 # Dépendances, à tous les niveaux du monorepo
 node_modules/
+
+# Paquet de photos de la démo (pnpm demo:pack) : publié en release GitHub, jamais dans le dépôt
+demo-pack/
+demo-pack.tar.gz

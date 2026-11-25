@@ -9,6 +9,7 @@
     "dev:clean": "pnpm clean && pnpm dev",
     "dev:infra": "docker compose -f docker-compose.dev.yml up -d --wait --remove-orphans",
     "dev:infra:stop": "docker compose -f docker-compose.dev.yml stop",
+    "demo:pack": "node --env-file=.env scripts/demo/export-demo-pack.mjs",
     "db:migrate": "prisma migrate deploy",
     "db:seed:dev": "node --env-file=.env prisma/db-target.mjs && node --env-file=.env prisma/seed.sandbox.mjs",
     "build": "pnpm --filter web build",
