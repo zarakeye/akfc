@@ -1,6 +1,6 @@
 import { JSX } from "react"
 import type { Metadata } from "next"
-import { SITE_URL } from "#config/siteUrl.ts";
+import { IS_DEMO, SITE_URL } from "#config/siteUrl.ts";
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css";
 import "#styles/tiptap-variables.css";
@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(SITE_URL),
     title: { default: shortTitle, template: `%s · ${shortTitle}` },
     description,
-    robots: { index: true, follow: true },
+    robots: IS_DEMO ? { index: false, follow: false } : { index: true, follow: true },
     openGraph: {
       type: "website",
       siteName: shortTitle,

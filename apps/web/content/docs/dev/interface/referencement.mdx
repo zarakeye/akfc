@@ -27,7 +27,9 @@ Les métadonnées, le plan du site et le `robots.txt` ont besoin d'URL absolues 
   fullFileTitle="Voir le fichier complet"
 />
 
-Une préproduction ou un autre domaine se règle par la variable d'environnement, sans toucher au code. Le slash final est retiré pour que `${SITE_URL}/gallery` ne produise jamais deux slashs.
+Une préproduction, un autre domaine ou une démo se règlent par la variable d'environnement `SITE_URL`, lue au lancement : sans toucher au code, ni reconstruire l'image (partie « Configuration », chapitre « Les variables d'environnement »). Le slash final est retiré pour que `${SITE_URL}/gallery` ne produise jamais deux slashs.
+
+Une instance de démonstration se déclare par `DEMO_MODE=1`. Elle ne doit apparaître dans aucun moteur de recherche : son `robots.txt` interdit tout, sans plan du site, et le layout marque toutes ses pages `noindex`. Une page publiée n'écrit rien dans `robots` et hérite donc de ce `noindex`. Une page non publiée l'avait déjà.
 
 ## Les métadonnées par défaut, depuis les Réglages
 
@@ -148,7 +150,7 @@ Certaines données publiques attirent les robots collecteurs, qui parcourent le 
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["D’où vient l’adresse absolue du site ?","De SITE_URL (NEXT_PUBLIC_SITE_URL, sinon https://akfc.fr), utilisée par les métadonnées, le plan du site et le robots.txt."],["D’où viennent le titre et la description par défaut ?","Des Réglages du site, lus par le layout racine ; chaque page compose son titre avec le modèle « %s · AKFC »."],["Un brouillon peut-il être indexé ?","Non : generateMetadata renvoie noindex pour un contenu non publié ou programmé, et une page éditoriale dépubliée."],["Que contient le plan du site ?","Les pages publiées et toujours publiques, et les contenus publiés à l’instant de la demande (une fonction, pas une constante figée au démarrage)."],["Le robots.txt protège-t-il les espaces privés ?","Non : c’est la session qui les protège ; le robots.txt évite seulement leur exploration."],["Les images des pages sont-elles explorables ?","Oui : /api/media/public/ est permis malgré /api/, la règle la plus précise l’emporte."]]' />
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["D’où vient l’adresse absolue du site ?","De la constante SITE_URL (variable SITE_URL lue au lancement, sinon NEXT_PUBLIC_SITE_URL, sinon https://akfc.fr), utilisée par les métadonnées, le plan du site et le robots.txt."], ["Et une démo ?","DEMO_MODE=1 : robots.txt interdit tout, et toutes les pages sont noindex."],["D’où viennent le titre et la description par défaut ?","Des Réglages du site, lus par le layout racine ; chaque page compose son titre avec le modèle « %s · AKFC »."],["Un brouillon peut-il être indexé ?","Non : generateMetadata renvoie noindex pour un contenu non publié ou programmé, et une page éditoriale dépubliée."],["Que contient le plan du site ?","Les pages publiées et toujours publiques, et les contenus publiés à l’instant de la demande (une fonction, pas une constante figée au démarrage)."],["Le robots.txt protège-t-il les espaces privés ?","Non : c’est la session qui les protège ; le robots.txt évite seulement leur exploration."],["Les images des pages sont-elles explorables ?","Oui : /api/media/public/ est permis malgré /api/, la règle la plus précise l’emporte."]]' />
 
 ## À suivre
 

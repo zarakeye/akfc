@@ -45,7 +45,17 @@ export function mailReplyTo(): string | undefined {
   return process.env.SMTP_REPLY_TO?.trim() || undefined;
 }
 
-/** URL publique canonique du site (même règle que l'e-mail de bienvenue et config/siteUrl.ts). */
+/**
+ * URL publique canonique du site, base des liens des e-mails. `SITE_URL` est lue au lancement
+ * (une démo sert la même image à une autre adresse) : par `runtimeEnv`, que Next ne remplace pas
+ * au build, contrairement à `process.env.NEXT_PUBLIC_…`. Puis les règles d'avant, inchangées.
+ */
+const runtimeEnv = process.env;
 export function siteBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || "https://akfc.fr").replace(/\/+$/, "");
+  return (
+    runtimeEnv.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "https://akfc.fr"
+  ).replace(/\/+$/, "");
 }

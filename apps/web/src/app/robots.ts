@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 
-import { SITE_URL } from "#config/siteUrl.ts";
+import { IS_DEMO, SITE_URL } from "#config/siteUrl.ts";
+
+// Calculé à chaque requête : une démo se reconnaît au lancement (DEMO_MODE), pas au build.
+export const dynamic = "force-dynamic";
 
 /**
  * robots.txt généré par Next.
@@ -14,6 +17,8 @@ import { SITE_URL } from "#config/siteUrl.ts";
  * ici : elle porte elle-même un `noindex` (editorialRobots).
  */
 export default function robots(): MetadataRoute.Robots {
+  // Une démo n'a rien à faire dans un moteur de recherche : tout est interdit, sans sitemap.
+  if (IS_DEMO) return { rules: { userAgent: "*", disallow: "/" } };
   return {
     rules: {
       userAgent: "*",
