@@ -68,6 +68,14 @@ Le rapport de Playwright — captures, traces pas à pas — et les journaux des
   fullFileTitle="Voir le fichier complet"
 />
 
+## Après la CI : les images de la démo
+
+Un second workflow, `.github/workflows/images.yml`, démarre quand la CI a réussi sur `main`. Il construit les images Docker du site et du migrateur, et les publie sur GHCR, le registre d’images de GitHub, où la sandbox les télécharge (partie « Infrastructure », chapitre « La sandbox »). Il construit le commit que la CI a testé, et pas le dernier de `main` : une image publiée a toujours passé les vérifications et les tests.
+
+Chaque image existe pour deux architectures, amd64 et arm64. Chacune se construit sur une machine de GitHub de la même architecture, sans émulation, qui serait plusieurs fois plus lente. Un dernier job réunit les deux sous un même nom (`:main`, et `:<commit>`).
+
+Ce workflow est le seul à écrire quelque part : il reçoit `packages: write`, juste assez pour publier sur GHCR, avec le jeton que GitHub crée pour le temps du workflow. Il ne déploie rien : la production ne télécharge pas ces images.
+
 ## Ce que la CI ne fait pas
 
 <Callout type="warning">

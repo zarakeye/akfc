@@ -1,0 +1,24 @@
+# ══════════════════════════════════════════════════════════════════════════
+#  AKFC — Sandbox avec les images déjà construites (à ajouter à docker-compose.sandbox.yml)
+#
+#  AKFC_IMAGES=ghcr.io/<propriétaire>/akfc docker compose -f docker-compose.sandbox.yml \
+#    -f docker-compose.sandbox.images.yml up -d
+#
+#  Les images viennent de GHCR, publiées par .github/workflows/images.yml après chaque CI réussie
+#  sur main : `docker compose up` les télécharge au lieu de construire (moins d'une minute au lieu
+#  de plusieurs). Docker prend l'architecture de la machine (amd64 ou arm64).
+#
+#    AKFC_IMAGES  préfixe des images, sans le suffixe -runner / -migrator (obligatoire)
+#    AKFC_TAG     version : main (la dernière publiée) ou les 12 premiers caractères d'un commit
+# ══════════════════════════════════════════════════════════════════════════
+
+services:
+  migrator:
+    image: "${AKFC_IMAGES:?AKFC_IMAGES manquante, par exemple ghcr.io/<propriétaire>/akfc}-migrator:${AKFC_TAG:-main}"
+    pull_policy: always
+  seeder:
+    image: "${AKFC_IMAGES:?AKFC_IMAGES manquante, par exemple ghcr.io/<propriétaire>/akfc}-migrator:${AKFC_TAG:-main}"
+    pull_policy: always
+  app:
+    image: "${AKFC_IMAGES:?AKFC_IMAGES manquante, par exemple ghcr.io/<propriétaire>/akfc}-runner:${AKFC_TAG:-main}"
+    pull_policy: always

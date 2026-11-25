@@ -2,7 +2,7 @@
 #  AKFC — Sandbox recruteurs (stack complète)
 #
 #  git clone … && docker compose -f docker-compose.sandbox.yml up -d --build
-#    → app sur http://localhost:3010
+#    → app sur http://localhost:3010 (ou AKFC_SITE_URL)
 #    → fichiers stockés http://localhost:9001  (SeaweedFS)
 #    → Mailpit (mails) http://localhost:8025
 #
@@ -10,6 +10,17 @@
 #
 #  Tout écoute sur 127.0.0.1 : la sandbox (secrets de démo, boîte mail ouverte) n'est joignable que
 #  depuis la machine qui la lance, pas depuis le réseau où elle se trouve.
+#
+#  Images déjà construites (GHCR, publiées par .github/workflows/images.yml) au lieu du build :
+#    AKFC_IMAGES=ghcr.io/<propriétaire>/akfc docker compose -f docker-compose.sandbox.yml \
+#      -f docker-compose.sandbox.images.yml up -d
+#
+#  Réglages (variables d'environnement, valeurs locales par défaut) — une démo en ligne les donne :
+#    AKFC_BIND         adresse d'écoute des ports (127.0.0.1 ; 0.0.0.0 si une plateforme doit
+#                      joindre la machine depuis l'extérieur, comme Killercoda)
+#    AKFC_SITE_URL     adresse du site vue par le navigateur (http://localhost:3010)
+#    AKFC_STORAGE_URL  adresse du stockage vue par le navigateur, pour les URL signées
+#                      (http://localhost:9000)
 #
 #  ⚠ Valeurs de démo (secrets bidon) : ne JAMAIS réutiliser en prod.
 # ══════════════════════════════════════════════════════════════════════════
@@ -40,8 +51,8 @@ services:
       AWS_ACCESS_KEY_ID: sandbox
       AWS_SECRET_ACCESS_KEY: sandbox-secret
     ports:
-      - "127.0.0.1:9000:8333"      # API S3 (URL signées vues par le navigateur)
-      - "127.0.0.1:9001:8888"      # fichiers stockés
+      - "${AKFC_BIND:-127.0.0.1}:9000:8333"      # API S3 (URL signées vues par le navigateur)
+      - "${AKFC_BIND:-127.0.0.1}:9001:8888"      # fichiers stockés
     volumes:
       - sandbox_storage:/data
     healthcheck:
@@ -53,7 +64,7 @@ services:
   mailpit:
     image: ghcr.io/axllent/mailpit:v1.33.0
     ports:
-      - "127.0.0.1:8025:8025"      # UI web des mails
+      - "${AKFC_BIND:-127.0.0.1}:8025:8025"      # UI web des mails
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: "true"
       MP_SMTP_AUTH_ALLOW_INSECURE: "true"
@@ -105,7 +116,7 @@ services:
       mailpit:
         condition: service_started
     ports:
-      - "127.0.0.1:3010:3000"
+      - "${AKFC_BIND:-127.0.0.1}:3010:3000"
     environment:
       NODE_ENV: "production"
 
@@ -116,10 +127,12 @@ services:
 
       # ── Auth / identité ──
       JWT_SECRET: "sandbox-demo-jwt-secret-change-me-please-0123456789"
-      NEXTAUTH_URL: "http://localhost:3010"
-      # Lue au démarrage (le build ne la reçoit pas) : métadonnées, plan du site et robots.txt
-      # désignent la sandbox, pas le site du club.
-      NEXT_PUBLIC_SITE_URL: "http://localhost:3010"
+      # Lues au lancement (partie « Configuration ») : métadonnées, plan du site, robots.txt et
+      # liens des e-mails désignent la sandbox, à son adresse, pas le site du club.
+      SITE_URL: "${AKFC_SITE_URL:-http://localhost:3010}"
+      NEXTAUTH_URL: "${AKFC_SITE_URL:-http://localhost:3010}"
+      # Une sandbox n'est jamais indexée par un moteur de recherche.
+      DEMO_MODE: "1"
       APP_SHORT_NAME: "AKFC"
       APP_FULL_NAME: "AKFC — Sandbox de démonstration"
       APP_SUPPORT_EMAIL: "contact@sandbox.local"
@@ -130,7 +143,7 @@ services:
       R2_SECRET_ACCESS_KEY: "sandbox-secret"
       R2_BUCKET: "documents"
       R2_FORCE_PATH_STYLE: "true"
-      R2_PUBLIC_ENDPOINT: "http://localhost:9000"
+      R2_PUBLIC_ENDPOINT: "${AKFC_STORAGE_URL:-http://localhost:9000}"
 
       # ── SMTP → Mailpit (mails capturés, visibles sur :8025) ──
       SMTP_HOST: "mailpit"

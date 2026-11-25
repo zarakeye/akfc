@@ -57,6 +57,26 @@ Le site envoie les fichiers au stockage par des **URL signées** : le navigateur
 
 En production, `R2_PUBLIC_ENDPOINT` est absente : serveur et navigateur atteignent R2 à la même adresse publique. La signature couvre l’adresse : une URL signée pour `storage:8333` puis réécrite en `localhost:9000` serait refusée. Il faut signer directement pour l’adresse que le navigateur utilisera.
 
+## Sans construire : les images publiées
+
+Construire les images prend plusieurs minutes. Après chaque CI réussie sur `main`, le workflow `.github/workflows/images.yml` les construit et les publie sur GHCR, le registre d’images de GitHub. Il y en a deux, `akfc-runner` (le site) et `akfc-migrator` (migrations et seed), chacune pour deux architectures : amd64 (PC, Mac Intel, Killercoda) et arm64 (Mac Apple Silicon, VM ARM). Un second fichier compose remplace alors la construction par le téléchargement :
+
+```bash
+AKFC_IMAGES=ghcr.io/<propriétaire>/akfc docker compose -f docker-compose.sandbox.yml -f docker-compose.sandbox.images.yml up -d
+```
+
+Docker prend l’architecture de la machine. `AKFC_TAG` choisit la version : `main`, la dernière publiée, ou les douze premiers caractères d’un commit, pour revenir à une version précise. Les images sont publiques, comme le code : elles ne contiennent aucun secret (partie « Docker », chapitre 3).
+
+👉 la même image, construite une fois, sert partout
+
+## Ailleurs que sur localhost
+
+Une démo en ligne, Killercoda par exemple, ne sert pas la sandbox sur `localhost`. Trois variables, lues par le fichier compose, s’en chargent, avec les valeurs locales par défaut :
+
+<DocsTable columnsJson='["Variable", "Défaut", "Rôle"]' rowsJson='[["AKFC_BIND", "127.0.0.1", "Adresse d’écoute des ports. 0.0.0.0 quand une plateforme doit joindre la machine depuis l’extérieur."], ["AKFC_SITE_URL", "http://localhost:3010", "Adresse du site vue par le navigateur : SITE_URL et NEXTAUTH_URL, donc les liens des e-mails."], ["AKFC_STORAGE_URL", "http://localhost:9000", "Adresse du stockage vue par le navigateur : R2_PUBLIC_ENDPOINT, pour les URL signées."]]' />
+
+Elles passent toutes au lancement, sans reconstruire : c’est le sens de `SITE_URL` (partie « Configuration »). Et la sandbox déclare toujours `DEMO_MODE=1` : aucun moteur de recherche ne l’indexe, où qu’elle tourne.
+
 ## Des comptes connus
 
 Le seed de la sandbox crée ce qu’il faut pour se connecter et essayer :
@@ -85,7 +105,7 @@ La sandbox, l’environnement de développement (`docker-compose.dev.yml`, parti
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que faut-il pour lancer la sandbox ?", "Docker, et une commande : docker compose -f docker-compose.sandbox.yml up -d --build."], ["Le site de la sandbox est-il celui de la production ?", "Oui : la même image (cible runner) ; seuls l’environnement et les services autour changent."], ["Comment les services s’attendent-ils ?", "depends_on : service_healthy pour la base, service_completed_successfully pour la migration et le seed."], ["Comment le navigateur atteint-il le stockage ?", "Par un client de signature à part, sur R2_PUBLIC_ENDPOINT (localhost:9000), l’adresse que la signature couvre."], ["Avec quels comptes se connecter ?", "Un administrateur et un membre de démonstration, remis à neuf à chaque démarrage."], ["Comment tout remettre à zéro ?", "down -v : conteneurs et volumes supprimés."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que faut-il pour lancer la sandbox ?", "Docker, et une commande : docker compose -f docker-compose.sandbox.yml up -d --build."], ["Et sans construire ?", "Les images publiées sur GHCR par images.yml, avec docker-compose.sandbox.images.yml et AKFC_IMAGES."], ["Et ailleurs que sur localhost ?", "AKFC_BIND, AKFC_SITE_URL, AKFC_STORAGE_URL, lues au lancement."], ["Le site de la sandbox est-il celui de la production ?", "Oui : la même image (cible runner) ; seuls l’environnement et les services autour changent."], ["Comment les services s’attendent-ils ?", "depends_on : service_healthy pour la base, service_completed_successfully pour la migration et le seed."], ["Comment le navigateur atteint-il le stockage ?", "Par un client de signature à part, sur R2_PUBLIC_ENDPOINT (localhost:9000), l’adresse que la signature couvre."], ["Avec quels comptes se connecter ?", "Un administrateur et un membre de démonstration, remis à neuf à chaque démarrage."], ["Comment tout remettre à zéro ?", "down -v : conteneurs et volumes supprimés."]]' />
 
 ## À suivre
 
