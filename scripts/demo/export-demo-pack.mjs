@@ -461,7 +461,11 @@ async function main() {
     )}\n`,
   );
   mkdirSync(path.dirname(OUT_FILE), { recursive: true });
-  execFileSync("tar", ["-czf", OUT_FILE, "-C", OUT_DIR, "."]);
+  // Sans les attributs étendus du Mac (com.apple.provenance…) ni ses fichiers « ._ » : le tar du
+  // seeder (Linux) les signalerait un par un.
+  execFileSync("tar", ["--no-xattrs", "-czf", OUT_FILE, "-C", OUT_DIR, "."], {
+    env: { ...process.env, COPYFILE_DISABLE: "1" },
+  });
   rmSync(OUT_DIR, { recursive: true, force: true });
 
   const folders = new Set(photos.map((p) => path.posix.dirname(p.path))).size;

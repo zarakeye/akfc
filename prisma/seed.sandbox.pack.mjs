@@ -57,7 +57,8 @@ async function unpack() {
     writeFileSync(archive, Buffer.from(await res.arrayBuffer()));
   }
   if (!archive) return null;
-  execFileSync("tar", ["-xzf", archive, "-C", dir]);
+  // Un paquet fait sur un Mac peut porter des attributs propres à macOS : on les ignore sans le dire.
+  execFileSync("tar", ["--warning=no-unknown-keyword", "-xzf", archive, "-C", dir]);
   return dir;
 }
 
