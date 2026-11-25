@@ -5,8 +5,8 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-import { seedTicketsDecor } from "./seed.sandbox.decor.mjs";
-import { seedDemoPack } from "./seed.sandbox.pack.mjs";
+import { seedLibraryDecor, seedTicketsDecor } from "./seed.sandbox.decor.mjs";
+import { seedDemoPack, storageClient } from "./seed.sandbox.pack.mjs";
 
 const prisma = new PrismaClient();
 const DEMO_PASSWORD = "sandbox-demo";
@@ -137,9 +137,11 @@ async function main() {
 
   if (IN_SANDBOX) {
     // Photos, avatars et bios du paquet de démo, sur des personnes fictives (seed.sandbox.pack.mjs).
-    await seedDemoPack({ prisma, adminId, adminGroupId, hash });
+    const pack = await seedDemoPack({ prisma, adminId, adminGroupId, hash });
     // Les demandes au club, dans tous leurs états, et le bénévole du support (seed.sandbox.decor.mjs).
     await seedTicketsDecor({ prisma, hash, domain: DOMAIN, adminId, adminGroupId, memberId });
+    // Droits à l'image, tags, une ancienne version, une page en construction (seed.sandbox.decor.mjs).
+    if (pack) await seedLibraryDecor({ prisma, storage: storageClient(), adminId, memberId, pack });
   }
 
   console.log("");

@@ -250,7 +250,8 @@ function replaceNames(text, pairs) {
 
 /**
  * Parcourt une bio (contenu de builder, JSON) : noms remplacés dans chaque texte, images
- * rattachées à leur photo du paquet. Rend null pour un objet qui pointe vers une image absente.
+ * rattachées à leur photo du paquet, avatars à leur personne (`person:<clé>`). Rend null pour un
+ * objet qui pointe vers une image absente ; dans un objet, la clé qui le portait disparaît.
  * @param {unknown} node
  * @param {(text: string) => string} rename
  * @param {Map<string, string>} mediaPaths  id du média → chemin dans le paquet
@@ -269,8 +270,12 @@ function transformBio(node, rename, mediaPaths) {
         const packPath = mediaPaths.get(v);
         if (!packPath) return null;
         out[k] = `media:${packPath}`;
+      } else if (k === "userId" && typeof v === "string" && /** @type {{ kind?: unknown }} */ (node).kind === "avatar") {
+        out[k] = `person:${keyOf("person", v)}`;
       } else {
-        out[k] = transformBio(v, rename, mediaPaths);
+        const t = transformBio(v, rename, mediaPaths);
+        if (t === null && v !== null) continue;
+        out[k] = t;
       }
     }
     return out;

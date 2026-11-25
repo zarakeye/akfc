@@ -15,7 +15,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync 
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 import { assertLocalTarget } from "./db-target.mjs";
 
@@ -61,7 +61,7 @@ async function unpack() {
   return dir;
 }
 
-function storageClient() {
+export function storageClient() {
   const endpoint = process.env.R2_ENDPOINT;
   const bucket = process.env.R2_BUCKET;
   if (!endpoint || !bucket) throw new Error("paquet de démo : R2_ENDPOINT et R2_BUCKET sont requis");
@@ -76,16 +76,20 @@ function storageClient() {
     },
   });
   /** Dépose l'objet, sauf s'il est déjà là avec la même taille (relance du seed). */
-  const put = async (/** @type {string} */ key, /** @type {Buffer} */ body) => {
+  const put = async (/** @type {string} */ key, /** @type {Buffer} */ body, contentType = "image/jpeg") => {
     try {
       const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
       if (head.ContentLength === body.byteLength) return;
     } catch {
       // absent : on le dépose
     }
-    await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: "image/jpeg" }));
+    await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
   };
-  return { put };
+  /** Copie un objet du stockage vers une autre clé. */
+  const copy = async (/** @type {string} */ from, /** @type {string} */ to) => {
+    await s3.send(new CopyObjectCommand({ Bucket: bucket, CopySource: `${bucket}/${encodeURI(from)}`, Key: to }));
+  };
+  return { put, copy };
 }
 
 /**
@@ -95,13 +99,17 @@ function storageClient() {
  *   adminGroupId: string;
  *   hash: string;
  * }} ctx
+ * @returns {Promise<null | {
+ *   persons: { id: string; instructor: boolean }[];
+ *   photos: { id: string; path: string; fullPath: string }[];
+ * }>} ce que le décor des parcours réutilise ; null sans paquet
  */
 export async function seedDemoPack({ prisma, adminId, adminGroupId, hash }) {
   assertLocalTarget(process.env.DATABASE_URL ?? "", "DATABASE_URL");
   const dir = await unpack();
   if (!dir) {
     console.log("ℹ Pas de paquet de démo (AKFC_DEMO_PACK_URL, demo-data/demo-pack.tar.gz) : sandbox sans photos");
-    return;
+    return null;
   }
   try {
     const manifest = JSON.parse(readFileSync(path.join(dir, "manifest.json"), "utf8"));
@@ -214,6 +222,8 @@ export async function seedDemoPack({ prisma, adminId, adminGroupId, hash }) {
     // 4. Les photos : l'objet dans le stockage, sa fiche, et les dossiers qui y mènent.
     /** @type {Map<string, string>} chemin du paquet → id du média */
     const mediaIds = new Map();
+    /** @type {{ id: string; path: string; fullPath: string }[]} */
+    const photos = [];
     const folders = new Set();
     for (const photo of manifest.photos) {
       const body = readFileSync(path.join(dir, "photos", photo.file));
@@ -243,6 +253,7 @@ export async function seedDemoPack({ prisma, adminId, adminGroupId, hash }) {
         select: { id: true },
       });
       mediaIds.set(photo.path, asset.id);
+      photos.push({ id: asset.id, path: photo.path, fullPath });
       const segs = fullPath.split("/").slice(0, -1);
       for (let k = 2; k <= segs.length; k++) folders.add(segs.slice(0, k).join("/"));
     }
@@ -278,7 +289,15 @@ export async function seedDemoPack({ prisma, adminId, adminGroupId, hash }) {
             const id = mediaIds.get(v.slice("media:".length));
             if (!id) return null;
             out[k] = id;
-          } else out[k] = resolve(v);
+          } else if (k === "userId" && typeof v === "string" && v.startsWith("person:")) {
+            const p = persons.get(v.slice("person:".length));
+            if (!p) return null;
+            out[k] = p.id;
+          } else {
+            const r = resolve(v);
+            if (r === null && v !== null) continue;
+            out[k] = r;
+          }
         }
         return out;
       }
@@ -308,6 +327,10 @@ export async function seedDemoPack({ prisma, adminId, adminGroupId, hash }) {
     for (const p of persons.values()) {
       if (instructorIds.includes(p.id)) console.log(`   Instructeur : ${p.firstName} ${p.lastName}`);
     }
+    return {
+      persons: [...persons.values()].map((p) => ({ id: p.id, instructor: instructorIds.includes(p.id) })),
+      photos,
+    };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
