@@ -51,3 +51,6 @@ diag_*.sh
 audit_*.sh
 *.sql
 *.png
+# Le paquet de démo : monté dans le seeder de la sandbox, jamais copié dans une image.
+demo-data/
+demo-pack.tar.gz

@@ -92,11 +92,23 @@ services:
     depends_on:
       migrator:
         condition: service_completed_successfully
+      storage:
+        condition: service_healthy
     environment:
       DATABASE_URL: "postgresql://akfc:sandbox@postgres:5432/akfc_db?schema=public"
       DIRECT_DATABASE_URL: "postgresql://akfc:sandbox@postgres:5432/akfc_db?schema=public"
       PRISMA_CLIENT_ENGINE_TYPE: "library"
       APP_SHORT_NAME: "AKFC"
+      # Le paquet de démo (photos, avatars, bios) : téléchargé s'il y a une adresse, sinon lu dans
+      # demo-data/ ; sans paquet, la sandbox démarre sans photos.
+      AKFC_DEMO_PACK_URL: "${AKFC_DEMO_PACK_URL:-}"
+      R2_ENDPOINT: "http://storage:8333"
+      R2_ACCESS_KEY_ID: "sandbox"
+      R2_SECRET_ACCESS_KEY: "sandbox-secret"
+      R2_BUCKET: "documents"
+      R2_FORCE_PATH_STYLE: "true"
+    volumes:
+      - ./demo-data:/demo-data:ro
     command: ["sh", "-c", "pnpm prisma generate && node prisma/seed.sandbox.mjs"]
 
   app:

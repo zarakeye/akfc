@@ -5,6 +5,8 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import { seedDemoPack } from "./seed.sandbox.pack.mjs";
+
 const prisma = new PrismaClient();
 const DEMO_PASSWORD = "sandbox-demo";
 
@@ -125,6 +127,9 @@ async function main() {
   }
 
   console.log("✅ Disciplines prêtes");
+
+  // Photos, avatars et bios du paquet de démo, sur des personnes fictives (seed.sandbox.pack.mjs).
+  await seedDemoPack({ prisma, adminId, adminGroupId, hash });
 
   console.log("");
   console.log("   Admin  : admin@akfc.demo  /  " + DEMO_PASSWORD);

@@ -6,7 +6,7 @@
  *
  *   pnpm demo:pack      (node --env-file=.env scripts/demo/export-demo-pack.mjs)
  *
- * Ce qui sort : demo-pack.tar.gz, à la racine du dépôt (ignoré par git), qui contient
+ * Ce qui sort : demo-data/demo-pack.tar.gz (ignoré par git, monté dans le seeder de la sandbox), qui contient
  *   - les photos de la bibliothèque, des espaces personnels et des avatars, réencodées en JPEG :
  *     orientation appliquée, 2048 px au plus de côté, et AUCUNE métadonnée (ni position GPS, ni
  *     appareil, ni date de prise de vue : sharp ne les recopie pas sans qu'on le lui demande) ;
@@ -60,7 +60,7 @@ const slugify = backendRequire("slugify");
 const slug = (/** @type {string} */ input) => slugify(input, { lower: true, strict: true });
 
 const OUT_DIR = "demo-pack";
-const OUT_FILE = "demo-pack.tar.gz";
+const OUT_FILE = "demo-data/demo-pack.tar.gz";
 const NAMES_FILE = "scripts/demo/names.local.json";
 const MAX_SIDE = 2048;
 /** Ce que sharp sait décoder ; le reste (vidéos, SVG, HEIC…) n'entre pas dans le paquet. */
@@ -440,6 +440,7 @@ async function main() {
       2,
     )}\n`,
   );
+  mkdirSync(path.dirname(OUT_FILE), { recursive: true });
   execFileSync("tar", ["-czf", OUT_FILE, "-C", OUT_DIR, "."]);
   rmSync(OUT_DIR, { recursive: true, force: true });
 
