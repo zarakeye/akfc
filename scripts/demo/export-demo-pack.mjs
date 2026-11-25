@@ -27,9 +27,12 @@
  * Les bios :
  *   - le nom de l'instructeur (prénom, nom, pseudo) devient `{person-1.firstName}`,
  *     `{person-1.lastName}`, `{person-1.pseudo}` : le seed y met le nom de la personne fictive ;
- *   - les AUTRES noms se remplacent par scripts/demo/names.local.json (ignoré par git), que vous
- *     remplissez : { "Vrai Nom": "Nom fictif", … }. Le script liste dans le terminal les mots à
- *     majuscule qui restent, pour vous aider à le compléter ; cette liste ne quitte pas le Mac ;
+ *   - les AUTRES noms de personnes se remplacent par scripts/demo/names.local.json (ignoré par git,
+ *     { "Vrai Nom": "Nom fictif", … }). S'il n'existe pas, le premier lancement le REMPLIT : il
+ *     repère les noms dans les bios (des mots à majuscule, hors début de phrase, hors disciplines,
+ *     lieux et mots courants), leur invente des noms fictifs cohérents (« Paul Durand » →
+ *     « Hugo Lefort », puis « Durand » seul → « Lefort ») et les applique. On relit ce fichier,
+ *     on retire ce qui n'est pas une personne, on relance. Le fichier ne quitte pas le Mac ;
  *   - une image de la bio pointe vers sa photo dans le paquet (`media:<chemin>`), pas vers un
  *     identifiant de la base. Une image absente du paquet (une vidéo) est retirée.
  *
@@ -141,6 +144,92 @@ function jpgPath(relative, taken) {
   }
 }
 
+/** Prénoms et noms fictifs, attribués dans l'ordre : un même vrai nom reçoit toujours le même. */
+const FICTIONAL_FIRST = ["Camille", "Hugo", "Léa", "Théo", "Inès", "Nathan", "Manon", "Lucas", "Chloé", "Mathis", "Jade",
+  "Enzo", "Sarah", "Noah", "Zoé", "Raphaël", "Lina", "Gabin", "Eva", "Jules", "Alice", "Louis", "Margaux", "Sacha",
+  "Clara", "Arthur", "Romane", "Tom", "Anaïs", "Maxime"];
+const FICTIONAL_LAST = ["Roche", "Lefort", "Vasseur", "Marchal", "Berthier", "Coudray", "Ferrand", "Delmas", "Garnier",
+  "Royer", "Fontaine", "Paillard", "Leclerc", "Duquesne", "Mercadier", "Tissot", "Courtois", "Lemaire", "Perrot",
+  "Bastide", "Morvan", "Chabert", "Renaud", "Vidal", "Fournel", "Joubert", "Lacombe", "Rivière", "Ducros", "Albrand"];
+/** Mots à majuscule qui ne sont pas des personnes (le reste se relit dans names.local.json). */
+const NOT_NAMES = new Set(
+  ("le la les un une des de du au aux en et il elle ils elles on nous vous son sa ses leur leurs ce cette ces " +
+    "depuis avec pour dans sur sous chez après avant pendant entre puis aujourd'hui ensuite enfin passionné " +
+    "passionnée kung fu sifu sigung maître maîtresse grand style école club association fédération france " +
+    "savoie chambéry lyon paris chine hong kong japon taïwan asie europe mjc ffk janvier février mars avril " +
+    "mai juin juillet août septembre octobre novembre décembre lundi mardi mercredi jeudi vendredi samedi dimanche " +
+    // Styles et arts martiaux : les disciplines de la base s'ajoutent à cette liste.
+    "hung gar wing chun tsun choy tchoy lee fut tai chi chuan qi gong shaolin wudang kali arnis eskrima escrima " +
+    "jeet kune do bak mei mantis")
+    .split(" "),
+);
+
+const TITLES = /(?:sifu|sigung|maître|maîtresse|m\.|mme|mr|monsieur|madame)\s+$/i;
+
+/**
+ * Repère les noms de personnes probables dans des textes : suites de un à trois mots à majuscule
+ * (le reste en minuscules : les sigles comme FFK n'en sont pas), hors début de phrase pour un mot
+ * seul, hors mots qui apparaissent aussi en minuscules, hors mots connus (NOT_NAMES, disciplines…).
+ * @param {string[]} texts
+ * @param {Set<string>} known  mots à ne jamais prendre pour un nom (en minuscules)
+ */
+function detectNames(texts, known) {
+  const lowerWords = new Set(texts.flatMap((t) => t.match(/(?<![\p{L}])\p{Ll}[\p{L}'’-]*/gu) ?? []));
+  const isName = (/** @type {string} */ w) => !NOT_NAMES.has(w.toLowerCase()) && !known.has(w.toLowerCase()) && !lowerWords.has(w.toLowerCase());
+  /** @type {Set<string>} */
+  const found = new Set();
+  for (const text of texts) {
+    // Un mot composé (« Jean-Marc ») reste un seul mot.
+    for (const m of text.matchAll(/(?<![\p{L}\p{N}{-])\p{Lu}\p{Ll}[\p{L}'’]*(?:-\p{Lu}\p{Ll}[\p{L}'’]*)*(?: \p{Lu}\p{Ll}[\p{L}'’]*(?:-\p{Lu}\p{Ll}[\p{L}'’]*)*){0,2}/gu)) {
+      const words = m[0].split(" ").filter(isName);
+      if (words.length === 0) continue;
+      const before = text.slice(0, m.index ?? 0);
+      const sentenceStart = /(^|[.!?:;]\s*|\n\s*)$/.test(before);
+      if (words.length === 1 && sentenceStart) continue;
+      // Un mot seul après un titre (« Sifu Lam », « M. Chen ») est un nom de famille ; sinon, un prénom.
+      const raw = m[0].split(" ");
+      const titled =
+        TITLES.test(before) || (raw.length > words.length && TITLES.test(`${raw.slice(0, raw.length - words.length).join(" ")} `));
+      found.add(words.length === 1 && titled ? `|${words[0]}` : words.join(" "));
+    }
+  }
+  // Les noms complets d'abord : leurs parties seules suivent le même nom fictif.
+  return [...found].sort((a, b) => b.split(" ").length - a.split(" ").length);
+}
+
+/**
+ * Invente des noms fictifs pour des noms repérés, de façon cohérente : « Paul Durand » →
+ * « Hugo Lefort », et ensuite « Durand » seul → « Lefort », « Paul » seul → « Hugo ».
+ * @param {string[]} detected  noms complets d'abord
+ * @returns {Record<string, string>}
+ */
+function inventNames(detected) {
+  /** @type {Record<string, string>} */
+  const map = {};
+  let first = 0;
+  let last = 0;
+  const pick = (/** @type {string[]} */ pool, /** @type {number} */ i) => pool[i % pool.length] + (i >= pool.length ? ` ${Math.floor(i / pool.length) + 1}` : "");
+  for (const entry of detected) {
+    // « |Lam » : un nom de famille seul (après un titre) ; un mot seul sans titre : un prénom.
+    const family = entry.startsWith("|");
+    const name = family ? entry.slice(1) : entry;
+    if (map[name]) continue;
+    const words = name.split(" ");
+    if (words.length === 1) {
+      map[name] = family ? pick(FICTIONAL_LAST, last++) : pick(FICTIONAL_FIRST, first++);
+      continue;
+    }
+    const [given, ...rest] = words;
+    const familyName = rest.join(" ");
+    const fictiveGiven = map[given] ?? pick(FICTIONAL_FIRST, first++);
+    const fictiveFamily = map[familyName] ?? pick(FICTIONAL_LAST, last++);
+    map[name] = `${fictiveGiven} ${fictiveFamily}`;
+    map[given] ??= fictiveGiven;
+    map[familyName] ??= fictiveFamily;
+  }
+  return map;
+}
+
 /** @param {string} s */
 const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -198,7 +287,7 @@ function collectCapitalized(node, words, fictional) {
   if (typeof node === "string") {
     if (node.startsWith("media:")) return;
     for (const m of node.matchAll(/(?<![\p{L}\p{N}{.])\p{Lu}[\p{L}'-]+/gu)) {
-      if (!fictional.has(m[0].toLowerCase())) words.add(m[0]);
+      if (!fictional.has(m[0].toLowerCase()) && !NOT_NAMES.has(m[0].toLowerCase())) words.add(m[0]);
     }
   } else if (Array.isArray(node)) node.forEach((n) => collectCapitalized(n, words, fictional));
   else if (node && typeof node === "object") Object.values(node).forEach((v) => collectCapitalized(v, words, fictional));
@@ -257,26 +346,52 @@ async function main() {
   }
 
   // 3. Les bios d'instructeur, noms remplacés.
-  /** @type {[string, string][]} */
-  const others = existsSync(NAMES_FILE) ? Object.entries(JSON.parse(readFileSync(NAMES_FILE, "utf8"))) : [];
-  const fictional = new Set(others.flatMap(([, to]) => to.toLowerCase().split(/\s+/)));
   const instructors = await prisma.user.findMany({
     where: { NOT: { instructorBio: { equals: Prisma.DbNull } } },
     select: { id: true, firstName: true, lastName: true, pseudo: true, instructorBio: true, instructorOrder: true },
   });
+  /** @param {(typeof instructors)[number]} u @param {string} person @returns {[string, string][]} */
+  const ownNames = (u, person) => [
+    [[u.firstName, u.lastName].filter(Boolean).join(" "), `{${person}.firstName} {${person}.lastName}`],
+    [u.firstName ?? "", `{${person}.firstName}`],
+    [u.lastName ?? "", `{${person}.lastName}`],
+    [u.pseudo ?? "", `{${person}.pseudo}`],
+  ];
+  let suggested = 0;
+  if (!existsSync(NAMES_FILE)) {
+    // Premier lancement : on repère les noms des AUTRES personnes (celui de l'instructeur est
+    // déjà remplacé), on leur invente des noms fictifs, et le fichier se relit ensuite.
+    /** @type {string[]} */
+    const texts = [];
+    const collect = (/** @type {unknown} */ node) => {
+      if (typeof node === "string") texts.push(node);
+      else if (Array.isArray(node)) node.forEach(collect);
+      else if (node && typeof node === "object") Object.values(node).forEach(collect);
+    };
+    for (const u of instructors) {
+      const own = ownNames(u, "x");
+      collect(transformBio(u.instructorBio, (text) => replaceNames(text, own), new Map()));
+    }
+    const known = new Set(
+      [
+        ...(await prisma.discipline.findMany({ select: { name: true } })).map((d) => d.name),
+        ...(await prisma.category.findMany({ select: { type: true } })).map((c) => c.type),
+      ].flatMap((label) => label.toLowerCase().split(/[\s'’()-]+/)),
+    );
+    const invented = inventNames(detectNames(texts, known));
+    suggested = Object.keys(invented).length;
+    writeFileSync(NAMES_FILE, `${JSON.stringify(invented, null, 2)}\n`);
+  }
+  /** @type {[string, string][]} */
+  const others = Object.entries(JSON.parse(readFileSync(NAMES_FILE, "utf8")));
+  const fictional = new Set(others.flatMap(([, to]) => to.toLowerCase().split(/[\s-]+/)));
   /** @type {{ person: string; order: number | null; content: unknown }[]} */
   const bios = [];
   const leftovers = new Set();
   for (const u of instructors) {
     if (u.instructorBio === null) continue;
     const person = keyOf("person", u.id);
-    /** @type {[string, string][]} */
-    const own = [
-      [[u.firstName, u.lastName].filter(Boolean).join(" "), `{${person}.firstName} {${person}.lastName}`],
-      [u.firstName ?? "", `{${person}.firstName}`],
-      [u.lastName ?? "", `{${person}.lastName}`],
-      [u.pseudo ?? "", `{${person}.pseudo}`],
-    ];
+    const own = ownNames(u, person);
     const content = transformBio(u.instructorBio, (text) => replaceNames(text, [...own, ...others]), mediaPaths);
     collectCapitalized(content, leftovers, fictional);
     bios.push({ person, order: u.instructorOrder, content });
@@ -334,6 +449,10 @@ async function main() {
       `${bios.length} bios, ${spaces.length} espaces de groupe`,
   );
   if (failed) console.log(`   ${failed} illisibles (objet absent du stockage, ou fichier abîmé)`);
+  if (suggested) {
+    console.log(`\n   ${suggested} noms repérés dans les bios et remplacés par des noms fictifs : ${NAMES_FILE}.`);
+    console.log(`   Relisez-le : retirez ce qui n'est pas une personne, corrigez au besoin, puis relancez.`);
+  }
   if (leftovers.size) {
     // Seulement dans ce terminal : rien de cette liste n'entre dans le paquet.
     console.log(`\n   Mots à majuscule restés dans les bios (noms à ajouter à ${NAMES_FILE} ?) :`);
