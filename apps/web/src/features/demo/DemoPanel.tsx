@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore, useTransition, type JSX } from "react";
 import { Clock, FlaskConical, Mail, UserRound, X } from "lucide-react";
 
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "#features/demo/demoAccounts.ts";
+import { DemoTours } from "#features/demo/DemoTours.tsx";
 import { switchDemoAccountAction } from "#features/demo/switchDemoAccount.action.ts";
 import type { DemoInfo } from "#features/demo/demoInfo.ts";
 
@@ -50,7 +51,7 @@ function formatRemaining(ms: number): string {
 
 /**
  * Le panneau de la démo, posé sur toutes les pages quand DEMO_MODE=1 : le temps qui reste, le
- * compte connecté, « Me connecter en tant que… », et la boîte mail de la démo. Replié, il n'est
+ * compte connecté, « Me connecter en tant que… », les parcours, et la boîte mail de la démo. Replié, il n'est
  * qu'une pastille en bas à gauche ; son état (ouvert, fermé) est retenu par le navigateur.
  */
 export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail: string | null }): JSX.Element {
@@ -101,7 +102,7 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
   return (
     <aside
       aria-label="Panneau de la démo"
-      className="fixed bottom-4 left-4 z-[60] flex max-h-[calc(100dvh-2rem)] w-80 flex-col overflow-y-auto rounded-xl border border-border bg-popover text-sm text-popover-foreground shadow-2xl"
+      className="fixed bottom-4 left-4 z-[60] flex max-h-[calc(100dvh-2rem)] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-y-auto rounded-xl border border-border bg-popover text-sm text-popover-foreground shadow-2xl"
     >
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <span className="inline-flex items-center gap-2 font-semibold">
@@ -163,6 +164,11 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
         <p className="mt-2 text-xs text-muted-foreground">
           Mot de passe de tous les comptes : <code className="rounded bg-muted px-1">{DEMO_PASSWORD}</code>
         </p>
+      </section>
+
+      <section className="border-t border-border px-4 py-3">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parcours</h2>
+        <DemoTours onSwitch={switchTo} currentKey={current?.key ?? null} pending={pending} />
       </section>
 
       <section className="border-t border-border px-4 py-3">
