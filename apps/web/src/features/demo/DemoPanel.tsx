@@ -77,7 +77,7 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
 
   const timer =
     remaining === null ? null : (
-      <span className={`inline-flex items-center gap-1 tabular-nums ${late ? "text-amber-600 dark:text-amber-400" : ""}`}>
+      <span className={`inline-flex items-center gap-1 tabular-nums ${late ? "text-warning" : ""}`}>
         <Clock className="h-3.5 w-3.5" aria-hidden />
         {ended ? "terminée" : formatRemaining(remaining)}
       </span>
@@ -88,7 +88,7 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
       <button
         type="button"
         onClick={() => toggle(true)}
-        className="fixed bottom-4 left-4 z-[60] inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-lg hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        className="fixed bottom-4 left-4 z-[60] inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90"
         aria-label="Ouvrir le panneau de la démo"
       >
         <FlaskConical className="h-4 w-4" aria-hidden />
@@ -101,9 +101,9 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
   return (
     <aside
       aria-label="Panneau de la démo"
-      className="fixed bottom-4 left-4 z-[60] flex max-h-[calc(100dvh-2rem)] w-80 flex-col overflow-y-auto rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+      className="fixed bottom-4 left-4 z-[60] flex max-h-[calc(100dvh-2rem)] w-80 flex-col overflow-y-auto rounded-xl border border-border bg-popover text-sm text-popover-foreground shadow-2xl"
     >
-      <header className="flex items-center justify-between gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
+      <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <span className="inline-flex items-center gap-2 font-semibold">
           <FlaskConical className="h-4 w-4" aria-hidden />
           Démo d&apos;AKFC
@@ -113,7 +113,7 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
           <button
             type="button"
             onClick={() => toggle(false)}
-            className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label="Replier le panneau"
           >
             <X className="h-4 w-4" aria-hidden />
@@ -122,21 +122,21 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
       </header>
 
       {ended && (
-        <p className="mx-4 mt-3 rounded-md bg-amber-50 px-3 py-2 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <p className="mx-4 mt-3 rounded-md bg-warning-muted px-3 py-2 text-warning">
           L&apos;heure est écoulée : rechargez l&apos;onglet Killercoda pour une nouvelle session.
         </p>
       )}
 
       <section className="px-4 py-3">
-        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">Connecté en tant que</h2>
+        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Connecté en tant que</h2>
         <p className="inline-flex items-center gap-2">
-          <UserRound className="h-4 w-4 text-zinc-500" aria-hidden />
+          <UserRound className="h-4 w-4 text-muted-foreground" aria-hidden />
           {current ? current.label : currentEmail ? currentEmail : "visiteur (non connecté)"}
         </p>
       </section>
 
-      <section className="border-t border-zinc-200 px-4 py-3 dark:border-zinc-700">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">Me connecter en tant que…</h2>
+      <section className="border-t border-border px-4 py-3">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Me connecter en tant que…</h2>
         <ul className="flex flex-col gap-1.5">
           {DEMO_ACCOUNTS.map((a) => {
             const active = a.email === currentEmail;
@@ -148,34 +148,34 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
                   onClick={() => switchTo(a.key)}
                   className={`w-full rounded-md border px-3 py-2 text-left transition ${
                     active
-                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950"
-                      : "border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                      ? "border-success bg-success-muted"
+                      : "border-border hover:border-ring hover:bg-muted disabled:opacity-60"
                   }`}
                 >
                   <span className="block font-medium">{a.label}</span>
-                  <span className="block text-xs text-zinc-500">{a.hint}</span>
+                  <span className="block text-xs text-muted-foreground">{a.hint}</span>
                 </button>
               </li>
             );
           })}
         </ul>
-        {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
-        <p className="mt-2 text-xs text-zinc-500">
-          Mot de passe de tous les comptes : <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">{DEMO_PASSWORD}</code>
+        {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+        <p className="mt-2 text-xs text-muted-foreground">
+          Mot de passe de tous les comptes : <code className="rounded bg-muted px-1">{DEMO_PASSWORD}</code>
         </p>
       </section>
 
-      <section className="border-t border-zinc-200 px-4 py-3 dark:border-zinc-700">
+      <section className="border-t border-border px-4 py-3">
         <a
           href={info.mailUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 font-medium text-blue-700 hover:underline dark:text-blue-400"
+          className="inline-flex items-center gap-2 font-medium text-brand hover:underline"
         >
           <Mail className="h-4 w-4" aria-hidden />
           La boîte mail de la démo (Mailpit)
         </a>
-        <p className="mt-1 text-xs text-zinc-500">Tous les e-mails envoyés par le site y arrivent.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Tous les e-mails envoyés par le site y arrivent.</p>
       </section>
     </aside>
   );
