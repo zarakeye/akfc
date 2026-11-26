@@ -141,10 +141,13 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "Construire une page",
     pitch: "Une page faite de blocs, publiée quand elle est prête.",
     steps: [
-      { text: "Se connecter en administrateur", as: "admin" },
-      { text: "Les pages du site : « L'association » est en construction", href: "/dashboard/pages" },
-      { text: "La compléter : un texte, une galerie, une image de la bibliothèque", href: "/dashboard/site-pages/association" },
-      { text: "La publier, puis la voir en visiteur", href: "/about" },
+      { text: "Se connecter en administrateur, par le formulaire", as: "admin", tour: "demo.connexion.admin" },
+      {
+        text: "« L'association », en brouillon : lui ajouter un bloc de texte, puis la publier",
+        href: "/dashboard/pages",
+        tour: "demo.page.completer",
+      },
+      { text: "La voir comme un visiteur", href: "/about" },
     ],
     docs: [
       { label: "Un contenu fait de blocs", href: dev("contenu/un-contenu-fait-de-blocs") },

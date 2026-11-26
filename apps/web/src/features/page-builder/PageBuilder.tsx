@@ -150,7 +150,7 @@ export function PageBuilder({
 
   return (
     <PageBuilderProvider value={{ adapter, appRoot, mediaRoot: mediaRoot ?? appRoot, imageRights }}>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3" data-tour="builder.blocks">
         {rightsCheck && (
           <RightsCheckBanner
             ids={mediaIds}

@@ -45,9 +45,11 @@ function shown(el: HTMLElement): boolean {
  * deux éléments dont un seul s'affiche selon la largeur de l'écran (la barre du header sur un
  * grand écran, le bouton du menu sur un téléphone) ; un élément masqué n'a pas de position.
  */
-function findTarget(name: string | undefined, text?: string, pick?: string): HTMLElement | null {
+function findTarget(name: string | undefined, text?: string, pick?: string, last?: boolean): HTMLElement | null {
   if (!name) return null;
-  for (const el of document.querySelectorAll<HTMLElement>(`[data-tour="${CSS.escape(name)}"]`)) {
+  const all = [...document.querySelectorAll<HTMLElement>(`[data-tour="${CSS.escape(name)}"]`)];
+  // `targetLast` : le dernier (le bloc tout juste ajouté, en bas de la page).
+  for (const el of last ? all.reverse() : all) {
     if (!shown(el)) continue;
     if (!text) return el;
     // Une ligne d'une table ou d'une liste, reconnue à son texte (`targetText`) ; dedans, au
@@ -122,7 +124,7 @@ function contentBox(el: HTMLElement): DOMRect {
  */
 function guidedGeometry(el: HTMLElement, kind: TourStep["advance"]["kind"], isRow: boolean): { rect: DOMRect; spot: Spot } {
   if (kind === "input") {
-    const r = (fieldOf(el) ?? el).getBoundingClientRect();
+    const r = (fieldOf(el) ?? editableOf(el) ?? el).getBoundingClientRect();
     // Sur la première ligne : au milieu d'un champ d'une ligne, en haut d'une zone de texte.
     return { rect: r, spot: { x: r.left + Math.min(28, r.width / 2), y: r.top + Math.min(r.height / 2, 22) } };
   }
@@ -148,12 +150,19 @@ function guidedGeometry(el: HTMLElement, kind: TourStep["advance"]["kind"], isRo
   return { rect: r, spot: centerOf(r) };
 }
 
+/** Une zone d'écriture riche (l'éditeur d'un bloc de texte) : la cible, ou celle qu'elle contient. */
+function editableOf(el: HTMLElement | null): HTMLElement | null {
+  if (!el) return null;
+  return el.isContentEditable ? el : el.querySelector<HTMLElement>("[contenteditable='true']");
+}
+
 function readValue(el: HTMLElement | null): string {
   if (!el) return "";
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)
     return el.value;
   const inner = el.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select");
-  return inner ? inner.value : (el.textContent ?? "");
+  if (inner) return inner.value;
+  return (editableOf(el) ?? el).textContent ?? "";
 }
 
 /**
@@ -215,7 +224,7 @@ export function TourOverlay({
         tourStore.next(index);
         return;
       }
-      const el = findTarget(step.target, step.targetText, step.targetPick);
+      const el = findTarget(step.target, step.targetText, step.targetPick, step.targetLast);
       if (step.target && !el) {
         holeRef.current = null;
         setRect(null);
@@ -240,7 +249,7 @@ export function TourOverlay({
           // un lecteur d'écran). Sans cela, il restait sur le bouton qui avait lancé le tuto.
           // En tuto guidé, il attend que le curseur soit arrivé (plus bas).
           if (!cursor) {
-            const field = advance.kind === "input" ? fieldOf(el) : null;
+            const field = advance.kind === "input" ? (fieldOf(el) ?? editableOf(el)) : null;
             (field ?? bubbleRef.current)?.focus({ preventScroll: true });
           }
         }
@@ -267,7 +276,7 @@ export function TourOverlay({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [step.target, step.targetText, step.targetPick, step.skipWhen, step.optional, step.expect, advance, index, cursor]);
+  }, [step.target, step.targetText, step.targetPick, step.targetLast, step.skipWhen, step.optional, step.expect, advance, index, cursor]);
 
   // Tuto guidé : le curseur part de sa dernière position (ou du coin du panneau de la démo),
   // glisse jusqu'à la cible, puis la suit si elle bouge. Les mises à jour passent par des images
@@ -309,8 +318,9 @@ export function TourOverlay({
   // refermerait, et l'élément à toucher disparaîtrait sous le curseur.
   useEffect(() => {
     if (!cursor || !arrived || !isField) return;
-    fieldOf(findTarget(step.target, step.targetText, step.targetPick))?.focus({ preventScroll: true });
-  }, [cursor, arrived, isField, step.target, step.targetText, step.targetPick]);
+    const el = findTarget(step.target, step.targetText, step.targetPick, step.targetLast);
+    (fieldOf(el) ?? editableOf(el))?.focus({ preventScroll: true });
+  }, [cursor, arrived, isField, step.target, step.targetText, step.targetPick, step.targetLast]);
 
   /**
    * « ← Précédent » (tuto guidé) : revoir l'étape d'avant. Si sa cible était sur la page
@@ -318,15 +328,38 @@ export function TourOverlay({
    */
   const goBack = (): void => {
     const prev = tour.steps[index - 1];
-    if (prev?.target && !findTarget(prev.target, prev.targetText, prev.targetPick)) window.history.back();
+    if (prev?.target && !findTarget(prev.target, prev.targetText, prev.targetPick, prev.targetLast)) window.history.back();
     tourStore.prev(index);
   };
 
   /** « Remplir pour moi » : la valeur attendue s'écrit lettre par lettre, comme au clavier. */
   const fillForMe = (): void => {
-    const field = fieldOf(findTarget(step.target, step.targetText, step.targetPick));
+    const target = findTarget(step.target, step.targetText, step.targetPick, step.targetLast);
+    const field = fieldOf(target);
     const text = step.expect;
-    if (!field || text === undefined || typing) return;
+    if (text === undefined || typing) return;
+    // Un éditeur riche : les lettres s'insèrent au point d'écriture, placé à la fin du texte ;
+    // l'éditeur les reçoit comme une frappe (`insertText`), et son état suit.
+    const editable = field ? null : editableOf(target);
+    if (editable) {
+      setTyping(true);
+      editable.focus({ preventScroll: true });
+      const range = document.createRange();
+      range.selectNodeContents(editable);
+      range.collapse(false);
+      window.getSelection()?.removeAllRanges();
+      window.getSelection()?.addRange(range);
+      let k = 0;
+      const typeChar = (): void => {
+        document.execCommand("insertText", false, text[k]);
+        k += 1;
+        if (k < text.length) window.setTimeout(typeChar, TYPE_MS);
+        else setTyping(false);
+      };
+      window.setTimeout(typeChar, TYPE_MS);
+      return;
+    }
+    if (!field) return;
     setTyping(true);
     field.focus({ preventScroll: true });
     // Une zone de texte déjà commencée (« Bonjour Membre Démo, ») : la suite s'écrit après.
@@ -353,7 +386,7 @@ export function TourOverlay({
   useEffect(() => {
     if (advance.kind !== "click") return;
     const onClick = (e: MouseEvent) => {
-      const el = findTarget(step.target, step.targetText, step.targetPick);
+      const el = findTarget(step.target, step.targetText, step.targetPick, step.targetLast);
       if (el && e.target instanceof Node && el.contains(e.target)) {
         window.setTimeout(() => tourStore.next(index), 0);
       }
@@ -361,7 +394,7 @@ export function TourOverlay({
     const type = right ? "contextmenu" : "click";
     document.addEventListener(type, onClick, true);
     return () => document.removeEventListener(type, onClick, true);
-  }, [advance.kind, right, step.target, step.targetText, step.targetPick, index]);
+  }, [advance.kind, right, step.target, step.targetText, step.targetPick, step.targetLast, index]);
 
   // Clavier : Échap quitte ; le focus ne sort ni de la cible ni de la bulle. Pour une étape
   // d'explication, il n'entre pas non plus dans la cible : Tab puis Entrée sur le bouton montré
@@ -372,7 +405,7 @@ export function TourOverlay({
       if (e.key === "Escape") tourStore.stop();
       // Tuto guidé : Entrée dans le champ d'une étape « input » valide l'étape (jamais le
       // formulaire). Hors tuto guidé, Entrée ne fait rien : on passe par « Suivant ».
-      if (cursor && e.key === "Enter" && !explains && findTarget(step.target, step.targetText, step.targetPick)?.contains(e.target as Node | null)) {
+      if (cursor && e.key === "Enter" && !explains && findTarget(step.target, step.targetText, step.targetPick, step.targetLast)?.contains(e.target as Node | null)) {
         const field = e.target;
         // La valeur relue à l'instant : Entrée peut suivre la dernière lettre avant la prochaine image.
         const v = field instanceof HTMLInputElement ? field.value.trim() : "";
@@ -387,7 +420,7 @@ export function TourOverlay({
       // Tuto guidé : pas de piège à focus. Un menu qui s'ouvre place le focus sur son premier
       // élément ; le ramener de force sur la cible le refermerait aussitôt.
       if (cursor) return;
-      const el = findTarget(step.target, step.targetText, step.targetPick);
+      const el = findTarget(step.target, step.targetText, step.targetPick, step.targetLast);
       const t = e.target as Node | null;
       if (!t || bubbleRef.current?.contains(t) || (!explains && el?.contains(t))) return;
       ((explains ? null : el) ?? bubbleRef.current)?.focus?.();
@@ -399,7 +432,7 @@ export function TourOverlay({
       document.removeEventListener("keydown", onKey, true);
       document.removeEventListener("focusin", onFocus);
     };
-  }, [step.target, step.targetText, step.targetPick, step.expect, advance, explains, index, cursor]);
+  }, [step.target, step.targetText, step.targetPick, step.targetLast, step.expect, advance, explains, index, cursor]);
 
   // Aucun formulaire ne part pendant une étape qui n'attend ni clic ni page : Entrée dans un champ
   // à remplir enverrait sinon le formulaire (la demande au club, le lien de réinitialisation).

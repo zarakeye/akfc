@@ -36,6 +36,7 @@ import {
   demoMediathequeRanger,
   demoMediathequeVersions,
 } from "./definitions/demo.mediatheque";
+import { demoPageCompleter } from "./definitions/demo.page";
 import { demoDroitsMasques, demoDroitsRefuser, demoDroitsRelancer, demoDroitsTaguer } from "./definitions/demo.droits";
 
 /**
@@ -88,6 +89,7 @@ export const TOURS: Tour[] = [
   demoDroitsRelancer,
   demoDroitsRefuser,
   demoDroitsMasques,
+  demoPageCompleter,
 ];
 
 export function getTour(id: string): Tour | undefined {

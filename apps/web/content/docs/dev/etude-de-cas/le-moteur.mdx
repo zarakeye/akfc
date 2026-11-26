@@ -71,14 +71,14 @@ Une cible n’est retenue que si elle a une position à l’écran. Un même nom
   snippetStart="* La cible d'une étape : le premier élément VISIBLE qui porte ce nom. Un même nom peut désigner"
   snippetLead="1"
   snippetEnd="^}"
-  snippetHighlight="9"
+  snippetHighlight="10,11"
   snippetTitle="Le premier élément visible"
   fullFileTitle="Voir le fichier complet"
 />
 
 Un élément masqué par `display: none` (la classe `hidden`, ou `xl:hidden` sur grand écran) n’a aucun rectangle : `getClientRects()` est vide. L’ancienne version prenait le premier élément du document, la barre masquée sur un téléphone, et perçait le voile sur un rectangle de taille nulle, en haut à gauche.
 
-Le contenu d’un `<details>` fermé, lui, garde ses rectangles : il n’est que masqué. La fonction `shown`, juste au-dessus, le compte pour invisible (son `<summary>` excepté). Sans elle, l’historique encore replié d’une photo passait pour affiché, et le tuto des versions sautait l’étape qui l’ouvre.
+Le contenu d’un `<details>` fermé, lui, garde ses rectangles : il n’est que masqué. La fonction `shown`, juste au-dessus, le compte pour invisible (son `<summary>` excepté). Sans elle, l’historique encore replié d’une photo passait pour affiché, et le tuto des versions sautait l’étape qui l’ouvre. Avec `targetLast`, la recherche part de la fin : le dernier élément de ce nom, celui du bloc de texte qu’on vient d’ajouter en bas d’une page.
 
 ### Un voile percé, et des clics bloqués
 

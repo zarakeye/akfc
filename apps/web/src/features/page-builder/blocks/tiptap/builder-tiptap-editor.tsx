@@ -297,6 +297,7 @@ export function BuilderTipTapEditor({
           editor={editor}
           role="presentation"
           className="simple-editor px-4 py-3"
+          data-tour="builder.text"
         />
       </div>
 

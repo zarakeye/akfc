@@ -47,6 +47,8 @@ export interface TourStep {
   targetText?: string;
   /** Dans cette ligne, l'élément précis à viser : un sélecteur CSS (`button`, `a`…). */
   targetPick?: string;
+  /** Le DERNIER élément qui porte ce nom, et non le premier : le bloc qu'on vient d'ajouter. */
+  targetLast?: boolean;
   /**
    * L'étape est déjà faite si cet élément est là (et contient ce texte) : elle s'efface. Pour un
    * parcours de la démo rejoué (le membre est déjà dans le groupe, la demande déjà à vous).

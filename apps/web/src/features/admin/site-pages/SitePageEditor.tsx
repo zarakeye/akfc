@@ -101,6 +101,7 @@ export function SitePageEditor({
             </span>
           )}
           <span
+            data-tour="site-page.status"
             className={
               "shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold " +
               (published
@@ -122,6 +123,7 @@ export function SitePageEditor({
             type="button"
             disabled={save.isPending || setPublished.isPending || title.trim() === ""}
             onClick={() => void persist(true)}
+            data-tour="site-page.publish"
             className="shrink-0 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
           >
             {save.isPending || setPublished.isPending ? "…" : "Publier"}
