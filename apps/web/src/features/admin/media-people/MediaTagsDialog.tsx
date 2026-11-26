@@ -126,6 +126,7 @@ export function MediaTagsDialog({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
+            data-tour="tags.close"
             className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted"
           >
             <X className="h-5 w-5" />
@@ -140,7 +141,7 @@ export function MediaTagsDialog({
                 <img src={previewUrl} alt="" className="h-full w-full object-cover" />
               )}
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-sm" data-tour="tags.verdict">
               <p className="font-medium text-foreground">
                 {dirty ? "Verdict après enregistrement" : "Verdict"}
               </p>
@@ -161,7 +162,7 @@ export function MediaTagsDialog({
           {tags && tags.people.length > 0 && (
             <section>
               <h3 className="mb-2 text-sm font-medium text-foreground">Déjà taguées</h3>
-              <ul className="divide-y divide-border rounded-lg border border-border">
+              <ul className="divide-y divide-border rounded-lg border border-border" data-tour="tags.tagged">
                 {tags.people.map((p) => (
                   <li key={p.userId} className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
                     <span className="min-w-40 flex-1 text-foreground">
@@ -209,11 +210,12 @@ export function MediaTagsDialog({
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Rechercher un membre"
                 aria-label="Rechercher un membre"
+                data-tour="tags.search"
                 className="w-56 rounded-lg border border-border px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
               />
             </div>
             <p className="mb-1 text-xs text-muted-foreground">{USAGE_ORDER_HINT} Survole une pastille pour le détail.</p>
-            <div className="max-h-72 overflow-y-auto rounded-lg border border-border">
+            <div className="max-h-72 overflow-y-auto rounded-lg border border-border" data-tour="tags.members">
               {candidatesQuery.isLoading ? (
                 <p className="px-3 py-2 text-sm text-muted-foreground">Chargement…</p>
               ) : ordered.length === 0 ? (
@@ -241,7 +243,7 @@ export function MediaTagsDialog({
             </div>
           </section>
 
-          {notice && <p className="text-sm text-success">{notice}</p>}
+          {notice && <p className="text-sm text-success" data-tour="tags.notice">{notice}</p>}
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
 
@@ -260,6 +262,7 @@ export function MediaTagsDialog({
               setTags.mutate({ mediaAssetId, userIds: selected });
             }}
             disabled={!tags || !dirty || setTags.isPending}
+            data-tour="tags.save"
             className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
           >
             {setTags.isPending ? "Enregistrement…" : "Enregistrer les tags"}

@@ -428,3 +428,76 @@ export async function seedMediathequeDecor({ prisma, storage, appRoot, adminId, 
   }
   console.log("✅ Dossier d'exercice de la médiathèque prêt (« Démo de la médiathèque »)");
 }
+
+/**
+ * Le décor du parcours « Droits à l'image et tags » : une galerie publique de deux photos aux noms
+ * connus d'avance. L'une n'est pas taguée (à taguer dans le parcours) ; sur l'autre, Camille, une
+ * adhérente fictive qui n'a jamais répondu, attend une relance (l'e-mail arrive dans Mailpit).
+ * Créé une seule fois : ce qu'en fait le visiteur reste fait au redémarrage.
+ * @param {{
+ *   prisma: import("@prisma/client").PrismaClient;
+ *   storage: { copy: (from: string, to: string) => Promise<void> };
+ *   appRoot: string;
+ *   adminId: string;
+ *   hash: string;
+ *   domain: string;
+ *   pack: { photos: { id: string; path: string; fullPath: string }[] };
+ * }} ctx
+ */
+export async function seedDroitImageDecor({ prisma, storage, appRoot, adminId, hash, domain, pack }) {
+  const library = pack.photos.filter((p) => !/^(personal-space|collaborative-group-spaces|avatars)\//.test(p.path));
+  if (library.length < 2) return;
+  const slug = "demo-droit-image";
+  if (await prisma.gallery.findUnique({ where: { slug }, select: { id: true } })) return;
+  const folder = `${appRoot}/demo-droit-image`;
+  await prisma.folder.upsert({
+    where: { appRoot_fullPath: { appRoot, fullPath: folder } },
+    update: {},
+    create: { appRoot, fullPath: folder, status: "published" },
+  });
+  await prisma.folderLabel.upsert({
+    where: { path: folder },
+    update: {},
+    create: { path: folder, displayName: "Démo du droit à l'image" },
+  });
+  const pick = (/** @type {number} */ k) => library[k % library.length];
+  /** @type {string[]} */
+  const ids = [];
+  for (const [name, k] of /** @type {[string, number][]} */ ([["droit-image-sans-reponse.jpg", 9], ["droit-image-a-taguer.jpg", 10]])) {
+    const fullPath = `${folder}/${name}`;
+    const source = await prisma.mediaAsset.findUniqueOrThrow({
+      where: { id: pick(k).id },
+      select: { fullPath: true, mimeType: true, format: true, bytes: true, width: true, height: true },
+    });
+    await storage.copy(source.fullPath, fullPath);
+    const asset = await prisma.mediaAsset.upsert({
+      where: { fullPath },
+      update: {},
+      create: {
+        fullPath, appRoot, status: "published", mimeType: source.mimeType, format: source.format,
+        bytes: source.bytes, width: source.width, height: source.height, originalFileName: name, uploaderUserId: adminId,
+      },
+      select: { id: true },
+    });
+    ids.push(asset.id);
+  }
+  const gallery = await prisma.gallery.create({
+    data: { slug, title: "Démo du droit à l'image", visibility: "PUBLIC", sortOrder: 99 },
+    select: { id: true },
+  });
+  await prisma.galleryItem.createMany({ data: ids.map((mediaAssetId, sortOrder) => ({ galleryId: gallery.id, mediaAssetId, sortOrder })) });
+
+  // Camille : une adhérente fictive, majeure, qui n'a jamais répondu. Sans compte utilisable : le
+  // mot de passe de la démo, mais rien ne la présente au visiteur.
+  const camille = await prisma.user.upsert({
+    where: { email: `camille@${domain}` },
+    update: {},
+    create: {
+      email: `camille@${domain}`, firstName: "Camille", lastName: "Démo", password: hash,
+      emailVerified: true, isFirstLogin: false, legalAge: "ADULT",
+    },
+    select: { id: true },
+  });
+  await prisma.mediaPerson.create({ data: { mediaAssetId: ids[0], userId: camille.id, taggedById: adminId } });
+  console.log("✅ Décor du droit à l'image prêt (galerie « Démo du droit à l'image »)");
+}

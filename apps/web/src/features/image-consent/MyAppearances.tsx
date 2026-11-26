@@ -59,7 +59,7 @@ export function MyAppearances(): JSX.Element {
               Vous n&apos;avez été identifié(e) sur aucune photo ni vidéo.
             </p>
           ) : (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2" data-tour="appearances.list">
               {data.items.map((m) => (
                 <li key={m.mediaAssetId} className="overflow-hidden rounded-xl border border-border bg-card">
                   {/* eslint-disable-next-line @next/next/no-img-element */}

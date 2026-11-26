@@ -5,7 +5,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-import { seedLibraryDecor, seedMediathequeDecor, seedTicketsDecor } from "./seed.sandbox.decor.mjs";
+import { seedDroitImageDecor, seedLibraryDecor, seedMediathequeDecor, seedTicketsDecor } from "./seed.sandbox.decor.mjs";
 import { seedDemoPack, storageClient } from "./seed.sandbox.pack.mjs";
 
 const prisma = new PrismaClient();
@@ -147,6 +147,8 @@ async function main() {
     if (pack) await seedLibraryDecor({ prisma, storage: storageClient(), adminId, memberId, pack });
     // Le dossier d'exercice des parcours de la médiathèque, aux noms connus d'avance.
     if (pack) await seedMediathequeDecor({ prisma, storage: storageClient(), appRoot: process.env.NEXT_PUBLIC_APP_SHORT_NAME || "AKFC", adminId, pack });
+    // La galerie du parcours « Droits à l'image et tags » : une photo à taguer, une autre à relancer.
+    if (pack) await seedDroitImageDecor({ prisma, storage: storageClient(), appRoot: process.env.NEXT_PUBLIC_APP_SHORT_NAME || "AKFC", adminId, hash, domain: DOMAIN, pack });
   }
 
   console.log("");

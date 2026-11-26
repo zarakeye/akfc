@@ -36,6 +36,7 @@ import {
   demoMediathequeRanger,
   demoMediathequeVersions,
 } from "./definitions/demo.mediatheque";
+import { demoDroitsMasques, demoDroitsRefuser, demoDroitsRelancer, demoDroitsTaguer } from "./definitions/demo.droits";
 
 /**
  * Registre de TOUS les tutos. Ajouter un tuto = créer son fichier dans `definitions/` et
@@ -83,6 +84,10 @@ export const TOURS: Tour[] = [
   demoMediathequeRanger,
   demoMediathequeVersions,
   demoMediathequeCorbeille,
+  demoDroitsTaguer,
+  demoDroitsRelancer,
+  demoDroitsRefuser,
+  demoDroitsMasques,
 ];
 
 export function getTour(id: string): Tour | undefined {

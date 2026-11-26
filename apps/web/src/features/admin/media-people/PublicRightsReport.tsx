@@ -82,6 +82,7 @@ export function PublicRightsReport(): JSX.Element {
             key={s.key}
             type="button"
             role="tab"
+            data-tour-row=""
             aria-selected={s.key === section}
             onClick={() => setChosen(s.key)}
             className={`rounded-full border px-3 py-1.5 text-sm ${

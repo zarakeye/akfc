@@ -116,11 +116,18 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "Droits à l'image et tags",
     pitch: "Chaque personne taguée sur une photo est comparée à son autorisation.",
     steps: [
-      { text: "Se connecter en administrateur", as: "admin" },
-      { text: "Le tableau des droits à l'image : complet, partiel, absent", href: "/dashboard/droit-image" },
-      { text: "Dans la bibliothèque, les pastilles vertes et rouges des personnes taguées", href: "/dashboard/library" },
-      { text: "Taguer une personne sur une photo, puis envoyer le récapitulatif : il arrive dans Mailpit" },
-      { text: "Essayer d'utiliser une photo « rouge » sur une page publique : c'est refusé" },
+      { text: "Se connecter en administrateur, par le formulaire", as: "admin", tour: "demo.connexion.admin" },
+      {
+        text: "Taguer le membre sur une photo en ligne, et voir le verdict avant d'enregistrer",
+        href: "/dashboard/droit-image",
+        tour: "demo.droits.taguer",
+      },
+      { text: "Relancer une adhérente qui n'a pas répondu", href: "/dashboard/droit-image", tour: "demo.droits.relancer" },
+      { text: "La relance est dans Mailpit" },
+      { text: "Se connecter en membre majeur", as: "membre", tour: "demo.connexion.membre" },
+      { text: "« Où j'apparais » : refuser la photo", href: "/profil/ou-j-apparais", tour: "demo.droits.refuser" },
+      { text: "Revenir en administrateur", as: "admin", tour: "demo.connexion.admin" },
+      { text: "La photo refusée est masquée en ligne", href: "/dashboard/droit-image", tour: "demo.droits.masques" },
     ],
     docs: [
       { label: "Les tags de personnes", href: dev("legal/tags-de-personnes") },
