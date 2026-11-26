@@ -41,7 +41,7 @@ function findTarget(name: string | undefined, text?: string, pick?: string): HTM
     if (!text) return el;
     // Une ligne d'une table ou d'une liste, reconnue à son texte (`targetText`) ; dedans, au
     // besoin, un élément précis (`targetPick`, un sélecteur CSS : son bouton « Ajouter »…).
-    for (const row of el.querySelectorAll<HTMLElement>("tr, li, [role='row']")) {
+    for (const row of el.querySelectorAll<HTMLElement>("tr, li, label, [role='row']")) {
       if (row.getClientRects().length === 0 || !row.textContent?.includes(text)) continue;
       if (!pick) return row;
       const picked = row.querySelector<HTMLElement>(pick);
@@ -100,9 +100,12 @@ function contentBox(el: HTMLElement): DOMRect {
 function guidedGeometry(el: HTMLElement, kind: TourStep["advance"]["kind"], isRow: boolean): { rect: DOMRect; spot: Spot } {
   if (kind === "input") {
     const r = (fieldOf(el) ?? el).getBoundingClientRect();
-    return { rect: r, spot: { x: r.left + Math.min(28, r.width / 2), y: r.top + r.height / 2 } };
+    // Sur la première ligne : au milieu d'un champ d'une ligne, en haut d'une zone de texte.
+    return { rect: r, spot: { x: r.left + Math.min(28, r.width / 2), y: r.top + Math.min(r.height / 2, 22) } };
   }
-  if (isRow) {
+  // Une ligne de table (cliquable en entier) ; une option d'une liste (une étiquette, un élément
+  // de liste) se vise comme un clic ordinaire, plus bas.
+  if (isRow && el instanceof HTMLTableRowElement) {
     const cell = el.querySelector<HTMLElement>("td, th");
     return { rect: el.getBoundingClientRect(), spot: centerOf(cell ? contentBox(cell) : el.getBoundingClientRect()) };
   }
@@ -160,6 +163,16 @@ export function TourOverlay({
   const travelled = useRef(false);
   const spotRef = useRef<Spot | null>(null);
   const holeRef = useRef<Rect | null>(null);
+  // La hauteur réelle de la bulle (la consigne guidée l'allonge) : pour la placer là où elle
+  // tient en entier, ses boutons compris.
+  const [bubbleH, setBubbleH] = useState(0);
+  useEffect(() => {
+    const el = bubbleRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setBubbleH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const arrivalTimer = useRef<number | undefined>(undefined);
   const total = tour.steps.length;
   const isLast = index === total - 1;
@@ -278,14 +291,16 @@ export function TourOverlay({
     if (!field || text === undefined || typing) return;
     setTyping(true);
     field.focus({ preventScroll: true });
+    // Une zone de texte déjà commencée (« Bonjour Membre Démo, ») : la suite s'écrit après.
+    const start = field instanceof HTMLTextAreaElement && field.value.trim() && !field.value.includes(text) ? `${field.value.trimEnd()}\n\n` : "";
     let i = 0;
     const typeNext = (): void => {
       i += 1;
-      setFieldValue(field, text.slice(0, i));
+      setFieldValue(field, start + text.slice(0, i));
       if (i < text.length) window.setTimeout(typeNext, TYPE_MS);
       else setTyping(false);
     };
-    setFieldValue(field, "");
+    setFieldValue(field, start);
     window.setTimeout(typeNext, TYPE_MS);
   };
 
@@ -398,8 +413,9 @@ export function TourOverlay({
     bubbleStyle.left = left;
     const below = vh - (hole.top + hole.height) - GAP;
     const above = hole.top - GAP;
-    if (below >= BUBBLE_ROOM) bubbleStyle.top = hole.top + hole.height + GAP;
-    else if (above >= BUBBLE_ROOM) bubbleStyle.bottom = vh - hole.top + GAP;
+    const room = Math.max(BUBBLE_ROOM, bubbleH);
+    if (below >= room) bubbleStyle.top = hole.top + hole.height + GAP;
+    else if (above >= room) bubbleStyle.bottom = vh - hole.top + GAP;
     else bubbleStyle.bottom = 12;
   } else {
     bubbleStyle.left = "50%";

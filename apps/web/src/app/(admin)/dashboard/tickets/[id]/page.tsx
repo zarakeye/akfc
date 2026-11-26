@@ -38,14 +38,14 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="mx-auto max-w-4xl p-4 sm:p-6">
-      <Link href="/dashboard/tickets" className="mb-4 inline-flex items-center gap-1 text-sm text-success hover:underline">
+      <Link href="/dashboard/tickets" data-tour="tickets.back" className="mb-4 inline-flex items-center gap-1 text-sm text-success hover:underline">
         <ArrowLeft className="h-4 w-4" /> Toutes les demandes
       </Link>
 
       <header className="mb-6 rounded-lg border border-border p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="font-mono text-muted-foreground">{t.ref}</span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[t.status]}`}>{STATUS_LABEL[t.status]}</span>
+          <span data-tour="tickets.status" className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[t.status]}`}>{STATUS_LABEL[t.status]}</span>
           <span className="text-muted-foreground">· {t.category.label}</span>
         </div>
         <h1 className="mt-2 text-xl font-bold sm:text-2xl">{t.subject}</h1>
@@ -77,6 +77,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
         <div className="mt-4 flex flex-wrap gap-2" data-tour="tickets.actions">
           {!closed && t.assignee?.id !== me && (
             <button
+              data-tour="tickets.take"
               onClick={() => take.mutate({ id })}
               disabled={take.isPending}
               className="rounded-md bg-brand px-3 py-1.5 text-sm text-brand-foreground hover:bg-brand/90 disabled:opacity-50"

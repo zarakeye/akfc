@@ -94,6 +94,7 @@ export function ReplyTicketForm({
       </label>
       <textarea
         id="ticket-reply"
+        data-tour="tickets.reply.body"
         className="min-h-44 w-full resize-y rounded-md border border-border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         {...register("body")}
       />
@@ -108,6 +109,7 @@ export function ReplyTicketForm({
       {notice && <p className="mt-2 text-sm text-success">{notice}</p>}
       <button
         type="submit"
+        data-tour="tickets.reply.send"
         disabled={isPending}
         className="mt-3 rounded-md bg-brand px-5 py-2 text-sm font-medium text-brand-foreground hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
       >

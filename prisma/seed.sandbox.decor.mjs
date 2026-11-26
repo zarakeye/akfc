@@ -52,9 +52,9 @@ export async function seedTicketsDecor({ prisma, hash, domain, adminId, adminGro
   // Connu par un pseudo, comme beaucoup de bénévoles.
   const sam = await prisma.user.upsert({
     where: { email: `support.sam@${domain}` },
-    update: { password: hash, emailVerified: true, isFirstLogin: false },
+    update: { firstName: "Sam", password: hash, emailVerified: true, isFirstLogin: false },
     create: {
-      email: `support.sam@${domain}`, pseudo: "Sam (support)", password: hash,
+      email: `support.sam@${domain}`, firstName: "Sam", pseudo: "Sam (support)", password: hash,
       emailVerified: true, isFirstLogin: false, legalAge: "ADULT",
     },
     select: { id: true },

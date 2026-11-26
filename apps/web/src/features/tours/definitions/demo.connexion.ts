@@ -61,3 +61,4 @@ function connexion(id: string, title: string, email: string, who: string): Tour 
 
 export const demoConnexionAdmin = connexion("demo.connexion.admin", "Se connecter en administrateur", "admin@sandbox.local", "administrateur");
 export const demoConnexionMembre = connexion("demo.connexion.membre", "Se connecter en membre", "membre@sandbox.local", "membre majeur");
+export const demoConnexionSupport = connexion("demo.connexion.support", "Se connecter en Sam, du support", "support.sam@sandbox.local", "Sam, bénévole du support,");

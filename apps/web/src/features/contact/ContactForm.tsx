@@ -79,7 +79,7 @@ export function ContactForm(): JSX.Element | null {
   if (state.status === "success" && state !== dismissed) {
     const sent = state.data;
     return (
-      <div className="rounded-lg border border-success/40 bg-success-muted p-6 text-sm" role="status">
+      <div className="rounded-lg border border-success/40 bg-success-muted p-6 text-sm" role="status" data-tour="contact.sent">
         <p className="text-base font-semibold">Message envoyé, merci !</p>
         {sent?.ref && (
           <p className="mt-2">

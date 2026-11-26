@@ -41,7 +41,7 @@ export interface TourStep {
    */
   expect?: string;
   /**
-   * Viser une LIGNE de la cible (une table, une liste) : celle qui contient ce texte. Sert aux
+   * Viser une LIGNE de la cible (une table, une liste, un groupe d'options) : celle qui contient ce texte. Sert aux
    * tutos qui créent puis retrouvent un élément (« le voilà dans la liste »), ou qui en ouvrent un.
    */
   targetText?: string;

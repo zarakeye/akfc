@@ -71,7 +71,7 @@ export default function TicketsPage(): JSX.Element {
           Aucune demande ici.
         </p>
       ) : (
-        <ul className="divide-y divide-border rounded-lg border border-border">
+        <ul className="divide-y divide-border rounded-lg border border-border" data-tour="tickets.list">
           {(inbox.data ?? []).map((t) => (
             <li key={t.id}>
               <Link

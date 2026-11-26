@@ -27,7 +27,8 @@ import { membreVersions } from "./definitions/membre.versions";
 import { membreProfil } from "./definitions/membre.profil";
 import { publicDecouvrirLeSite } from "./definitions/public.decouvrir-le-site";
 import { publicMotDePasseOublie } from "./definitions/public.mot-de-passe-oublie";
-import { demoConnexionAdmin, demoConnexionMembre } from "./definitions/demo.connexion";
+import { demoConnexionAdmin, demoConnexionMembre, demoConnexionSupport } from "./definitions/demo.connexion";
+import { demoDemandesEcrire, demoDemandesSupport, demoDemandesTraiter } from "./definitions/demo.demandes";
 import { demoGroupesCreer, demoGroupesSupprimer } from "./definitions/demo.groupes";
 
 /**
@@ -66,6 +67,10 @@ export const TOURS: Tour[] = [
   // La démo : lancés par son panneau, en mode guidé ; jamais proposés par le lanceur « ? ».
   demoConnexionAdmin,
   demoConnexionMembre,
+  demoConnexionSupport,
+  demoDemandesEcrire,
+  demoDemandesTraiter,
+  demoDemandesSupport,
   demoGroupesCreer,
   demoGroupesSupprimer,
 ];
