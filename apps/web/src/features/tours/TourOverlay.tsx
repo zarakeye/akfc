@@ -75,10 +75,49 @@ function setFieldValue(field: HTMLInputElement | HTMLTextAreaElement | HTMLSelec
   field.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-/** Où se pose le curseur : au début d'un champ (là où l'on clique pour écrire), au centre sinon. */
-function cursorSpot(rect: Rect, isField: boolean): { x: number; y: number } {
-  const y = rect.top + rect.height / 2;
-  return isField ? { x: rect.left + Math.min(28, rect.width / 2), y } : { x: rect.left + rect.width / 2, y };
+const INTERACTIVE = "button, a[href], input, select, textarea, summary, [role='button'], [role='menuitem'], [role='link']";
+type Spot = { x: number; y: number };
+const centerOf = (r: DOMRect): Spot => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+
+/** Le rectangle du CONTENU d'un élément (son texte, sa case) : pas toute la largeur de sa boîte. */
+function contentBox(el: HTMLElement): DOMRect {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const r = range.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 ? r : el.getBoundingClientRect();
+}
+
+/**
+ * Tuto guidé : la zone éclairée et l'endroit où s'arrête le curseur, au plus juste de ce qu'il
+ * faut toucher. Une cible est souvent un conteneur (`data-tour` sur le bloc d'un bouton, sur une
+ * étiquette pleine largeur) : éclairer tout le bloc et viser son centre montrerait un vide, et un
+ * clic à cet endroit ne ferait rien. On vise donc :
+ *   - pour une saisie, le champ lui-même, à son début (là où l'on clique pour écrire) ;
+ *   - pour un clic, l'élément cliquable du bloc (son bouton, son lien) ; une case à cocher dans
+ *     son étiquette, l'étiquette réduite à son contenu ;
+ *   - pour une ligne de table, toute la ligne (elle est cliquable), le curseur sur sa première case.
+ */
+function guidedGeometry(el: HTMLElement, kind: TourStep["advance"]["kind"], isRow: boolean): { rect: DOMRect; spot: Spot } {
+  if (kind === "input") {
+    const r = (fieldOf(el) ?? el).getBoundingClientRect();
+    return { rect: r, spot: { x: r.left + Math.min(28, r.width / 2), y: r.top + r.height / 2 } };
+  }
+  if (isRow) {
+    const cell = el.querySelector<HTMLElement>("td, th");
+    return { rect: el.getBoundingClientRect(), spot: centerOf(cell ? contentBox(cell) : el.getBoundingClientRect()) };
+  }
+  if (kind !== "click") {
+    const r = el.getBoundingClientRect();
+    return { rect: r, spot: centerOf(r) };
+  }
+  const act = el.matches(INTERACTIVE) || el instanceof HTMLLabelElement ? el : (el.querySelector<HTMLElement>(INTERACTIVE) ?? el);
+  if (act instanceof HTMLLabelElement) {
+    const box = contentBox(act);
+    const box2 = act.querySelector<HTMLElement>("input");
+    return { rect: box, spot: box2 ? centerOf(box2.getBoundingClientRect()) : centerOf(box) };
+  }
+  const r = act.getBoundingClientRect();
+  return { rect: r, spot: centerOf(r) };
 }
 
 function readValue(el: HTMLElement | null): string {
@@ -119,6 +158,8 @@ export function TourOverlay({
   const scrolled = useRef(false);
   const inputOkRef = useRef(false);
   const travelled = useRef(false);
+  const spotRef = useRef<Spot | null>(null);
+  const holeRef = useRef<Rect | null>(null);
   const arrivalTimer = useRef<number | undefined>(undefined);
   const total = tour.steps.length;
   const isLast = index === total - 1;
@@ -132,6 +173,7 @@ export function TourOverlay({
     const tick = () => {
       const el = findTarget(step.target, step.targetText, step.targetPick);
       if (step.target && !el) {
+        holeRef.current = null;
         setRect(null);
         const waited = performance.now() - started;
         if (step.optional && waited > OPTIONAL_WAIT_MS) {
@@ -151,8 +193,12 @@ export function TourOverlay({
             (field ?? bubbleRef.current)?.focus({ preventScroll: true });
           }
         }
-        const r = el.getBoundingClientRect();
+        // En tuto guidé, la zone se resserre sur ce qu'il faut vraiment toucher ; ailleurs, la cible.
+        const geo = cursor ? guidedGeometry(el, advance.kind, !!step.targetText && !step.targetPick) : null;
+        spotRef.current = geo?.spot ?? null;
+        const r = geo?.rect ?? el.getBoundingClientRect();
         const next = { top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 };
+        holeRef.current = next;
         setRect((prev) => (sameRect(prev, next) ? prev : next));
         setLost(false);
         if (advance.kind === "input") {
@@ -178,10 +224,8 @@ export function TourOverlay({
   const isField = advance.kind === "input";
   useEffect(() => {
     if (!cursor || !rect) return;
-    // Pour un champ, le curseur vise le champ lui-même, pas son étiquette voisine.
-    const field = isField ? fieldOf(findTarget(step.target, step.targetText, step.targetPick)) : null;
-    const fr = field?.getBoundingClientRect();
-    const dest = fr ? cursorSpot({ top: fr.top, left: fr.left, width: fr.width, height: fr.height }, true) : cursorSpot(rect, isField);
+    // Le point calculé avec la zone (guidedGeometry) ; à défaut, le centre de la zone.
+    const dest = spotRef.current ?? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     if (travelled.current) {
       const raf = requestAnimationFrame(() => {
         if (lastCursor) lastCursor = dest;
@@ -206,15 +250,15 @@ export function TourOverlay({
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
     };
-  }, [cursor, rect, isField, step.target, step.targetText, step.targetPick]);
+  }, [cursor, rect]);
   useEffect(() => () => window.clearTimeout(arrivalTimer.current), []);
 
   // Arrivé : le focus entre dans le champ à remplir (le visiteur voit le curseur d'écriture
-  // clignoter), sinon sur la bulle.
+  // clignoter). Pour un clic, il ne bouge pas : le retirer à un menu tout juste ouvert le
+  // refermerait, et l'élément à toucher disparaîtrait sous le curseur.
   useEffect(() => {
-    if (!cursor || !arrived) return;
-    const field = isField ? fieldOf(findTarget(step.target, step.targetText, step.targetPick)) : null;
-    (field ?? bubbleRef.current)?.focus({ preventScroll: true });
+    if (!cursor || !arrived || !isField) return;
+    fieldOf(findTarget(step.target, step.targetText, step.targetPick))?.focus({ preventScroll: true });
   }, [cursor, arrived, isField, step.target, step.targetText, step.targetPick]);
 
   /**
@@ -274,29 +318,55 @@ export function TourOverlay({
       // formulaire). Hors tuto guidé, Entrée ne fait rien : on passe par « Suivant ».
       if (cursor && e.key === "Enter" && !explains && findTarget(step.target, step.targetText, step.targetPick)?.contains(e.target as Node | null)) {
         const field = e.target;
-        if (field instanceof HTMLInputElement && inputOkRef.current) {
+        // La valeur relue à l'instant : Entrée peut suivre la dernière lettre avant la prochaine image.
+        const v = field instanceof HTMLInputElement ? field.value.trim() : "";
+        const ok = advance.kind === "input" && (advance.validate ? advance.validate(v) : step.expect !== undefined ? v === step.expect : v !== "");
+        if (field instanceof HTMLInputElement && (ok || inputOkRef.current)) {
           e.preventDefault();
           tourStore.next(index);
         }
       }
     };
     const onFocus = (e: FocusEvent) => {
+      // Tuto guidé : pas de piège à focus. Un menu qui s'ouvre place le focus sur son premier
+      // élément ; le ramener de force sur la cible le refermerait aussitôt.
+      if (cursor) return;
       const el = findTarget(step.target, step.targetText, step.targetPick);
       const t = e.target as Node | null;
       if (!t || bubbleRef.current?.contains(t) || (!explains && el?.contains(t))) return;
       ((explains ? null : el) ?? bubbleRef.current)?.focus?.();
     };
-    document.addEventListener("keydown", onKey);
+    // En capture : un composant qui arrête la propagation de la touche ne prive pas le tuto d'Entrée.
+    document.addEventListener("keydown", onKey, true);
     document.addEventListener("focusin", onFocus);
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey, true);
       document.removeEventListener("focusin", onFocus);
     };
-  }, [step.target, step.targetText, step.targetPick, explains, index, cursor]);
+  }, [step.target, step.targetText, step.targetPick, step.expect, advance, explains, index, cursor]);
 
   // Aucun formulaire ne part pendant une étape qui n'attend ni clic ni page : Entrée dans un champ
   // à remplir enverrait sinon le formulaire (la demande au club, le lien de réinitialisation).
   // Écouté en capture sur le document, avant que React ne reçoive l'évènement.
+  // Tuto guidé : pas de panneaux bloqueurs posés sur la page (ils feraient « sortir » la souris des
+  // menus ouverts au survol, qui se refermeraient). Les clics hors de la zone sont arrêtés ici, en
+  // capture, avant que la page ne les voie ; le survol, lui, continue de fonctionner.
+  useEffect(() => {
+    if (!cursor) return;
+    const guard = (e: MouseEvent) => {
+      const t = e.target as Node | null;
+      if (t && bubbleRef.current?.contains(t)) return;
+      const h = holeRef.current;
+      const inHole = !!h && e.clientX >= h.left && e.clientX <= h.left + h.width && e.clientY >= h.top && e.clientY <= h.top + h.height;
+      if (inHole && advance.kind !== "next") return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    const kinds = ["pointerdown", "mousedown", "pointerup", "mouseup", "click", "dblclick", "contextmenu"] as const;
+    kinds.forEach((k) => window.addEventListener(k, guard, true));
+    return () => kinds.forEach((k) => window.removeEventListener(k, guard, true));
+  }, [cursor, advance.kind]);
+
   const allowsSubmit = advance.kind === "click" || advance.kind === "route";
   useEffect(() => {
     if (allowsSubmit) return;
@@ -367,7 +437,7 @@ export function TourOverlay({
 
       {/* Bloqueurs : quatre panneaux transparents autour du trou captent tous les clics ailleurs. */}
       {blockers.map((b, i) => (
-        <div key={i} className="fixed z-[10000]" style={b} onClick={(e) => e.stopPropagation()} />
+        <div key={i} className={`fixed z-[10000] ${cursor ? "pointer-events-none" : ""}`} style={b} onClick={(e) => e.stopPropagation()} />
       ))}
 
       {hole && (
