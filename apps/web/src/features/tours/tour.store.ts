@@ -10,6 +10,8 @@
 export interface TourState {
   tourId: string;
   index: number;
+  /** Tuto « guidé » (la démo) : un curseur va d'une cible à l'autre et la bulle dit quoi faire. */
+  cursor?: boolean;
 }
 
 const KEY = "akfc.tour";
@@ -50,8 +52,8 @@ export const tourStore = {
   getServerSnapshot(): TourState | null {
     return null;
   },
-  start(tourId: string): void {
-    write({ tourId, index: 0 });
+  start(tourId: string, options?: { cursor?: boolean }): void {
+    write({ tourId, index: 0, ...(options?.cursor ? { cursor: true } : {}) });
   },
   /** Passe à l'étape suivante, seulement si l'on est bien à `fromIndex` (évite les doubles passages). */
   next(fromIndex: number): void {

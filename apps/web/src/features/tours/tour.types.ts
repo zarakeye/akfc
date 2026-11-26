@@ -34,6 +34,12 @@ export interface TourStep {
    * y a plusieurs options), elle est passée au bout d'un court délai au lieu de bloquer le tuto.
    */
   optional?: boolean;
+  /**
+   * Étape « input », en tuto guidé (la démo) : la valeur à taper. La bulle la montre (« Tapez :
+   * Bureau »), propose de la remplir à la place du visiteur, et l'étape avance quand le champ la
+   * contient (sauf `validate`). Hors tuto guidé, elle est ignorée : on tape ce qu'on veut.
+   */
+  expect?: string;
 }
 
 export interface Tour {

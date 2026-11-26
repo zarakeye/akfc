@@ -14,6 +14,14 @@ const BUBBLE_ROOM = 200; // place qu'il faut à la bulle, sous ou au-dessus de l
 const WAIT_MS = 8000; // délai avant d'abandonner une cible introuvable
 const OPTIONAL_WAIT_MS = 1500; // délai avant de passer une étape facultative sans cible
 const DIM = "rgba(15, 23, 42, 0.62)"; // voile
+const CURSOR_MS = 900; // trajet du curseur guidé d'une cible à la suivante
+const TYPE_MS = 45; // « Remplir pour moi » : délai entre deux lettres
+
+/**
+ * Le curseur guidé (tuto lancé avec `cursor`, dans la démo) : sa dernière position survit au
+ * changement d'étape, pour qu'il parte de la cible précédente plutôt que d'un coin de l'écran.
+ */
+let lastCursor: { x: number; y: number } | null = null;
 
 type Rect = { top: number; left: number; width: number; height: number };
 
@@ -34,6 +42,36 @@ function findTarget(name: string | undefined): HTMLElement | null {
   return null;
 }
 
+/** Le champ d'une cible : elle-même, ou le premier champ qu'elle contient. */
+function fieldOf(el: HTMLElement | null): HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null {
+  if (!el) return null;
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) return el;
+  return el.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select");
+}
+
+/**
+ * Écrit dans un champ comme le ferait le clavier : par le setter natif de `value`, puis un
+ * évènement `input`. React ne voit pas une simple affectation (`el.value = …`) : son état garde
+ * l'ancienne valeur et l'efface au rendu suivant.
+ */
+function setFieldValue(field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, value: string): void {
+  const proto =
+    field instanceof HTMLTextAreaElement
+      ? HTMLTextAreaElement.prototype
+      : field instanceof HTMLSelectElement
+        ? HTMLSelectElement.prototype
+        : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, "value")?.set?.call(field, value);
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  field.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+/** Où se pose le curseur : au début d'un champ (là où l'on clique pour écrire), au centre sinon. */
+function cursorSpot(rect: Rect, isField: boolean): { x: number; y: number } {
+  const y = rect.top + rect.height / 2;
+  return isField ? { x: rect.left + Math.min(28, rect.width / 2), y } : { x: rect.left + rect.width / 2, y };
+}
+
 function readValue(el: HTMLElement | null): string {
   if (!el) return "";
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)
@@ -46,13 +84,33 @@ function readValue(el: HTMLElement | null): string {
  * Overlay d'UNE étape : voile percé autour de la cible, clics bloqués partout ailleurs,
  * bulle numérotée. Remonté à chaque étape (`key` dans le provider) : chaque étape repart
  * d'un état propre.
+ *
+ * Tuto guidé (`cursor`, la démo) : un curseur glisse jusqu'à la cible et s'y arrête ; la bulle
+ * n'apparaît qu'à son arrivée, et dit quoi faire (« Cliquez », « Tapez : … »). C'est le visiteur
+ * qui fait le geste : le curseur montre le chemin, il ne clique ni ne valide jamais.
  */
-export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep; index: number }): JSX.Element | null {
+export function TourOverlay({
+  tour,
+  step,
+  index,
+  cursor = false,
+}: {
+  tour: Tour;
+  step: TourStep;
+  index: number;
+  cursor?: boolean;
+}): JSX.Element | null {
   const [rect, setRect] = useState<Rect | null>(null);
   const [lost, setLost] = useState(false);
   const [inputOk, setInputOk] = useState(false);
+  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
+  const [arrived, setArrived] = useState(!cursor || !step.target);
+  const [typing, setTyping] = useState(false);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const scrolled = useRef(false);
+  const inputOkRef = useRef(false);
+  const travelled = useRef(false);
+  const arrivalTimer = useRef<number | undefined>(undefined);
   const total = tour.steps.length;
   const isLast = index === total - 1;
   const advance = step.advance;
@@ -78,8 +136,11 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
           el.scrollIntoView({ block: "center", inline: "nearest" });
           // Le curseur clavier suit l'étape : dans le champ à remplir, sinon sur la bulle (lue par
           // un lecteur d'écran). Sans cela, il restait sur le bouton qui avait lancé le tuto.
-          const field = advance.kind === "input" ? (el.matches("input, textarea, select") ? el : el.querySelector<HTMLElement>("input, textarea, select")) : null;
-          (field ?? bubbleRef.current)?.focus({ preventScroll: true });
+          // En tuto guidé, il attend que le curseur soit arrivé (plus bas).
+          if (!cursor) {
+            const field = advance.kind === "input" ? fieldOf(el) : null;
+            (field ?? bubbleRef.current)?.focus({ preventScroll: true });
+          }
         }
         const r = el.getBoundingClientRect();
         const next = { top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 };
@@ -87,14 +148,83 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
         setLost(false);
         if (advance.kind === "input") {
           const v = readValue(el);
-          setInputOk(advance.validate ? advance.validate(v) : v.trim() !== "");
+          const ok = advance.validate
+            ? advance.validate(v)
+            : cursor && step.expect !== undefined
+              ? v.trim() === step.expect
+              : v.trim() !== "";
+          inputOkRef.current = ok;
+          setInputOk(ok);
         }
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [step.target, step.optional, advance, index]);
+  }, [step.target, step.optional, step.expect, advance, index, cursor]);
+
+  // Tuto guidé : le curseur part de sa dernière position (ou du coin du panneau de la démo),
+  // glisse jusqu'à la cible, puis la suit si elle bouge. Les mises à jour passent par des images
+  // d'animation : jamais d'état modifié directement dans l'effet.
+  const isField = advance.kind === "input";
+  useEffect(() => {
+    if (!cursor || !rect) return;
+    // Pour un champ, le curseur vise le champ lui-même, pas son étiquette voisine.
+    const field = isField ? fieldOf(findTarget(step.target)) : null;
+    const fr = field?.getBoundingClientRect();
+    const dest = fr ? cursorSpot({ top: fr.top, left: fr.left, width: fr.width, height: fr.height }, true) : cursorSpot(rect, isField);
+    if (travelled.current) {
+      const raf = requestAnimationFrame(() => {
+        if (lastCursor) lastCursor = dest;
+        setPointer(dest);
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+    travelled.current = true;
+    const from = lastCursor ?? { x: 48, y: window.innerHeight - 48 };
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      setPointer(from);
+      raf2 = requestAnimationFrame(() => setPointer(dest));
+    });
+    // L'arrivée ne dépend pas des mouvements de la cible pendant le trajet : un minuteur à part,
+    // annulé seulement quand l'étape se termine.
+    arrivalTimer.current = window.setTimeout(() => {
+      lastCursor = dest;
+      setArrived(true);
+    }, CURSOR_MS + 50);
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [cursor, rect, isField, step.target]);
+  useEffect(() => () => window.clearTimeout(arrivalTimer.current), []);
+
+  // Arrivé : le focus entre dans le champ à remplir (le visiteur voit le curseur d'écriture
+  // clignoter), sinon sur la bulle.
+  useEffect(() => {
+    if (!cursor || !arrived) return;
+    const field = isField ? fieldOf(findTarget(step.target)) : null;
+    (field ?? bubbleRef.current)?.focus({ preventScroll: true });
+  }, [cursor, arrived, isField, step.target]);
+
+  /** « Remplir pour moi » : la valeur attendue s'écrit lettre par lettre, comme au clavier. */
+  const fillForMe = (): void => {
+    const field = fieldOf(findTarget(step.target));
+    const text = step.expect;
+    if (!field || text === undefined || typing) return;
+    setTyping(true);
+    field.focus({ preventScroll: true });
+    let i = 0;
+    const typeNext = (): void => {
+      i += 1;
+      setFieldValue(field, text.slice(0, i));
+      if (i < text.length) window.setTimeout(typeNext, TYPE_MS);
+      else setTyping(false);
+    };
+    setFieldValue(field, "");
+    window.setTimeout(typeNext, TYPE_MS);
+  };
 
   // Étape sans cible : la bulle reçoit le curseur dès son affichage.
   useEffect(() => {
@@ -121,6 +251,14 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") tourStore.stop();
+      // Entrée dans le champ d'une étape « input » : valide l'étape (et jamais le formulaire).
+      if (e.key === "Enter" && !explains && findTarget(step.target)?.contains(e.target as Node | null)) {
+        const field = e.target;
+        if (field instanceof HTMLInputElement && inputOkRef.current) {
+          e.preventDefault();
+          tourStore.next(index);
+        }
+      }
     };
     const onFocus = (e: FocusEvent) => {
       const el = findTarget(step.target);
@@ -134,7 +272,7 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("focusin", onFocus);
     };
-  }, [step.target, explains]);
+  }, [step.target, explains, index]);
 
   // Aucun formulaire ne part pendant une étape qui n'attend ni clic ni page : Entrée dans un champ
   // à remplir enverrait sinon le formulaire (la demande au club, le lien de réinitialisation).
@@ -219,12 +357,31 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
         />
       )}
 
+      {/* Le curseur guidé : il montre le chemin, il ne clique pas (aucun évènement ne le traverse). */}
+      {cursor && pointer && (
+        <div
+          className="pointer-events-none fixed left-0 top-0 z-[10003]"
+          style={{
+            transform: `translate(${pointer.x}px, ${pointer.y}px)`,
+            transition: arrived ? "transform 150ms linear" : `transform ${CURSOR_MS}ms cubic-bezier(0.45, 0, 0.2, 1)`,
+          }}
+          aria-hidden="true"
+        >
+          {arrived && <span className="absolute -left-3 -top-3 h-6 w-6 animate-ping rounded-full bg-brand/40" />}
+          <svg width="22" height="26" viewBox="0 0 22 26" className="drop-shadow-md">
+            <path d="M2 2 L2 21 L7 16.5 L10.5 24 L14 22.5 L10.5 15 L17 15 Z" className="fill-foreground stroke-background" strokeWidth="1.6" strokeLinejoin="round" />
+          </svg>
+        </div>
+      )}
+
       <div
         ref={bubbleRef}
         tabIndex={-1}
         role="dialog"
         aria-label={`${tour.title} — étape ${index + 1} sur ${total}`}
-        className="fixed z-[10002] rounded-xl bg-card p-4 text-foreground shadow-2xl outline-none"
+        className={`fixed z-[10002] rounded-xl bg-card p-4 text-foreground shadow-2xl outline-none transition-opacity duration-200 ${
+          arrived || lost ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
         style={bubbleStyle}
       >
         <div className="mb-2 flex items-center gap-2">
@@ -243,6 +400,25 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
               ? "Chargement de la page…"
               : step.body}
         </p>
+        {cursor && !lost && arrived && advance.kind === "click" && (
+          <p className="mt-3 rounded-md bg-brand/10 px-3 py-2 text-sm font-medium">👉 Cliquez là où s&apos;est arrêté le curseur.</p>
+        )}
+        {cursor && !lost && advance.kind === "input" && step.expect !== undefined && (
+          <div className="mt-3 rounded-md bg-brand/10 px-3 py-2 text-sm">
+            <p>
+              Tapez : <code className="rounded bg-background px-1.5 py-0.5 font-mono">{step.expect}</code>
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Puis validez avec Entrée ou « Suivant ».</p>
+            <button
+              type="button"
+              onClick={fillForMe}
+              disabled={typing || inputOk}
+              className="mt-2 rounded border border-border px-2 py-0.5 text-xs hover:bg-muted disabled:opacity-50"
+            >
+              {typing ? "Saisie…" : "Remplir pour moi"}
+            </button>
+          </div>
+        )}
         <div className="mt-4 flex items-center justify-between gap-2">
           <button
             type="button"

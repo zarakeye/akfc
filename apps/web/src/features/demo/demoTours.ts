@@ -8,7 +8,8 @@ import type { DemoAccountKey } from "#features/demo/demoAccounts.ts";
  * Une étape peut proposer un compte (« en Membre majeur ») : le panneau offre de s'y connecter.
  * Les liens de la doc ouvrent un nouvel onglet, pour ne pas perdre sa place dans le site.
  */
-export type DemoStep = { text: string; href?: string; as?: DemoAccountKey };
+/** `tour` : un tuto du site (features/tours), lancé en mode guidé (le curseur montre le chemin). */
+export type DemoStep = { text: string; href?: string; as?: DemoAccountKey; tour?: string };
 export type DemoTour = {
   key: string;
   family: "fonction" | "metier";
@@ -132,7 +133,7 @@ export const DEMO_TOURS: DemoTour[] = [
     pitch: "Les droits passent par les groupes ; un groupe peut avoir son espace partagé.",
     steps: [
       { text: "Se connecter en administrateur", as: "admin" },
-      { text: "Créer un groupe collaboratif et y ajouter le membre majeur", href: "/dashboard/groups" },
+      { text: "Créer un groupe collaboratif et y ajouter le membre majeur", href: "/dashboard/groups", tour: "admin.groups.create" },
       { text: "Se connecter en membre majeur : l'espace du groupe apparaît", as: "membre" },
       { text: "Y déposer une photo", href: "/mes-espaces" },
     ],

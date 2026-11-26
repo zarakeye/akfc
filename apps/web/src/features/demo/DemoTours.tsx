@@ -2,10 +2,13 @@
 
 import { useMemo, useSyncExternalStore, type JSX } from "react";
 import Link from "next/link";
-import { BookOpen, Check, LogIn } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { BookOpen, Check, LogIn, PlayCircle } from "lucide-react";
 
 import { DEMO_ACCOUNTS, type DemoAccountKey } from "#features/demo/demoAccounts.ts";
 import { DEMO_TOURS, type DemoTour } from "#features/demo/demoTours.ts";
+import { getTour } from "#features/tours/tour.registry.ts";
+import { tourStore } from "#features/tours/tour.store.ts";
 
 const STORE_KEY = "akfc-demo-tours";
 
@@ -59,6 +62,14 @@ function TourSteps({
   currentKey: DemoAccountKey | null;
   pending: boolean;
 }): JSX.Element {
+  const router = useRouter();
+  // Un tuto guidé : le curseur va de cible en cible, la bulle dit quoi faire, le visiteur agit.
+  const guide = (id: string): void => {
+    const t = getTour(id);
+    if (!t) return;
+    tourStore.start(t.id, { cursor: true });
+    router.push(t.startRoute);
+  };
   return (
     <div className="mt-2 rounded-md bg-muted px-3 py-2">
       <p className="mb-2 text-xs text-muted-foreground">{tour.pitch}</p>
@@ -87,6 +98,16 @@ function TourSteps({
                   </Link>
                 ) : (
                   step.text
+                )}
+                {step.tour && getTour(step.tour) && (
+                  <button
+                    type="button"
+                    onClick={() => guide(step.tour as string)}
+                    className="ml-1 inline-flex items-center gap-1 rounded bg-brand px-1.5 text-xs text-brand-foreground hover:bg-brand/90"
+                  >
+                    <PlayCircle className="h-3 w-3" aria-hidden />
+                    Guidé
+                  </button>
                 )}
                 {account && account.key !== currentKey && (
                   <button

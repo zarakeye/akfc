@@ -47,6 +47,7 @@ export function TourProvider({ children }: { children: ReactNode }): JSX.Element
           tour={tour}
           step={step}
           index={state.index}
+          cursor={state.cursor === true}
         />
       ) : (
         <TourLauncher pathname={pathname} />
