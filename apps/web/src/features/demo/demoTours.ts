@@ -143,10 +143,16 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "Les groupes",
     pitch: "Les droits passent par les groupes ; un groupe peut avoir son espace partagé.",
     steps: [
-      { text: "Se connecter en administrateur", as: "admin" },
-      { text: "Créer un groupe collaboratif et y ajouter le membre majeur", href: "/dashboard/groups", tour: "admin.groups.create" },
-      { text: "Se connecter en membre majeur : l'espace du groupe apparaît", as: "membre" },
-      { text: "Y déposer une photo", href: "/mes-espaces" },
+      { text: "Se connecter en administrateur, par le formulaire", as: "admin", tour: "demo.connexion.admin" },
+      {
+        text: "Créer un groupe collaboratif, le retrouver dans la liste, y ajouter le membre majeur",
+        href: "/dashboard/groups",
+        tour: "demo.groupes.creer",
+      },
+      { text: "Se connecter en membre majeur", as: "membre", tour: "demo.connexion.membre" },
+      { text: "L'espace du groupe apparaît dans « Mes espaces »", href: "/mes-espaces" },
+      { text: "Revenir en administrateur", as: "admin", tour: "demo.connexion.admin" },
+      { text: "Supprimer le groupe, et constater qu'il a quitté la liste", href: "/dashboard/groups", tour: "demo.groupes.supprimer" },
     ],
     docs: [
       { label: "Les groupes", href: dev("membres/les-groupes") },

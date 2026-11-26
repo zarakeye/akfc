@@ -40,6 +40,13 @@ export interface TourStep {
    * contient (sauf `validate`). Hors tuto guidé, elle est ignorée : on tape ce qu'on veut.
    */
   expect?: string;
+  /**
+   * Viser une LIGNE de la cible (une table, une liste) : celle qui contient ce texte. Sert aux
+   * tutos qui créent puis retrouvent un élément (« le voilà dans la liste »), ou qui en ouvrent un.
+   */
+  targetText?: string;
+  /** Dans cette ligne, l'élément précis à viser : un sélecteur CSS (`button`, `a`…). */
+  targetPick?: string;
 }
 
 export interface Tour {
@@ -57,4 +64,9 @@ export interface Tour {
   /** Fiche de documentation du tuto (« /docs/guide/mon-profil ») ; vérifiée par la garde. */
   doc: string;
   steps: TourStep[];
+  /**
+   * Tuto de la démo (DEMO_MODE) : lancé par son panneau, en mode guidé, jamais proposé par le
+   * lanceur « ? » du site. Il va jusqu'au bout (il crée, puis retrouve dans la liste).
+   */
+  demoOnly?: boolean;
 }

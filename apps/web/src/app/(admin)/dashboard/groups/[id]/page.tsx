@@ -73,6 +73,7 @@ export default function GroupDetailPage(): JSX.Element {
     <div>
       <Link
         href="/dashboard/groups"
+        data-tour="groups.detail.back"
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -154,7 +155,7 @@ export default function GroupDetailPage(): JSX.Element {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <div>
+        <div data-tour="groups.detail.members">
           <p className="mb-2 text-sm font-medium">Membres</p>
           {members.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aucun membre.</p>
@@ -211,7 +212,7 @@ export default function GroupDetailPage(): JSX.Element {
           )}
         </div>
 
-        <div>
+        <div data-tour="groups.detail.add">
           <p className="mb-2 text-sm font-medium">Ajouter</p>
           <DemoAccountsToggle
             count={demoCandidates}
@@ -262,6 +263,7 @@ export default function GroupDetailPage(): JSX.Element {
         ) : !confirmingDelete ? (
           <button
             type="button"
+            data-tour="groups.detail.delete"
             onClick={() => setConfirmingDelete(true)}
             className="rounded-md bg-destructive px-3 py-1.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
           >
@@ -276,6 +278,7 @@ export default function GroupDetailPage(): JSX.Element {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                data-tour="groups.detail.confirm-delete"
                 disabled={del.isPending}
                 onClick={() => del.mutate({ id: group.id })}
                 className="rounded-md bg-destructive px-3 py-1.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"

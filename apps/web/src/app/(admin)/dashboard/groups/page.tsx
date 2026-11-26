@@ -19,7 +19,9 @@ export default function GroupsPage(): JSX.Element {
           Créer un groupe
         </Link>
       </div>
-      <GroupsTable />
+      <div data-tour="groups.list.table">
+        <GroupsTable />
+      </div>
     </div>
   );
 }

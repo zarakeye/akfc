@@ -46025,7 +46025,7 @@
       [
        [
         "<DemoPanel>",
-        "apps/web/src/features/demo/DemoPanel.tsx:33"
+        "apps/web/src/features/demo/DemoPanel.tsx:35"
        ],
        [
         "switchDemoAccountAction",
@@ -46101,7 +46101,7 @@
       [
        [
         "<DemoPanel>",
-        "apps/web/src/features/demo/DemoPanel.tsx:33"
+        "apps/web/src/features/demo/DemoPanel.tsx:35"
        ],
        [
         "switchDemoAccountAction",
@@ -46129,7 +46129,7 @@
       [
        [
         "<DemoPanel>",
-        "apps/web/src/features/demo/DemoPanel.tsx:33"
+        "apps/web/src/features/demo/DemoPanel.tsx:35"
        ],
        [
         "switchDemoAccountAction",

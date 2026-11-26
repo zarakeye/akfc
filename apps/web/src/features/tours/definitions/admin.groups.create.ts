@@ -24,7 +24,7 @@ export const adminGroupsCreate: Tour = {
       title: "Le nom",
       body: "Par exemple « Bureau » ou « Compétition ».",
       advance: { kind: "input", validate: (v) => v.trim().length > 0 },
-      expect: "Bureau",
+      expect: "Compétition",
     },
     {
       target: "groups.form.parent",

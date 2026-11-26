@@ -6,6 +6,8 @@ import { Clock, FlaskConical, Mail, UserRound, X } from "lucide-react";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "#features/demo/demoAccounts.ts";
 import { DemoTours } from "#features/demo/DemoTours.tsx";
 import { readOpen, subscribeOpen, writeOpen } from "#features/demo/demoPanelOpen.ts";
+import { useSessionStore } from "#lib/stores/useSessionStore.ts";
+import { tourStore } from "#features/tours/tour.store.ts";
 import { switchDemoAccountAction } from "#features/demo/switchDemoAccount.action.ts";
 import type { DemoInfo } from "#features/demo/demoInfo.ts";
 
@@ -31,7 +33,13 @@ function formatRemaining(ms: number): string {
  * qu'une pastille en bas à gauche ; son état (ouvert, fermé) est retenu par le navigateur.
  */
 export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail: string | null }): JSX.Element {
-  const open = useSyncExternalStore(subscribeOpen, readOpen, () => true);
+  // Pendant un tuto, le panneau reste replié : il ne doit rien cacher de la page parcourue.
+  const touring = useSyncExternalStore(
+    tourStore.subscribe,
+    () => tourStore.getSnapshot() !== null,
+    () => false,
+  );
+  const open = useSyncExternalStore(subscribeOpen, readOpen, () => true) && !touring;
   const now = useSyncExternalStore<number | null>(subscribeClock, readClock, noClock);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -40,7 +48,12 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
   const remaining = info.endsAt !== null && now !== null ? info.endsAt - now : null;
   const ended = remaining !== null && remaining <= 0;
   const late = remaining !== null && remaining < 5 * 60 * 1000;
-  const current = DEMO_ACCOUNTS.find((a) => a.email === currentEmail) ?? null;
+  // Le compte connecté : celui de la session côté navigateur, qui suit une connexion faite par le
+  // formulaire (un tuto guidé) sans rechargement ; à défaut, celui du rendu serveur.
+  const status = useSessionStore((st) => st.status);
+  const liveEmail = useSessionStore((st) => st.session?.user?.email ?? null);
+  const email = status === "authenticated" || status === "guest" ? liveEmail : currentEmail;
+  const current = DEMO_ACCOUNTS.find((a) => a.email === email) ?? null;
 
   const switchTo = (key: string): void => {
     setError(null);
@@ -108,7 +121,7 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
         <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Connecté en tant que</h2>
         <p className="inline-flex items-center gap-2">
           <UserRound className="h-4 w-4 text-muted-foreground" aria-hidden />
-          {current ? current.label : currentEmail ? currentEmail : "visiteur (non connecté)"}
+          {current ? current.label : email ? email : "visiteur (non connecté)"}
         </p>
       </section>
 
@@ -116,7 +129,7 @@ export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Me connecter en tant que…</h2>
         <ul className="flex flex-col gap-1.5">
           {DEMO_ACCOUNTS.map((a) => {
-            const active = a.email === currentEmail;
+            const active = a.email === email;
             return (
               <li key={a.key}>
                 <button

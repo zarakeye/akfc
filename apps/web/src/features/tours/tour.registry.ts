@@ -27,6 +27,8 @@ import { membreVersions } from "./definitions/membre.versions";
 import { membreProfil } from "./definitions/membre.profil";
 import { publicDecouvrirLeSite } from "./definitions/public.decouvrir-le-site";
 import { publicMotDePasseOublie } from "./definitions/public.mot-de-passe-oublie";
+import { demoConnexionAdmin, demoConnexionMembre } from "./definitions/demo.connexion";
+import { demoGroupesCreer, demoGroupesSupprimer } from "./definitions/demo.groupes";
 
 /**
  * Registre de TOUS les tutos. Ajouter un tuto = créer son fichier dans `definitions/` et
@@ -61,6 +63,11 @@ export const TOURS: Tour[] = [
   adminFamiliesCreate,
   adminOriginsCreate,
   adminReglages,
+  // La démo : lancés par son panneau, en mode guidé ; jamais proposés par le lanceur « ? ».
+  demoConnexionAdmin,
+  demoConnexionMembre,
+  demoGroupesCreer,
+  demoGroupesSupprimer,
 ];
 
 export function getTour(id: string): Tour | undefined {
@@ -85,7 +92,7 @@ export function unavailableReason(audience: TourAudience): string {
 
 /** Tutos proposés sur cette page, pour ce visiteur. */
 export function toursFor(pathname: string, viewer: TourViewer): Tour[] {
-  return TOURS.filter((t) => canFollow(t.audience, viewer) && t.routes.some((r) => matches(r, pathname)));
+  return TOURS.filter((t) => !t.demoOnly && canFollow(t.audience, viewer) && t.routes.some((r) => matches(r, pathname)));
 }
 
 export function routeMatches(match: string | RegExp, pathname: string): boolean {

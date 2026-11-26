@@ -20,7 +20,7 @@ test("tuto guidé : la bulle dit quoi faire, « Remplir pour moi » écrit, Entr
   const field = page.locator('[data-tour="groups.form.name"] input');
   await expect(field).toBeFocused({ timeout: 8000 });
   await page.getByRole("button", { name: "Remplir pour moi" }).click();
-  await expect(field).toHaveValue("Bureau", { timeout: 3000 });
+  await expect(field).toHaveValue("Compétition", { timeout: 3000 });
   await field.press("Enter");
   await expect(page.getByText("Le groupe parent")).toBeVisible({ timeout: 5000 });
 

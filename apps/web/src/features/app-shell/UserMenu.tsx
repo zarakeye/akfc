@@ -47,6 +47,7 @@ export default function UserMenu(): JSX.Element | null {
     >
       <button
         {...menu.buttonProps}
+        data-tour="header.user-menu"
         className="flex items-center gap-2 cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         <UserPortrait
@@ -129,6 +130,7 @@ export default function UserMenu(): JSX.Element | null {
             Où j&apos;apparais
           </Link>
           <button
+            data-tour="header.logout"
             className="block w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
             onClick={handleLogout}
           >

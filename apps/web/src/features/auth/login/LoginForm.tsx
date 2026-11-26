@@ -92,6 +92,7 @@ export default function LoginForm(): JSX.Element {
       <div className="flex gap-2">
         <input
           type="email"
+          data-tour="auth.login.email"
           placeholder="Adresse e-mail"
           autoComplete="email"
           aria-invalid={!!formState.errors.email}
@@ -102,6 +103,7 @@ export default function LoginForm(): JSX.Element {
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
+            data-tour="auth.login.password"
             placeholder="Mot de passe"
             autoComplete="current-password"
             aria-invalid={!!formState.errors.password}
@@ -123,6 +125,7 @@ export default function LoginForm(): JSX.Element {
 
       <button
         type="submit"
+        data-tour="auth.login.submit"
         disabled={isPending || state.status === "success"}
         className="px-4 py-2 rounded bg-brand text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
