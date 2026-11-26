@@ -42,7 +42,7 @@ export function MyAppearances(): JSX.Element {
         <p className="text-sm text-destructive">Impossible de charger la liste.</p>
       ) : (
         <>
-          <section className="rounded-xl border border-border bg-card p-4" aria-label="Mon droit à l'image">
+          <section className="rounded-xl border border-border bg-card p-4" aria-label="Mon droit à l'image" data-tour="appearances.consent">
             <p className="text-sm text-foreground">
               Mon droit à l&apos;image ({SOURCE_LABEL[data.source]}) :
             </p>

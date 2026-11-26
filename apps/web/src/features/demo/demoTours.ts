@@ -51,11 +51,17 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "La vie d'un membre",
     pitch: "Un membre majeur : son profil, son espace, son droit à l'image.",
     steps: [
-      { text: "Se connecter en membre majeur", as: "membre" },
-      { text: "Son profil, puis changer son avatar (recadrage carré)", href: "/profil/edit" },
-      { text: "Déposer une photo dans son espace", href: "/mes-espaces" },
-      { text: "Donner son droit à l'image en ligne : un PDF signé arrive dans Mailpit", href: "/profil/droit-a-l-image" },
-      { text: "Voir où l'on apparaît sur le site", href: "/profil/ou-j-apparais" },
+      { text: "Se connecter en membre majeur, par le formulaire", as: "membre", tour: "demo.connexion.membre" },
+      { text: "Son profil, et où changer sa photo de profil", href: "/profil", tour: "demo.membre.profil" },
+      { text: "Changer sa photo de profil (recadrage rond ou carré), avec une image à vous", href: "/profil/edit" },
+      { text: "Déposer une photo dans son espace, avec une image à vous", href: "/mes-espaces" },
+      {
+        text: "Donner son droit à l'image en ligne, signé de son mot de passe",
+        href: "/profil/droit-a-l-image",
+        tour: "demo.membre.consentement",
+      },
+      { text: "Le club en reçoit l'avis : il est dans Mailpit" },
+      { text: "Où il apparaît, et ce qui en est montré", href: "/profil/ou-j-apparais", tour: "demo.membre.apparais" },
     ],
     docs: [
       { label: "Profil et première connexion", href: dev("membres/profil-et-premiere-connexion") },

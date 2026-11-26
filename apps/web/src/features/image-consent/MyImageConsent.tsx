@@ -17,6 +17,7 @@ import { OnlineConsentForm } from "#features/image-consent/OnlineConsentForm.tsx
 export function MyImageConsent(): JSX.Element {
   const { data } = trpc.imageConsent.mine.useQuery();
   const [open, setOpen] = useState<ViewableConsentForm | null>(null);
+  const [saved, setSaved] = useState(false);
   const latest = data?.forms[0] ?? null;
 
   return (
@@ -26,6 +27,8 @@ export function MyImageConsent(): JSX.Element {
         <OnlineConsentForm
           key={latest?.id ?? "none"}
           latest={latest ? { usages: latest.usages, keepAfterLeave: latest.keepAfterLeave } : null}
+          saved={saved}
+          setSaved={setSaved}
         />
       )}
       {data && (

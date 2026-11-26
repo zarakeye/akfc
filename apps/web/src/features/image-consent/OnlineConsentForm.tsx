@@ -37,11 +37,22 @@ import {
  * Les deux formulaires (majeur, mineur) suivent le modèle hybride : React Hook Form et le schéma
  * partagé dans le navigateur, une server action pour l'enregistrement.
  */
-export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValue[]; keepAfterLeave: boolean | null } | null }): JSX.Element | null {
+export function OnlineConsentForm({
+  latest,
+  saved,
+  setSaved,
+}: {
+  latest: { usages: ImageUsageValue[]; keepAfterLeave: boolean | null } | null;
+  /**
+   * « Autorisation enregistrée » : tenu par la page. Le formulaire est remonté à chaque nouvelle
+   * autorisation (sa clé suit la dernière), ce qui effaçait l'annonce aussitôt affichée.
+   */
+  saved: boolean;
+  setSaved: (saved: boolean) => void;
+}): JSX.Element | null {
   const utils = trpc.useUtils();
   const state = trpc.imageConsent.onlineState.useQuery();
   const [open, setOpen] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [textOpen, setTextOpen] = useState(false);
 
   const s = state.data;
@@ -83,6 +94,7 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
               setSaved(false);
               setOpen(true);
             }}
+            data-tour="consent.open"
             className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90"
           >
             <PenLine className="h-4 w-4" />
@@ -102,7 +114,7 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
         />
       )}
       {saved && !open && (
-        <p className="mt-3 text-success">
+        <p className="mt-3 text-success" data-tour="consent.saved">
           Autorisation enregistrée. Le récapitulatif signé figure ci-dessous, avec vos formulaires.
         </p>
       )}
@@ -250,19 +262,22 @@ function AdultConsentForm({
           Lire le texte complet de l&apos;autorisation
         </button>
       </p>
-      <ConsentChoicesFields
-        usages={usages}
-        onUsages={(v) => setValue("usages", v)}
-        keep={keep ?? false}
-        onKeep={(v) => setValue("keepAfterLeave", v)}
-        subject="self"
-      />
+      <div data-tour="consent.choices">
+        <ConsentChoicesFields
+          usages={usages}
+          onUsages={(v) => setValue("usages", v)}
+          keep={keep ?? false}
+          onKeep={(v) => setValue("keepAfterLeave", v)}
+          subject="self"
+        />
+      </div>
 
       <label className="flex max-w-xs flex-col gap-1">
         <span className="font-medium">Votre mot de passe, pour signer</span>
         <input
           type="password"
           autoComplete="current-password"
+          data-tour="consent.password"
           className="rounded border border-border px-2 py-1.5"
           {...register("password")}
         />
@@ -274,6 +289,7 @@ function AdultConsentForm({
         <button
           type="submit"
           disabled={isPending}
+          data-tour="consent.submit"
           className="rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
         >
           {isPending ? "Enregistrement…" : "Je confirme mes choix"}
