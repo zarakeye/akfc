@@ -4,7 +4,8 @@ import { loginAs } from "./helpers";
 
 /**
  * Tuto guidé (le mode de la démo) : le curseur s'arrête sur la cible, la bulle dit quoi faire ;
- * « Remplir pour moi » écrit la valeur attendue dans le champ, Entrée valide l'étape.
+ * « Remplir pour moi » écrit la valeur attendue dans le champ, Entrée valide l'étape, et
+ * « ← Précédent » revient en arrière, jusqu'à la page d'avant.
  */
 test("tuto guidé : la bulle dit quoi faire, « Remplir pour moi » écrit, Entrée valide", async ({ page }) => {
   await loginAs(page, USERS.admin.email);
@@ -22,4 +23,11 @@ test("tuto guidé : la bulle dit quoi faire, « Remplir pour moi » écrit, Entr
   await expect(field).toHaveValue("Bureau", { timeout: 3000 });
   await field.press("Enter");
   await expect(page.getByText("Le groupe parent")).toBeVisible({ timeout: 5000 });
+
+  // « ← Précédent » : l'étape du nom revient ; encore une fois, et l'on retourne à la liste.
+  await page.getByRole("button", { name: "Revenir à l'étape précédente" }).click();
+  await expect(page.getByText("Tapez :")).toBeVisible({ timeout: 5000 });
+  await page.getByRole("button", { name: "Revenir à l'étape précédente" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/groups$/);
+  await expect(page.getByText("Cliquez là où s'est arrêté le curseur")).toBeVisible({ timeout: 8000 });
 });

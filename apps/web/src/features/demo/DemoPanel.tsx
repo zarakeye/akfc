@@ -5,33 +5,9 @@ import { Clock, FlaskConical, Mail, UserRound, X } from "lucide-react";
 
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "#features/demo/demoAccounts.ts";
 import { DemoTours } from "#features/demo/DemoTours.tsx";
+import { readOpen, subscribeOpen, writeOpen } from "#features/demo/demoPanelOpen.ts";
 import { switchDemoAccountAction } from "#features/demo/switchDemoAccount.action.ts";
 import type { DemoInfo } from "#features/demo/demoInfo.ts";
-
-const OPEN_KEY = "akfc-demo-panel-open";
-
-// Ouvert ou replié, retenu par le navigateur. Lu par useSyncExternalStore : le serveur rend le
-// panneau ouvert, le navigateur corrige aussitôt, sans écart d'hydratation.
-const openListeners = new Set<() => void>();
-function readOpen(): boolean {
-  try {
-    return window.localStorage.getItem(OPEN_KEY) !== "0";
-  } catch {
-    return true;
-  }
-}
-function writeOpen(next: boolean): void {
-  try {
-    window.localStorage.setItem(OPEN_KEY, next ? "1" : "0");
-  } catch {
-    // sans stockage, l'état n'est simplement pas retenu
-  }
-  openListeners.forEach((l) => l());
-}
-function subscribeOpen(listener: () => void): () => void {
-  openListeners.add(listener);
-  return () => openListeners.delete(listener);
-}
 
 // L'horloge : une valeur par seconde. Côté serveur, pas d'heure (pas de compte à rebours rendu).
 function subscribeClock(listener: () => void): () => void {

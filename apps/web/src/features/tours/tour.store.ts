@@ -60,6 +60,11 @@ export const tourStore = {
     const s = tourStore.getSnapshot();
     if (s && s.index === fromIndex) write({ ...s, index: s.index + 1 });
   },
+  /** Revenir à l'étape précédente (tuto guidé) ; même garde que `next` contre un double appel. */
+  prev(fromIndex: number): void {
+    const s = tourStore.getSnapshot();
+    if (s && s.index === fromIndex && fromIndex > 0) write({ ...s, index: s.index - 1 });
+  },
   stop(): void {
     write(null);
   },

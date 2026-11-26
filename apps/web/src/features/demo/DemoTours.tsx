@@ -7,6 +7,7 @@ import { BookOpen, Check, LogIn, PlayCircle } from "lucide-react";
 
 import { DEMO_ACCOUNTS, type DemoAccountKey } from "#features/demo/demoAccounts.ts";
 import { DEMO_TOURS, type DemoTour } from "#features/demo/demoTours.ts";
+import { writeOpen } from "#features/demo/demoPanelOpen.ts";
 import { getTour } from "#features/tours/tour.registry.ts";
 import { tourStore } from "#features/tours/tour.store.ts";
 
@@ -67,6 +68,8 @@ function TourSteps({
   const guide = (id: string): void => {
     const t = getTour(id);
     if (!t) return;
+    // Le panneau se replie : il ne doit rien cacher de la page que le tuto fait parcourir.
+    writeOpen(false);
     tourStore.start(t.id, { cursor: true });
     router.push(t.startRoute);
   };

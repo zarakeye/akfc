@@ -208,6 +208,16 @@ export function TourOverlay({
     (field ?? bubbleRef.current)?.focus({ preventScroll: true });
   }, [cursor, arrived, isField, step.target]);
 
+  /**
+   * « ← Précédent » (tuto guidé) : revoir l'étape d'avant. Si sa cible était sur la page
+   * précédente (le bouton qui a ouvert ce formulaire), on y retourne d'abord.
+   */
+  const goBack = (): void => {
+    const prevTarget = tour.steps[index - 1]?.target;
+    if (prevTarget && !findTarget(prevTarget)) window.history.back();
+    tourStore.prev(index);
+  };
+
   /** « Remplir pour moi » : la valeur attendue s'écrit lettre par lettre, comme au clavier. */
   const fillForMe = (): void => {
     const field = fieldOf(findTarget(step.target));
@@ -421,13 +431,25 @@ export function TourOverlay({
           </div>
         )}
         <div className="mt-4 flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => tourStore.stop()}
-            className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            Quitter
-          </button>
+          <span className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => tourStore.stop()}
+              className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Quitter
+            </button>
+            {cursor && index > 0 && (
+              <button
+                type="button"
+                onClick={goBack}
+                className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Revenir à l'étape précédente"
+              >
+                ← Précédent
+              </button>
+            )}
+          </span>
           {(advance.kind === "next" || advance.kind === "input") && !lost && (
             <button
               type="button"
