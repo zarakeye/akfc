@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { BookOpen, Check, LogIn, PlayCircle } from "lucide-react";
 
 import { DEMO_ACCOUNTS, type DemoAccountKey } from "#features/demo/demoAccounts.ts";
-import { DEMO_TOURS, type DemoTour } from "#features/demo/demoTours.ts";
+import { DEMO_TOURS, stepRoles, tourRoles, type DemoRole, type DemoTour } from "#features/demo/demoTours.ts";
 import { writeOpen } from "#features/demo/demoPanelOpen.ts";
 import { switchDemoAccountAction } from "#features/demo/switchDemoAccount.action.ts";
 import { getTour } from "#features/tours/tour.registry.ts";
@@ -46,6 +46,30 @@ function write(next: ToursState): void {
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
+}
+
+/**
+ * La pastille d'un rôle : qui l'on est pendant l'étape ou le parcours. Une couleur par rôle, pour
+ * savoir d'un coup d'œil dans quelle session on se trouve.
+ */
+const ROLE_BADGE: Record<DemoRole, { label: string; className: string }> = {
+  visiteur: { label: "Visiteur", className: "bg-muted text-muted-foreground border border-border" },
+  admin: { label: "Admin", className: "bg-destructive-muted text-destructive" },
+  membre: { label: "Membre", className: "bg-success-muted text-success" },
+  mineur: { label: "Mineur", className: "bg-warning-muted text-warning" },
+  support: { label: "Sam · support", className: "bg-info-muted text-info" },
+};
+
+function RoleBadge({ role, title }: { role: DemoRole; title?: string }): JSX.Element {
+  const b = ROLE_BADGE[role];
+  return (
+    <span
+      title={title ?? `En tant que : ${b.label}`}
+      className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-px text-[10px] font-semibold leading-4 ${b.className}`}
+    >
+      {b.label}
+    </span>
+  );
 }
 
 const toggleIn = (list: string[], item: string): string[] =>
@@ -95,6 +119,7 @@ function TourSteps({
       <p className="mb-2 text-xs text-muted-foreground">{tour.pitch}</p>
       <ol className="flex flex-col gap-1.5">
         {tour.steps.map((step, i) => {
+          const role = stepRoles(tour)[i];
           const id = `${tour.key}:${i}`;
           const done = state.done.includes(id);
           const account = step.as ? DEMO_ACCOUNTS.find((a) => a.key === step.as) : undefined;
@@ -111,6 +136,7 @@ function TourSteps({
               >
                 {done && <Check className="h-3 w-3" aria-hidden />}
               </button>
+              <RoleBadge role={role} />
               <span className={done ? "text-muted-foreground line-through" : ""}>
                 {step.href ? (
                   <Link href={step.href} className="underline decoration-dotted underline-offset-2 hover:text-brand">
@@ -185,6 +211,9 @@ export function DemoTours({
 
   return (
     <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted-foreground">
+        Chaque pastille dit dans quel rôle se fait le parcours, puis chaque étape : mettez-vous à sa place.
+      </p>
       {families.map(({ family, title }) => (
         <div key={family}>
           <h3 className="mb-1 text-xs font-medium text-muted-foreground">{title}</h3>
@@ -202,6 +231,11 @@ export function DemoTours({
                       className="h-4 w-4 accent-brand"
                     />
                     <span className="flex-1">{tour.title}</span>
+                    <span className="flex flex-wrap justify-end gap-0.5">
+                      {tourRoles(tour).map((role) => (
+                        <RoleBadge key={role} role={role} title={`Ce parcours se fait en : ${ROLE_BADGE[role].label}`} />
+                      ))}
+                    </span>
                     {doneCount > 0 && (
                       <span className="text-xs tabular-nums text-muted-foreground">
                         {doneCount}/{tour.steps.length}

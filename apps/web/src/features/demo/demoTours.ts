@@ -10,8 +10,12 @@ import type { DemoAccountKey } from "#features/demo/demoAccounts.ts";
  */
 /** `tour` : un tuto du site (features/tours), lancé en mode guidé (le curseur montre le chemin). */
 export type DemoStep = { text: string; href?: string; as?: DemoAccountKey; tour?: string };
+/** Le rôle dans lequel se fait une étape : un compte de la démo, ou un visiteur sans compte. */
+export type DemoRole = DemoAccountKey | "visiteur";
 export type DemoTour = {
   key: string;
+  /** Le rôle de la première étape ; une étape avec `as` change de rôle pour les suivantes. */
+  start: DemoRole;
   family: "fonction" | "metier";
   title: string;
   pitch: string;
@@ -24,6 +28,7 @@ const dev = (path: string): string => `/docs/dev/${path}`;
 export const DEMO_TOURS: DemoTour[] = [
   {
     key: "site-public",
+    start: "visiteur",
     family: "fonction",
     title: "Le site public",
     pitch: "Ce que voit un visiteur, sans compte.",
@@ -41,6 +46,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "vie-membre",
+    start: "membre",
     family: "fonction",
     title: "La vie d'un membre",
     pitch: "Un membre majeur : son profil, son espace, son droit à l'image.",
@@ -59,6 +65,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "mineur-parent",
+    start: "mineur",
     family: "fonction",
     title: "Un mineur et son parent",
     pitch: "Le droit à l'image d'un mineur passe par son parent, par e-mail.",
@@ -75,6 +82,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "mediatheque",
+    start: "admin",
     family: "fonction",
     title: "La médiathèque",
     pitch: "Un explorateur de fichiers dans le navigateur, avec corbeille et versions.",
@@ -95,6 +103,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "droits-image",
+    start: "admin",
     family: "fonction",
     title: "Droits à l'image et tags",
     pitch: "Chaque personne taguée sur une photo est comparée à son autorisation.",
@@ -112,6 +121,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "construire-page",
+    start: "admin",
     family: "fonction",
     title: "Construire une page",
     pitch: "Une page faite de blocs, publiée quand elle est prête.",
@@ -128,6 +138,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "groupes",
+    start: "admin",
     family: "fonction",
     title: "Les groupes",
     pitch: "Les droits passent par les groupes ; un groupe peut avoir son espace partagé.",
@@ -145,6 +156,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "demandes",
+    start: "visiteur",
     family: "fonction",
     title: "Une demande au club",
     pitch: "Un formulaire de contact devient une demande suivie, et la réponse part par e-mail.",
@@ -159,6 +171,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "sous-le-capot",
+    start: "visiteur",
     family: "fonction",
     title: "Sous le capot",
     pitch: "Comment cette démo existe : une image, un paquet de données, une machine jetable.",
@@ -174,6 +187,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "lead-front",
+    start: "admin",
     family: "metier",
     title: "Lead Front",
     pitch: "Le Finder, les formulaires, React Hook Form et useActionState.",
@@ -194,6 +208,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "backend",
+    start: "visiteur",
     family: "metier",
     title: "Backend",
     pitch: "Prisma, le modèle de données, tRPC et les contrats partagés.",
@@ -212,6 +227,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "cto",
+    start: "visiteur",
     family: "metier",
     title: "CTO",
     pitch: "L'architecture d'ensemble, les choix techniques, ce qui permet de grandir.",
@@ -230,6 +246,7 @@ export const DEMO_TOURS: DemoTour[] = [
   },
   {
     key: "rssi",
+    start: "support",
     family: "metier",
     title: "RSSI",
     pitch: "Le stockage, les permissions, le RGPD et les mineurs.",
@@ -247,3 +264,17 @@ export const DEMO_TOURS: DemoTour[] = [
     ],
   },
 ];
+
+/** Le rôle de chaque étape : celui de départ, puis celui de la dernière étape qui a changé de compte. */
+export function stepRoles(tour: DemoTour): DemoRole[] {
+  let role: DemoRole = tour.start;
+  return tour.steps.map((step) => {
+    if (step.as) role = step.as;
+    return role;
+  });
+}
+
+/** Les rôles d'un parcours, dans l'ordre où on les endosse, sans doublon. */
+export function tourRoles(tour: DemoTour): DemoRole[] {
+  return [...new Set(stepRoles(tour))];
+}
