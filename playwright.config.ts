@@ -12,7 +12,8 @@ import { E2E_APP_ENV, E2E_BASE_URL, E2E_PORT } from "./e2e/env.mjs";
  * L'application de test est construite dans apps/web/.next-e2e (next.config.ts, AKFC_E2E=1) et
  * écoute sur le port 3100 : elle ne gêne pas `pnpm dev`, qui garde .next et le port 3000.
  */
-const build = process.env.E2E_NO_BUILD === "1" ? "" : "next build --webpack && ";
+// `pnpm exec` : le binaire next est celui d'apps/web, que le PATH de la racine ne contient pas (la CI).
+const build = process.env.E2E_NO_BUILD === "1" ? "" : "pnpm exec next build --webpack && ";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -32,7 +33,7 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } }],
   webServer: {
-    command: `${build}next start --port ${E2E_PORT}`,
+    command: `${build}pnpm exec next start --port ${E2E_PORT}`,
     cwd: "apps/web",
     url: E2E_BASE_URL,
     env: E2E_APP_ENV,
