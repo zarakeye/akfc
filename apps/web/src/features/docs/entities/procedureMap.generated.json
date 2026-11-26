@@ -38638,6 +38638,79 @@
     "sendTicketNotification"
    ]
   },
+  "switchDemoAccountAction": {
+   "kind": "server action",
+   "file": "apps/web/src/features/demo/switchDemoAccount.action.ts",
+   "line": 16,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "loginService",
+        "packages/backend/src/modules/auth/services/auth.service.ts:24"
+       ],
+       [
+        "createSessionJWT",
+        "packages/backend/src/lib/session/session.server.ts:22"
+       ],
+       [
+        "prisma.session.create",
+        "packages/backend/src/lib/session/session.server.ts:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loginService",
+        "packages/backend/src/modules/auth/services/auth.service.ts:24"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/auth/services/auth.service.ts:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "lastLoginAt"
+     ],
+     "raw": true,
+     "trails": [
+      [
+       [
+        "loginService",
+        "packages/backend/src/modules/auth/services/auth.service.ts:24"
+       ],
+       [
+        "createSessionJWT",
+        "packages/backend/src/lib/session/session.server.ts:22"
+       ],
+       [
+        "prisma.$executeRaw (SQL)",
+        "packages/backend/src/lib/session/session.server.ts:26"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "loadFullCode": {
    "kind": "server action",
    "file": "apps/web/src/features/docs/lib/fullCode.action.ts",

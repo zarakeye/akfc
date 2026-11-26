@@ -147,6 +147,10 @@ services:
       NEXTAUTH_URL: "${AKFC_SITE_URL:-http://localhost:3010}"
       # Une sandbox n'est jamais indexée par un moteur de recherche.
       DEMO_MODE: "1"
+      # Le panneau de la démo : fin de la session (secondes depuis 1970, posée par Killercoda ;
+      # vide en local : pas de compte à rebours) et adresse de Mailpit vue par le navigateur.
+      DEMO_ENDS_AT: "${AKFC_DEMO_ENDS_AT:-}"
+      DEMO_MAIL_URL: "${AKFC_MAIL_URL:-http://localhost:8025}"
       APP_SHORT_NAME: "AKFC"
       APP_FULL_NAME: "AKFC — Sandbox de démonstration"
       APP_SUPPORT_EMAIL: "contact@sandbox.local"
