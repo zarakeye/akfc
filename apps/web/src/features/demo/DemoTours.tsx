@@ -8,6 +8,7 @@ import { BookOpen, Check, LogIn, PlayCircle } from "lucide-react";
 import { DEMO_ACCOUNTS, type DemoAccountKey } from "#features/demo/demoAccounts.ts";
 import { DEMO_TOURS, type DemoTour } from "#features/demo/demoTours.ts";
 import { writeOpen } from "#features/demo/demoPanelOpen.ts";
+import { switchDemoAccountAction } from "#features/demo/switchDemoAccount.action.ts";
 import { getTour } from "#features/tours/tour.registry.ts";
 import { tourStore } from "#features/tours/tour.store.ts";
 
@@ -65,13 +66,29 @@ function TourSteps({
 }): JSX.Element {
   const router = useRouter();
   // Un tuto guidé : le curseur va de cible en cible, la bulle dit quoi faire, le visiteur agit.
-  const guide = (id: string): void => {
+  const guide = async (id: string): Promise<void> => {
     const t = getTour(id);
     if (!t) return;
+    // Le compte qu'il faut pour suivre ce tuto : un tuto d'administration lancé en visiteur
+    // échouerait sur sa première page (le site le renverrait ailleurs).
+    const needs: DemoAccountKey | null =
+      t.audience === "admin" ? (currentKey === "admin" ? null : "admin") : t.audience === "member" && !currentKey ? "membre" : null;
     // Le panneau se replie : il ne doit rien cacher de la page que le tuto fait parcourir.
     writeOpen(false);
     tourStore.start(t.id, { cursor: true });
-    router.push(t.startRoute);
+    if (!needs) {
+      router.push(t.startRoute);
+      return;
+    }
+    const result = await switchDemoAccountAction(needs);
+    if (!result.ok) {
+      tourStore.stop();
+      writeOpen(true);
+      return;
+    }
+    // Nouveau compte : chargement complet de la page de départ (en-tête, menus et droits suivent) ;
+    // le tuto, gardé par l'onglet, reprend dessus.
+    window.location.assign(new URL(t.startRoute, window.location.origin));
   };
   return (
     <div className="mt-2 rounded-md bg-muted px-3 py-2">
@@ -105,7 +122,7 @@ function TourSteps({
                 {step.tour && getTour(step.tour) && (
                   <button
                     type="button"
-                    onClick={() => guide(step.tour as string)}
+                    onClick={() => void guide(step.tour as string)}
                     className="ml-1 inline-flex items-center gap-1 rounded bg-brand px-1.5 text-xs text-brand-foreground hover:bg-brand/90"
                   >
                     <PlayCircle className="h-3 w-3" aria-hidden />
