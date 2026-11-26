@@ -14,6 +14,9 @@ test("avatar : l'image d'attente reste lisible pendant le chargement de la nouve
     await route.continue();
   });
   await page.goto("/profil/edit");
+  // Premier test de la suite en CI : le serveur est encore froid, et un fichier posé avant que
+  // React ait branché le champ n'ouvre rien. On attend que la page ait fini de charger.
+  await page.waitForLoadState("networkidle");
 
   const base64 = await page.evaluate(async () => {
     const canvas = document.createElement("canvas");
