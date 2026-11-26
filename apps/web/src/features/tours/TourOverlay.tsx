@@ -251,8 +251,9 @@ export function TourOverlay({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") tourStore.stop();
-      // Entrée dans le champ d'une étape « input » : valide l'étape (et jamais le formulaire).
-      if (e.key === "Enter" && !explains && findTarget(step.target)?.contains(e.target as Node | null)) {
+      // Tuto guidé : Entrée dans le champ d'une étape « input » valide l'étape (jamais le
+      // formulaire). Hors tuto guidé, Entrée ne fait rien : on passe par « Suivant ».
+      if (cursor && e.key === "Enter" && !explains && findTarget(step.target)?.contains(e.target as Node | null)) {
         const field = e.target;
         if (field instanceof HTMLInputElement && inputOkRef.current) {
           e.preventDefault();
@@ -272,7 +273,7 @@ export function TourOverlay({
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("focusin", onFocus);
     };
-  }, [step.target, explains, index]);
+  }, [step.target, explains, index, cursor]);
 
   // Aucun formulaire ne part pendant une étape qui n'attend ni clic ni page : Entrée dans un champ
   // à remplir enverrait sinon le formulaire (la demande au club, le lien de réinitialisation).
