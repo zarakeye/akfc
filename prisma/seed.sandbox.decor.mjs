@@ -356,3 +356,75 @@ export async function seedLibraryDecor({ prisma, storage, adminId, memberId, pac
 
   console.log("✅ Décor de la médiathèque prêt (droits à l'image, tags, version, page en construction)");
 }
+
+/**
+ * Le dossier d'exercice des parcours de la médiathèque : des noms connus d'avance, pour que les
+ * parcours guidés les retrouvent (« photo-a-ranger.jpg », « photo-a-jeter.jpg »…), quelles que
+ * soient les photos du paquet. Des copies de photos du paquet ; créé une seule fois : ce qu'en
+ * fait le visiteur (une photo rangée dans l'album) reste fait au redémarrage.
+ * @param {{
+ *   prisma: import("@prisma/client").PrismaClient;
+ *   storage: { copy: (from: string, to: string) => Promise<void> };
+ *   appRoot: string;
+ *   adminId: string;
+ *   pack: { photos: { id: string; path: string; fullPath: string }[] };
+ * }} ctx
+ */
+export async function seedMediathequeDecor({ prisma, storage, appRoot, adminId, pack }) {
+  const library = pack.photos.filter((p) => !/^(personal-space|collaborative-group-spaces|avatars)\//.test(p.path));
+  if (library.length < 2) return;
+  const root = `${appRoot}/demo-mediatheque`;
+  if (await prisma.folder.findUnique({ where: { appRoot_fullPath: { appRoot, fullPath: root } }, select: { id: true } })) return;
+  const album = `${root}/album`;
+  for (const [path, displayName] of [[root, "Démo de la médiathèque"], [album, "Album"]]) {
+    await prisma.folder.create({ data: { appRoot, fullPath: path, status: "published" } });
+    await prisma.folderLabel.upsert({ where: { path }, update: { displayName }, create: { path, displayName } });
+  }
+  const pick = (/** @type {number} */ k) => library[k % library.length];
+  /** @type {[string, number][]} */
+  const files = [
+    [`${root}/photo-a-ranger.jpg`, 4],
+    [`${root}/photo-a-jeter.jpg`, 5],
+    [`${album}/photo-avec-versions.jpg`, 6],
+    [`${album}/photo-souvenir.jpg`, 7],
+  ];
+  /** @type {Map<string, string>} */
+  const ids = new Map();
+  for (const [fullPath, k] of files) {
+    const source = await prisma.mediaAsset.findUniqueOrThrow({
+      where: { id: pick(k).id },
+      select: { fullPath: true, mimeType: true, format: true, bytes: true, width: true, height: true },
+    });
+    await storage.copy(source.fullPath, fullPath);
+    const asset = await prisma.mediaAsset.create({
+      data: {
+        fullPath, appRoot, status: "published", mimeType: source.mimeType, format: source.format,
+        bytes: source.bytes, width: source.width, height: source.height,
+        originalFileName: fullPath.split("/").pop() ?? "photo.jpg", uploaderUserId: adminId,
+      },
+      select: { id: true },
+    });
+    ids.set(fullPath, asset.id);
+  }
+
+  // Une ancienne version de « photo-avec-versions.jpg » : une autre photo, déposée il y a un mois.
+  const current = ids.get(`${album}/photo-avec-versions.jpg`);
+  const older = await prisma.mediaAsset.findUniqueOrThrow({
+    where: { id: pick(8).id },
+    select: { fullPath: true, bytes: true, width: true, height: true },
+  });
+  if (current) {
+    const version = await prisma.fileVersion.create({
+      data: {
+        mediaAssetId: current, storageKey: `_versions/${current}/pending`, originalFileName: "photo-avec-versions.jpg",
+        mimeType: "image/jpeg", bytes: older.bytes, width: older.width, height: older.height, authorId: adminId,
+        uploadedAt: new Date(Date.now() - 30 * DAY), confirmed: true,
+      },
+      select: { id: true },
+    });
+    const storageKey = `_versions/${current}/${version.id}`;
+    await storage.copy(older.fullPath, storageKey);
+    await prisma.fileVersion.update({ where: { id: version.id }, data: { storageKey } });
+  }
+  console.log("✅ Dossier d'exercice de la médiathèque prêt (« Démo de la médiathèque »)");
+}

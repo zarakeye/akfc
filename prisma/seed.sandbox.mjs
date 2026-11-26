@@ -5,7 +5,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-import { seedLibraryDecor, seedTicketsDecor } from "./seed.sandbox.decor.mjs";
+import { seedLibraryDecor, seedMediathequeDecor, seedTicketsDecor } from "./seed.sandbox.decor.mjs";
 import { seedDemoPack, storageClient } from "./seed.sandbox.pack.mjs";
 
 const prisma = new PrismaClient();
@@ -145,6 +145,8 @@ async function main() {
     await seedTicketsDecor({ prisma, hash, domain: DOMAIN, adminId, adminGroupId, memberId });
     // Droits à l'image, tags, une ancienne version, une page en construction (seed.sandbox.decor.mjs).
     if (pack) await seedLibraryDecor({ prisma, storage: storageClient(), adminId, memberId, pack });
+    // Le dossier d'exercice des parcours de la médiathèque, aux noms connus d'avance.
+    if (pack) await seedMediathequeDecor({ prisma, storage: storageClient(), appRoot: process.env.NEXT_PUBLIC_APP_SHORT_NAME || "AKFC", adminId, pack });
   }
 
   console.log("");

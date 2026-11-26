@@ -56,7 +56,7 @@ export default function VersionsPanel({ file }: { file: FinderNode }): JSX.Eleme
         Versions ({data.versions.length + 1})
       </summary>
 
-      <ol className="mt-2 space-y-2">
+      <ol className="mt-2 space-y-2" data-tour="finder.versions.list">
         <li className="rounded border border-success/40 bg-success-muted/60 px-2 py-1.5">
           <div className="font-medium text-success">Version actuelle</div>
           <div className="text-muted-foreground">

@@ -130,6 +130,7 @@ export default function ContextMenu({
       ref={ref}
       role="menu"
       data-finder-overlay
+      data-tour="finder.menu"
       style={{
         position: 'fixed',
         top: adjustedPos.y,

@@ -87,11 +87,19 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "La médiathèque",
     pitch: "Un explorateur de fichiers dans le navigateur, avec corbeille et versions.",
     steps: [
-      { text: "Se connecter en administrateur", as: "admin" },
-      { text: "Parcourir la bibliothèque, changer de vue, trier, chercher", href: "/dashboard/library" },
-      { text: "Glisser une photo d'un dossier à un autre" },
-      { text: "Ouvrir l'historique des versions d'une photo (la première du carousel en a une)" },
-      { text: "Jeter une photo, la retrouver dans la corbeille, la restaurer" },
+      { text: "Se connecter en administrateur, par le formulaire", as: "admin", tour: "demo.connexion.admin" },
+      {
+        text: "Parcourir la bibliothèque : ouvrir un dossier, changer d'affichage, chercher",
+        href: "/dashboard/library",
+        tour: "demo.mediatheque.parcourir",
+      },
+      { text: "Ranger une photo dans un autre dossier", href: "/dashboard/library", tour: "demo.mediatheque.ranger" },
+      { text: "Ouvrir l'historique des versions d'une photo", href: "/dashboard/library", tour: "demo.mediatheque.versions" },
+      {
+        text: "Jeter une photo, la retrouver dans la corbeille, la restaurer",
+        href: "/dashboard/library",
+        tour: "demo.mediatheque.corbeille",
+      },
       { text: "Ajouter des photos (une photo d'iPhone en HEIC passe aussi)", href: "/dashboard/library/add" },
     ],
     docs: [

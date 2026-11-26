@@ -61,6 +61,7 @@ export function MoveDialog({
     >
       <div
         className="flex max-h-[70vh] w-full max-w-lg flex-col rounded-lg bg-card shadow-xl"
+        data-tour="finder.move"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b px-4 py-3">
@@ -140,6 +141,7 @@ export function MoveDialog({
               type="button"
               disabled={busy || isDisabled}
               onClick={() => void confirm()}
+              data-tour="finder.move.confirm"
               className="rounded bg-brand px-3 py-1.5 text-xs text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
             >
               {busy ? 'Déplacement…' : 'Déplacer ici'}

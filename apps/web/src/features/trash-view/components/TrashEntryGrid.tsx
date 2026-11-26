@@ -59,6 +59,7 @@ export default function TrashEntryGrid({
 
   return (
     <div
+      data-tour-row=""
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       onContextMenu={

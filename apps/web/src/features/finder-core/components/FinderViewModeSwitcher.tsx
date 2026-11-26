@@ -38,6 +38,7 @@ export default function FinderViewModeSwitcher(): JSX.Element {
           <button
             key={mode}
             type="button"
+            data-tour-row=""
             onClick={() => setViewMode(mode)}
             className={`
               p-1.5 rounded
@@ -52,6 +53,8 @@ export default function FinderViewModeSwitcher(): JSX.Element {
             aria-pressed={active}
           >
             <Icon className="h-4 w-4" />
+            {/* Le nom, pour un tuto guidé qui vise « Tableau » (`targetText`). */}
+            <span className="sr-only">{label}</span>
           </button>
         );
       })}

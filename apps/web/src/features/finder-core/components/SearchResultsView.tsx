@@ -151,6 +151,7 @@ export default function SearchResultsView(): JSX.Element {
             <button
               key={result.id}
               type="button"
+              data-tour-row=""
               onClick={() => handleClick(result)}
               className="
                 w-full text-left px-4 py-2 hover:bg-info-muted transition-colors

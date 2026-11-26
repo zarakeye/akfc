@@ -257,6 +257,8 @@ export default function GridItem({
         draggable={!isStatus && !readOnly}
         {...dropHandlers}
         data-finder-drop-path={isFolder ? node.path : undefined}
+        // Un élément que les tutos guidés retrouvent à son nom (`targetText`).
+        data-tour-row=""
         onClick={(e) => {
           // Avale le click parasite qui suit immédiatement un longpress
           // (cf. doc dans useLongPress.ts). Sans ce skip, le toggle dans

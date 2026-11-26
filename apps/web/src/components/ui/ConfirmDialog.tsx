@@ -140,6 +140,8 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={!canConfirm}
+            // Un tuto guidé le retrouve à son libellé (`targetText`) dans un bloc qui porte son `data-tour`.
+            data-tour-row=""
             className={`px-4 py-2 text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               destructive
                 ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'

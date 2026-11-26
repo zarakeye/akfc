@@ -78,6 +78,8 @@ Une cible n’est retenue que si elle a une position à l’écran. Un même nom
 
 Un élément masqué par `display: none` (la classe `hidden`, ou `xl:hidden` sur grand écran) n’a aucun rectangle : `getClientRects()` est vide. L’ancienne version prenait le premier élément du document, la barre masquée sur un téléphone, et perçait le voile sur un rectangle de taille nulle, en haut à gauche.
 
+Le contenu d’un `<details>` fermé, lui, garde ses rectangles : il n’est que masqué. La fonction `shown`, juste au-dessus, le compte pour invisible (son `<summary>` excepté). Sans elle, l’historique encore replié d’une photo passait pour affiché, et le tuto des versions sautait l’étape qui l’ouvre.
+
 ### Un voile percé, et des clics bloqués
 
 <CodeExample
@@ -107,14 +109,14 @@ La bulle se pose **sous** la cible s’il y reste au moins 200 pixels (`BUBBLE_R
   filename="TourOverlay.tsx"
   snippetStart="// Étape « click » : le clic sur la cible passe à l'étape suivante (après que l'élément l'a traité)."
   snippetEnd="(fin du bloc)"
-  snippetHighlight="7,10"
+  snippetHighlight="3,9,12,13"
   snippetTitle="Un clic sur la cible"
   fullFileTitle="Voir le fichier complet"
 />
 
 Le clic est écouté sur tout le document, en **phase de capture** (`true`) : avant que l’élément cliqué ne le reçoive, et quoi qu’il en fasse — même un composant qui arrête la propagation ne le cache pas au tuto. L’étape passe ensuite, au tour suivant de la boucle d’événements (`setTimeout(…, 0)` : le navigateur traite ses tâches une à une, et celle-ci passera après le clic en cours) : l’élément a d’abord traité son clic (ouvert le formulaire, suivi le lien).
 
-<DocsTable columnsJson='["Étape", "Ce qui la fait passer", "Qui le constate"]' rowsJson='[["click", "Un clic sur la cible.", "L’overlay, en capture sur le document."], ["input", "« Suivant », actif dès que validate accepte la valeur.", "L’overlay, qui relit la valeur à chaque image."], ["route", "L’arrivée sur une page qui correspond.", "Le fournisseur, qui survit au changement de page."], ["next", "« Suivant » (ou « Terminer » à la dernière étape).", "La bulle."]]' />
+<DocsTable columnsJson='["Étape", "Ce qui la fait passer", "Qui le constate"]' rowsJson='[["click", "Un clic sur la cible ; avec button: \"right\", un clic droit (l’ouverture d’un menu contextuel, l’évènement contextmenu).", "L’overlay, en capture sur le document."], ["input", "« Suivant », actif dès que validate accepte la valeur.", "L’overlay, qui relit la valeur à chaque image."], ["route", "L’arrivée sur une page qui correspond.", "Le fournisseur, qui survit au changement de page."], ["next", "« Suivant » (ou « Terminer » à la dernière étape).", "La bulle."]]' />
 
 ### Au clavier
 

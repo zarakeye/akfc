@@ -263,6 +263,7 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
             ) : (
               <button
                 type="button"
+                data-tour-row=""
                 onClick={() => setPath(segment.path)}
                 onDragEnter={handlers.handleDragEnter}
                 onDragOver={handlers.handleDragOver}

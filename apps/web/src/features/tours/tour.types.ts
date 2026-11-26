@@ -12,8 +12,8 @@ export type TourAudience = "public" | "member" | "admin";
 
 /** Ce qui fait passer une étape à la suivante. */
 export type TourAdvance =
-  /** Un clic sur la cible (bouton, lien…). */
-  | { kind: "click" }
+  /** Un clic sur la cible (bouton, lien…) ; `button: "right"` : un clic droit (un menu contextuel). */
+  | { kind: "click"; button?: "right" }
   /** Une saisie dans la cible (input, textarea) ; « Suivant » s'active quand `validate` l'accepte. */
   | { kind: "input"; validate?: (value: string) => boolean }
   /** L'arrivée sur une page : chaîne = chemin exact, RegExp = motif (`/^\/dashboard\/posts\/\d+$/`). */
@@ -56,8 +56,12 @@ export interface TourStep {
   skipWhen?: TourSkip | TourSkip[];
 }
 
-/** Un élément qui prouve qu'une étape est faite (voir `skipWhen`) ; plusieurs : l'un d'eux suffit. */
-export type TourSkip = { target: string; text?: string };
+/**
+ * Un élément qui prouve qu'une étape est faite (voir `skipWhen`) ; plusieurs : l'un d'eux suffit.
+ * `without` : le texte qui n'y est plus (la photo rangée a quitté le dossier, dont la liste est
+ * chargée puisque `text` y est).
+ */
+export type TourSkip = { target: string; text?: string; without?: string };
 
 export interface Tour {
   /** Identifiant stable, partagé avec la fiche de documentation (ex. « admin.posts.create »). */

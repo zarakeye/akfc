@@ -30,6 +30,12 @@ import { publicMotDePasseOublie } from "./definitions/public.mot-de-passe-oublie
 import { demoConnexionAdmin, demoConnexionMembre, demoConnexionSupport } from "./definitions/demo.connexion";
 import { demoDemandesEcrire, demoDemandesSupport, demoDemandesTraiter } from "./definitions/demo.demandes";
 import { demoGroupesCreer, demoGroupesSupprimer } from "./definitions/demo.groupes";
+import {
+  demoMediathequeCorbeille,
+  demoMediathequeParcourir,
+  demoMediathequeRanger,
+  demoMediathequeVersions,
+} from "./definitions/demo.mediatheque";
 
 /**
  * Registre de TOUS les tutos. Ajouter un tuto = créer son fichier dans `definitions/` et
@@ -73,6 +79,10 @@ export const TOURS: Tour[] = [
   demoDemandesSupport,
   demoGroupesCreer,
   demoGroupesSupprimer,
+  demoMediathequeParcourir,
+  demoMediathequeRanger,
+  demoMediathequeVersions,
+  demoMediathequeCorbeille,
 ];
 
 export function getTour(id: string): Tour | undefined {

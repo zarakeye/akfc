@@ -32,6 +32,7 @@ export default function TrashEntryCompactRow({
 
   return (
     <div
+      data-tour-row=""
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       onContextMenu={

@@ -117,6 +117,7 @@ export default function FinderSearchBar({
         onChange={(e) => setSearchQuery(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Rechercher dans ce dossier…"
+        data-tour="finder.search"
         className="
           flex-1 min-w-0 bg-transparent border-none outline-none text-xs
           placeholder:text-muted-foreground
@@ -132,6 +133,7 @@ export default function FinderSearchBar({
           onClick={clearSearch}
           className="shrink-0 p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
           title="Effacer la recherche"
+          data-tour="finder.search.clear"
           aria-label="Effacer la recherche"
         >
           <X className="w-3 h-3" aria-hidden />

@@ -31,6 +31,16 @@ const sameRect = (a: Rect | null, b: Rect | null) =>
   (!!a && !!b && a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height);
 
 /**
+ * L'élément est affiché. Le contenu d'un <details> fermé garde des dimensions pour le navigateur
+ * (il n'est que masqué) : il compte pour invisible, son <summary> excepté.
+ */
+function shown(el: HTMLElement): boolean {
+  if (el.getClientRects().length === 0) return false;
+  const closed = el.closest("details:not([open])");
+  return !closed || !!el.closest("summary")?.parentElement?.isSameNode(closed);
+}
+
+/**
  * La cible d'une étape : le premier élément VISIBLE qui porte ce nom. Un même nom peut désigner
  * deux éléments dont un seul s'affiche selon la largeur de l'écran (la barre du header sur un
  * grand écran, le bouton du menu sur un téléphone) ; un élément masqué n'a pas de position.
@@ -38,12 +48,12 @@ const sameRect = (a: Rect | null, b: Rect | null) =>
 function findTarget(name: string | undefined, text?: string, pick?: string): HTMLElement | null {
   if (!name) return null;
   for (const el of document.querySelectorAll<HTMLElement>(`[data-tour="${CSS.escape(name)}"]`)) {
-    if (el.getClientRects().length === 0) continue;
+    if (!shown(el)) continue;
     if (!text) return el;
     // Une ligne d'une table ou d'une liste, reconnue à son texte (`targetText`) ; dedans, au
     // besoin, un élément précis (`targetPick`, un sélecteur CSS : son bouton « Ajouter »…).
-    for (const row of el.querySelectorAll<HTMLElement>("tr, li, label, [role='row']")) {
-      if (row.getClientRects().length === 0 || !row.textContent?.includes(text)) continue;
+    for (const row of el.querySelectorAll<HTMLElement>("tr, li, label, [role='row'], [role='menuitem'], [data-tour-row]")) {
+      if (!shown(row) || !row.textContent?.includes(text)) continue;
       if (!pick) return row;
       const picked = row.querySelector<HTMLElement>(pick);
       if (picked) return picked;
@@ -56,7 +66,10 @@ function findTarget(name: string | undefined, text?: string, pick?: string): HTM
 function isDone(when: TourSkip | TourSkip[]): boolean {
   return (Array.isArray(when) ? when : [when]).some((w) =>
     [...document.querySelectorAll<HTMLElement>(`[data-tour="${CSS.escape(w.target)}"]`)].some(
-      (el) => el.getClientRects().length > 0 && (!w.text || !!el.textContent?.includes(w.text)),
+      (el) =>
+        shown(el) &&
+        (!w.text || !!el.textContent?.includes(w.text)) &&
+        (!w.without || !el.textContent?.includes(w.without)),
     ),
   );
 }
@@ -119,7 +132,9 @@ function guidedGeometry(el: HTMLElement, kind: TourStep["advance"]["kind"], isRo
     const cell = el.querySelector<HTMLElement>("td, th");
     return { rect: el.getBoundingClientRect(), spot: centerOf(cell ? contentBox(cell) : el.getBoundingClientRect()) };
   }
-  if (kind !== "click") {
+  // Un élément que la page marque comme cliquable en entier (une vignette de fichier, un bouton
+  // d'icône) : tout l'élément, le curseur en son centre.
+  if (kind !== "click" || (isRow && el.hasAttribute("data-tour-row"))) {
     const r = el.getBoundingClientRect();
     return { rect: r, spot: centerOf(r) };
   }
@@ -333,6 +348,8 @@ export function TourOverlay({
   }, [step.target]);
 
   // Étape « click » : le clic sur la cible passe à l'étape suivante (après que l'élément l'a traité).
+  // Un clic droit attendu : c'est l'ouverture du menu contextuel qui compte.
+  const right = advance.kind === "click" && advance.button === "right";
   useEffect(() => {
     if (advance.kind !== "click") return;
     const onClick = (e: MouseEvent) => {
@@ -341,9 +358,10 @@ export function TourOverlay({
         window.setTimeout(() => tourStore.next(index), 0);
       }
     };
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
-  }, [advance.kind, step.target, step.targetText, step.targetPick, index]);
+    const type = right ? "contextmenu" : "click";
+    document.addEventListener(type, onClick, true);
+    return () => document.removeEventListener(type, onClick, true);
+  }, [advance.kind, right, step.target, step.targetText, step.targetPick, index]);
 
   // Clavier : Échap quitte ; le focus ne sort ni de la cible ni de la bulle. Pour une étape
   // d'explication, il n'entre pas non plus dans la cible : Tab puis Entrée sur le bouton montré
@@ -530,7 +548,11 @@ export function TourOverlay({
               : step.body}
         </p>
         {cursor && !lost && arrived && advance.kind === "click" && (
-          <p className="mt-3 rounded-md bg-brand/10 px-3 py-2 text-sm font-medium">👉 Cliquez là où s&apos;est arrêté le curseur.</p>
+          <p className="mt-3 rounded-md bg-brand/10 px-3 py-2 text-sm font-medium">
+            {right
+              ? "👉 Faites un clic droit là où s'est arrêté le curseur."
+              : "👉 Cliquez là où s'est arrêté le curseur."}
+          </p>
         )}
         {cursor && !lost && advance.kind === "input" && step.expect !== undefined && (
           <div className="mt-3 rounded-md bg-brand/10 px-3 py-2 text-sm">
@@ -580,7 +602,9 @@ export function TourOverlay({
           )}
           {(advance.kind === "click" || advance.kind === "route") && !lost && (
             <span className="text-xs text-muted-foreground">
-              {advance.kind === "click" || step.target
+              {right
+                ? "Clic droit sur l'élément en surbrillance"
+                : advance.kind === "click" || step.target
                 ? "Cliquez sur l'élément en surbrillance"
                 : "En attente de la page suivante…"}
             </span>

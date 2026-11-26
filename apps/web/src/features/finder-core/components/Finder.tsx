@@ -755,6 +755,8 @@ export default function Finder({
             count > 0 &&
             (targets[0].path === `${APP_ROOT}/bin` || targets[0].path.startsWith(`${APP_ROOT}/bin/`));
           return (
+            // Le bloc que vise un tuto guidé ; il y retrouve le bouton à son libellé.
+            <div data-tour="finder.confirm-delete">
             <ConfirmDialog
               open={count > 0}
               title={targetInBin ? "Supprimer définitivement" : "Envoyer à la corbeille"}
@@ -775,12 +777,15 @@ export default function Finder({
               }}
               onCancel={clearPendingDelete}
             />
+            </div>
           );
         })()}
 
         <button
           type="button"
           onClick={togglePreviewPanel}
+          // Un tuto guidé ne le montre que pour OUVRIR l'aperçu (fermé, il n'a pas d'ancre).
+          data-tour={(isWide ? isPreviewCollapsed : !previewSheetOpen) ? "finder.preview.open" : undefined}
           className="
             shrink-0 rounded p-1 text-muted-foreground
             hover:text-foreground hover:bg-muted
@@ -1178,6 +1183,7 @@ export default function Finder({
                 type="button"
                 onClick={() => setPreviewSheetOpen(false)}
                 aria-label="Fermer l'aperçu"
+                data-tour="finder.preview.close"
                 className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <X className="h-5 w-5" />

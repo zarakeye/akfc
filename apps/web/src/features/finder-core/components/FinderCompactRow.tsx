@@ -118,6 +118,7 @@ export default function FinderCompactRow({
       onDragStart={onDragStart}
       {...dropHandlers}
       data-finder-drop-path={isFolder ? node.path : undefined}
+      data-tour-row=""
       onContextMenu={
         isStatus || readOnly
           ? undefined
