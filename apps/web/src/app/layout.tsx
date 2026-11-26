@@ -11,6 +11,8 @@ import { prisma } from "@akfc/backend/prisma.ts"
 import { AppProviders } from "#app/providers.tsx"
 import { SessionLoader } from "#features/auth/SessionLoader.tsx"
 import { getSessionFromRequest } from "@akfc/backend/modules/auth/getSessionFromRequest.ts"
+import { DemoPanel } from "#features/demo/DemoPanel.tsx"
+import { getDemoInfo } from "#features/demo/demoInfo.ts"
 
 export const dynamic = 'force-dynamic';
 
@@ -120,6 +122,9 @@ export default async function RootLayout({
   // SessionLoader / useCurrentUser). Base indisponible → visiteur anonyme, pas d'erreur.
   const initialSession = await getSessionFromRequest().catch(() => null);
 
+  // La démo (DEMO_MODE=1) : son panneau sur toutes les pages. Hors démo, rien.
+  const demoInfo = getDemoInfo();
+
   const styleKey = siteStyle
     ? `akfc-site-style-${siteStyle.updatedAt.getTime()}`
     : "akfc-site-style";
@@ -155,6 +160,7 @@ export default async function RootLayout({
         <AppProviders>
           <SessionLoader initialSession={initialSession}>{children}</SessionLoader>
         </AppProviders>
+        {demoInfo && <DemoPanel info={demoInfo} currentEmail={initialSession?.user?.email ?? null} />}
       </body>
     </html>
   )

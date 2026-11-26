@@ -46012,8 +46012,40 @@
   "layout /": {
    "kind": "layout",
    "file": "apps/web/src/app/layout.tsx",
-   "line": 91,
+   "line": 93,
    "effects": [
+    {
+     "model": "Session",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "<DemoPanel>",
+        "apps/web/src/features/demo/DemoPanel.tsx:56"
+       ],
+       [
+        "switchDemoAccountAction",
+        "apps/web/src/features/demo/switchDemoAccount.action.ts:16"
+       ],
+       [
+        "loginService",
+        "packages/backend/src/modules/auth/services/auth.service.ts:24"
+       ],
+       [
+        "createSessionJWT",
+        "packages/backend/src/lib/session/session.server.ts:22"
+       ],
+       [
+        "prisma.session.create",
+        "packages/backend/src/lib/session/session.server.ts:30"
+       ]
+      ]
+     ]
+    },
     {
      "model": "Session",
      "op": "delete",
@@ -46056,7 +46088,64 @@
       [
        [
         "prisma.siteStyle .findUnique",
-        "apps/web/src/app/layout.tsx:98"
+        "apps/web/src/app/layout.tsx:100"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<DemoPanel>",
+        "apps/web/src/features/demo/DemoPanel.tsx:56"
+       ],
+       [
+        "switchDemoAccountAction",
+        "apps/web/src/features/demo/switchDemoAccount.action.ts:16"
+       ],
+       [
+        "loginService",
+        "packages/backend/src/modules/auth/services/auth.service.ts:24"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/auth/services/auth.service.ts:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "lastLoginAt"
+     ],
+     "raw": true,
+     "trails": [
+      [
+       [
+        "<DemoPanel>",
+        "apps/web/src/features/demo/DemoPanel.tsx:56"
+       ],
+       [
+        "switchDemoAccountAction",
+        "apps/web/src/features/demo/switchDemoAccount.action.ts:16"
+       ],
+       [
+        "loginService",
+        "packages/backend/src/modules/auth/services/auth.service.ts:24"
+       ],
+       [
+        "createSessionJWT",
+        "packages/backend/src/lib/session/session.server.ts:22"
+       ],
+       [
+        "prisma.$executeRaw (SQL)",
+        "packages/backend/src/lib/session/session.server.ts:26"
        ]
       ]
      ]
