@@ -114,7 +114,9 @@ export async function seedDemoPack({ prisma, adminId, adminGroupId, hash }) {
   }
   try {
     const manifest = JSON.parse(readFileSync(path.join(dir, "manifest.json"), "utf8"));
-    if (manifest.version !== 3) throw new Error(`paquet de démo : version ${manifest.version}, 3 attendue`);
+    if (manifest.version !== 3 && manifest.version !== 4) {
+      throw new Error(`paquet de démo : version ${manifest.version}, 3 ou 4 attendue`);
+    }
     const storage = storageClient();
 
     // 1. Les catégories et les disciplines, avec les segments de dossier du paquet.
@@ -167,33 +169,78 @@ export async function seedDemoPack({ prisma, adminId, adminGroupId, hash }) {
     }
     const instructorIds = manifest.persons.filter((p) => p.instructor).map((p) => persons.get(p.key).id);
 
+    // Les familles (« Kung-fu wushu ») et les origines, sous lesquelles le site range les disciplines.
+    /** @type {Map<string, number>} */
+    const familyIds = new Map();
+    for (const f of manifest.families ?? []) {
+      const found =
+        (await prisma.disciplineFamily.findUnique({ where: { slug: f.slug } })) ??
+        (await prisma.disciplineFamily.findUnique({ where: { name: f.name } }));
+      const row = found
+        ? await prisma.disciplineFamily.update({ where: { id: found.id }, data: { sortOrder: f.sortOrder } })
+        : await prisma.disciplineFamily.create({ data: f });
+      familyIds.set(f.slug, row.id);
+    }
+    /** @type {Map<string, number>} */
+    const originIds = new Map();
+    for (const o of manifest.origins ?? []) {
+      const found =
+        (await prisma.origin.findUnique({ where: { slug: o.slug } })) ??
+        (await prisma.origin.findUnique({ where: { name: o.name } }));
+      const row = found ?? (await prisma.origin.create({ data: o }));
+      originIds.set(o.slug, row.id);
+    }
+
+    // Les disciplines : leur place (famille, origine), leur instructeur, leur publication. Leur
+    // description et leur résumé, qui montrent des photos, viennent après les photos (étape 7).
+    // Un paquet de version 3 n'a ni instructeur ni publication : on les répartit, on publie.
     const disciplineIds = new Map();
+    /** @type {{ id: number; d: any }[]} */
+    const disciplineRows = [];
     let i = 0;
     for (const d of manifest.disciplines) {
       const categoryId = categoryIds.get(d.category);
       if (!categoryId) continue;
-      const instructorId = instructorIds.length ? instructorIds[i++ % instructorIds.length] : adminId;
+      const instructorId =
+        (d.instructor ? persons.get(d.instructor)?.id : undefined) ??
+        (instructorIds.length ? instructorIds[i++ % instructorIds.length] : adminId);
       const found =
+        (d.slug ? await prisma.discipline.findUnique({ where: { slug: d.slug } }) : null) ??
         (await prisma.discipline.findUnique({
           where: { categoryId_storageSegment: { categoryId, storageSegment: d.storageSegment } },
-        })) ?? (await prisma.discipline.findUnique({ where: { categoryId_name: { categoryId, name: d.name } } }));
+        })) ??
+        (await prisma.discipline.findUnique({ where: { categoryId_name: { categoryId, name: d.name } } }));
+      const published = d.published ?? true;
+      const data = {
+        name: d.name,
+        type: d.type,
+        categoryId,
+        instructorId,
+        storageSegment: d.storageSegment,
+        familyId: d.family ? (familyIds.get(d.family) ?? null) : null,
+        originId: d.origin ? (originIds.get(d.origin) ?? null) : null,
+        school: d.school ?? null,
+        classification: d.classification ?? null,
+      };
       let row;
       if (found) {
         row = await prisma.discipline.update({
           where: { id: found.id },
-          data: { instructorId, storageSegment: found.storageSegment ?? d.storageSegment },
-        });
-      } else {
-        let s = slug(d.name) || d.storageSegment;
-        for (let k = 2; await prisma.discipline.findUnique({ where: { slug: s } }); k++) s = `${slug(d.name)}-${k}`;
-        row = await prisma.discipline.create({
           data: {
-            name: d.name, type: d.type, slug: s, categoryId, instructorId,
-            storageSegment: d.storageSegment, publicationDate: new Date(),
+            ...data,
+            ...(d.slug ? { slug: d.slug } : {}),
+            publicationDate: published ? (found.publicationDate ?? new Date()) : null,
           },
         });
+      } else {
+        let s = d.slug || slug(d.name) || d.storageSegment;
+        for (let k = 2; await prisma.discipline.findUnique({ where: { slug: s } }); k++) s = `${slug(d.name)}-${k}`;
+        row = await prisma.discipline.create({
+          data: { ...data, slug: s, publicationDate: published ? new Date() : null },
+        });
       }
-      disciplineIds.set(`${d.category}/${row.storageSegment ?? d.storageSegment}`, row.id);
+      disciplineIds.set(`${d.category}/${d.storageSegment}`, row.id);
+      disciplineRows.push({ id: row.id, d });
     }
 
     // 3. Les groupes collaboratifs, avec leur espace.
@@ -321,9 +368,72 @@ export async function seedDemoPack({ prisma, adminId, adminGroupId, hash }) {
       }
     }
 
+    /** Les médias cités par un contenu de page : ses `"mediaId"`. */
+    const mediaIdsOf = (/** @type {unknown} */ content) =>
+      new Set(JSON.stringify(content).match(/"mediaId":"([^"]+)"/g)?.map((m) => m.slice(11, -1)) ?? []);
+
+    // 7. Les descriptions et les résumés des disciplines, maintenant que les photos ont un id.
+    for (const { id, d } of disciplineRows) {
+      if (!d.description && !d.summary) continue;
+      const description = resolve(d.description ?? { version: 1, blocks: [] });
+      const summary = resolve(d.summary ?? { version: 1, blocks: [] });
+      const summaryMediaId = d.summaryMedia ? (mediaIds.get(d.summaryMedia.slice("media:".length)) ?? null) : null;
+      await prisma.discipline.update({ where: { id }, data: { description, summary, summaryMediaId } });
+      const used = new Set([...mediaIdsOf(description), ...mediaIdsOf(summary)]);
+      if (summaryMediaId) used.add(summaryMediaId);
+      for (const mediaAssetId of used) {
+        await prisma.pageMediaReference.upsert({
+          where: { mediaAssetId_pageType_pageId: { mediaAssetId, pageType: "DISCIPLINE", pageId: String(id) } },
+          update: {},
+          create: { mediaAssetId, pageType: "DISCIPLINE", pageId: String(id) },
+        });
+      }
+    }
+
+    // 8. Les galeries (le carousel d'accueil compris), leurs photos dans l'ordre du paquet.
+    for (const g of manifest.galleries ?? []) {
+      const data = {
+        title: g.title,
+        visibility: g.visibility,
+        sortOrder: g.sortOrder,
+        date: g.date ? new Date(g.date) : null,
+        disciplineId: g.discipline ? (disciplineIds.get(`${g.discipline.category}/${g.discipline.storageSegment}`) ?? null) : null,
+        categoryId: g.category ? (categoryIds.get(g.category) ?? null) : null,
+        originId: g.origin ? (originIds.get(g.origin) ?? null) : null,
+      };
+      const gallery = await prisma.gallery.upsert({
+        where: { slug: g.slug },
+        update: data,
+        create: { slug: g.slug, ...data },
+        select: { id: true },
+      });
+      const items = g.items.map((/** @type {string} */ m) => mediaIds.get(m.slice("media:".length))).filter(Boolean);
+      await prisma.galleryItem.deleteMany({ where: { galleryId: gallery.id } });
+      await prisma.galleryItem.createMany({
+        data: items.map((mediaAssetId, sortOrder) => ({ galleryId: gallery.id, mediaAssetId, sortOrder })),
+        skipDuplicates: true,
+      });
+    }
+
+    // 9. Les partenaires du pied de page, logo compris, s'il n'y en a encore aucun (le site les
+    // créerait sans logo au démarrage).
+    if ((manifest.partners ?? []).length && (await prisma.sitePartner.count()) === 0) {
+      for (const p of manifest.partners) {
+        await prisma.sitePartner.create({
+          data: {
+            ...p,
+            logoData: p.logoData ? Buffer.from(p.logoData, "base64") : null,
+            logoUpdatedAt: p.logoData ? new Date() : null,
+          },
+        });
+      }
+    }
+
     console.log(
       `✅ Paquet de démo : ${manifest.photos.length} photos, ${manifest.avatars.length} avatars, ` +
-        `${manifest.bios.length} bios, ${persons.size} personnes, ${groups.size} groupes`,
+        `${manifest.bios.length} bios, ${persons.size} personnes, ${groups.size} groupes, ` +
+        `${disciplineRows.length} disciplines, ${(manifest.galleries ?? []).length} galeries, ` +
+        `${(manifest.partners ?? []).length} partenaires`,
     );
     for (const p of persons.values()) {
       if (instructorIds.includes(p.id)) console.log(`   Instructeur : ${p.firstName} ${p.lastName}`);

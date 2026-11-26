@@ -110,6 +110,11 @@ async function main() {
 
   console.log("✅ Catégorie « Cours » prête");
 
+  // Dans la sandbox, le paquet de démo apporte les disciplines du club (avec leurs familles, leurs
+  // descriptions, leurs galeries) ; la liste ci-dessous ne sert que sans paquet.
+  // Photos, avatars et bios du paquet, sur des personnes fictives (seed.sandbox.pack.mjs).
+  const pack = IN_SANDBOX ? await seedDemoPack({ prisma, adminId, adminGroupId, hash }) : null;
+
   // Disciplines (les « cours »). Le NOM porte accents/espaces ; le dossier
   // physique est slugifié à l'upload par le code → `courses/<slug>`. Le `slug`
   // sert aux URLs publiques. Instructeur = l'admin (champ requis).
@@ -119,7 +124,7 @@ async function main() {
     { name: "Tchoy Lee Fut", slug: "tchoy-lee-fut" },
     { name: "Taïchi Chuan", slug: "taichi-chuan" },
   ];
-  for (const d of DISCIPLINES) {
+  for (const d of pack ? [] : DISCIPLINES) {
     await prisma.discipline.upsert({
       where: { categoryId_name: { categoryId: coursCategory.id, name: d.name } },
       update: { slug: d.slug },
@@ -136,8 +141,6 @@ async function main() {
   console.log("✅ Disciplines prêtes");
 
   if (IN_SANDBOX) {
-    // Photos, avatars et bios du paquet de démo, sur des personnes fictives (seed.sandbox.pack.mjs).
-    const pack = await seedDemoPack({ prisma, adminId, adminGroupId, hash });
     // Les demandes au club, dans tous leurs états, et le bénévole du support (seed.sandbox.decor.mjs).
     await seedTicketsDecor({ prisma, hash, domain: DOMAIN, adminId, adminGroupId, memberId });
     // Droits à l'image, tags, une ancienne version, une page en construction (seed.sandbox.decor.mjs).

@@ -16,7 +16,13 @@
  *       bios         chaque bio d'instructeur, ses noms remplacés (voir plus bas) ;
  *       persons      les personnes à créer, sans nom : le seed leur en invente un ;
  *       spaces       les groupes à espace, avec leur nom (« Bureau »…) ;
- *       categories, disciplines   leurs segments de dossier, pour que les chemins mènent quelque part.
+ *       categories, disciplines   leurs segments de dossier, pour que les chemins mènent quelque part ;
+ *                    les disciplines avec leur famille, leur origine, leur instructeur (une personne
+ *                    du paquet), leur publication, leur description et leur résumé ;
+ *       families, origins         les familles (« Kung-fu wushu ») et origines des disciplines ;
+ *       galleries    les galeries et leurs photos (le carousel d'accueil compris) ; une galerie sans
+ *                    aucune photo du paquet (que des vidéos) n'est pas reprise ;
+ *       partners     les partenaires du pied de page (la MJC, la FFK), logo compris.
  *
  * Les chemins sont recopiés tels quels, sauf les segments qui portent l'identifiant d'une ligne de
  * la base : `personal-space/<nom>-<id>`, `avatars/<id>` et `collaborative-group-spaces/<nom>-<id>`.
@@ -24,8 +30,8 @@
  * et met leurs identifiants à la place. Une même personne garde la même clé partout : son espace,
  * son avatar et sa bio vont à la même personne fictive.
  *
- * Les bios :
- *   - le nom de l'instructeur (prénom, nom, pseudo) devient `{person-1.firstName}`,
+ * Les bios, et de même les descriptions des disciplines et les titres des galeries :
+ *   - le nom d'un instructeur (prénom, nom, pseudo) devient `{person-1.firstName}`,
  *     `{person-1.lastName}`, `{person-1.pseudo}` : le seed y met le nom de la personne fictive ;
  *   - les AUTRES noms de personnes se remplacent par scripts/demo/names.local.json (ignoré par git,
  *     { "Vrai Nom": "Nom fictif", … }). S'il n'existe pas, le premier lancement le REMPLIT : il
@@ -36,7 +42,7 @@
  *   - une image de la bio pointe vers sa photo dans le paquet (`media:<chemin>`), pas vers un
  *     identifiant de la base. Une image absente du paquet (une vidéo) est retirée.
  *
- * Ce qui ne sort pas : le reste de la base (comptes, membres, descriptions, pages…), que le seed
+ * Ce qui ne sort pas : le reste de la base (comptes, membres, stages, pages…), que le seed
  * fabrique ; les vidéos, dont les visages n'ont pas pu être modifiés ; la corbeille.
  *
  * Il ne lit que la base et le stockage LOCAUX : la garde de prisma/db-target.mjs refuse toute
@@ -366,9 +372,36 @@ async function main() {
   }
 
   // 3. Les bios d'instructeur, noms remplacés.
+  // Un instructeur : il a une bio, ou il enseigne une discipline.
+  const disciplineRows = await prisma.discipline.findMany({
+    select: {
+      id: true, name: true, type: true, slug: true, storageSegment: true, publicationDate: true,
+      school: true, classification: true, description: true, summary: true, summaryMediaId: true,
+      instructorId: true,
+      family: { select: { slug: true } },
+      origin: { select: { slug: true } },
+      category: { select: { type: true, storageSegment: true } },
+    },
+    orderBy: { id: "asc" },
+  });
   const instructors = await prisma.user.findMany({
-    where: { NOT: { instructorBio: { equals: Prisma.DbNull } } },
+    where: {
+      OR: [
+        { NOT: { instructorBio: { equals: Prisma.DbNull } } },
+        { id: { in: disciplineRows.map((d) => d.instructorId) } },
+      ],
+    },
     select: { id: true, firstName: true, lastName: true, pseudo: true, instructorBio: true, instructorOrder: true },
+  });
+  const galleryRows = await prisma.gallery.findMany({
+    select: {
+      slug: true, title: true, visibility: true, sortOrder: true, date: true,
+      discipline: { select: { storageSegment: true, name: true, id: true, category: { select: { type: true, storageSegment: true } } } },
+      category: { select: { type: true, storageSegment: true } },
+      origin: { select: { slug: true } },
+      items: { select: { mediaAssetId: true, sortOrder: true }, orderBy: { sortOrder: "asc" } },
+    },
+    orderBy: { sortOrder: "asc" },
   });
   /** @param {(typeof instructors)[number]} u @param {string} person @returns {[string, string][]} */
   const ownNames = (u, person) => [
@@ -388,10 +421,14 @@ async function main() {
       else if (Array.isArray(node)) node.forEach(collect);
       else if (node && typeof node === "object") Object.values(node).forEach(collect);
     };
+    const allOwn = instructors.flatMap((u) => ownNames(u, "x"));
     for (const u of instructors) {
-      const own = ownNames(u, "x");
-      collect(transformBio(u.instructorBio, (text) => replaceNames(text, own), new Map()));
+      collect(transformBio(u.instructorBio, (text) => replaceNames(text, allOwn), new Map()));
     }
+    for (const d of disciplineRows) {
+      collect(transformBio([d.description, d.summary], (text) => replaceNames(text, allOwn), new Map()));
+    }
+    for (const g of galleryRows) texts.push(replaceNames(g.title, allOwn));
     const known = new Set(
       [
         ...(await prisma.discipline.findMany({ select: { name: true } })).map((d) => d.name),
@@ -408,11 +445,13 @@ async function main() {
   /** @type {{ person: string; order: number | null; content: unknown }[]} */
   const bios = [];
   const leftovers = new Set();
+  // Les noms de TOUS les instructeurs : une description cite volontiers un autre instructeur.
+  const allOwnNames = instructors.flatMap((u) => ownNames(u, keyOf("person", u.id)));
+  const rename = (/** @type {string} */ text) => replaceNames(text, [...allOwnNames, ...others]);
   for (const u of instructors) {
     if (u.instructorBio === null) continue;
     const person = keyOf("person", u.id);
-    const own = ownNames(u, person);
-    const content = transformBio(u.instructorBio, (text) => replaceNames(text, [...own, ...others]), mediaPaths);
+    const content = transformBio(u.instructorBio, rename, mediaPaths);
     collectCapitalized(content, leftovers, fictional);
     bios.push({ person, order: u.instructorOrder, content });
   }
@@ -425,22 +464,68 @@ async function main() {
   const categories = (await prisma.category.findMany({ select: { type: true, key: true, storageSegment: true } })).map(
     (c) => ({ type: c.type, key: c.key, storageSegment: categorySegment(c) }),
   );
-  const disciplines = (
-    await prisma.discipline.findMany({
+  /** @param {{ id: number; name: string; storageSegment: string | null }} d */
+  const disciplineSegment = (d) => d.storageSegment ?? (slug(d.name) || `disc-${d.id}`);
+  const disciplines = disciplineRows.map((d) => {
+    const description = transformBio(d.description, rename, mediaPaths) ?? { version: 1, blocks: [] };
+    const summary = transformBio(d.summary, rename, mediaPaths) ?? { version: 1, blocks: [] };
+    collectCapitalized([description, summary], leftovers, fictional);
+    const summaryMedia = d.summaryMediaId ? mediaPaths.get(d.summaryMediaId) : undefined;
+    return {
+      name: d.name,
+      type: d.type,
+      slug: d.slug,
+      storageSegment: disciplineSegment(d),
+      category: categorySegment(d.category),
+      family: d.family?.slug ?? null,
+      origin: d.origin?.slug ?? null,
+      school: d.school,
+      classification: d.classification,
+      published: d.publicationDate !== null,
+      instructor: keyOf("person", d.instructorId),
+      description,
+      summary,
+      summaryMedia: summaryMedia ? `media:${summaryMedia}` : null,
+    };
+  });
+  const families = await prisma.disciplineFamily.findMany({
+    select: { name: true, slug: true, sortOrder: true },
+    orderBy: { sortOrder: "asc" },
+  });
+  const origins = await prisma.origin.findMany({ select: { name: true, slug: true, description: true } });
+
+  // Les galeries : seulement leurs photos du paquet ; une galerie qui n'en garde aucune est laissée.
+  const galleries = [];
+  for (const g of galleryRows) {
+    const items = g.items.map((i) => mediaPaths.get(i.mediaAssetId)).filter((p) => p !== undefined);
+    if (items.length === 0) continue;
+    const title = rename(g.title);
+    collectCapitalized(title, leftovers, fictional);
+    galleries.push({
+      slug: g.slug,
+      title,
+      visibility: g.visibility,
+      sortOrder: g.sortOrder,
+      date: g.date?.toISOString() ?? null,
+      discipline: g.discipline
+        ? { category: categorySegment(g.discipline.category), storageSegment: disciplineSegment(g.discipline) }
+        : null,
+      category: g.category ? categorySegment(g.category) : null,
+      origin: g.origin?.slug ?? null,
+      items: items.map((p) => `media:${p}`),
+    });
+  }
+
+  // Les partenaires du pied de page : des organismes (la MJC, la FFK), pas des personnes.
+  const partners = (
+    await prisma.sitePartner.findMany({
       select: {
-        id: true,
-        name: true,
-        type: true,
-        storageSegment: true,
-        category: { select: { type: true, storageSegment: true } },
+        name: true, role: true, description: true, websiteUrl: true, links: true,
+        logoData: true, logoMime: true, position: true, isActive: true,
       },
+      orderBy: { position: "asc" },
     })
-  ).map((d) => ({
-    name: d.name,
-    type: d.type,
-    storageSegment: d.storageSegment ?? (slug(d.name) || `disc-${d.id}`),
-    category: categorySegment(d.category),
-  }));
+  ).map((p) => ({ ...p, logoData: p.logoData ? Buffer.from(p.logoData).toString("base64") : null }));
   const groupNames = new Map(
     (
       await prisma.memberGroup.findMany({ where: { id: { in: [...keys.group.keys()] } }, select: { id: true, name: true } })
@@ -449,13 +534,16 @@ async function main() {
   const spaces = [...keys.group].map(([id, key]) => ({ key, kind: "group", name: groupNames.get(id) ?? "Groupe" }));
   const persons = [...keys.person.values()].map((key) => ({
     key,
-    instructor: bios.some((b) => b.person === key),
+    instructor: bios.some((b) => b.person === key) || disciplines.some((d) => d.instructor === key),
   }));
 
   writeFileSync(
     path.join(OUT_DIR, "manifest.json"),
     `${JSON.stringify(
-      { version: 3, createdAt: new Date().toISOString(), categories, disciplines, spaces, persons, photos, avatars, bios },
+      {
+        version: 4, createdAt: new Date().toISOString(), categories, families, origins, disciplines,
+        spaces, persons, photos, avatars, bios, galleries, partners,
+      },
       null,
       2,
     )}\n`,
@@ -471,19 +559,20 @@ async function main() {
   const folders = new Set(photos.map((p) => path.posix.dirname(p.path))).size;
   console.log(
     `✅ ${OUT_FILE} : ${photos.length} photos dans ${folders} dossiers, ${avatars.length} avatars, ` +
-      `${bios.length} bios, ${spaces.length} espaces de groupe`,
+      `${bios.length} bios, ${spaces.length} espaces de groupe, ${disciplines.length} disciplines, ` +
+      `${galleries.length} galeries, ${partners.length} partenaires`,
   );
   if (failed) {
     console.log(`   ${failed} illisibles (objet absent du stockage, ou fichier abîmé) ; première cause : ${firstError}`);
     if (photos.length === 0) console.log("   Aucune photo lue : le stockage de développement tourne-t-il (docker compose -f docker-compose.dev.yml ps) ?");
   }
   if (suggested) {
-    console.log(`\n   ${suggested} noms repérés dans les bios et remplacés par des noms fictifs : ${NAMES_FILE}.`);
+    console.log(`\n   ${suggested} noms repérés (bios, disciplines, galeries) et remplacés par des noms fictifs : ${NAMES_FILE}.`);
     console.log(`   Relisez-le : retirez ce qui n'est pas une personne, corrigez au besoin, puis relancez.`);
   }
   if (leftovers.size) {
     // Seulement dans ce terminal : rien de cette liste n'entre dans le paquet.
-    console.log(`\n   Mots à majuscule restés dans les bios (noms à ajouter à ${NAMES_FILE} ?) :`);
+    console.log(`\n   Mots à majuscule restés dans les textes (noms à ajouter à ${NAMES_FILE} ?) :`);
     console.log(`   ${[...leftovers].sort((a, b) => a.localeCompare(b, "fr")).join(", ")}`);
   }
   console.log(`\n   Avant de le publier : ouvrez-le et regardez-le (tar -xzf ${OUT_FILE} -C /tmp/demo-pack).`);
