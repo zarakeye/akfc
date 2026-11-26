@@ -83,6 +83,8 @@ export const demoDemandesTraiter: Tour = {
       title: "Prendre en charge",
       body: "Elle est à vous : les autres administrateurs voient qui s'en occupe.",
       advance: { kind: "click" },
+      // Parcours rejoué : la demande est peut-être déjà à vous ; l'étape s'efface alors.
+      skipWhen: { target: "tickets.assignee", text: "vous" },
     },
     {
       target: "tickets.reply.body",

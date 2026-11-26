@@ -4,6 +4,9 @@ import type { Tour } from "../tour.types";
  * La démo — un groupe de bout en bout : le créer, le retrouver dans la liste, y ajouter le membre
  * majeur, constater qu'il y est ; puis, plus tard, le supprimer. Contrairement au tuto du site
  * (« Créer un groupe »), ces tutos valident pour de vrai : la démo est jetable.
+ *
+ * Un parcours se rejoue : un second groupe du même nom peut exister, et le membre y être déjà.
+ * Une étape déjà faite s'efface (`skipWhen`), sur la preuve qu'elle l'est.
  */
 const NAME = "Équipe compétition";
 const MEMBER = "membre@sandbox.local";
@@ -64,6 +67,8 @@ export const demoGroupesCreer: Tour = {
       title: "Ajoutez le membre majeur",
       body: "La colonne « Ajouter » liste les membres qui n'y sont pas encore. Cliquez sur « Ajouter » en face du membre majeur.",
       advance: { kind: "click" },
+      // Parcours rejoué : le membre est peut-être déjà dans ce groupe ; l'étape s'efface alors.
+      skipWhen: { target: "groups.detail.members", text: MEMBER },
     },
     {
       target: "groups.detail.members",

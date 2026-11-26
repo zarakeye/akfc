@@ -4,7 +4,7 @@ import { JSX, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { tourStore } from "./tour.store";
-import type { Tour, TourStep } from "./tour.types";
+import type { Tour, TourSkip, TourStep } from "./tour.types";
 
 /* ►►► Réglages ◄◄◄ */
 const PAD = 6; // marge autour de la cible (px)
@@ -14,6 +14,7 @@ const BUBBLE_ROOM = 200; // place qu'il faut à la bulle, sous ou au-dessus de l
 const WAIT_MS = 8000; // délai avant d'abandonner une cible introuvable
 const OPTIONAL_WAIT_MS = 1500; // délai avant de passer une étape facultative sans cible
 const DIM = "rgba(15, 23, 42, 0.62)"; // voile
+const SETTLE_MS = 2000; // après l'arrivée de la cible, la page peut encore bouger : on la suit
 const CURSOR_MS = 900; // trajet du curseur guidé d'une cible à la suivante
 const TYPE_MS = 45; // « Remplir pour moi » : délai entre deux lettres
 
@@ -49,6 +50,15 @@ function findTarget(name: string | undefined, text?: string, pick?: string): HTM
     }
   }
   return null;
+}
+
+/** `skipWhen` : l'élément est là, visible, et contient le texte demandé (plusieurs : l'un d'eux). */
+function isDone(when: TourSkip | TourSkip[]): boolean {
+  return (Array.isArray(when) ? when : [when]).some((w) =>
+    [...document.querySelectorAll<HTMLElement>(`[data-tour="${CSS.escape(w.target)}"]`)].some(
+      (el) => el.getClientRects().length > 0 && (!w.text || !!el.textContent?.includes(w.text)),
+    ),
+  );
 }
 
 /** Le champ d'une cible : elle-même, ou le premier champ qu'elle contient. */
@@ -159,6 +169,7 @@ export function TourOverlay({
   const [typing, setTyping] = useState(false);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const scrolled = useRef(false);
+  const scrolledAt = useRef(0);
   const inputOkRef = useRef(false);
   const travelled = useRef(false);
   const spotRef = useRef<Spot | null>(null);
@@ -184,6 +195,11 @@ export function TourOverlay({
     let raf = 0;
     const started = performance.now();
     const tick = () => {
+      // Déjà fait (parcours rejoué) : l'étape s'efface.
+      if (step.skipWhen && isDone(step.skipWhen)) {
+        tourStore.next(index);
+        return;
+      }
       const el = findTarget(step.target, step.targetText, step.targetPick);
       if (step.target && !el) {
         holeRef.current = null;
@@ -195,8 +211,15 @@ export function TourOverlay({
         }
         if (waited > WAIT_MS) setLost(true);
       } else if (el) {
+        // La page peut encore grandir juste après (une liste qui se charge au-dessus) et pousser la
+        // cible hors de l'écran : pendant un court moment, on la ramène au centre si elle en sort.
+        if (scrolled.current && performance.now() - scrolledAt.current < SETTLE_MS) {
+          const b = el.getBoundingClientRect();
+          if (b.top < 0 || b.bottom > window.innerHeight) el.scrollIntoView({ block: "center", inline: "nearest" });
+        }
         if (!scrolled.current) {
           scrolled.current = true;
+          scrolledAt.current = performance.now();
           el.scrollIntoView({ block: "center", inline: "nearest" });
           // Le curseur clavier suit l'étape : dans le champ à remplir, sinon sur la bulle (lue par
           // un lecteur d'écran). Sans cela, il restait sur le bouton qui avait lancé le tuto.
@@ -229,7 +252,7 @@ export function TourOverlay({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [step.target, step.targetText, step.targetPick, step.optional, step.expect, advance, index, cursor]);
+  }, [step.target, step.targetText, step.targetPick, step.skipWhen, step.optional, step.expect, advance, index, cursor]);
 
   // Tuto guidé : le curseur part de sa dernière position (ou du coin du panneau de la démo),
   // glisse jusqu'à la cible, puis la suit si elle bouge. Les mises à jour passent par des images

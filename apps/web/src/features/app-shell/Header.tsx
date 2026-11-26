@@ -292,7 +292,7 @@ export default function Header({
                 connexion ne tient pas dans une barre de téléphone. */}
             <div className="mt-6 border-t border-gray-700 pt-6">
               <Suspense fallback={<div className="text-white">Chargement...</div>}>
-                {user ? <UserMenu /> : <LoginForm />}
+                {user ? <UserMenu variant="panel" /> : <LoginForm />}
               </Suspense>
             </div>
           </div>

@@ -47,7 +47,17 @@ export interface TourStep {
   targetText?: string;
   /** Dans cette ligne, l'élément précis à viser : un sélecteur CSS (`button`, `a`…). */
   targetPick?: string;
+  /**
+   * L'étape est déjà faite si cet élément est là (et contient ce texte) : elle s'efface. Pour un
+   * parcours de la démo rejoué (le membre est déjà dans le groupe, la demande déjà à vous).
+   * Contrairement à `optional`, qui saute une étape faute de cible après un délai, rien n'est
+   * sauté tant que la page charge : seule la preuve que c'est fait compte.
+   */
+  skipWhen?: TourSkip | TourSkip[];
 }
+
+/** Un élément qui prouve qu'une étape est faite (voir `skipWhen`) ; plusieurs : l'un d'eux suffit. */
+export type TourSkip = { target: string; text?: string };
 
 export interface Tour {
   /** Identifiant stable, partagé avec la fiche de documentation (ex. « admin.posts.create »). */

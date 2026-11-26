@@ -60,7 +60,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
           </div>
           <div>
             <dt className="inline text-muted-foreground">Responsable : </dt>
-            <dd className="inline">{t.assignee ? (t.assignee.id === me ? "vous" : t.assignee.name) : "personne"}</dd>
+            <dd className="inline" data-tour="tickets.assignee">{t.assignee ? (t.assignee.id === me ? "vous" : t.assignee.name) : "personne"}</dd>
           </div>
           <div>
             <dt className="inline text-muted-foreground">Reçue : </dt>

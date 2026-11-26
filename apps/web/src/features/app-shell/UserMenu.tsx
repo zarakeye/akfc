@@ -17,9 +17,10 @@ import { useDisclosure } from "#features/app-shell/useDisclosure.ts";
  * The menu is only visible when the user is connected.
  * @returns {React.ReactElement | null} - The user menu React element or null if the user is not connected.
  */
-export default function UserMenu(): JSX.Element | null {
-  // Survol et clavier : l'avatar et le prénom forment un bouton (useDisclosure).
-  const menu = useDisclosure();
+export default function UserMenu({ variant = "bar" }: { variant?: "bar" | "panel" }): JSX.Element | null {
+  // Survol et clavier : l'avatar et le prénom forment un bouton (useDisclosure). Dans le panneau
+  // des petits écrans, à l'appui seulement.
+  const menu = useDisclosure({ hover: variant === "bar" });
   const { open } = menu;
   const router = useRouter();
   const logout = useSessionStore((s) => s.logout);

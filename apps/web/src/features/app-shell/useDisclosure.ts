@@ -16,7 +16,12 @@ import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent
  * le refermerait sous le pointeur. Seul un « clic » produit par le clavier (Entrée, Espace :
  * `detail === 0`) bascule.
  */
-export function useDisclosure() {
+/**
+ * `hover: false` : le menu ne s'ouvre et ne se ferme qu'à l'appui, jamais au survol. C'est le cas
+ * dans le panneau des petits écrans, où l'on fait défiler sous le doigt (ou sous une souris immobile) :
+ * un défilement y faisait « sortir » le pointeur du menu, qui se refermait.
+ */
+export function useDisclosure({ hover = true }: { hover?: boolean } = {}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -39,8 +44,8 @@ export function useDisclosure() {
     /** À poser sur l'élément qui contient le bouton ET le menu. */
     rootProps: {
       ref: rootRef,
-      onMouseEnter: (): void => setOpen(true),
-      onMouseLeave: (): void => setOpen(false),
+      onMouseEnter: hover ? (): void => setOpen(true) : undefined,
+      onMouseLeave: hover ? (): void => setOpen(false) : undefined,
       onKeyDown: (e: KeyboardEvent): void => {
         if (e.key === "Escape" && open) {
           e.stopPropagation();

@@ -16,6 +16,14 @@ function connexion(id: string, title: string, email: string, who: string): Tour 
     demoOnly: true,
     steps: [
       {
+        // Petit écran : le compte est dans le menu. Sur grand écran, il est déjà en vue : l'étape s'efface.
+        target: "header.nav",
+        title: "Ouvrez le menu",
+        body: "Sur cet écran, le compte se trouve dans le menu.",
+        advance: { kind: "click" },
+        skipWhen: [{ target: "header.user-menu" }, { target: "auth.login.email" }],
+      },
+      {
         target: "header.user-menu",
         title: "Le menu du compte",
         body: "Vous êtes connecté sous un autre compte. Ouvrez son menu, en haut à droite.",
