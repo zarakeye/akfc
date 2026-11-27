@@ -54,7 +54,13 @@ function findTarget(name: string | undefined, text?: string, pick?: string, last
     if (!text) return el;
     // Une ligne d'une table ou d'une liste, reconnue à son texte (`targetText`) ; dedans, au
     // besoin, un élément précis (`targetPick`, un sélecteur CSS : son bouton « Ajouter »…).
-    for (const row of el.querySelectorAll<HTMLElement>("tr, li, label, [role='row'], [role='menuitem'], [data-tour-row]")) {
+    // Une cible qui est elle-même une ligne (le code d'une lecture guidée, dont l'en-tête porte le
+    // titre de l'étape en cours) se reconnaît à son propre texte, avant ses descendants.
+    const rows = [
+      ...(el.matches("[data-tour-row]") ? [el] : []),
+      ...el.querySelectorAll<HTMLElement>("tr, li, label, [role='row'], [role='menuitem'], [data-tour-row]"),
+    ];
+    for (const row of rows) {
       if (!shown(row) || !row.textContent?.includes(text)) continue;
       if (!pick) return row;
       const picked = row.querySelector<HTMLElement>(pick);
@@ -122,6 +128,25 @@ function contentBox(el: HTMLElement): DOMRect {
  *     son étiquette, l'étiquette réduite à son contenu ;
  *   - pour une ligne de table, toute la ligne (elle est cliquable), le curseur sur sa première case.
  */
+/**
+ * La part VISIBLE d'une zone : coupée par les conteneurs qui défilent ou rognent (overflow), entre
+ * lesquels la cible peut dépasser. Sans cela, la lecture guidée d'un fichier, plus haute que la
+ * colonne de la doc qui la fait défiler, s'éclairait par-dessus le texte qui l'entoure.
+ */
+function clipToScrollers(el: HTMLElement, r: DOMRect): DOMRect {
+  let { left, top, right, bottom } = r;
+  for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+    const cs = getComputedStyle(a);
+    if (cs.overflowX === "visible" && cs.overflowY === "visible") continue;
+    const b = a.getBoundingClientRect();
+    left = Math.max(left, b.left);
+    top = Math.max(top, b.top);
+    right = Math.min(right, b.right);
+    bottom = Math.min(bottom, b.bottom);
+  }
+  return right > left && bottom > top ? new DOMRect(left, top, right - left, bottom - top) : r;
+}
+
 function guidedGeometry(el: HTMLElement, kind: TourStep["advance"]["kind"], isRow: boolean): { rect: DOMRect; spot: Spot } {
   if (kind === "input") {
     const r = (fieldOf(el) ?? editableOf(el) ?? el).getBoundingClientRect();
@@ -255,8 +280,14 @@ export function TourOverlay({
         }
         // En tuto guidé, la zone se resserre sur ce qu'il faut vraiment toucher ; ailleurs, la cible.
         const geo = cursor ? guidedGeometry(el, advance.kind, !!step.targetText && !step.targetPick) : null;
-        spotRef.current = geo?.spot ?? null;
-        const r = geo?.rect ?? el.getBoundingClientRect();
+        const r = clipToScrollers(el, geo?.rect ?? el.getBoundingClientRect());
+        // Le point visé reste dans la part visible.
+        spotRef.current = geo
+          ? {
+              x: Math.min(Math.max(geo.spot.x, r.left + 4), r.right - 4),
+              y: Math.min(Math.max(geo.spot.y, r.top + 4), r.bottom - 4),
+            }
+          : null;
         const next = { top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 };
         holeRef.current = next;
         setRect((prev) => (sameRect(prev, next) ? prev : next));
@@ -475,8 +506,9 @@ export function TourOverlay({
 
   // Position de la bulle : sous la cible s'il y a la place, sinon au-dessus ; une cible qui occupe
   // presque tout l'écran (le contenu de la bibliothèque) ne laisse de place ni dessous ni dessus :
-  // la bulle se pose alors en bas de l'écran, sur la cible, plutôt que hors de la vue. Centrée sans
-  // cible ; jamais plus haute que l'écran.
+  // la bulle se pose alors à côté (le code d'une lecture guidée, sa liste d'étapes à gauche), ou,
+  // sans place sur les côtés, en bas de l'écran, sur la cible, plutôt que hors de la vue. Centrée
+  // sans cible ; jamais plus haute que l'écran.
   const bubbleStyle: React.CSSProperties = {
     width: Math.min(BUBBLE_W, vw - 24),
     maxHeight: vh - 24,
@@ -488,9 +520,16 @@ export function TourOverlay({
     const below = vh - (hole.top + hole.height) - GAP;
     const above = hole.top - GAP;
     const room = Math.max(BUBBLE_ROOM, bubbleH);
+    const side = Math.max(12, Math.min(hole.top, vh - room - 12));
     if (below >= room) bubbleStyle.top = hole.top + hole.height + GAP;
     else if (above >= room) bubbleStyle.bottom = vh - hole.top + GAP;
-    else bubbleStyle.bottom = 12;
+    else if (hole.left - GAP - 12 >= BUBBLE_W) {
+      bubbleStyle.left = hole.left - GAP - BUBBLE_W;
+      bubbleStyle.top = side;
+    } else if (vw - (hole.left + hole.width) - GAP - 12 >= BUBBLE_W) {
+      bubbleStyle.left = hole.left + hole.width + GAP;
+      bubbleStyle.top = side;
+    } else bubbleStyle.bottom = 12;
   } else {
     bubbleStyle.left = "50%";
     bubbleStyle.top = "50%";

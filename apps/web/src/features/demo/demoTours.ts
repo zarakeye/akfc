@@ -253,10 +253,15 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "Lead Front",
     pitch: "Le Finder, les formulaires, React Hook Form et useActionState.",
     steps: [
-      { text: "Se connecter en administrateur", as: "admin" },
-      { text: "Le Finder : arbre chargé par paliers, grille, glisser-déposer", href: "/dashboard/library" },
-      { text: "Un formulaire : modifier son profil (erreurs champ par champ, envoi sans JavaScript)", href: "/profil/edit" },
-      { text: "Le recadrage de l'avatar, au doigt comme à la souris", href: "/profil/edit" },
+      { text: "Se connecter en administrateur, par le formulaire", as: "admin", tour: "demo.connexion.admin" },
+      { text: "Le Finder : ranger une photo par son menu", href: "/dashboard/library", tour: "demo.mediatheque.ranger" },
+      { text: "Un formulaire qui refuse une valeur, puis l'accepte", href: "/profil/edit", tour: "demo.front.formulaire" },
+      {
+        text: "Son code, dans la doc : les erreurs du serveur, l'action du formulaire",
+        href: "/docs/dev/formulaires/le-modele-hybride-face-au-reel",
+        tour: "demo.code.formulaire",
+      },
+      { text: "Le recadrage de la photo de profil, au doigt comme à la souris", href: "/profil/edit", tour: "demo.membre.avatar" },
     ],
     docs: [
       { label: "Le store du Finder", href: dev("finder/le-store-du-finder") },
@@ -274,8 +279,17 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "Backend",
     pitch: "Prisma, le modèle de données, tRPC et les contrats partagés.",
     steps: [
-      { text: "Écrire au club, puis suivre la demande côté administration : un circuit complet", href: "/contacts", tour: "demo.demandes.ecrire" },
-      { text: "Se connecter en Sam, puis ouvrir la bibliothèque : refusé, par la procédure elle-même", as: "support" },
+      { text: "Se connecter en membre, par le formulaire", as: "membre", tour: "demo.connexion.membre" },
+      { text: "Écrire au club : la demande part par une procédure tRPC", href: "/contacts", tour: "demo.demandes.ecrire" },
+      { text: "Se connecter en administrateur", as: "admin", tour: "demo.connexion.admin" },
+      { text: "La traiter : la prendre, répondre, changer son état", href: "/dashboard/tickets", tour: "demo.demandes.traiter" },
+      { text: "Se connecter en Sam, bénévole du support", as: "support", tour: "demo.connexion.support" },
+      { text: "Ouvrir la bibliothèque : refusé, par la procédure elle-même", href: "/dashboard/library", tour: "demo.support.refus" },
+      {
+        text: "La garde qui a refusé, dans la doc",
+        href: "/docs/dev/api/proteger-une-procedure",
+        tour: "demo.code.garde",
+      },
     ],
     docs: [
       { label: "Lire le schéma", href: dev("donnees/lire-le-schema") },

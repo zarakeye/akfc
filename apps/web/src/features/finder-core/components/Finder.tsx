@@ -816,6 +816,7 @@ export default function Finder({
         <div
           className="px-3 py-2 text-sm bg-destructive-muted text-destructive border-b flex items-center gap-2"
           role="alert"
+          data-tour="finder.error"
         >
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>Erreur : {error}</span>

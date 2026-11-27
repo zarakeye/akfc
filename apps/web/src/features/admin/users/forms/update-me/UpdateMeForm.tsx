@@ -236,7 +236,7 @@ export default function UpdateMeForm(): JSX.Element {
             )}
           </label>
 
-          <label className="grid gap-1">
+          <label className="grid gap-1" data-tour="profil.form.phone">
             <span className="text-sm">Téléphone</span>
             <input
               className="border rounded px-3 py-2"

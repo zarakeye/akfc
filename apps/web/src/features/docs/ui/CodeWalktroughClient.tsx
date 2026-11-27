@@ -165,7 +165,7 @@ export function CodeWalkthroughClient({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="rounded-xl border bg-card">
+          <aside className="rounded-xl border bg-card" data-tour="doc.walkthrough.steps">
             <div className="max-h-[70vh] overflow-auto p-3">
               <div className="space-y-2">
                 {steps.map((step, index) => (
@@ -173,6 +173,7 @@ export function CodeWalkthroughClient({
                     key={`${step.title}-${index}`}
                     type="button"
                     onClick={() => setActiveIndex(index)}
+                    data-tour-row=""
                     className={`w-full rounded-lg border p-3 text-left transition ${
                       index === activeIndex
                         ? "border-primary/30 bg-primary/10"
@@ -191,7 +192,7 @@ export function CodeWalkthroughClient({
             </div>
           </aside>
 
-          <div className="overflow-hidden rounded-xl border border-white/10 bg-[#12141a] shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-[#12141a] shadow-sm" data-tour="doc.walkthrough.code" data-tour-row="">
             <div className="sticky top-0 z-20 border-b border-white/10 bg-[#12141a]/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-[#12141a]/80">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
