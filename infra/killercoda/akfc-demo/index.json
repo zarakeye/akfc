@@ -1,0 +1,16 @@
+{
+  "title": "AKFC — démo de l'application du club",
+  "description": "Une instance complète et jetable de l'application AKFC (site public, espace membre, médiathèque, demandes au club), avec des données fictives. Une heure, rien à installer.",
+  "details": {
+    "intro": {
+      "text": "intro.md",
+      "background": "background.sh",
+      "foreground": "foreground.sh"
+    },
+    "steps": [
+      { "title": "Ouvrir le site", "text": "step1.md" }
+    ],
+    "finish": { "text": "finish.md" }
+  },
+  "backend": { "imageid": "ubuntu-4GB" }
+}

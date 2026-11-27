@@ -1,0 +1,38 @@
+# Le scénario Killercoda publié est-il à jour ?
+#
+# La source du scénario est infra/killercoda/akfc-demo, dans ce dépôt. Killercoda, lui, lit une
+# copie, dans le dépôt public zarakeye/akfc-killercoda. Ce workflow compare les deux, sur main, et
+# échoue tant que la copie diffère : il reste à la publier (infra/killercoda/README.md).
+#
+# Un workflow à part, et pas un job de ci.yml : un scénario pas encore publié ne doit pas faire
+# échouer la CI, dont dépend la construction des images (images.yml).
+#
+# Aucun secret : le dépôt est public, le clone est anonyme.
+
+name: Killercoda
+
+on:
+  push:
+    branches: [main]
+    paths: [infra/killercoda/**, .github/workflows/killercoda.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  published:
+    name: Scénario Killercoda publié
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Copie publiée identique à infra/killercoda/akfc-demo
+        run: |
+          git clone --quiet --depth 1 https://github.com/zarakeye/akfc-killercoda "$RUNNER_TEMP/kc"
+          if ! diff -r infra/killercoda/akfc-demo "$RUNNER_TEMP/kc/akfc-demo"; then
+            echo "::error::Le scénario publié diffère de infra/killercoda/akfc-demo : bash scripts/publier-scenario-killercoda.sh ~/akfc-killercoda, puis git push depuis ce clone."
+            exit 1
+          fi
