@@ -4,5 +4,5 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["prisma.config.ts", "prisma/**/*.ts", "playwright.config.ts", "e2e/**/*.ts", "e2e/**/*.mjs"]
+  "include": ["prisma.config.ts", "prisma/**/*.ts", "playwright.config.ts", "playwright.demo.config.ts", "e2e/**/*.ts", "e2e/**/*.mjs"]
 }
