@@ -37,7 +37,13 @@ import {
   demoMediathequeVersions,
 } from "./definitions/demo.mediatheque";
 import { demoPageCompleter } from "./definitions/demo.page";
-import { demoMembreApparais, demoMembreConsentement, demoMembreProfil } from "./definitions/demo.membre";
+import {
+  demoMembreApparais,
+  demoMembreAvatar,
+  demoMembreConsentement,
+  demoMembreDepot,
+  demoMembreProfil,
+} from "./definitions/demo.membre";
 import { demoDroitsMasques, demoDroitsRefuser, demoDroitsRelancer, demoDroitsTaguer } from "./definitions/demo.droits";
 
 /**
@@ -94,6 +100,8 @@ export const TOURS: Tour[] = [
   demoMembreProfil,
   demoMembreConsentement,
   demoMembreApparais,
+  demoMembreAvatar,
+  demoMembreDepot,
 ];
 
 export function getTour(id: string): Tour | undefined {

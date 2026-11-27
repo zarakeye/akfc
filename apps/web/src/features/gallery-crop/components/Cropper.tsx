@@ -332,7 +332,7 @@ export default function Cropper({
                 <>
                   <span className={`mr-1 text-[11px] uppercase tracking-wide ${muted}`}>Forme</span>
                   <button type="button" onClick={() => onShapeChange("circle")} className={tbBtn(shape === "circle")} aria-label="Cercle" aria-pressed={shape === "circle"}><Circle className="h-5 w-5" /></button>
-                  <button type="button" onClick={() => onShapeChange("rect")} className={tbBtn(shape === "rect")} aria-label="Carré" aria-pressed={shape === "rect"}><Square className="h-5 w-5" /></button>
+                  <button type="button" onClick={() => onShapeChange("rect")} className={tbBtn(shape === "rect")} aria-label="Carré" aria-pressed={shape === "rect"} data-tour="cropper.square"><Square className="h-5 w-5" /></button>
                 </>
               )}
             </div>
@@ -412,7 +412,7 @@ export default function Cropper({
         <div className="flex justify-end gap-2 mt-4">
           {problem && <p role="alert" className="mr-auto self-center text-sm text-destructive">{problem}</p>}
           <button type="button" onClick={onCancel} className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${cancelCls}`}>Annuler</button>
-          <button type="button" onClick={() => void handleCrop()} disabled={encoding} className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60">{encoding ? "Recadrage…" : "Recadrer"}</button>
+          <button type="button" onClick={() => void handleCrop()} disabled={encoding} data-tour="cropper.crop" className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60">{encoding ? "Recadrage…" : "Recadrer"}</button>
         </div>
       </div>
     </div>

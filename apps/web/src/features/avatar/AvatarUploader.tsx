@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { useDropzone } from "react-dropzone";
+
+import { demoSampleFile, useDemoMode } from "#features/demo/demoMode.ts";
 import { HEIC_ACCEPT, heicFailureMessage, heicProgressMessage, isHeicFile, toBrowserImages } from "#features/media/heic/browserImages.ts";
 import { Camera, Check, ImageUp, Loader2, Trash2, Video, X } from "lucide-react";
 
@@ -155,6 +157,12 @@ export function AvatarUploader({
     if (file) beginFreshCrop(file);
   };
 
+  // La démo : une image d'exemple, pour le visiteur qui n'en a pas sous la main.
+  const demo = useDemoMode();
+  const onSample = (): void => {
+    demoSampleFile("image-exemple.jpg").then(beginFreshCrop, (err: Error) => setError(err.message));
+  };
+
   const onCameraCapture = (file: File) => {
     setCameraOpen(false);
     beginFreshCrop(file);
@@ -302,6 +310,7 @@ export function AvatarUploader({
                   disabled={busy}
                   onClick={confirmPending}
                   aria-label="Valider"
+                  data-tour="avatar.confirm"
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-50"
                 >
                   <Check className="h-5 w-5" />
@@ -369,6 +378,18 @@ export function AvatarUploader({
               <ImageUp className="h-4 w-4" />
               Choisir un fichier
             </button>
+            {demo && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={onSample}
+                data-tour="avatar.sample"
+                className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                <ImageUp className="h-4 w-4" />
+                Image d&apos;exemple
+              </button>
+            )}
             <button
               type="button"
               disabled={busy}

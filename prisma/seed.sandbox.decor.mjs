@@ -501,3 +501,24 @@ export async function seedDroitImageDecor({ prisma, storage, appRoot, adminId, h
   await prisma.mediaPerson.create({ data: { mediaAssetId: ids[0], userId: camille.id, taggedById: adminId } });
   console.log("✅ Décor du droit à l'image prêt (galerie « Démo du droit à l'image »)");
 }
+
+/**
+ * Un espace partagé où le membre de démonstration peut déposer (éditeur) : le groupe collaboratif
+ * « Atelier de la démo ». Son dossier est créé au démarrage du site (ensureAllGroupSpaces).
+ * @param {{ prisma: import("@prisma/client").PrismaClient; memberId: string }} ctx
+ */
+export async function seedEspaceDecor({ prisma, memberId }) {
+  const name = "Atelier de la démo";
+  const group =
+    (await prisma.memberGroup.findFirst({ where: { name }, select: { id: true } })) ??
+    (await prisma.memberGroup.create({
+      data: { name, description: "Un espace partagé où le membre de la démo dépose ses documents.", isCollaborative: true },
+      select: { id: true },
+    }));
+  await prisma.memberGroupMembership.upsert({
+    where: { groupId_userId: { groupId: group.id, userId: memberId } },
+    update: {},
+    create: { groupId: group.id, userId: memberId, access: "EDITOR" },
+  });
+  console.log("✅ Espace « Atelier de la démo » prêt (le membre y dépose)");
+}

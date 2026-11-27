@@ -129,3 +129,91 @@ export const demoMembreApparais: Tour = {
     },
   ],
 };
+
+export const demoMembreAvatar: Tour = {
+  id: "demo.membre.avatar",
+  title: "Changer sa photo de profil",
+  description: "Une image, son recadrage rond ou carré, puis la validation.",
+  audience: "member",
+  routes: ["/profil/edit"],
+  startRoute: "/profil/edit",
+  doc: "/docs/dev/membres/l-avatar",
+  demoOnly: true,
+  steps: [
+    {
+      target: "avatar.sample",
+      title: "Une image",
+      body: "Sur le site : un fichier de l'ordinateur ou du téléphone (une photo d'iPhone passe aussi), la caméra, ou une image glissée ici. Dans la démo, une image d'exemple.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "cropper.square",
+      title: "Carré",
+      body: "Rond ou carré : le cadre suit votre choix.",
+      advance: { kind: "click" },
+    },
+    {
+      title: "Le recadrage",
+      body: "On fait glisser l'image dans le cadre ; les curseurs zooment et tournent. Chaque réglage se défait.",
+      advance: { kind: "next" },
+    },
+    {
+      target: "cropper.crop",
+      title: "Recadrez",
+      body: "L'image est recadrée dans le navigateur ; rien n'est encore envoyé.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "avatar.confirm",
+      title: "Validez",
+      body: "La vignette « Nouveau » se rouvre dans le même état tant qu'on n'a pas validé. ✓ envoie la photo.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "profil.form.avatar",
+      title: "C'est fait",
+      body: "La photo s'enregistre seule, sans le bouton du formulaire ; elle apparaît aussitôt dans le menu du compte.",
+      advance: { kind: "next" },
+    },
+  ],
+};
+
+export const demoMembreDepot: Tour = {
+  id: "demo.membre.depot",
+  title: "Déposer un document dans son espace",
+  description: "Ouvrir un espace partagé et y déposer un PDF.",
+  audience: "member",
+  routes: ["/mes-espaces"],
+  startRoute: "/mes-espaces",
+  doc: "/docs/dev/membres/espaces-collaboratifs",
+  demoOnly: true,
+  steps: [
+    {
+      target: "finder.content",
+      targetText: "Atelier de la démo",
+      title: "Ouvrez l'espace",
+      body: "Les espaces des groupes du membre. Dans celui-ci, il est éditeur : il peut y déposer.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "deposit.sample",
+      title: "Déposez",
+      body: "Sur le site : un PDF de l'ordinateur. Dans la démo, un document d'exemple.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "deposit.replace",
+      title: "Il existe déjà",
+      body: "Un fichier du même nom est déjà là (le parcours a été rejoué) : le remplacer garde l'actuel dans ses versions.",
+      advance: { kind: "click" },
+      optional: true,
+    },
+    {
+      target: "finder.content",
+      targetText: "document-exemple",
+      title: "Déposé",
+      body: "Les éditeurs du groupe le voient aussitôt ; les lecteurs, eux, ne peuvent que le lire.",
+      advance: { kind: "next" },
+    },
+  ],
+};

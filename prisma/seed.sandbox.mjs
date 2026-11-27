@@ -5,7 +5,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-import { seedDroitImageDecor, seedLibraryDecor, seedMediathequeDecor, seedTicketsDecor } from "./seed.sandbox.decor.mjs";
+import { seedDroitImageDecor, seedEspaceDecor, seedLibraryDecor, seedMediathequeDecor, seedTicketsDecor } from "./seed.sandbox.decor.mjs";
 import { seedDemoPack, storageClient } from "./seed.sandbox.pack.mjs";
 
 const prisma = new PrismaClient();
@@ -143,6 +143,8 @@ async function main() {
   if (IN_SANDBOX) {
     // Les demandes au club, dans tous leurs états, et le bénévole du support (seed.sandbox.decor.mjs).
     await seedTicketsDecor({ prisma, hash, domain: DOMAIN, adminId, adminGroupId, memberId });
+    // Un espace partagé où le membre dépose (seed.sandbox.decor.mjs).
+    await seedEspaceDecor({ prisma, memberId });
     // Droits à l'image, tags, une ancienne version, une page en construction (seed.sandbox.decor.mjs).
     if (pack) await seedLibraryDecor({ prisma, storage: storageClient(), adminId, memberId, pack });
     // Le dossier d'exercice des parcours de la médiathèque, aux noms connus d'avance.

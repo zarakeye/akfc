@@ -17,6 +17,7 @@ import {
   memberFinderAdapter,
   MEMBER_FINDER_ROOT,
 } from "#features/finder-adapters/member/memberFinder.adapter.ts";
+import { demoSampleFile, useDemoMode } from "#features/demo/demoMode.ts";
 
 /**
  * Barre de DÉPÔT superposée au finder membre. Cible l'espace COURANT (déduit de
@@ -36,6 +37,8 @@ function MemberDepositBar(): JSX.Element | null {
   const createR2 = trpc.storage.createR2Upload.useMutation();
   const registerR2 = trpc.storage.registerR2Upload.useMutation();
   const deposit = trpc.memberDocument.depositToGroupSpace.useMutation();
+  // La démo : un PDF d'exemple, pour le visiteur qui n'en a pas sous la main.
+  const demo = useDemoMode();
 
   const space =
     (spaces ?? []).find(
@@ -90,6 +93,22 @@ function MemberDepositBar(): JSX.Element | null {
       >
         {uploading ? "Dépôt en cours…" : `Déposer dans « ${space.name} »`}
       </button>
+      {demo && (
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => {
+            demoSampleFile("document-exemple.pdf").then(
+              (file) => send(file, false),
+              (err: Error) => setUploadError(err.message),
+            );
+          }}
+          data-tour="deposit.sample"
+          className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+        >
+          Document d&apos;exemple
+        </button>
+      )}
       <input
         ref={inputRef}
         type="file"
@@ -106,6 +125,7 @@ function MemberDepositBar(): JSX.Element | null {
           <button
             type="button"
             onClick={() => void send(toReplace, true)}
+            data-tour="deposit.replace"
             className="rounded-md bg-brand px-2 py-1 text-xs font-medium text-brand-foreground hover:bg-brand/90"
           >
             Remplacer

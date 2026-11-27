@@ -53,8 +53,8 @@ export const DEMO_TOURS: DemoTour[] = [
     steps: [
       { text: "Se connecter en membre majeur, par le formulaire", as: "membre", tour: "demo.connexion.membre" },
       { text: "Son profil, et où changer sa photo de profil", href: "/profil", tour: "demo.membre.profil" },
-      { text: "Changer sa photo de profil (recadrage rond ou carré), avec une image à vous", href: "/profil/edit" },
-      { text: "Déposer une photo dans son espace, avec une image à vous", href: "/mes-espaces" },
+      { text: "Changer sa photo de profil : le recadrage, rond ou carré", href: "/profil/edit", tour: "demo.membre.avatar" },
+      { text: "Déposer un document dans un espace partagé", href: "/mes-espaces", tour: "demo.membre.depot" },
       {
         text: "Donner son droit à l'image en ligne, signé de son mot de passe",
         href: "/profil/droit-a-l-image",

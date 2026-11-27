@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useSyncExternalStore, useTransition, type JSX } from "react";
+import { useEffect, useState, useSyncExternalStore, useTransition, type JSX } from "react";
 import { Clock, FlaskConical, Mail, UserRound, X } from "lucide-react";
 
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "#features/demo/demoAccounts.ts";
 import { DemoTours } from "#features/demo/DemoTours.tsx";
 import { readOpen, subscribeOpen, writeOpen } from "#features/demo/demoPanelOpen.ts";
+import { markDemoMode } from "#features/demo/demoMode.ts";
 import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import { tourStore } from "#features/tours/tour.store.ts";
 import { switchDemoAccountAction } from "#features/demo/switchDemoAccount.action.ts";
@@ -33,6 +34,8 @@ function formatRemaining(ms: number): string {
  * qu'une pastille en bas à gauche ; son état (ouvert, fermé) est retenu par le navigateur.
  */
 export function DemoPanel({ info, currentEmail }: { info: DemoInfo; currentEmail: string | null }): JSX.Element {
+  // Le panneau n'existe que dans la démo : il le signale aux fichiers d'exemple (demoMode.ts).
+  useEffect(() => markDemoMode(), []);
   // Pendant un tuto, le panneau reste replié : il ne doit rien cacher de la page parcourue.
   const touring = useSyncExternalStore(
     tourStore.subscribe,
