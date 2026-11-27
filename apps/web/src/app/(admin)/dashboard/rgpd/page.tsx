@@ -41,7 +41,7 @@ export default async function RegisterPage(): Promise<JSX.Element> {
   return (
     <div id="registre" className="mx-auto max-w-4xl p-6 text-sm">
       <style>{PRINT_CSS}</style>
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4" data-tour="rgpd.header">
         <div>
           <h1 className="text-2xl font-semibold">Registre des activités de traitement</h1>
           <p className="mt-1 text-muted-foreground">Article 30 du RGPD — état au {frenchDate(new Date())}</p>
@@ -50,7 +50,7 @@ export default async function RegisterPage(): Promise<JSX.Element> {
       </div>
 
       {/* Hors registre (non imprimé) : comptes à examiner au regard de la durée de conservation. */}
-      <section className="registre-noprint mt-6 rounded-lg border border-warning/40 bg-warning-muted p-4">
+      <section className="registre-noprint mt-6 rounded-lg border border-warning/40 bg-warning-muted p-4" data-tour="rgpd.inactive">
         <h2 className="mb-1 font-semibold">Comptes à examiner ({inactive.accounts.length})</h2>
         <p className="text-foreground">
           Sans connexion depuis plus de {inactive.months} mois (réglage « Comptes des anciens membres »). Si la
@@ -93,7 +93,7 @@ export default async function RegisterPage(): Promise<JSX.Element> {
       </p>
 
       {activities.map((a, i) => (
-        <section key={a.id} className="mt-6 break-inside-avoid rounded-lg border border-border p-4">
+        <section key={a.id} className="mt-6 break-inside-avoid rounded-lg border border-border p-4" data-tour="rgpd.activity">
           <h2 className="mb-3 font-semibold">
             {i + 1}. {a.name}
           </h2>
@@ -120,7 +120,7 @@ export default async function RegisterPage(): Promise<JSX.Element> {
         </section>
       ))}
 
-      <section className="mt-6 break-inside-avoid rounded-lg border border-border p-4">
+      <section className="mt-6 break-inside-avoid rounded-lg border border-border p-4" data-tour="rgpd.security">
         <h2 className="mb-2 font-semibold">Mesures de sécurité (tous traitements)</h2>
         <ul className="list-disc pl-5">
           {SECURITY_MEASURES.map((m) => (

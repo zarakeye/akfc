@@ -35,7 +35,17 @@ import {
   demoDeconnexion,
 } from "./definitions/demo.connexion";
 import { demoPublicAccueil, demoPublicClub, demoPublicGaleries } from "./definitions/demo.public";
-import { demoCodeFormulaire, demoCodeGarde, demoFrontFormulaire, demoSupportRefus } from "./definitions/demo.metiers";
+import {
+  demoCodeEnvoi,
+  demoCodeFormulaire,
+  demoCodeGarde,
+  demoCodeImage,
+  demoCodeSandbox,
+  demoCtoCarte,
+  demoFrontFormulaire,
+  demoRgpdRegistre,
+  demoSupportRefus,
+} from "./definitions/demo.metiers";
 import { demoMineurParent, demoMineurResultat, demoMineurSouhaits } from "./definitions/demo.mineur";
 import { demoDemandesEcrire, demoDemandesSupport, demoDemandesTraiter } from "./definitions/demo.demandes";
 import { demoGroupesCreer, demoGroupesSupprimer } from "./definitions/demo.groupes";
@@ -123,6 +133,11 @@ export const TOURS: Tour[] = [
   demoCodeFormulaire,
   demoSupportRefus,
   demoCodeGarde,
+  demoRgpdRegistre,
+  demoCodeEnvoi,
+  demoCtoCarte,
+  demoCodeImage,
+  demoCodeSandbox,
 ];
 
 export function getTour(id: string): Tour | undefined {

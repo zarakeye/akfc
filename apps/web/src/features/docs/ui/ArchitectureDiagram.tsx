@@ -59,7 +59,8 @@ export function ArchitectureDiagram(props: ArchitectureDiagramProps) {
   }
 
   return (
-    <div className="my-8 rounded-2xl border border-black/10 bg-[#2b2b2b] p-4 shadow-sm">
+    // Un tuto le reconnaît à ses étapes (`targetText`) : le schéma est lui-même la « ligne ».
+    <div className="my-8 rounded-2xl border border-black/10 bg-[#2b2b2b] p-4 shadow-sm" data-tour="doc.diagram" data-tour-row="">
       <p className="mb-3 text-xs font-medium text-white/80">
         Scroller horizontalement si nécessaire
       </p>

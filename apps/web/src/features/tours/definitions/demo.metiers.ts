@@ -170,3 +170,123 @@ export const demoCodeGarde = lectureDuCode(
     },
   ],
 );
+
+export const demoRgpdRegistre: Tour = {
+  id: "demo.rgpd.registre",
+  title: "Le registre des traitements",
+  description: "Le registre de l'article 30, généré, et les comptes à examiner.",
+  audience: "admin",
+  routes: ["/dashboard/rgpd"],
+  startRoute: "/dashboard/rgpd",
+  doc: "/docs/dev/legal/donnees-personnelles",
+  demoOnly: true,
+  steps: [
+    {
+      target: "rgpd.header",
+      title: "Le registre de l'article 30",
+      body: "Généré depuis la même description que la politique de confidentialité : les deux ne peuvent pas se contredire. Il s'imprime, pour la CNIL si elle le demande.",
+      advance: { kind: "next" },
+    },
+    {
+      target: "rgpd.inactive",
+      title: "Les comptes à examiner",
+      body: "Ceux qui ne se sont plus connectés depuis la durée fixée dans les réglages : la conservation des données a une limite.",
+      advance: { kind: "next" },
+    },
+    {
+      target: "rgpd.activity",
+      title: "Un traitement",
+      body: "Sa finalité, les personnes et les données concernées, la base légale, qui y accède, les sous-traitants, les transferts hors UE et la durée de conservation.",
+      advance: { kind: "next" },
+    },
+    {
+      target: "rgpd.security",
+      title: "Les mesures de sécurité",
+      body: "Communes à tous les traitements, et décrites une fois pour toutes.",
+      advance: { kind: "next" },
+    },
+  ],
+};
+
+export const demoCodeEnvoi = lectureDuCode(
+  "demo.code.envoi",
+  "Le code d'un envoi",
+  "/docs/dev/stockage/signer-un-envoi",
+  "Avant qu'un fichier parte vers le stockage, le serveur vérifie et signe : la procédure, commentée étape par étape.",
+  [
+    {
+      step: "Le droit, puis le dossier",
+      body: "Le droit de déposer d'abord, le dossier ensuite, tous deux d'après la session : le client ne choisit pas où son fichier atterrit.",
+    },
+    {
+      step: "… et pas d’écrasement par n’importe qui",
+      body: "Remplacer un fichier publié, ou déposé par un autre, est réservé à un administrateur (ou à un éditeur dans son groupe) : sinon, FORBIDDEN.",
+    },
+  ],
+);
+
+export const demoCtoCarte: Tour = {
+  ...lectureDuCode(
+    "demo.cto.carte",
+    "La carte du système",
+    "/docs/dev/api/la-carte-du-systeme",
+    "Le point d'entrée de l'API, commenté étape par étape.",
+    [
+      {
+        step: "createContext fabrique le sac à dos du concierge",
+        body: "À chaque requête, un contexte (la session, l'accès aux données), injecté dans la procédure appelée.",
+      },
+    ],
+  ),
+};
+demoCtoCarte.steps = [
+  {
+    target: "doc.diagram",
+    targetText: "JSON",
+    title: "Avant",
+    body: "Le client appelle des routes et échange du JSON : rien ne garantit que les deux côtés parlent du même objet.",
+    advance: { kind: "next" },
+  },
+  {
+    target: "doc.diagram",
+    targetText: "Réponse typée",
+    title: "Maintenant",
+    body: "Un appel tRPC, un contexte (la session, Prisma), une procédure : la réponse arrive typée jusqu'au composant React.",
+    advance: { kind: "next" },
+  },
+  ...demoCtoCarte.steps.slice(1),
+];
+
+export const demoCodeImage = lectureDuCode(
+  "demo.code.image",
+  "L'image Docker",
+  "/docs/dev/docker/l-image-docker",
+  "L'image de production, celle qui tourne aussi dans cette démo, commentée étape par étape.",
+  [
+    {
+      step: "Debian, pas Alpine",
+      body: "Alpine (musl) obligerait Prisma à un autre moteur, à resurveiller à chaque version : une Debian minimale, plutôt.",
+    },
+    {
+      step: "Le service, sans droits",
+      body: "Le site ne tourne pas en root : une faille dans le site ne donne pas la main sur le conteneur.",
+    },
+  ],
+);
+
+export const demoCodeSandbox = lectureDuCode(
+  "demo.code.sandbox",
+  "La sandbox",
+  "/docs/dev/infrastructure/la-sandbox",
+  "Comment cette démo existe : le fichier compose qui la monte, commenté étape par étape.",
+  [
+    {
+      step: "Migrer, quand la base est prête",
+      body: "Chaque service attend le précédent : la base répond, puis le schéma s'applique, puis les données de démo arrivent.",
+    },
+    {
+      step: "Un environnement complet, et bidon",
+      body: "Toutes les variables en clair : des valeurs de démonstration, qui ne servent nulle part ailleurs. Les données sont fictives.",
+    },
+  ],
+);

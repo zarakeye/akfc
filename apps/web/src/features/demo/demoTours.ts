@@ -238,6 +238,7 @@ export const DEMO_TOURS: DemoTour[] = [
     pitch: "Comment cette démo existe : une image, un paquet de données, une machine jetable.",
     steps: [
       { text: "La documentation des développeurs, intégrée au site", href: "/docs/dev" },
+      { text: "Le compose de la sandbox, dans la doc", href: dev("infrastructure/la-sandbox"), tour: "demo.code.sandbox" },
       { text: "Dans le terminal Killercoda : docker ps, puis docker compose logs seeder" },
     ],
     docs: [
@@ -307,8 +308,9 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "CTO",
     pitch: "L'architecture d'ensemble, les choix techniques, ce qui permet de grandir.",
     steps: [
-      { text: "La carte du système, puis le domaine du club", href: dev("api/la-carte-du-systeme") },
-      { text: "Cette démo elle-même : la même image que la production, des données fictives" },
+      { text: "La carte du système", href: dev("api/la-carte-du-systeme"), tour: "demo.cto.carte" },
+      { text: "L'image Docker : celle de la production, qui tourne aussi ici", href: dev("docker/l-image-docker"), tour: "demo.code.image" },
+      { text: "Cette démo elle-même : le parcours « Sous le capot »" },
     ],
     docs: [
       { label: "Comprendre le domaine", href: dev("domaine/comprendre-le-domaine") },
@@ -326,9 +328,13 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "RSSI",
     pitch: "Le stockage, les permissions, le RGPD et les mineurs.",
     steps: [
-      { text: "Se connecter en Sam : ce qu'un bénévole non administrateur voit, et ne voit pas", as: "support" },
-      { text: "Se connecter en membre mineur et suivre la validation par le parent", as: "mineur" },
-      { text: "Se connecter en administrateur : la page RGPD", as: "admin", href: "/dashboard/rgpd" },
+      { text: "Se connecter en Sam, bénévole du support", as: "support", tour: "demo.connexion.support" },
+      { text: "Ce qu'il voit : les demandes de son groupe", href: "/dashboard/tickets", tour: "demo.demandes.support" },
+      { text: "Ce qu'il ne voit pas : la bibliothèque, refusée par la procédure", href: "/dashboard/library", tour: "demo.support.refus" },
+      { text: "Le droit à l'image d'un mineur : le parcours « Un mineur et son parent »" },
+      { text: "Se connecter en administrateur", as: "admin", tour: "demo.connexion.admin" },
+      { text: "Le registre des traitements (RGPD)", href: "/dashboard/rgpd", tour: "demo.rgpd.registre" },
+      { text: "Un envoi signé, dans la doc", href: "/docs/dev/stockage/signer-un-envoi", tour: "demo.code.envoi" },
     ],
     docs: [
       { label: "Signer un envoi", href: dev("stockage/signer-un-envoi") },
