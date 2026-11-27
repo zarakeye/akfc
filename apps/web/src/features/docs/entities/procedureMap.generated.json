@@ -470,7 +470,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 18,
+   "line": 20,
    "effects": [
     {
      "model": "TicketCategory",
@@ -480,7 +480,7 @@
       [
        [
         "ctx.prisma.ticketCategory.findMany",
-        "packages/backend/src/modules/tickets/router.ts:19"
+        "packages/backend/src/modules/tickets/router.ts:21"
        ]
       ]
      ]
@@ -492,7 +492,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 31,
+   "line": 33,
    "effects": [
     {
      "model": "SiteSettings",
@@ -686,7 +686,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 45,
+   "line": 47,
    "effects": [
     {
      "model": "MemberGroup",
@@ -831,7 +831,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 47,
+   "line": 49,
    "effects": [
     {
      "model": "MemberGroup",
@@ -983,7 +983,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 51,
+   "line": 53,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1169,7 +1169,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 55,
+   "line": 57,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1341,7 +1341,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 59,
+   "line": 61,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1531,7 +1531,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 63,
+   "line": 65,
    "effects": [
     {
      "model": "MemberGroup",
@@ -1723,7 +1723,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 74,
+   "line": 76,
    "effects": [
     {
      "model": "MemberGroup",
@@ -2077,7 +2077,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 80,
+   "line": 82,
    "effects": [
     {
      "model": "MemberGroup",
@@ -2268,7 +2268,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/tickets/router.ts",
-   "line": 84,
+   "line": 86,
    "effects": [
     {
      "model": "MemberGroup",
@@ -2448,6 +2448,690 @@
        [
         "db.ticketEvent.create",
         "packages/backend/src/modules/tickets/tickets.service.ts:299"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "ticket.demoReply": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 93,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
+       ],
+       [
+        "sendTicketFollowUpNotification",
+        "packages/backend/src/email/services/sendTicketEmails.ts:225"
+       ],
+       [
+        "siteName",
+        "packages/backend/src/email/services/sendTicketEmails.ts:27"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/services/sendTicketEmails.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:46"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "db.ticketMessage.findFirst",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:78"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "closedAt",
+      "status"
+     ],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "addIncomingMessage",
+        "packages/backend/src/modules/tickets/tickets.service.ts:239"
+       ],
+       [
+        "tx.ticket.update",
+        "packages/backend/src/modules/tickets/tickets.service.ts:267"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "addIncomingMessage",
+        "packages/backend/src/modules/tickets/tickets.service.ts:239"
+       ],
+       [
+        "tx.ticketEvent.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:275"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "addIncomingMessage",
+        "packages/backend/src/modules/tickets/tickets.service.ts:239"
+       ],
+       [
+        "tx.ticketEvent.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:277"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail",
+      "ticketId"
+     ],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "addIncomingMessage",
+        "packages/backend/src/modules/tickets/tickets.service.ts:239"
+       ],
+       [
+        "tx.ticketMessage.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:255"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:46"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "db.ticketMessage.findUnique",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:70"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "simulateRequesterReply",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:38"
+       ],
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendTicketFollowUpNotification"
+   ]
+  },
+  "ticket.demoRecap": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 101,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "sendTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:142"
+       ],
+       [
+        "db.siteSettings.findUnique",
+        "packages/backend/src/modules/tickets/recap.service.ts:149"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "db.ticket.count",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:46"
+       ]
+      ],
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "db.ticket.count",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:47"
+       ]
+      ],
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "db.ticket.count",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:48"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ],
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "sendTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:142"
+       ],
+       [
+        "buildTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:45"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendDemoRecap",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:92"
+       ],
+       [
+        "sendTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:142"
+       ],
+       [
+        "buildTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:45"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
        ]
       ]
      ]
@@ -31572,6 +32256,558 @@
     "sendTicketReply"
    ]
   },
+  "simulateRequesterReply": {
+   "file": "packages/backend/src/modules/tickets/demoMail.service.ts",
+   "line": 38,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
+       ],
+       [
+        "sendTicketFollowUpNotification",
+        "packages/backend/src/email/services/sendTicketEmails.ts:225"
+       ],
+       [
+        "siteName",
+        "packages/backend/src/email/services/sendTicketEmails.ts:27"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/services/sendTicketEmails.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:46"
+       ]
+      ],
+      [
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "db.ticketMessage.findFirst",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:78"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "closedAt",
+      "status"
+     ],
+     "trails": [
+      [
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "addIncomingMessage",
+        "packages/backend/src/modules/tickets/tickets.service.ts:239"
+       ],
+       [
+        "tx.ticket.update",
+        "packages/backend/src/modules/tickets/tickets.service.ts:267"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ],
+     "trails": [
+      [
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "addIncomingMessage",
+        "packages/backend/src/modules/tickets/tickets.service.ts:239"
+       ],
+       [
+        "tx.ticketEvent.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:275"
+       ]
+      ],
+      [
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "addIncomingMessage",
+        "packages/backend/src/modules/tickets/tickets.service.ts:239"
+       ],
+       [
+        "tx.ticketEvent.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:277"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail",
+      "ticketId"
+     ],
+     "trails": [
+      [
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "addIncomingMessage",
+        "packages/backend/src/modules/tickets/tickets.service.ts:239"
+       ],
+       [
+        "tx.ticketMessage.create",
+        "packages/backend/src/modules/tickets/tickets.service.ts:255"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/demoMail.service.ts:46"
+       ]
+      ],
+      [
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
+        "db.ticketMessage.findUnique",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:70"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendTicketFollowUpNotification"
+   ]
+  },
+  "sendDemoRecap": {
+   "file": "packages/backend/src/modules/tickets/demoMail.service.ts",
+   "line": 92,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:142"
+       ],
+       [
+        "db.siteSettings.findUnique",
+        "packages/backend/src/modules/tickets/recap.service.ts:149"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "db.ticket.count",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:46"
+       ]
+      ],
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "db.ticket.count",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:47"
+       ]
+      ],
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "db.ticket.count",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:48"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ],
+      [
+       [
+        "sendTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:142"
+       ],
+       [
+        "buildTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:45"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:142"
+       ],
+       [
+        "buildTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:45"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "ensureTicketCategories": {
    "file": "packages/backend/src/modules/tickets/ensureTicketCategories.service.ts",
    "line": 19,
@@ -31655,7 +32891,7 @@
       [
        [
         "notifyClub",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
        ],
        [
         "sendTicketFollowUpNotification",
@@ -31745,11 +32981,11 @@
       [
        [
         "notifyClub",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
        ],
        [
         "db.ticket.findUniqueOrThrow",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
        ]
       ]
      ]
@@ -31873,11 +33109,80 @@
       [
        [
         "notifyClub",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
        ],
        [
         "db.ticket.findUniqueOrThrow",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendTicketFollowUpNotification"
+   ]
+  },
+  "notifyClub": {
+   "file": "packages/backend/src/modules/tickets/imapIntake.service.ts",
+   "line": 157,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendTicketFollowUpNotification",
+        "packages/backend/src/email/services/sendTicketEmails.ts:225"
+       ],
+       [
+        "siteName",
+        "packages/backend/src/email/services/sendTicketEmails.ts:27"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "packages/backend/src/email/services/sendTicketEmails.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
        ]
       ]
      ]
@@ -31889,7 +33194,7 @@
   },
   "startTicketMailboxPolling": {
    "file": "packages/backend/src/modules/tickets/imapIntake.service.ts",
-   "line": 185,
+   "line": 186,
    "effects": [
     {
      "model": "SiteSettings",
@@ -31903,7 +33208,7 @@
        ],
        [
         "notifyClub",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
        ],
        [
         "sendTicketFollowUpNotification",
@@ -32013,11 +33318,11 @@
        ],
        [
         "notifyClub",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
        ],
        [
         "db.ticket.findUniqueOrThrow",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
        ]
       ]
      ]
@@ -32169,11 +33474,11 @@
        ],
        [
         "notifyClub",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:157"
        ],
        [
         "db.ticket.findUniqueOrThrow",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:162"
        ]
       ]
      ]

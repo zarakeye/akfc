@@ -153,7 +153,8 @@ export async function pollTicketMailbox(db: PrismaClient, cfg: IntakeConfig): Pr
   return report;
 }
 
-async function notifyClub(
+/** Le responsable (ou les traitants) est prévenu d'une réponse rattachée. Repris par la démo. */
+export async function notifyClub(
   db: PrismaClient,
   o: Extract<InboundOutcome, { kind: "added" }>,
   mail: InboundEmail,

@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, publicProcedure, protectedProcedure } from "#trpc/core.ts";
@@ -6,6 +7,7 @@ import { closeTicket, reopenTicket, takeTicket, transferTicket } from "#modules/
 import { answerTicket } from "#modules/tickets/answerTicket.service.ts";
 import { getTicketDetail, listHandlers, listInbox, ticketAccess } from "#modules/tickets/ticketQueries.service.ts";
 import { submitTicket } from "#modules/tickets/submitTicket.service.ts";
+import { isDemoMail, sendDemoRecap, simulateRequesterReply } from "#modules/tickets/demoMail.service.ts";
 
 /**
  * Demandes adressées au club (formulaire de contact).
@@ -84,4 +86,20 @@ export const ticketRouter = router({
   reopen: protectedProcedure
     .input(z.object({ id: z.string().min(1) }))
     .mutation(({ ctx, input }) => reopenTicket(ctx.prisma, input.id, ctx.sessionClient.user.id)),
+
+  /* ── La démo seulement (DEMO_MODE=1) : la boîte noreply@ et l'horloge, à la demande ── */
+
+  /** Le demandeur répond par e-mail (ou quelqu'un d'autre, `fromOther`) : voir demoMail.service. */
+  demoReply: protectedProcedure
+    .input(z.object({ id: z.string().min(1), fromOther: z.boolean().default(false) }))
+    .mutation(({ ctx, input }) => {
+      if (!isDemoMail()) throw new TRPCError({ code: "NOT_FOUND" });
+      return simulateRequesterReply(ctx.prisma, input.id, ctx.sessionClient.user.id, input.fromOther);
+    }),
+
+  /** Le récapitulatif du matin, maintenant. */
+  demoRecap: protectedProcedure.mutation(({ ctx }) => {
+    if (!isDemoMail()) throw new TRPCError({ code: "NOT_FOUND" });
+    return sendDemoRecap(ctx.prisma, ctx.sessionClient.user.id);
+  }),
 });
