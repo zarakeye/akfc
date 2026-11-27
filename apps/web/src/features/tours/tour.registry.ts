@@ -32,7 +32,9 @@ import {
   demoConnexionMembre,
   demoConnexionMineur,
   demoConnexionSupport,
+  demoDeconnexion,
 } from "./definitions/demo.connexion";
+import { demoPublicAccueil, demoPublicClub, demoPublicGaleries } from "./definitions/demo.public";
 import { demoMineurParent, demoMineurResultat, demoMineurSouhaits } from "./definitions/demo.mineur";
 import { demoDemandesEcrire, demoDemandesSupport, demoDemandesTraiter } from "./definitions/demo.demandes";
 import { demoGroupesCreer, demoGroupesSupprimer } from "./definitions/demo.groupes";
@@ -112,6 +114,10 @@ export const TOURS: Tour[] = [
   demoMineurSouhaits,
   demoMineurParent,
   demoMineurResultat,
+  demoDeconnexion,
+  demoPublicAccueil,
+  demoPublicGaleries,
+  demoPublicClub,
 ];
 
 export function getTour(id: string): Tour | undefined {

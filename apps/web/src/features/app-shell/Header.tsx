@@ -160,7 +160,7 @@ export default function Header({
                 <UserMenu />
               </div>
             )
-            : <LoginForm />
+            : <LoginForm compact />
           }
         </Suspense>
       </div>
@@ -233,7 +233,7 @@ export default function Header({
               </button>
             </div>
 
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-1" data-tour="header.panel">
               {visible.map((entry) => {
                 if (entry.kind === "activities") {
                   return <OurActivitiesMenu key="activities" variant="panel" />;
@@ -257,6 +257,7 @@ export default function Header({
                       type="button"
                       onClick={() => setPanelMenu(expanded ? null : entry.label)}
                       aria-expanded={expanded}
+                      data-tour-row=""
                       className={`flex items-center justify-between py-3 text-left text-lg text-white ${isActive(entry) ? NAV_ACTIVE : ""}`}
                     >
                       <span>{entry.label}</span>
@@ -270,12 +271,13 @@ export default function Header({
                       />
                     </button>
                     {expanded && (
-                      <div className="flex flex-col border-l border-gray-700 pl-4">
+                      <div className="flex flex-col border-l border-gray-700 pl-4" data-tour="header.submenu">
                         {entry.children.map((child) => (
                           <Link
                             key={child.href}
                             href={child.href}
                             aria-current={pathname === child.href ? "page" : undefined}
+                            data-tour-row=""
                             className={`block py-2 ${pathname === child.href ? NAV_SUB_ACTIVE_PANEL : "text-white/80"}`}
                           >
                             {child.label}
@@ -319,7 +321,11 @@ function BarMenu({
   const { open, rootProps, buttonProps, menuProps } = useDisclosure();
   return (
     <div {...rootProps} className={`relative flex items-center whitespace-nowrap 2xl:text-[20px] ${NAV_GLOW}`}>
-      <button {...buttonProps} className="flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+      <button
+        {...buttonProps}
+        data-tour-row=""
+        className="flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
         <span className={`whitespace-nowrap text-lg font-bold ${active ? NAV_ACTIVE : ""}`}>{entry.label}</span>
         <Image
           src="/chevron-white.svg"
@@ -332,6 +338,7 @@ function BarMenu({
       </button>
       <div
         {...menuProps}
+        data-tour="header.submenu"
         className={`${open ? "block" : "hidden"} absolute left-1/2 top-full z-20 w-44 -translate-x-1/2 transform rounded border-4 bg-secondary opacity-90 shadow-md transition-opacity duration-300 hover:opacity-100`}
       >
         {entry.children.map((child) => (
@@ -339,6 +346,7 @@ function BarMenu({
             key={child.href}
             href={child.href}
             aria-current={pathname === child.href ? "page" : undefined}
+            data-tour-row=""
             className={`block px-4 py-2 ${pathname === child.href ? NAV_SUB_ACTIVE_BAR : "text-foreground hover:bg-muted"}`}
           >
             {child.label}

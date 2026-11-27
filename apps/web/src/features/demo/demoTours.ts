@@ -45,11 +45,14 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "Le site public",
     pitch: "Ce que voit un visiteur, sans compte.",
     steps: [
-      { text: "L'accueil et son carousel", href: "/" },
-      { text: "Une discipline, par le menu « Nos disciplines » : sa description, ses photos" },
-      { text: "Les instructeurs et leurs bios", href: "/about/instructeurs" },
-      { text: "Les galeries", href: "/gallery" },
-      { text: "La page « L'association » : en construction pour le public", href: "/about" },
+      { text: "Se déconnecter, si l'on est connecté", tour: "demo.deconnexion" },
+      { text: "L'accueil, puis une discipline par le menu", href: "/", tour: "demo.public.accueil" },
+      { text: "Les galeries et leur visionneuse", href: "/gallery", tour: "demo.public.galeries" },
+      {
+        text: "Les instructeurs, puis « L'association » (en construction tant qu'elle n'est pas publiée)",
+        href: "/about/instructeurs",
+        tour: "demo.public.club",
+      },
     ],
     docs: [
       { label: "Ce que voit le visiteur", href: dev("domaine/ce-que-voit-le-visiteur") },

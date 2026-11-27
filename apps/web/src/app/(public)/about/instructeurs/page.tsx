@@ -55,7 +55,7 @@ export default async function InstructeursPage(): Promise<JSX.Element> {
   });
 
   return (
-    <div className="akfc-page py-12">
+    <div className="akfc-page py-12" data-tour="instructors.page">
       <h1 className="mb-8 text-2xl font-bold">Nos instructeurs</h1>
 
       {instructors.length === 0 ? (

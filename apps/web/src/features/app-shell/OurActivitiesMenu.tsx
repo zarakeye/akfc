@@ -86,6 +86,7 @@ export default function OurActivitiesMenu({
           type="button"
           onClick={() => setHover(!hover)}
           aria-expanded={hover}
+          data-tour-row=""
           className={`flex items-center justify-between py-3 text-left text-lg text-white ${onDisciplines ? NAV_ACTIVE : ""}`}
         >
           <span>Nos disciplines</span>
@@ -100,7 +101,7 @@ export default function OurActivitiesMenu({
         </button>
 
         {hover && (
-          <div className="flex flex-col border-l border-gray-700 pl-4">
+          <div className="flex flex-col border-l border-gray-700 pl-4" data-tour="header.submenu">
             {/* <Link href="/agenda" className="block py-2 text-white/80">
               Agenda — stages et évènements
             </Link> */}
@@ -134,6 +135,7 @@ export default function OurActivitiesMenu({
     >
       <button
         {...bar.buttonProps}
+        data-tour-row=""
         className="flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         <span className={`text-lg font-bold ${onDisciplines ? NAV_ACTIVE : ""}`}>Nos disciplines</span>
@@ -148,6 +150,7 @@ export default function OurActivitiesMenu({
       </button>
       <div
         {...bar.menuProps}
+        data-tour="header.submenu"
         className={`${bar.open ? "block" : "hidden"} absolute z-20 top-full left-1/2 transform -translate-x-1/2 min-w-[18rem] bg-secondary border-4 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300`}
       >
         {/* Accès direct à l'agenda.

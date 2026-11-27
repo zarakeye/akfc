@@ -39,7 +39,7 @@ export async function editorialRobots(key: string): Promise<Pick<Metadata, "robo
  */
 export function UnderConstruction(): JSX.Element {
   return (
-    <div className="akfc-page py-16 text-center">
+    <div className="akfc-page py-16 text-center" data-tour="page.under-construction">
       <h1 className="mb-4 text-2xl font-bold">Page en construction</h1>
       <p className="akfc-measure-block mx-auto text-muted-foreground">
         Cette page n&apos;est pas encore disponible. Revenez bientôt !

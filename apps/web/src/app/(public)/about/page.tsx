@@ -44,7 +44,7 @@ export default async function AboutPage(): Promise<JSX.Element> {
   const content = parsePageContentV1(page?.content);
 
   return (
-    <div className="akfc-page py-12">
+    <div className="akfc-page py-12" data-tour="about.content">
       <h1 className="mb-8 text-2xl font-bold">
         {page?.title ?? "L'association"}
       </h1>

@@ -110,7 +110,7 @@ export default async function PublicDisciplinePage({
       -->
       */}
       
-      <section>
+      <section data-tour="discipline.content">
         <PageRenderer content={description} audience={audienceFor(access)} />
       </section>
     </article>

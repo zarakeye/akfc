@@ -25,7 +25,12 @@ import {
  *   - useActionState relie le formulaire à la server action loginFormAction, qui pose le cookie ;
  *   - une fois connecté, le formulaire relit la session (getSession) et la range dans le store.
  */
-export default function LoginForm(): JSX.Element {
+/**
+ * `compact` : dans la barre de l'en-tête (≥ xl), à côté du menu. Les champs, à leur largeur
+ * naturelle, ne laissaient pas assez de place au menu entre 1280 et 1536 px : ses rubriques se
+ * chevauchaient. Plus étroits jusqu'à 2xl.
+ */
+export default function LoginForm({ compact = false }: { compact?: boolean } = {}): JSX.Element {
   // Hors du React Compiler : react-hook-form signale ses changements par un proxy (`formState`)
   // que le compilateur ne voit pas ; mémorisé, le rendu ne suivrait plus les erreurs.
   "use no memo";
@@ -96,7 +101,7 @@ export default function LoginForm(): JSX.Element {
           placeholder="Adresse e-mail"
           autoComplete="email"
           aria-invalid={!!formState.errors.email}
-          className="border rounded bg-card px-2 py-1"
+          className={`border rounded bg-card px-2 py-1 ${compact ? "w-40 2xl:w-auto" : ""}`}
           {...register("email")}
         />
 
@@ -107,7 +112,7 @@ export default function LoginForm(): JSX.Element {
             placeholder="Mot de passe"
             autoComplete="current-password"
             aria-invalid={!!formState.errors.password}
-            className="border rounded bg-card px-2 py-1 pr-9"
+            className={`border rounded bg-card px-2 py-1 pr-9 ${compact ? "w-40 2xl:w-auto" : ""}`}
             {...register("password")}
           />
           <button

@@ -195,7 +195,7 @@ export function GalleryGroupedView({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-tour="gallery.view">
       {groups.map((disc) => {
         const discOpen = !closedDisc.has(disc.key);
         return (

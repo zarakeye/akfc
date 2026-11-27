@@ -26,7 +26,7 @@ export function GalleryGrid({
   onItemClick,
 }: GalleryGridProps): JSX.Element {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4" data-tour="gallery.grid">
       {items.map((item, i) => (
         <button
           key={item.mediaAssetId}

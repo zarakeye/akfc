@@ -71,3 +71,17 @@ export const demoConnexionAdmin = connexion("demo.connexion.admin", "Se connecte
 export const demoConnexionMembre = connexion("demo.connexion.membre", "Se connecter en membre", "membre@sandbox.local", "membre majeur");
 export const demoConnexionMineur = connexion("demo.connexion.mineur", "Se connecter en membre mineur", "mineur@sandbox.local", "membre mineur");
 export const demoConnexionSupport = connexion("demo.connexion.support", "Se connecter en Sam, du support", "support.sam@sandbox.local", "Sam, bénévole du support,");
+
+/** Se déconnecter, pour voir le site en visiteur : les trois premières étapes, puis le constat. */
+export const demoDeconnexion: Tour = {
+  ...connexion("demo.deconnexion", "Se déconnecter", "", "visiteur"),
+  description: "Se déconnecter, pour voir le site comme un visiteur sans compte.",
+};
+demoDeconnexion.steps = [
+  ...demoDeconnexion.steps.slice(0, 3),
+  {
+    title: "Visiteur",
+    body: "Vous voilà visiteur : le site tel que le voit quelqu'un qui n'a pas de compte. Déjà déconnecté, il n'y avait rien à faire.",
+    advance: { kind: "next" },
+  },
+];

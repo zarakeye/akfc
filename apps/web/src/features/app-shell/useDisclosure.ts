@@ -14,7 +14,9 @@ import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent
  *
  * Un clic de SOURIS sur le titre n'inverse pas l'état : le survol a déjà ouvert le menu, l'inverser
  * le refermerait sous le pointeur. Seul un « clic » produit par le clavier (Entrée, Espace :
- * `detail === 0`) bascule.
+ * `detail === 0`) bascule. Il l'épingle en revanche : ouvert d'un clic, le menu ne se referme plus
+ * en sortant, mais au clic ailleurs, à Échap ou en le quittant au clavier (un tuto guidé fait
+ * cliquer le titre, puis lire sa bulle, loin du menu).
  */
 /**
  * `hover: false` : le menu ne s'ouvre et ne se ferme qu'à l'appui, jamais au survol. C'est le cas
@@ -22,7 +24,13 @@ import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent
  * un défilement y faisait « sortir » le pointeur du menu, qui se refermait.
  */
 export function useDisclosure({ hover = true }: { hover?: boolean } = {}) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  // Toute fermeture désépingle.
+  const setOpen = (next: boolean | ((o: boolean) => boolean)): void => {
+    setOpenState(next);
+    if (next === false) setPinned(false);
+  };
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
@@ -45,7 +53,7 @@ export function useDisclosure({ hover = true }: { hover?: boolean } = {}) {
     rootProps: {
       ref: rootRef,
       onMouseEnter: hover ? (): void => setOpen(true) : undefined,
-      onMouseLeave: hover ? (): void => setOpen(false) : undefined,
+      onMouseLeave: hover ? (): void => (pinned ? undefined : setOpen(false)) : undefined,
       onKeyDown: (e: KeyboardEvent): void => {
         if (e.key === "Escape" && open) {
           e.stopPropagation();
@@ -66,7 +74,10 @@ export function useDisclosure({ hover = true }: { hover?: boolean } = {}) {
       "aria-controls": menuId,
       onClick: (e: MouseEvent): void => {
         if (e.detail === 0) setOpen((o) => !o);
-        else setOpen(true);
+        else {
+          setOpen(true);
+          setPinned(true);
+        }
       },
     },
     /** À poser sur le conteneur des liens du menu. */

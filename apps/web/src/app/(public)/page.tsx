@@ -187,7 +187,7 @@ export default async function HomePage(): Promise<JSX.Element> {
       <HomeCarousel />
 
       {/* Intro */}
-      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
+      <section className="mx-auto max-w-3xl px-4 py-16 text-center" data-tour="home.intro">
         {/* La pastille noire fait désormais PARTIE du logo (fichier carré, disque noir sous le dessin
             blanc) : logo et pastille grandissent ensemble, à la taille de ce carré. */}
         <div className="mx-auto mb-6 h-80 w-80 sm:h-56 sm:w-56 lg:h-80 lg:w-80">
@@ -238,7 +238,7 @@ export default async function HomePage(): Promise<JSX.Element> {
 
       {/* Présentations synthétiques des disciplines */}
       {disciplineCards.length > 0 && (
-        <section className="akfc-page py-12">
+        <section className="akfc-page py-12" data-tour="home.disciplines">
           <h2 className="mb-8 text-2xl font-bold">Nos disciplines</h2>
           <SummaryCards
             cards={disciplineCards}
@@ -249,7 +249,7 @@ export default async function HomePage(): Promise<JSX.Element> {
 
       {/* ── Mur de posts (flux façon Facebook) ─────────────────────── */}
       {posts.length > 0 && (
-        <section className="mx-auto w-full max-w-2xl px-4 py-16">
+        <section className="mx-auto w-full max-w-2xl px-4 py-16" data-tour="home.news">
           <h2 className="mb-8 text-2xl font-bold">Actualités du club</h2>
           <div className="flex flex-col gap-8">
             {posts.map((post) => (
@@ -265,7 +265,7 @@ export default async function HomePage(): Promise<JSX.Element> {
       )}
 
       {/* CTA final */}
-      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
+      <section className="mx-auto max-w-3xl px-4 py-16 text-center" data-tour="home.join">
         <h2 className="mb-3 text-2xl font-bold">
           Envie de nous rejoindre&nbsp;?
         </h2>

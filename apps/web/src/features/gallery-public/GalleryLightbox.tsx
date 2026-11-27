@@ -106,6 +106,7 @@ export function GalleryLightbox({
       role="dialog"
       aria-modal="true"
       aria-label="Visionneuse de la galerie"
+      data-tour="gallery.lightbox"
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
@@ -214,6 +215,7 @@ export function GalleryLightbox({
       <button
         type="button"
         aria-label="Fermer la visionneuse"
+        data-tour="gallery.close"
         autoFocus
         onClick={onClose}
         className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25"
