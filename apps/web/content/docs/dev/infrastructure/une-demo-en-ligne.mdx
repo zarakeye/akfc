@@ -1,0 +1,193 @@
+---
+title: "Une démo en ligne, gratuite"
+description: "La sandbox, ouverte à n’importe qui depuis un lien, sans rien installer, sans coût et sans aucune donnée réelle : ce qu’une démo demande à un hébergeur et ce que Killercoda en donne, un scénario de deux scripts, un paquet de photos sans vraies personnes, un site qui sait qu’il est en démo, ce qu’on simule faute de boîte mail et d’horloge, des parcours guidés que le visiteur fait lui-même, et un test qui les rejoue tous."
+section: "Infrastructure et déploiement"
+order: 3
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Une commande lance le site entier, avec des comptes connus et des images déjà construites ; trois variables le font répondre ailleurs que sur `localhost`.
+
+La sandbox suppose encore que le visiteur a Docker, un terminal, et l’envie de s’en servir. Un recruteur qui ouvre un CV n’a rien de tout cela : il a un lien, et quelques minutes. Ce chapitre raconte comment nous avons fait de la sandbox une **démo en ligne** — un lien, et le site complet, à lui seul, pour une heure — sans payer d’hébergement, sans exposer aucune donnée réelle, et sans que rien de ce que fait le visiteur n’atteigne la production.
+
+## Ce que le visiteur doit trouver 🎯
+
+Nous nous sommes fixé cinq exigences, et tout le reste en découle :
+
+- **un lien**, rien à installer ;
+- **le site complet**, pas une maquette : la médiathèque, les droits à l’image, les demandes au club, le tableau de bord ;
+- **une démo à lui seul** : ce qu’il crée, renomme ou supprime ne se voit chez personne d’autre, et le visiteur suivant repart d’une démo neuve ;
+- **aucune donnée réelle** : ni nom d’adhérent, ni photo où l’on reconnaîtrait quelqu’un ;
+- **rien vers la production** : ni sa base, ni son stockage, ni ses secrets, ni son serveur.
+
+La troisième exigence décide de l’hébergement. Une démo partagée par tous les visiteurs, sur une machine qui reste allumée, montrerait à chacun ce que le précédent a cassé ; pire, n’importe qui pourrait y publier une image sur une galerie publique, sous le nom du club. Il faut une machine **par visiteur**, créée à l’ouverture et détruite à la fin.
+
+## Ce qu’une démo demande à un hébergeur
+
+La sandbox fixe le contrat. Il lui faut :
+
+<DocsTable columnsJson='["Besoin", "Pourquoi"]' rowsJson='[["Linux, avec Docker et son plugin compose", "La sandbox est un fichier compose (chapitre précédent)."], ["Environ 4 Go de mémoire", "Postgres, le stockage, Mailpit, puis le site ; le seed, au démarrage, est le moment le plus gourmand."], ["Une adresse publique par port", "Le navigateur du visiteur atteint le site (3010), le stockage (9000, pour les URL signées) et Mailpit (8025)."], ["Le droit de télécharger", "Les images sur GHCR, le paquet de photos sur GitHub."], ["Une machine jetable", "La troisième exigence : une par visiteur, détruite à la fin."]]' />
+
+Notre serveur de production remplirait les quatre premières lignes, pas la dernière : il porte aussi d’autres backends, et nous n’y lançons pas des conteneurs pour des inconnus. **Killercoda** remplit les cinq. C’est une plateforme de travaux pratiques : un *scénario*, décrit dans un dépôt GitHub, ouvre pour chaque visiteur une machine virtuelle neuve (ici `ubuntu-4GB`), avec un terminal et des pages d’explication à côté, et la supprime à la fin de la session. Chaque port de la machine a une adresse publique, du type `https://<identifiant>-3010.<serveur>.killercoda.com`.
+
+C’est gratuit, sans limite sur le nombre de visiteurs. En échange, le visiteur paie trois choses, et la démo les annonce :
+
+- **un compte Killercoda**, gratuit, à créer avant de lancer le scénario ;
+- **quelques minutes d’attente** : chaque machine neuve télécharge les images et remplit sa base ;
+- **une heure**, au plus, par session (en offre gratuite) ; il peut en relancer une autre, sans limite par jour.
+
+Killercoda limite aussi, à court terme, la fréquence des démarrages, et demande un CAPTCHA quand beaucoup de visiteurs arrivent de la même adresse IP — toute une équipe qui teste depuis un même bureau, par exemple.
+
+<Callout type="insight">
+Un hébergeur de démo se choisit sur l’isolement autant que sur le prix : une machine par visiteur, c’est une démo qu’on peut laisser casser.
+</Callout>
+
+## Le scénario : deux scripts et trois pages
+
+Un scénario Killercoda est un dossier : un `index.json` qui le décrit (titre, étapes, machine), une page Markdown par étape, et deux scripts lancés à l’ouverture. Le nôtre vit dans le monorepo, dans `infra/killercoda/akfc-demo/`, à côté du code qu’il lance : nous le modifions et le relisons avec le reste. Killercoda, lui, lit un dépôt public à part, `zarakeye/akfc-killercoda`, qui n’en contient que la copie :
+
+<DocsTable columnsJson='["Fichier", "Rôle"]' rowsJson='[["index.json", "Le titre, les étapes, et la machine : ubuntu-4GB."], ["intro.md, step1.md, finish.md", "Les pages : ce qui se prépare, comment ouvrir le site et avec quels comptes, et la fin."], ["background.sh", "Lancé à l’ouverture, sans être affiché : prépare la machine et démarre la sandbox."], ["foreground.sh", "Le terminal que voit le visiteur : il attend que la démo soit prête, et le dit."]]' />
+
+`scripts/publier-scenario-killercoda.sh` copie le dossier dans un clone du dépôt publié et y commite ; le `git push`, avec ses identifiants, reste à faire à la main. Et le workflow `.github/workflows/killercoda.yml` compare, sur `main`, les deux copies : il échoue tant que la copie publiée diffère, pour rappeler qu’il reste à publier. C’est un workflow à part, et pas un job de la CI : un scénario pas encore publié ne doit pas bloquer la construction des images, qui attend une CI réussie.
+
+Tout le travail est dans `background.sh` :
+
+<CodeWalkthrough
+  language="bash"
+  filepath="infra/killercoda/akfc-demo/background.sh"
+  filename="background.sh"
+  title="infra/killercoda/akfc-demo/background.sh"
+  stepsJson='[{"title": "Tout dans un journal", "body": "Le script tourne sans terminal : personne ne verrait ses messages. `exec` redirige d’un coup toute sa sortie, erreurs comprises, vers `/tmp/akfc-setup.log`. Quand la démo ne démarre pas, c’est la première chose à lire (`tail -30 /tmp/akfc-setup.log`, dans le terminal de la session).", "scope": "1-3", "focus": "3-3"}, {"title": "La fin de la session, et l’attente", "body": "L’heure de fin est calculée tout de suite : maintenant, plus une heure, en secondes depuis 1970. Le script écrit ensuite le petit programme que lancera le terminal visible : des points toutes les cinq secondes, jusqu’à ce qu’un fichier dise « prêt » (`/tmp/akfc-ready`) ou « échec » (`/tmp/akfc-failed`). Les deux scripts ne se parlent que par ces fichiers.", "scope": "4-17", "focus": "5-5"}, {"title": "Le plugin compose, absent", "body": "La machine de Killercoda a Docker, mais pas `docker compose`. Le script télécharge le plugin officiel pour l’architecture de la machine (`uname -m`), dans le dossier où Docker cherche ses plugins. `set -x`, juste avant, recopie chaque commande dans le journal.", "scope": "18-31", "focus": "25-25"}, {"title": "Le dépôt, sans git", "body": "La machine n’a besoin que des fichiers compose du dépôt, pas de son historique : l’archive de `main`, téléchargée et décompressée sur place. `demo-data/` reste vide : le paquet de photos viendra par son adresse.", "scope": "33-36", "focus": "35-35"}, {"title": "Les adresses de Killercoda", "body": "`/etc/killercoda/host` contient l’adresse publique de la machine, avec `PORT` à la place du port. `sed` en tire celle du site, du stockage et de Mailpit : ce sont les variables du chapitre précédent, lues par le fichier compose. `AKFC_BIND=0.0.0.0`, parce que le proxy de Killercoda joint la machine de l’extérieur. Restent l’adresse du paquet de photos, celle des images, et l’heure de fin.", "scope": "38-45", "focus": "40-40"}, {"title": "Les images, pas la construction", "body": "Le second fichier compose remplace la construction par le téléchargement des images publiées sur GHCR : construire prendrait plus de temps que la session n’en laisse.", "scope": "47-47", "focus": "47-47"}, {"title": "Prêt, ou pas", "body": "Le site répond-il ? Toutes les cinq secondes, pendant dix minutes au plus. Un code 200 ou une redirection, et le fichier « prêt » est posé ; au bout des dix minutes, le fichier « échec ». Le terminal du visiteur, qui guettait l’un des deux, le lui dit.", "scope": "49-55", "focus": "52-52"}]'
+/>
+
+Rien n’est construit sur la machine : elle télécharge des images déjà prêtes, un paquet déjà prêt, et lance. C’est ce qui tient le démarrage en quelques minutes.
+
+## Des données crédibles, et aucune vraie
+
+Une démo sans photos ne montre rien de la médiathèque, des galeries ou des droits à l’image. Les vraies photos du club, elles, ne quittent jamais le Mac ni le serveur. Entre les deux, il y a la base de développement : ses photos ont été retouchées, visage par visage, jusqu’à ce que personne n’y soit reconnaissable. La démo reprend celles-là, et seulement celles-là.
+
+`pnpm demo:pack` (`scripts/demo/export-demo-pack.mjs`) les extrait de la base et du stockage **locaux** — la garde de `prisma/db-target.mjs` refuse toute autre adresse — et fabrique `demo-pack.tar.gz` :
+
+- les photos de la bibliothèque, des espaces personnels et des avatars, réencodées en JPEG **sans aucune métadonnée** : ni position GPS, ni appareil, ni date de prise de vue ;
+- un `manifest.json` qui dit où va chaque photo, et décrit les disciplines, les galeries, les partenaires du pied de page ;
+- **aucun nom** : les personnes deviennent `{person-1}`, `{person-2}`…, et le seed leur invente un nom. Dans les bios des instructeurs, le nom de l’instructeur devient celui de sa personne fictive ; les autres noms passent par une table de correspondance qui ne quitte pas le Mac ;
+- **aucune vidéo** : leurs visages n’ont pas pu être retouchés.
+
+Le paquet est publié une fois, en pièce jointe d’une release GitHub (`demo-pack-1`) ; `AKFC_DEMO_PACK_URL` le désigne, et le seed de la sandbox le télécharge.
+
+<Callout type="warning">
+Le paquet se fabrique sur le Mac, depuis la base de développement, jamais depuis le serveur : c’est la seule base dont toutes les photos sont retouchées. Une photo de la production ne peut pas s’y glisser, puisque le script ne sait pas lire la production.
+</Callout>
+
+Les photos ne suffisent pas. Un parcours guidé qui apprend à ranger une photo a besoin d’une photo à ranger ; celui qui apprend à relancer une personne qui n’a pas répondu a besoin de cette personne. Les **décors** (`prisma/seed.sandbox.decor.mjs`, chapitre précédent) posent exactement cela, aux noms connus d’avance : « Démo de la médiathèque » et sa `photo-a-ranger.jpg`, « Démo du droit à l’image » et Camille, l’« Atelier de la démo » où le membre est éditeur, les demandes au club dans tous leurs états. Chaque décor existe parce qu’un parcours en a besoin.
+
+## Le site sait qu’il est en démo
+
+L’image de la démo est l’image de production. Ce qui la distingue se lit **au lancement**, dans l’environnement que pose le fichier compose : `DEMO_MODE=1`. Le site en tire `IS_DEMO` (`apps/web/src/config/siteUrl.ts`) : aucune page n’est indexée par les moteurs de recherche, et le **panneau de la démo** s’affiche, en bas à gauche de chaque page.
+
+Le panneau a besoin de deux informations que seule la session connaît : l’heure de fin, et l’adresse de Mailpit vue par le navigateur.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/demo/demoInfo.ts"
+  filename="demoInfo.ts"
+  title="apps/web/src/features/demo/demoInfo.ts"
+  stepsJson='[{"title": "Côté serveur seulement", "body": "`server-only` fait échouer la construction si un composant client importe ce fichier : les variables d’environnement du serveur ne partent pas dans le JavaScript du navigateur.", "scope": "1-3", "focus": "1-1"}, {"title": "Lues au lancement, pas à la construction", "body": "Next.js remplace `process.env.NEXT_PUBLIC_…` par sa valeur **au moment de la construction**. Lues par une variable intermédiaire (`runtimeEnv`), comme `SITE_URL` dans `siteUrl.ts` et le mailer, ces variables restent lues au lancement : une même image sert toutes les sessions, chacune avec son heure de fin.", "scope": "5-12", "focus": "12-12"}, {"title": "Hors démo, rien", "body": "`null` hors démo : le panneau ne s’affiche pas, et le site de production n’en sait rien.", "scope": "16-17", "focus": "17-17"}, {"title": "Une fin, ou pas de compte à rebours", "body": "`DEMO_ENDS_AT` est posée par le scénario Killercoda, en secondes. Absente, comme dans une sandbox lancée en local, elle donne `null` : pas de compte à rebours. L’adresse de Mailpit, elle, a une valeur par défaut, celle de la sandbox locale.", "scope": "18-23", "focus": "20-20"}]'
+/>
+
+Le panneau range les **parcours guidés** par famille : ceux qui montrent une fonction du site (la médiathèque, les groupes…) et ceux qui parlent à un métier (Lead Front, Backend, CTO, RSSI). Chaque parcours affiche le rôle dans lequel il se fait — un compte de la démo, un visiteur sans compte, ou le parent d’un mineur, qui n’a pas de compte —, et chaque étape aussi, avec un bouton qui connecte le bon compte. Chaque parcours renvoie enfin aux chapitres de cette documentation qui expliquent ce qu’il vient de montrer.
+
+## Ce que la démo n’a pas, simulé
+
+Deux choses du vrai site n’existent pas dans une machine d’une heure. La première est une **boîte mail qui reçoit** : en production, le club relève la boîte `noreply@` et rattache chaque réponse d’un demandeur à sa demande (partie « Membres et collaboration », chapitre sur les demandes). La sandbox n’a que Mailpit, qui capture les envois et n’en relève aucun. La seconde est le **temps** : le récapitulatif des demandes ouvertes part chaque matin, et personne n’attendra le matin.
+
+Dans la démo seulement, la page d’une demande montre donc deux boutons : l’un fait répondre le demandeur par e-mail, l’autre fait répondre quelqu’un d’autre. La liste des demandes en montre un troisième, qui envoie le récapitulatif tout de suite. La réponse simulée n’a rien de simulé une fois construite :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/tickets/demoMail.service.ts"
+  filename="demoMail.service.ts"
+  snippetStart="export function isDemoMail(): boolean {"
+  snippetLines="68"
+  title="packages/backend/src/modules/tickets/demoMail.service.ts"
+  stepsJson='[{"title": "La démo, et rien d’autre", "body": "Les deux procédures tRPC qui appellent ce fichier (`tickets.demoReply`, `tickets.demoRecap`) commencent par `isDemoMail()` ; hors démo, elles répondent « introuvable », comme une procédure qui n’existerait pas.", "scope": "1-3", "focus": "2-2"}, {"title": "Quelqu’un qui n’est pas le demandeur", "body": "Une adresse qui n’appartient à personne : la démonstration du refus. En production, une réponse venue d’un autre expéditeur n’est pas ajoutée à la demande, elle est mise de côté pour qu’un responsable la regarde.", "scope": "6-6", "focus": "6-6"}, {"title": "Le droit de voir, d’abord", "body": "`getTicketDetail` lève une erreur si l’utilisateur ne peut pas voir la demande : seul celui qui pourrait la traiter déclenche la réponse.", "scope": "25-25", "focus": "25-25"}, {"title": "La dernière réponse du club", "body": "Le message sortant le plus récent : c’est à lui que le demandeur « répond ». Son identifiant d’e-mail (`emailMessageId`) servira à rattacher la réponse, comme le fait une vraie messagerie.", "scope": "26-41", "focus": "34-34"}, {"title": "Le message cité", "body": "Une messagerie recopie sous la réponse le message auquel on répond, chaque ligne précédée de `>`. Le vrai traitement retire cette partie citée : la simulation la met, pour qu’il ait à la retirer.", "scope": "42-47", "focus": "43-43"}, {"title": "Un e-mail comme un autre", "body": "Un identifiant neuf, l’en-tête `References` qui désigne le message du club, et le sujet `Re: [AKFC-0042] …` : les trois indices par lesquels le vrai traitement retrouve la demande.", "scope": "48-58", "focus": "52-52"}, {"title": "Le vrai traitement", "body": "`processInboundEmail` est la fonction qu’appelle la relève de la boîte, en production. Mêmes règles de rattachement, même retrait de la partie citée, même refus d’un autre expéditeur : la démo montre le comportement réel, pas une imitation.", "scope": "59-59", "focus": "59-59"}, {"title": "Le responsable prévenu", "body": "Comme à la relève, le responsable reçoit un avis ; il arrive dans Mailpit. Un échec de l’avis est noté dans le journal sans faire échouer la réponse, déjà enregistrée.", "scope": "60-68", "focus": "62-62"}]'
+/>
+
+Nous simulons **l’entrée**, pas le traitement : ce que la démo montre de la réponse par e-mail est ce que fait le site.
+
+Le même principe règle un troisième manque : **les fichiers du visiteur**. Le parcours qui apprend à changer d’avatar ou à déposer un document demanderait au visiteur de choisir un fichier sur son ordinateur, et un parcours guidé ne peut pas savoir ce qu’il y a. En démo, à côté du sélecteur de fichier, un bouton propose donc un fichier d’exemple (`apps/web/public/demo/image-exemple.jpg`, `document-exemple.pdf`) ; une fois choisi, il suit le circuit d’envoi ordinaire.
+
+## Des parcours que le visiteur fait lui-même
+
+Les tutoriels du site (partie « Étude de cas (1) ») montrent une page et ses actions : la bulle explique, et un bouton peut faire l’action à la place du lecteur. Les parcours de la démo s’en servent en **mode curseur** : un curseur dessiné va se poser exactement sur ce qu’il faut cliquer, la bulle dit quoi faire, et c’est le visiteur qui clique, qui tape, qui valide. Le site ne fait rien à sa place.
+
+Nous nous sommes donné trois règles :
+
+- **la zone éclairée est exactement ce qu’il faut cliquer** : le bouton, la case, le champ, pas le bloc qui les contient. Le moteur resserre la zone (`guidedGeometry`) et la coupe aux bords d’un conteneur qui défile (`clipToScrollers`), pour que le curseur ne s’arrête jamais sur une partie cachée ;
+- **créer, modifier, supprimer passent par le tableau** : le visiteur constate ce qu’il vient de créer, le sélectionne pour le modifier, puis pour le supprimer ;
+- **chaque parcours se rejoue** : ce qu’il crée, il le défait, ou il le retrouve au second passage.
+
+<DocsTable columnsJson='["Parcours", "Commence en", "Ce qu’il montre"]' rowsJson='[["Le site public", "visiteur", "L’accueil, une discipline par le menu, les galeries, le club."], ["La vie d’un membre", "membre", "Le profil, le droit à l’image, ses apparitions, l’avatar, un dépôt dans un espace collaboratif."], ["Un mineur et son parent", "mineur", "Les souhaits du mineur, la décision du parent par le lien reçu par e-mail, le résultat."], ["La médiathèque", "admin", "Parcourir, ranger, les versions d’un fichier, la corbeille."], ["Droits à l’image et tags", "admin", "Taguer, relancer, refuser, les masques."], ["Construire une page", "admin", "Compléter une page, la publier."], ["Les groupes", "admin", "Créer un groupe, ses membres, son espace."], ["Une demande au club", "membre", "Écrire une demande, la traiter, la réponse par e-mail et le récapitulatif."], ["Sous le capot", "visiteur", "Comment le site est construit, par sa documentation."], ["Lead Front, Backend, CTO, RSSI", "selon le métier", "Pour chaque métier, une fonction du site, puis le code qui la porte, lu dans cette documentation."]]' />
+
+Les parcours de métier finissent dans cette documentation même : un tuto générique (`lectureDuCode`, dans `apps/web/src/features/tours/definitions/demo.metiers.ts`) promène le curseur sur les étapes d’un code commenté, comme celui de ce chapitre.
+
+## Chaque parcours, rejoué à chaque changement
+
+Un parcours guidé est fragile d’une façon particulière : il dépend de la page entière. Un bouton qui change de place, un menu qui se ferme trop tôt, un champ masqué par l’en-tête à une certaine largeur d’écran, et le visiteur clique dans le vide. Nous ne le découvririons qu’en refaisant tous les parcours à la main. `pnpm e2e:demo` les refait à notre place, **comme un visiteur** :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="e2e/demo/parcours.demo.ts"
+  filename="parcours.demo.ts"
+  snippetStart="async function loadDemoTours(): Promise<DemoTour[]> {"
+  snippetLines="132"
+  title="e2e/demo/parcours.demo.ts"
+  stepsJson='[{"title": "La liste du panneau", "body": "Le test ne tient pas sa propre liste : il lit `DEMO_TOURS`, celle du panneau. Un parcours ajouté au panneau est testé, sans toucher au test. Le fichier est traduit en JavaScript par TypeScript au moment de la lecture : le dossier `apps/web` n’est pas déclaré en modules ES, et Node refuserait son `export`. D’où une contrainte, écrite en tête du fichier : `demoTours.ts` n’importe que des types.", "scope": "1-7", "focus": "3-3"}, {"title": "Où est le curseur ?", "body": "Le curseur dessiné est un élément placé par `transform`. Le test lit sa position, à trois pixels près : la pointe de la flèche.", "scope": "21-28", "focus": "26-26"}, {"title": "La page d’un e-mail", "body": "Le parent n’a pas de compte : il décide depuis le lien reçu par e-mail, dont l’adresse change à chaque envoi. Le test le cherche dans Mailpit, par son API.", "scope": "31-43", "focus": "37-37"}, {"title": "Lancer, comme le panneau", "body": "Le bouton du panneau écrit l’état du tuto dans le `sessionStorage` de l’onglet, mode curseur compris, puis ouvre la page. Le test fait de même. Il ne retient que la bulle du tuto (« Étape 3 sur 7 »), pas un autre dialogue de la page.", "scope": "46-50", "focus": "47-47"}, {"title": "Attendre l’étape suivante", "body": "Une étape est passée quand la bulle change de texte et a fini d’apparaître (opacité 1). Pendant un changement de page, la bulle dit « Chargement de la page » : le test attend, sans compter l’étape.", "scope": "57-79", "focus": "61-61"}, {"title": "Introuvable : échec", "body": "Quand la cible d’une étape n’apparaît pas, la bulle finit par dire « Élément introuvable ». Pour le test, c’est un échec, avec le nom du tuto.", "scope": "80-80", "focus": "80-80"}, {"title": "Cliquer là où est le curseur", "body": "Le test lit ce que demande la bulle, et le fait **à la position du curseur** : taper la valeur indiquée, faire un clic droit, cliquer. Jamais sur l’élément visé par son nom : si la zone éclairée n’est pas celle qu’il faut cliquer, le clic tombe à côté, l’étape suivante n’arrive pas, et le test échoue. Après un clic, la souris part en bas de l’écran, comme celle d’un visiteur qui lit la bulle : un menu qui se fermerait à ce moment-là se ferme aussi pendant le test.", "scope": "81-104", "focus": "98-98"}, {"title": "Pas de boucle sans fin", "body": "Plus de trente étapes : le tuto tourne en rond. Le test échoue au lieu d’attendre son délai.", "scope": "106-106", "focus": "106-106"}, {"title": "Les tutos d’un parcours", "body": "Chaque étape du panneau qui lance un tuto, avec la page où il commence. Une étape `here` (le tuto démarre sur la page où l’on est) n’a pas d’adresse fixe : seule celle du parent est prévue, par son e-mail.", "scope": "110-116", "focus": "114-114"}, {"title": "Deux fois", "body": "Un test par parcours, qui le joue deux fois de suite : le second passage vérifie que la démo peut le refaire.", "scope": "118-132", "focus": "124-124"}]'
+/>
+
+`e2e/demo/run.mjs` joue le tout à trois largeurs d’écran, 1440, 1280 et 1024 pixels. Avant chaque largeur, il repart d’une base neuve : celle des tests de bout en bout (partie « Qualité (2) »), plus le décor de la démo (`e2e/demo/seed.mjs`), où une petite image remplace chaque photo — le test regarde où l’on clique, pas ce que montre la photo. Le site est construit une fois, puis lancé en mode démo (`playwright.demo.config.ts`).
+
+<DocsTable columnsJson='["Commande", "Ce qu’elle fait"]' rowsJson='[["pnpm e2e:demo", "Tous les parcours, deux fois chacun, aux trois largeurs : environ une heure."], ["pnpm e2e:demo 1440", "Une seule largeur, environ vingt minutes ; plusieurs largeurs se donnent à la suite (1440 1024)."], ["E2E_NO_BUILD=1 pnpm e2e:demo", "Sans reconstruire : la dernière construction des tests de bout en bout."], ["pnpm e2e:report", "Le rapport du dernier lancement, captures des échecs comprises."]]' />
+
+Ce test ne fait pas partie de `pnpm e2e` ni de la CI : il dure trop longtemps pour chaque push. Il se lance avant de pousser un changement qui touche un parcours, le panneau, ou une page qu’un parcours traverse. Ses fichiers s’appellent `*.demo.ts`, que la configuration ordinaire de Playwright ne cherche pas.
+
+Il a trouvé de vrais défauts du site, pas seulement des parcours. Le message « Autorisation enregistrée » disparaissait aussitôt affiché : le formulaire du droit à l’image se remontait à chaque nouvelle autorisation. Entre 1280 et 1536 pixels, sans être connecté, le formulaire de connexion de l’en-tête recouvrait le menu. Et les menus qui s’ouvrent au survol se refermaient dès que la souris partait vers la bulle : ils restent désormais ouverts quand on les ouvre d’un clic.
+
+<Callout type="insight">
+Un parcours guidé qui se rejoue est aussi un test de bout en bout : il passe par les mêmes pages que le visiteur, à la même largeur d’écran, avec la même souris.
+</Callout>
+
+## Ce qui ne touche jamais la production
+
+<DocsTable columnsJson='["Ce qui pourrait fuir", "Pourquoi ça ne fuit pas"]' rowsJson='[["La base, le stockage, les secrets de la production", "La démo a les siens, dans sa machine : ceux de la sandbox, publics par nature. Les images publiées ne contiennent aucun secret."], ["Le serveur", "Rien ne tourne dessus : chaque visiteur a une machine de Killercoda, détruite à la fin."], ["Les photos et les noms des adhérents", "Le paquet vient de la base de développement, aux visages retouchés ; les noms y sont remplacés ; les vidéos n’y sont pas."], ["Les e-mails", "Mailpit les capture tous ; aucun ne part vers une vraie boîte."], ["Les fonctions de démo", "Les procédures demoReply et demoRecap répondent « introuvable » hors DEMO_MODE."], ["Les moteurs de recherche", "DEMO_MODE : aucune page de la démo n’est indexée."]]' />
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où tourne la démo ?", "Sur Killercoda : une machine ubuntu-4GB par visiteur, détruite au bout d’une heure au plus."], ["Que coûte-t-elle au visiteur ?", "Un compte Killercoda gratuit, et quelques minutes de démarrage."], ["Où vit le scénario ?", "Dans infra/killercoda/akfc-demo, la source ; zarakeye/akfc-killercoda en est la copie publiée, vérifiée par killercoda.yml."], ["Que fait background.sh ?", "Installe compose, télécharge les fichiers du dépôt, tire de /etc/killercoda/host les adresses publiques, lance la sandbox avec les images publiées, et dit quand elle est prête."], ["D’où viennent les photos ?", "Du paquet de démo, fabriqué sur le Mac depuis la base de développement : visages retouchés, sans métadonnées, sans noms, sans vidéos."], ["Comment le site sait-il qu’il est en démo ?", "DEMO_MODE, lu au lancement ; DEMO_ENDS_AT et DEMO_MAIL_URL nourrissent le panneau."], ["Et sans boîte mail ni horloge ?", "Des boutons de démo qui construisent un vrai e-mail de réponse et le confient au vrai traitement, ou envoient le récapitulatif tout de suite."], ["Qui fait les gestes d’un parcours ?", "Le visiteur ; le curseur montre exactement où."], ["Comment sait-on que tous les parcours marchent ?", "pnpm e2e:demo les joue deux fois, comme un visiteur, à trois largeurs d’écran."]]' />
+
+## Ce que nous devons savoir expliquer
+
+Avant de passer à la suite, nous devrions pouvoir expliquer :
+
+- pourquoi une démo a besoin d’une machine par visiteur, et ce que Killercoda demande en échange ;
+- comment une même image d’application sait qu’elle est en démo, à quelle adresse elle répond, et quand sa session finit ;
+- pourquoi le scénario vit dans le monorepo alors que Killercoda le lit ailleurs, et comment les deux copies restent identiques ;
+- d’où viennent les photos et les noms de la démo, et pourquoi aucun n’est réel ;
+- comment la démo montre la réponse par e-mail sans boîte mail, sans pour autant l’imiter ;
+- pourquoi le test des parcours clique à la position du curseur, et pas sur l’élément visé.
+
+## À suivre
+
+Cette partie a mis le site en ligne, l’a copié pour l’essayer, puis l’a ouvert à n’importe qui. Reste à protéger ce que la production contient et qu’aucune image ne recrée : la base et les fichiers des membres.
+
+<Callout type="info">
+**À venir : les sauvegardes.** Ce qui se sauvegarde, où, à quelle fréquence, chiffré comment, et comment on vérifie qu’une sauvegarde se restaure.
+</Callout>
+
+Le site public est en ligne. Les membres, eux, ont leur propre espace : leur profil, les documents que le club leur transmet, les espaces de fichiers de leurs groupes, et les demandes qu’ils adressent au club.
+
+<Callout type="tip">
+**Partie suivante : les membres et la collaboration.** Le profil et la première connexion, les documents des membres et leur suivi de lecture, les espaces collaboratifs, et le système de demandes.
+</Callout>

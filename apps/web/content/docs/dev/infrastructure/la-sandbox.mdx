@@ -71,7 +71,7 @@ Docker prend l’architecture de la machine. `AKFC_TAG` choisit la version : `ma
 
 ## Ailleurs que sur localhost
 
-Une démo en ligne, Killercoda par exemple, ne sert pas la sandbox sur `localhost`. Trois variables, lues par le fichier compose, s’en chargent, avec les valeurs locales par défaut :
+Une démo en ligne (chapitre suivant) ne sert pas la sandbox sur `localhost`. Trois variables, lues par le fichier compose, s’en chargent, avec les valeurs locales par défaut :
 
 <DocsTable columnsJson='["Variable", "Défaut", "Rôle"]' rowsJson='[["AKFC_BIND", "127.0.0.1", "Adresse d’écoute des ports. 0.0.0.0 quand une plateforme doit joindre la machine depuis l’extérieur."], ["AKFC_SITE_URL", "http://localhost:3010", "Adresse du site vue par le navigateur : SITE_URL et NEXTAUTH_URL, donc les liens des e-mails."], ["AKFC_STORAGE_URL", "http://localhost:9000", "Adresse du stockage vue par le navigateur : R2_PUBLIC_ENDPOINT, pour les URL signées."]]' />
 
@@ -109,14 +109,8 @@ La sandbox, l’environnement de développement (`docker-compose.dev.yml`, parti
 
 ## À suivre
 
-Cette partie a mis le site en ligne et l’a copié pour l’essayer. Reste à protéger ce que la production contient et qu’aucune image ne recrée : la base et les fichiers des membres.
-
-<Callout type="info">
-**À venir : les sauvegardes.** Ce qui se sauvegarde, où, à quelle fréquence, chiffré comment, et comment on vérifie qu’une sauvegarde se restaure.
-</Callout>
-
-Le site public est en ligne. Les membres, eux, ont leur propre espace : leur profil, les documents que le club leur transmet, les espaces de fichiers de leurs groupes, et les demandes qu’ils adressent au club.
+La sandbox suppose encore que celui qui l’essaie a Docker, un terminal, et l’envie de s’en servir. Un recruteur qui ouvre un CV n’a qu’un lien. Faire de ce lien le site entier, à lui seul, pour une heure, sans payer d’hébergement et sans qu’une seule donnée réelle ne sorte : c’est l’objet du chapitre suivant.
 
 <Callout type="tip">
-**Partie suivante : les membres et la collaboration.** Le profil et la première connexion, les documents des membres et leur suivi de lecture, les espaces collaboratifs, et le système de demandes.
+**Chapitre suivant : une démo en ligne, gratuite.** Ce qu’une démo demande à un hébergeur, le scénario Killercoda, un paquet de photos sans vraies personnes, ce que la démo simule, et des parcours guidés qu’un test rejoue tous.
 </Callout>
