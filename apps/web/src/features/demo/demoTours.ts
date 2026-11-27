@@ -9,9 +9,21 @@ import type { DemoAccountKey } from "#features/demo/demoAccounts.ts";
  * Les liens de la doc ouvrent un nouvel onglet, pour ne pas perdre sa place dans le site.
  */
 /** `tour` : un tuto du site (features/tours), lancé en mode guidé (le curseur montre le chemin). */
-export type DemoStep = { text: string; href?: string; as?: DemoAccountKey; tour?: string };
+export type DemoStep = {
+  text: string;
+  href?: string;
+  as?: DemoAccountKey;
+  tour?: string;
+  /** Le rôle de cette seule étape, sans changer de compte : le parent, qui n'en a pas. */
+  role?: "parent";
+  /**
+   * Le tuto se lance sur la page où l'on est, sans y mener : celle d'un lien reçu par e-mail
+   * (son adresse change à chaque envoi). Ailleurs, le bouton attend qu'on l'ait ouverte.
+   */
+  here?: boolean;
+};
 /** Le rôle dans lequel se fait une étape : un compte de la démo, ou un visiteur sans compte. */
-export type DemoRole = DemoAccountKey | "visiteur";
+export type DemoRole = DemoAccountKey | "visiteur" | "parent";
 export type DemoTour = {
   key: string;
   /** Le rôle de la première étape ; une étape avec `as` change de rôle pour les suivantes. */
@@ -76,10 +88,19 @@ export const DEMO_TOURS: DemoTour[] = [
     title: "Un mineur et son parent",
     pitch: "Le droit à l'image d'un mineur passe par son parent, par e-mail.",
     steps: [
-      { text: "Se connecter en membre mineur", as: "mineur" },
-      { text: "Demander l'autorisation de droit à l'image", href: "/profil/droit-a-l-image" },
-      { text: "Ouvrir Mailpit (lien plus bas) : le parent a reçu un e-mail ; cliquer son lien et valider" },
-      { text: "Revenir au profil du mineur : l'autorisation est enregistrée", href: "/profil/droit-a-l-image" },
+      { text: "Se connecter en membre mineur, par le formulaire", as: "mineur", tour: "demo.connexion.mineur" },
+      {
+        text: "Indiquer ses souhaits, et les envoyer à son parent",
+        href: "/profil/droit-a-l-image",
+        tour: "demo.mineur.souhaits",
+      },
+      { text: "Dans Mailpit (lien plus bas), ouvrir l'e-mail reçu par le parent et cliquer son lien", role: "parent" },
+      { text: "Sur la page du lien, décider et valider", role: "parent", tour: "demo.mineur.parent", here: true },
+      {
+        text: "Revenir au profil du mineur : l'autorisation est enregistrée",
+        href: "/profil/droit-a-l-image",
+        tour: "demo.mineur.resultat",
+      },
     ],
     docs: [
       { label: "Le droit à l'image", href: dev("legal/droit-a-l-image") },
@@ -307,7 +328,7 @@ export function stepRoles(tour: DemoTour): DemoRole[] {
   let role: DemoRole = tour.start;
   return tour.steps.map((step) => {
     if (step.as) role = step.as;
-    return role;
+    return step.role ?? role;
   });
 }
 

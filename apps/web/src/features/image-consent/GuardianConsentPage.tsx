@@ -117,7 +117,11 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
 
   if (state.status === "success" && state.data) {
     return (
-      <div className="mt-6 space-y-2 rounded-md border border-success/40 bg-success-muted p-4 text-success" role="status">
+      <div
+        className="mt-6 space-y-2 rounded-md border border-success/40 bg-success-muted p-4 text-success"
+        role="status"
+        data-tour="guardian.done"
+      >
         <p className="font-medium">Merci, l&apos;autorisation de {r.memberName} est enregistrée.</p>
         {state.data.changes.length > 0 ? (
           <>
@@ -169,16 +173,18 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
         </button>
       </p>
 
-      <ConsentChoicesFields
-        usages={usages}
-        onUsages={(v) => setValue("usages", v, revalidate)}
-        keep={keep ?? false}
-        onKeep={(v) => setValue("keepAfterLeave", v, revalidate)}
-        subject="child"
-        wishes={{ usages: r.usages, keepAfterLeave: r.keepAfterLeave }}
-      />
+      <div data-tour="guardian.choices">
+        <ConsentChoicesFields
+          usages={usages}
+          onUsages={(v) => setValue("usages", v, revalidate)}
+          keep={keep ?? false}
+          onKeep={(v) => setValue("keepAfterLeave", v, revalidate)}
+          subject="child"
+          wishes={{ usages: r.usages, keepAfterLeave: r.keepAfterLeave }}
+        />
+      </div>
 
-      <div>
+      <div data-tour="guardian.birthdate">
         <GuardianBirthDateField
           memberName={r.memberName}
           label={`Date de naissance de ${r.memberName} (facultative)`}
@@ -194,7 +200,7 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
       </div>
 
       <div>
-        <label className="flex items-start gap-2">
+        <label className="flex items-start gap-2" data-tour="guardian.legal">
           <input type="checkbox" className="mt-1" {...register("isLegalRepresentative")} />
           <span>
             Je suis {r.guardianName}, représentant légal ({r.guardianRelation}) de {r.memberName}, et je donne cette
@@ -208,6 +214,7 @@ function GuardianForm({ token, data: r }: { token: string; data: RequestData }):
       <button
         type="submit"
         disabled={isPending}
+        data-tour="guardian.submit"
         className="rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
       >
         {isPending ? "Enregistrement…" : "Je valide l'autorisation"}

@@ -2,15 +2,16 @@
 
 import { useMemo, useSyncExternalStore, type JSX } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, Check, LogIn, PlayCircle } from "lucide-react";
 
 import { DEMO_ACCOUNTS, type DemoAccountKey } from "#features/demo/demoAccounts.ts";
 import { DEMO_TOURS, stepRoles, tourRoles, type DemoRole, type DemoTour } from "#features/demo/demoTours.ts";
 import { writeOpen } from "#features/demo/demoPanelOpen.ts";
 import { switchDemoAccountAction } from "#features/demo/switchDemoAccount.action.ts";
-import { getTour } from "#features/tours/tour.registry.ts";
+import { getTour, onTourPage } from "#features/tours/tour.registry.ts";
 import { tourStore } from "#features/tours/tour.store.ts";
+import type { Tour } from "#features/tours/tour.types.ts";
 
 const STORE_KEY = "akfc-demo-tours";
 
@@ -57,6 +58,7 @@ const ROLE_BADGE: Record<DemoRole, { label: string; className: string }> = {
   admin: { label: "Admin", className: "bg-destructive-muted text-destructive" },
   membre: { label: "Membre", className: "bg-success-muted text-success" },
   mineur: { label: "Mineur", className: "bg-warning-muted text-warning" },
+  parent: { label: "Parent, sans compte", className: "bg-muted text-foreground border border-border" },
   support: { label: "Sam · support", className: "bg-info-muted text-info" },
 };
 
@@ -89,10 +91,17 @@ function TourSteps({
   pending: boolean;
 }): JSX.Element {
   const router = useRouter();
+  const pathname = usePathname();
   // Un tuto guidé : le curseur va de cible en cible, la bulle dit quoi faire, le visiteur agit.
-  const guide = async (id: string): Promise<void> => {
+  const guide = async (id: string, here = false): Promise<void> => {
     const t = getTour(id);
     if (!t) return;
+    // Sur place (la page d'un lien reçu par e-mail) : ni compte à changer, ni page où aller.
+    if (here) {
+      writeOpen(false);
+      tourStore.start(t.id, { cursor: true });
+      return;
+    }
     // Le compte qu'il faut pour suivre ce tuto : un tuto d'administration lancé en visiteur
     // échouerait sur sa première page (le site le renverrait ailleurs).
     const needs: DemoAccountKey | null =
@@ -148,8 +157,15 @@ function TourSteps({
                 {step.tour && getTour(step.tour) && (
                   <button
                     type="button"
-                    onClick={() => void guide(step.tour as string)}
-                    className="ml-1 inline-flex items-center gap-1 rounded bg-brand px-1.5 text-xs text-brand-foreground hover:bg-brand/90"
+                    onClick={() => void guide(step.tour as string, step.here)}
+                    // Sur place seulement : tant que la page du lien n'est pas ouverte, il attend.
+                    disabled={step.here && !onTourPage(getTour(step.tour) as Tour, pathname)}
+                    title={
+                      step.here && !onTourPage(getTour(step.tour) as Tour, pathname)
+                        ? "Ouvrez d'abord le lien de l'e-mail : le guide se lance sur sa page."
+                        : undefined
+                    }
+                    className="ml-1 inline-flex items-center gap-1 rounded bg-brand px-1.5 text-xs text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
                   >
                     <PlayCircle className="h-3 w-3" aria-hidden />
                     Guidé

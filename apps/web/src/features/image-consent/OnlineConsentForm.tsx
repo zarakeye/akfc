@@ -161,12 +161,17 @@ function MinorWishes({
           Le club doit d&apos;abord renseigner : {s.missing.join(", ")}. Parlez-en à un instructeur.
         </p>
       ) : pending?.active && !open ? (
-        <div className="mt-3 space-y-2" role="status">
+        <div className="mt-3 space-y-2" role="status" data-tour="consent.pending">
           <p className="text-success">
             En attente de votre parent : lien envoyé à {pending.sentToMasked} le {pending.sentAt ? formatDate(pending.sentAt) : "—"},
             valable jusqu&apos;au {pending.expiresAt ? formatDate(pending.expiresAt) : "—"}.
           </p>
-          <button type="button" onClick={() => setOpen(true)} className="rounded-md border border-border px-3 py-2 hover:bg-muted">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            data-tour="consent.wishes.open"
+            className="rounded-md border border-border px-3 py-2 hover:bg-muted"
+          >
             Modifier mes souhaits et renvoyer le lien
           </button>
         </div>
@@ -176,6 +181,7 @@ function MinorWishes({
           <button
             type="button"
             onClick={() => setOpen(true)}
+            data-tour="consent.wishes.open"
             className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90"
           >
             <PenLine className="h-4 w-4" />
@@ -344,18 +350,21 @@ function MinorWishesForm({
           Lire le texte complet de l&apos;autorisation
         </button>
       </p>
-      <ConsentChoicesFields
-        usages={usages}
-        onUsages={(v) => setValue("usages", v)}
-        keep={keep ?? false}
-        onKeep={(v) => setValue("keepAfterLeave", v)}
-        subject="self"
-      />
+      <div data-tour="consent.choices">
+        <ConsentChoicesFields
+          usages={usages}
+          onUsages={(v) => setValue("usages", v)}
+          keep={keep ?? false}
+          onKeep={(v) => setValue("keepAfterLeave", v)}
+          subject="self"
+        />
+      </div>
       {errMsg && <p className="text-destructive">{errMsg}</p>}
       <div className="flex flex-wrap gap-3">
         <button
           type="submit"
           disabled={isPending}
+          data-tour="consent.wishes.send"
           className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-2 font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
         >
           <Send className="h-4 w-4" />

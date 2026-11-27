@@ -27,7 +27,13 @@ import { membreVersions } from "./definitions/membre.versions";
 import { membreProfil } from "./definitions/membre.profil";
 import { publicDecouvrirLeSite } from "./definitions/public.decouvrir-le-site";
 import { publicMotDePasseOublie } from "./definitions/public.mot-de-passe-oublie";
-import { demoConnexionAdmin, demoConnexionMembre, demoConnexionSupport } from "./definitions/demo.connexion";
+import {
+  demoConnexionAdmin,
+  demoConnexionMembre,
+  demoConnexionMineur,
+  demoConnexionSupport,
+} from "./definitions/demo.connexion";
+import { demoMineurParent, demoMineurResultat, demoMineurSouhaits } from "./definitions/demo.mineur";
 import { demoDemandesEcrire, demoDemandesSupport, demoDemandesTraiter } from "./definitions/demo.demandes";
 import { demoGroupesCreer, demoGroupesSupprimer } from "./definitions/demo.groupes";
 import {
@@ -83,6 +89,7 @@ export const TOURS: Tour[] = [
   demoConnexionAdmin,
   demoConnexionMembre,
   demoConnexionSupport,
+  demoConnexionMineur,
   demoDemandesEcrire,
   demoDemandesTraiter,
   demoDemandesSupport,
@@ -102,6 +109,9 @@ export const TOURS: Tour[] = [
   demoMembreApparais,
   demoMembreAvatar,
   demoMembreDepot,
+  demoMineurSouhaits,
+  demoMineurParent,
+  demoMineurResultat,
 ];
 
 export function getTour(id: string): Tour | undefined {
@@ -131,4 +141,9 @@ export function toursFor(pathname: string, viewer: TourViewer): Tour[] {
 
 export function routeMatches(match: string | RegExp, pathname: string): boolean {
   return matches(match, pathname);
+}
+
+/** La page courante est-elle l'une de celles de ce tuto ? (Le panneau de la démo lance sur place.) */
+export function onTourPage(tour: Tour, pathname: string): boolean {
+  return tour.routes.some((r) => matches(r, pathname));
 }

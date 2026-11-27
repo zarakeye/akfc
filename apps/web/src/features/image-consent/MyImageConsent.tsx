@@ -32,7 +32,7 @@ export function MyImageConsent(): JSX.Element {
         />
       )}
       {data && (
-        <div className="rounded-lg border border-border p-4 text-sm">
+        <div className="rounded-lg border border-border p-4 text-sm" data-tour="consent.summary">
           <p>
             <span className="font-semibold">Votre autorisation : </span>
             {IMAGE_CONSENT_LABEL[data.consent]}
