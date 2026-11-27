@@ -27,6 +27,9 @@ function resolveProjectPath(filepath: string): string | null {
     path.join(cwd, filepath),
     path.join(cwd, "..", filepath),
     path.join(cwd, "..", "..", filepath),
+    // Dans l'image : la sortie autonome n'a pas les sources ; le Dockerfile y recopie les fichiers
+    // que la doc cite (scripts/docs/collect-cited-sources.mjs). En dernier : le dépôt d'abord.
+    path.join(cwd, ".doc-sources", filepath),
   ]
 
   const found = candidates.find((candidate) => fs.existsSync(candidate))

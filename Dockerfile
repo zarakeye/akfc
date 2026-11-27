@@ -52,7 +52,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # fichiers sous une autre racine (sans défaut, ENV recevait une chaîne VIDE).
 ARG NEXT_PUBLIC_APP_SHORT_NAME=AKFC
 ENV NEXT_PUBLIC_APP_SHORT_NAME=${NEXT_PUBLIC_APP_SHORT_NAME}
-RUN pnpm --filter web build
+RUN pnpm --filter web build && node scripts/docs/collect-cited-sources.mjs
 # sharp avec ses dépendances (detect-libc, semver, @img/*) à plat : le traçage Next ne les emporte pas.
 # Le build échoue ici si sharp ne se charge pas, plutôt que l'API en production.
 RUN set -e; S=$(ls -d node_modules/.pnpm/sharp@*/node_modules | head -1); \

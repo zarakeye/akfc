@@ -33,13 +33,12 @@ dist
 
 # Historique et outillage local.
 .git
-.github
 .vscode
 *.log
 
-# Tests de bout en bout : ni leur code, ni leurs résultats ne servent à l'image.
-e2e
-playwright.config.ts
+# Résultats des tests de bout en bout. Leur code, lui, entre dans le contexte, comme .github : la
+# documentation le cite, et le build en recopie les fichiers cités dans l'image
+# (scripts/docs/collect-cited-sources.mjs). Rien d'autre des tests n'entre dans l'image.
 test-results
 playwright-report
 

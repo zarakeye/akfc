@@ -90,6 +90,16 @@ La garde `check-doc-snippets.mjs` relit donc, à chaque `pnpm check`, toutes les
 
 Cette règle est écrite **deux fois** : dans le composant (TypeScript) et dans la garde (un script Node sans compilation, qui ne peut pas importer le TypeScript du site). Un commentaire de chaque côté renvoie à l’autre. Deux copies d’une règle sont un risque ; documentées et courtes, elles restent un compromis acceptable face à une étape de compilation de plus dans `pnpm check`.
 
+### Dans l’image, des sources absentes
+
+En développement, le fichier cité est dans le dépôt. Dans l’image Docker, il n’y est plus : le site y tourne depuis sa **sortie autonome** (partie « Docker », chapitre « L’image Docker »), le code compilé et ce que le traceur de Next a jugé utile, sans les sources de `apps/web`, ni les tests, ni les scripts. Chaque extrait de ces fichiers affichait « ⚠ Extrait introuvable » sur le site en ligne, alors que `check-doc-snippets` passait : la garde lit le dépôt.
+
+`scripts/docs/collect-cited-sources.mjs`, lancé par le Dockerfile juste après la construction, relit toute la documentation, relève chaque fichier cité (par `filepath="…"`, ou par la ligne de chemin d’un bloc « ``` ») et le recopie dans le dossier `.doc-sources/` de la sortie autonome, sous le chemin tel que la doc l’écrit. `resolveProjectPath` y cherche en dernier, après le dépôt. Seuls les fichiers cités entrent dans l’image, jamais un `.env`, et rien qui sorte du dépôt.
+
+<Callout type="warning">
+Un extrait juste dans le dépôt peut être introuvable en production : la garde vérifie le dépôt, pas l’image. Ce qu’une page lit sur le disque doit aussi être dans l’image.
+</Callout>
+
 ## Les lectures guidées
 
 Un extrait montre ; une **lecture guidée** (`CodeWalkthrough`) explique. Elle reprend le même passage, désigné de la même façon, et le parcourt en étapes : chaque étape a un titre, un texte, une portée (`scope`, les lignes affichées) et un point d’attention (`focus`, les lignes éclairées). Le lecteur choisit une étape dans la liste, et le code reste à sa place pendant que l’explication et l’éclairage changent.
