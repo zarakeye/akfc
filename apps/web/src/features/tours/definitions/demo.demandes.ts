@@ -146,3 +146,85 @@ export const demoDemandesSupport: Tour = {
     },
   ],
 };
+
+/**
+ * La boîte et l'horloge, à la demande (la démo seulement) : le demandeur répond par e-mail, puis
+ * quelqu'un d'autre ; enfin le récapitulatif du matin, envoyé tout de suite. Sam traite la demande
+ * de son groupe, « Changer mon adresse e-mail », à laquelle il a déjà répondu (décor de la sandbox).
+ */
+const ANSWERED = "Changer mon adresse e-mail";
+
+export const demoDemandesEmail: Tour = {
+  id: "demo.demandes.email",
+  title: "Les réponses par e-mail, le récapitulatif",
+  description: "Le demandeur répond depuis sa messagerie ; le club reçoit chaque matin un récapitulatif.",
+  audience: "member",
+  routes: [/^\/dashboard\/tickets/],
+  startRoute: "/dashboard/tickets",
+  doc: "/docs/dev/membres/demandes",
+  demoOnly: true,
+  steps: [
+    {
+      target: "tickets.list",
+      targetText: ANSWERED,
+      targetPick: "a",
+      title: "Une demande répondue",
+      body: "Sam y a répondu par le site : la réponse est partie par e-mail. Ouvrez-la.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "tickets.thread",
+      title: "Le fil",
+      body: "La question du membre, la réponse de Sam. Le membre peut répondre depuis sa messagerie, sans revenir sur le site.",
+      advance: { kind: "next" },
+    },
+    {
+      target: "tickets.demo.reply",
+      title: "Le demandeur répond",
+      body: "Un e-mail « Re: [AKFC-…] », avec la réponse de Sam citée dessous, comme l'écrirait une messagerie.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "tickets.demo.result",
+      title: "Rattachée",
+      body: "Retrouvée par ses en-têtes de réponse (ou la référence de l'objet), débarrassée de la citation, ajoutée au fil.",
+      advance: { kind: "next" },
+    },
+    {
+      target: "tickets.status",
+      title: "Son état suit",
+      body: "Elle n'est plus « répondue » : de nouveau à traiter, « en cours » chez son responsable (« en attente » sans responsable). Close, elle se rouvrirait.",
+      advance: { kind: "next" },
+    },
+    {
+      target: "tickets.demo.reply-other",
+      title: "Quelqu'un d'autre",
+      body: "Le même e-mail, envoyé d'une autre adresse.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "tickets.demo.result",
+      title: "Mise de côté",
+      body: "Seul le demandeur écrit dans sa demande.",
+      advance: { kind: "next" },
+    },
+    {
+      target: "tickets.back",
+      title: "Retour à la liste",
+      body: "Toutes les demandes.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "tickets.demo.recap",
+      title: "Le récapitulatif",
+      body: "Chaque matin, chacun reçoit les demandes ouvertes de ses groupes : envoyez-le maintenant.",
+      advance: { kind: "click" },
+    },
+    {
+      target: "tickets.demo.recap-result",
+      title: "Envoyé",
+      body: "À des personnes, jamais à l'adresse du club : il y reviendrait comme une nouvelle demande. Dans la démo, il est dans Mailpit.",
+      advance: { kind: "next" },
+    },
+  ],
+};

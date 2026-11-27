@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { trpc } from "#core/trpc/trpcClient.ts";
 import { STATUS_CLASS, STATUS_LABEL, dueLabel, shortDate } from "#features/tickets/ticketUi.ts";
+import { DemoTicketRecap } from "#features/tickets/demo/DemoTicketMail.tsx";
 
 /**
  * Demandes — `/dashboard/tickets`.
@@ -42,6 +43,8 @@ export default function TicketsPage(): JSX.Element {
           </span>
         )}
       </div>
+
+      <DemoTicketRecap />
 
       <div className="mb-4 flex flex-wrap gap-2" role="tablist" data-tour="tickets.tabs">
         {TABS.map((tab) => (

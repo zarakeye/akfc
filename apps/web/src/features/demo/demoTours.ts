@@ -227,6 +227,12 @@ export const DEMO_TOURS: DemoTour[] = [
       { text: "La réponse est dans Mailpit, comme l'a reçue le membre" },
       { text: "Se connecter en Sam, du support", as: "support", tour: "demo.connexion.support" },
       { text: "Ce que voit un bénévole qui n'est pas administrateur", href: "/dashboard/tickets", tour: "demo.demandes.support" },
+      {
+        text: "Le demandeur répond par e-mail, puis quelqu'un d'autre ; le récapitulatif du matin",
+        href: "/dashboard/tickets",
+        tour: "demo.demandes.email",
+      },
+      { text: "L'avis à Sam et le récapitulatif sont dans Mailpit" },
     ],
     docs: [{ label: "Les demandes", href: dev("membres/demandes") }],
   },

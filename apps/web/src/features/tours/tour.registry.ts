@@ -47,7 +47,12 @@ import {
   demoSupportRefus,
 } from "./definitions/demo.metiers";
 import { demoMineurParent, demoMineurResultat, demoMineurSouhaits } from "./definitions/demo.mineur";
-import { demoDemandesEcrire, demoDemandesSupport, demoDemandesTraiter } from "./definitions/demo.demandes";
+import {
+  demoDemandesEcrire,
+  demoDemandesEmail,
+  demoDemandesSupport,
+  demoDemandesTraiter,
+} from "./definitions/demo.demandes";
 import { demoGroupesCreer, demoGroupesSupprimer } from "./definitions/demo.groupes";
 import {
   demoMediathequeCorbeille,
@@ -138,6 +143,7 @@ export const TOURS: Tour[] = [
   demoCtoCarte,
   demoCodeImage,
   demoCodeSandbox,
+  demoDemandesEmail,
 ];
 
 export function getTour(id: string): Tour | undefined {

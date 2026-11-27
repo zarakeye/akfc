@@ -9,6 +9,7 @@ import { useSessionStore } from "#lib/stores/useSessionStore.ts";
 import { EVENT_LABEL, STATUS_CLASS, STATUS_LABEL, dateTime, dueLabel } from "#features/tickets/ticketUi.ts";
 import { ReplyTicketForm } from "#features/tickets/reply/ReplyTicketForm.tsx";
 import { TransferTicketButton } from "#features/tickets/transfer/TransferTicketForm.tsx";
+import { DemoTicketReply } from "#features/tickets/demo/DemoTicketMail.tsx";
 
 /**
  * Une demande — `/dashboard/tickets/[id]` : fil des messages, réponse signée, prise en charge,
@@ -107,7 +108,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
         {actionError && <p className="mt-2 text-sm text-destructive">{actionError.message}</p>}
       </header>
 
-      <ol className="mb-6 flex flex-col gap-4">
+      <ol className="mb-6 flex flex-col gap-4" data-tour="tickets.thread">
         {t.messages.map((m) => (
           <li
             key={m.id}
@@ -125,6 +126,8 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
           </li>
         ))}
       </ol>
+
+      <DemoTicketReply ticketId={id} onDone={refresh} />
 
       {closed ? (
         <p className="mb-6 rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
